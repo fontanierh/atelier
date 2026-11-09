@@ -1,7 +1,18 @@
 # Yorimichi V2: the game and the way we build it
 
-**Status: execution plan, not an implementation report.** Written 6 November 2026.
-No milestone below is complete merely because this file exists.
+**Status: design and acceptance reference.** Written 6 November 2026; owner directions reconciled
+9 November 2026. [The inventory](../games/yorimichi_v2/docs/INVENTORY.md) is the current implementation
+status; [the V2 README](../games/yorimichi_v2/README.md) is the working command guide.
+The original milestone names below remain useful for tracing evidence, not as a fresh task list.
+
+The owner authorized the whole port in small playable increments on 7 November. Missing slice measurements,
+human-editor and second-machine proofs do not block independent migration. On 8 November the owner required
+independent editing and recoverable sources for every useful object, permitted supported larger guarded
+sessions and disjoint headless editors, and asked the team to reuse existing queues and passing checks.
+On 9 November the owner placed human and multiplayer playtesting after construction, with his brother.
+Those checks remain unverified until performed; they must not become an operator-permission gate on building.
+V2 is already the active game. Its normal build, targeted imports, claims and warm editor queue exist;
+consult the inventory before treating any original milestone below as unfinished.
 
 **Goal:** rebuild the original Yorimichi in Unreal, with its world, characters and
 gameplay, while letting people and agents work independently without repeatedly
@@ -19,8 +30,8 @@ service to prevent conflicting binary edits across all machines.
 
 ## 1. Read this before doing any work
 
-1. Start at **P0**, in section 12. Do not start the full port before the small
-   experiment passes **P3**.
+1. Continue the full port from the current inventory. Reuse completed P0–P3 work;
+   do not delay independent migration for outstanding human or second-machine evidence.
 2. Use `games/yorimichi_v2/` for the new game. Keep the original game available as
    a reference until V2 passes acceptance. Do not turn its working checkout into
    V2 in place.
@@ -34,8 +45,8 @@ service to prevent conflicting binary edits across all machines.
 6. Each agent and human uses an independent checkout. No shared writable
    `Content`, `Binaries`, `Intermediate` or `Saved` directory.
 7. Claim a binary asset or world area before changing it. A Git branch alone
-   does not prevent two people from overwriting the same Unreal asset. Until
-   the claim service exists, use the single-writer bootstrap rule in section 9.
+   does not prevent two people from overwriting the same Unreal asset. Use the
+   existing claims service; the bootstrap history in section 9 is not an alternative.
 8. A claim lasts through review and merge. Another agent using the same GitHub
    account is still another owner.
 9. Keep the current machine's admission and memory protections. More agents
@@ -66,7 +77,7 @@ historical design rules. In particular:
   stay private, paid requests are accounted for, each machine admits heavy jobs,
   and workers cannot damage each other's files or processes.
 
-During P0, make a short **keep / replace / retire** list. For every retained rule,
+Keep the existing **keep / replace / retire** decisions current. For every retained rule,
 name the V2 behavior it protects. Delete a redundant file, or mark a useful
 historical file as reference-only; Git already preserves its history. Update
 links, inherited `CONTRACTS` scope and automated checks in the same change so
@@ -84,8 +95,8 @@ failure. There is no requirement to add boilerplate to every folder.
 The starting source is commit
 `7eec0f98dd02c9505d3870336717b3edf830be73`. The published reference playtest is
 `yorimichi-macos-2026-10-23-r13`. They are **two references, not a claim that the
-release was built from that commit**. P0 must reconcile the release manifest,
-source, available editable content and any later approved work.
+release was built from that commit**. The recorded baseline reconciliation is in
+[V2 decisions](../games/yorimichi_v2/docs/DECISIONS.md); later work belongs in the current inventory.
 
 Preserve working, in-scope behavior. A proposal in an old document is not a
 feature that must now be invented. A known unfinished feature is not silently
@@ -111,7 +122,7 @@ There are five different operations. Do not combine them into one automatic
 
 The original project already separates packaging from normal builds. Its larger
 problem is that editable Unreal content is not committed, and several scripts
-own broad outputs. The current world also creates much of its static scenery
+own broad outputs. That baseline world also creates much of its static scenery
 from `world.json` at runtime. Adding Git LFS without changing those ownership
 boundaries would preserve much of the old problem.
 
@@ -135,7 +146,7 @@ See [Epic's One File Per Actor documentation](https://dev.epicgames.com/document
 
 ## 3. Fixed design choices
 
-| Question | Decision for the experiment | Reason and cost |
+| Question | V2 design decision | Reason and cost |
 | --- | --- | --- |
 | Engine | Exact proven Unreal 5.8 installation | Keeps migration problems separate from engine changes |
 | Project | One new Unreal project in the existing repository | Shares working platform code and makes integration visible |
@@ -149,13 +160,13 @@ See [Epic's One File Per Actor documentation](https://dev.epicgames.com/document
 | Integration | A persistent integration workspace per supported platform | Warm builds; package merged work in batches |
 | Initial release target | macOS desktop, matching the original supported target | Establish parity before adding a new release platform |
 
-If the brother's development machine uses Windows, P0 records that fact and the
+If a collaborator requires native Windows development, record that choice and the
 native-development choice must be explicit. Unreal supports Windows, but the
 current Atelier launch checks, board service and admission paths contain macOS
 assumptions. Do not assume they already provide a working Windows host.
 
-Choose one route in P0: validate a bounded Windows launch/admission/cleanup adapter
-before its native slice tests, or let Windows workers do code/review and use
+For that work, validate a bounded Windows launch/admission/cleanup adapter
+before its native checks, or let Windows workers do code/review and use
 separate owned workspaces on a supported remote Mac for Unreal work. Do not
 bypass guards to make a Windows demonstration run. Native Windows work requires
 the slice to open/compile there with its own tools and binaries; it does not
@@ -169,7 +180,8 @@ See [Epic's roadmap](https://www.unrealengine.com/news/the-road-to-ue-6).
 
 ## 4. Where each thing lives
 
-The following is the **proposed V2 layout**, to create during implementation:
+The following describes the V2 ownership layout. The README and schemas document the
+implemented routes; empty directories from the original sketch are not requirements:
 
 ```text
 games/yorimichi_v2/
@@ -181,7 +193,7 @@ games/yorimichi_v2/
   assets/<kind>/<asset>/
     asset.toml              identity, owner, sources, settings, Unreal paths
     src/                    editable sources and approved original exports
-    prepared/               finished import inputs, when preparation is necessary
+    prepared/               optional pinned external import inputs, never a derived-output cache
     verified.json           authority-aware import/save record and package hashes
   schemas/                  formats shared by tools and runtime
   tools/prepare/            one preparation route per asset kind
@@ -204,8 +216,13 @@ This keeps Hakuba's useful discipline without forcing Unreal to load assets from
 an unnatural location. External sources stay together under `assets`; Unreal
 packages must stay under valid Unreal content roots. The asset record links the
 two. Do not put duplicate copies in both places.
-For editor-owned content, omit unused `src/` and `prepared/` directories: its
-saved Unreal packages are its editable sources.
+For genuinely editor-authored content, omit unused `src/` and `prepared/` directories: its
+saved Unreal packages are its editable sources. Imported packages still need their models,
+textures and applicable rigs/animation inputs; generated art needs its generator, settings and inputs.
+Unknown originals remain unfinished. Do not relabel an imported binary as editor-authored to hide a gap.
+Derived, carved or baked intermediates belong under `build/yorimichi_v2/` (or the recorded Unreal output),
+not alongside or in place of the committed originals. Every useful object must be independently editable;
+rendering batches may remain for performance.
 
 Reuse generic plugins from `platform/engine/Plugins`. Game-specific runtime code
 must live in the new game, not import Python or load files from the old game's
@@ -237,8 +254,8 @@ Python authoring tools are editor-only; the shipped game must not depend on them
 | --- | --- | --- |
 | C++, Python, shaders, project files, reviewed config, manifests, import recipes, licenses, small text runtime data | `.uasset`, `.umap`, external actor/object packages, required uncooked bulk-data sidecars, large binary art/audio sources and prepared inputs | `Binaries`, `Intermediate`, `Saved`, local/shared DDC, logs, captures, cooked packages, machine-local credentials |
 
-At P1, add a V2-specific exception to parent ignore rules and retire conflicting
-documentation/contracts. Test actual tracking with `git check-ignore` and
+V2-specific tracking is installed. When changing its ignore/LFS rules, verify
+actual tracking with `git check-ignore` and
 `git check-attr`; a child ignore file alone may not unignore an ignored parent.
 
 Use LFS `lockable` for editable binary files. Include the real sidecar extensions
@@ -256,7 +273,7 @@ too: it can retain absolute donor paths even when the text manifests are clean.
 Normalize portable source references through the supported import/editor path
 before publishing; do not rely on text lint to inspect binary metadata.
 New versions of large LFS files also consume storage and
-download allowance; measure those totals during the slice.
+download allowance; use existing transfer/storage evidence when planning content batches.
 See [GitHub's LFS billing explanation](https://docs.github.com/en/billing/concepts/product-billing/git-lfs).
 
 ## 5. Assets have one source of truth
@@ -492,8 +509,12 @@ See [Epic's DDC guide](https://dev.epicgames.com/documentation/en-us/unreal-engi
 
 Agents can write code, inspect files and review in parallel. Unreal imports,
 compiles, previews and Blender jobs use the current machine's admission rules.
-The experiment must work even if that machine can safely run only one heavy
-job at a time. Do not change resource reservations to manufacture concurrency.
+Use preparation workers for concrete disjoint batches. The implemented warm queue accepts
+object jobs and prepared imports. Supported `tools/editor/session.py JOBS.json --headless`
+object/static-mesh batches may overlap in two owned checkouts with disjoint complete claims and
+full memory reservations when the broker admits them. Textures stay rendered; rendered games,
+captures, compile and cook remain exclusive. Jobs sharing a package use one sequential queue.
+Do not change resource reservations to manufacture concurrency or restart a broker during another job.
 
 An editor process owns its checkout while it is open. Do not pull, switch
 branches, replace packages or merge into that checkout behind the editor's back.
@@ -506,30 +527,23 @@ time. A long queue is a machine-capacity problem, not evidence of slow imports.
 
 ### Live commands must reach the right game
 
-The existing bridge is loopback-only, and the current `atelier live` CLI normally
-targets port 8830. That is insufficient for safely controlling several instances.
-Before concurrent previews, implement explicit session selection for launch,
-state, commands, screenshots and QA. A session record must include:
-
-- Unique session ID, game/project identity, checkout identity and source revision.
-- Loopback port, process identity including start time, and owning agent/task.
-- A readiness handshake proving the contacted process matches that record.
-
-An occupied port, missing identity, stale PID or different checkout must produce
-an error, not fall back to another running game. Test two distinct sessions and
-a stale record. Until this passes, **serialize previews** and explicitly verify
-the single target. Different game-network ports are needed for multiplayer too.
-Do not expose the live bridge to the internet or use it as a remote lock service.
+The live bridge is loopback-only. `atelier play` records each session, checkout, process and free
+loopback port; `atelier live --session ID` and QA verify that identity before issuing commands.
+The checkout-local target is the default, and `--port` is only an explicit legacy route.
+An occupied port, stale PID, missing identity or different checkout is an error, never a fallback
+to another game. Preserve this targeting when adding launch or QA paths. Different game-network
+ports are needed for multiplayer too. A correct local session route is not second-machine evidence.
 
 ## 9. Several machines, each with several agents
 
 Every machine has its own workspaces, engine installation, cache and resource
 queue. They share the Git/LFS remote and one global task/claim authority.
-The existing Atelier board is machine-local; it is not already that authority.
+The machine-local agent board remains advisory; the global V2 claim service and its
+verified LFS bindings decide protected writes.
 
-### Bootstrap before the claim service exists
+### Historical bootstrap (closed; see V2 DECISIONS D04)
 
-P0 and P1 must create/copy content before P2 can provide claims. During that
+The initial P0/P1 adoption preceded the claim service. During that
 period, the migration lead names **one V2 binary-content writer across all
 machines**, in the task record visible to every worker. Only that owner may
 create, import, save or publish V2 binary content, including test maps. Other
@@ -539,8 +553,8 @@ parallel protected authoring. Existing donor content is copied, not edited.
 Use existing LFS locks as soon as P1 enables them, but do not call them sufficient
 multi-agent protection. A bootstrap handoff requires the previous writer to save,
 stop its native processes, preserve its work and explicitly transfer ownership.
-Switch to parallel protected authoring only after P2-B's claim/LFS tests pass and
-the service has adopted or released every bootstrap lock. Record that transition.
+The transition to claimed authoring is recorded in D04. New work uses the implemented
+claim/LFS route; the historical single-writer rule does not authorize bypassing it.
 
 ```mermaid
 flowchart TB
@@ -727,37 +741,35 @@ process boundary and run relevant checks there. Batch full cooks after related
 merges or at milestone gates; a feature handoff does not require a new release.
 A final clean package is still required to establish that a milestone ships.
 
-### Existing tools versus work still to build
+### Implemented routes and remaining evidence
 
-| Capability | State at the source baseline | V2 action |
+| Capability | Current route | Limit |
 | --- | --- | --- |
-| `atelier build`, `play`, `qa`, lint and release publishing | Existing, with game-specific assumptions | Reuse interfaces; implement V2 recipes/profiles explicitly |
-| Per-machine board, persistent listeners, admission, guards | Existing | Keep useful behavior; no cross-machine claim guarantee today |
-| Git LFS | Already used by Hakuba | Add V2 tracking, hydration and ownership checks |
-| `atelier reuse`, portable build cache | Existing for current workflows | Optional helper; verify compatibility before using for V2 |
-| V2 source/output manifests and read-only asset check | Not implemented by this plan | P1/P2 deliverable |
-| Safe targeted V2 import/update tools | Not implemented by this plan | P2 deliverable |
-| Global agent/task/scope claims bound to LFS locks | Not implemented by this plan | P2 deliverable |
-| Explicit end-to-end live-session targeting | Incomplete for this workflow | P2 deliverable before concurrent previews |
-| Actor/package ownership and dependency review report | Not established for V2 | P2/P3 deliverable |
+| Normal build/play | V2 recipes validate and compile committed content | No automatic preparation, import, resave or cook |
+| Persistent listeners, admission and guards | Shared board and per-machine broker | Advisory messages do not grant write or render admission |
+| Versioned editable content | Git LFS and portable asset/region records | Required restricted bytes use their pinned fetch route |
+| Asset validation | `tools/content/check.py`, save validation and recorded output hashes | A passed content check alone is not gameplay acceptance |
+| Targeted import | `tools/import/run.py`; warm `tools/editor/session.py` | Per-job authorization/checks, final acceptance after native exit |
+| Global ownership | Existing claims service and exact LFS lock binding | Fresh bases, complete touched sets and journal recovery remain required |
+| Live-session targeting | `atelier live --session ID` | Local multi-session success is not a second-machine proof |
+| Saved actors and ownership records | Region `objects.toml`, saved manifests and verification receipts | Whole-game object splitting/source closure remain work in progress |
 
-There is no invented V2 CLI to copy from this file. At P1/P2, implement the
-capabilities above and put the exact tested invocations in the V2 README. A
-future agent must not run a command described as “existing” until it has checked
-the real help/build step list. Do not present an intended tool as already working.
+Use the current V2 README and actual `--help`/build step list for invocation details. The inventory
+separates implementation, accepted content and final human evidence; do not start replacement tooling
+because the original November 6 plan described an already implemented capability in the future tense.
 
 ## 11. Complete migration coverage
 
-The tables below are the minimum inventory, derived from the current game and
-its documentation. P0 must cross-check source registrations, runtime loads,
-maps, assets and the actual reference game. Add anything real that these tables
+The tables below are the minimum scope, derived from the original game and
+its documentation. The implementation inventory cross-checks source registrations, runtime loads,
+maps, assets and the reference game. Add anything real that these tables
 miss. Do not remove a row because its implementation is difficult.
 
 Each row in the implementation inventory needs: owner, dependencies, old source
 and package locations, new locations, baseline evidence, executable check or
-manual steps, current status, and accepted merge/evidence revision. Status starts
-as **not started**. Other states are **in progress**, **blocked**, **ready for
-review**, and **accepted**. Exclusions below are **deferred by owner**.
+manual steps, current status, and accepted merge/evidence revision. Use the current
+[status definitions](../games/yorimichi_v2/docs/INVENTORY.md); implemented or packaged does not mean
+human-verified. Exclusions below remain **deferred by owner**.
 
 ### Gameplay and shared systems
 
@@ -843,9 +855,10 @@ loads or broken menu entries. Existing files can remain in the old reference
 game; V2 must not load them. Deleting the original game's implementations is not
 required to exclude them from V2.
 
-## 12. Ordered execution plan
+## 12. Original milestone breakdown
 
-The dependency order is:
+This was the November 6 planning order. P0–P3 are not a gate on the now-authorized full port;
+use current inventory evidence and real package/interface dependencies when scheduling work:
 
 ```text
 P0 baseline and scope
@@ -858,9 +871,9 @@ P0 baseline and scope
   -> P7 final package and adoption
 ```
 
-P4 and P5 contain parallel work after P3. Their shared interfaces and assets must
-land before dependent tasks start. Infrastructure work stops expanding once P3
-passes; later additions must fix a measured problem in a game task.
+P4 and P5 proceed in parallel wherever ownership and actual dependencies permit. Shared interfaces
+and assets must land before dependent work. Add tooling only to resolve a concrete game-task blocker;
+do not create another benchmark or infrastructure campaign.
 
 ### P0 — Establish the truth and remove old obligations
 
@@ -992,12 +1005,12 @@ unexplained binary churn; both machines reproduce the result.
 
 **Stop:** any repeated whole-world import, unresolved ownership race, cross-talk
 between games, missing committed dependency, or unexplained visual/performance
-regression. Fix the slice before authorizing full migration. One machine with
-four agents is not proof of two-machine collaboration.
+regression. Fix the affected route while unrelated migration proceeds. Full migration is
+already authorized. One machine with four agents is not proof of two-machine collaboration.
 
 ### P4 — Restore shared gameplay and characters
 
-**Dependency:** P3. First land shared IDs, activity interfaces, surface queries,
+**Dependencies:** the relevant shared IDs, activity interfaces, surface queries,
 character definitions and save/settings identity. Then use these work packages:
 
 | Task | Scope | Dependencies and acceptance |
@@ -1021,7 +1034,7 @@ No phone/driving dependencies have returned through copied code.
 
 ### P5 — Restore the complete world and its services
 
-**Dependency:** P3, with the relevant P4 interfaces/assets available. Work on
+**Dependencies:** the relevant P4 interfaces/assets. Work on
 independent areas can overlap P4; do not alter its shared assets without claims.
 
 First migrate W00's terrain/surface foundations and authoritative boundaries.
@@ -1065,7 +1078,9 @@ dynamic behavior. No V2 runtime dependency points into the old game directory.
 
 ### P6 — Prove the complete game
 
-**Owners:** integration owner and independent reviewer. **Dependency:** P4/P5.
+**Owners:** integration owner and independent reviewer for build evidence; the owner and his brother
+for subsequent human/multiplayer playtesting (owner 2026-11-09). **Dependency:** the relevant P4/P5 content.
+Keep missing final evidence visible without blocking independent construction.
 
 1. Run the full F/W inventory acceptance, including transitions between features,
    not just their separate test maps. Verify keyboard and controller.
@@ -1089,7 +1104,8 @@ No required item is hidden behind “later,” “probably works,” or a film-o
 
 ### P7 — Package, verify and adopt V2
 
-**Dependency:** P6.
+**Final release dependency:** P6. Useful playable checkpoint packages may be built earlier
+from accepted merged content; label their remaining verification honestly.
 
 1. Produce a clean package from the final merged inputs. Use existing guarded
    compile/cook/package mechanisms with V2 recipes and explicit asset validation.
@@ -1101,7 +1117,7 @@ No required item is hidden behind “later,” “probably works,” or a film-o
 4. Record exact source/content/engine/target identities, hashes, settings, checks,
    known accepted limitations and measurements. Keep the independently verified
    package unchanged for publication; no extra cook is needed merely to upload it.
-5. Make V2 the documented active game only after acceptance. Keep the original
+5. V2 is the active game; final acceptance is a separate milestone. Keep the original
    reference and recovery pointers until the owner no longer needs them. Remove
    superseded active docs/contracts rather than leave two competing instructions.
 
@@ -1155,9 +1171,10 @@ the machines' safe capacity does not allow it.
 | C19 | Update a reusable building definition or shared skeleton | All real dependents identified and checked; unrelated asset families untouched |
 | C20 | Stop/cancel a build or preview owned by a worker | Its guarded child cleans up; another worker's process, locks and files remain intact |
 
-C01–C20 must pass on the slice before broad migration. A simulation of lock
-logic does not replace actual LFS/server integration tests; a complete game cook
-is not needed for every failure case.
+Keep C01–C20 evidence and remaining gaps in COLLABORATION_TESTS.md. Unavailable human/second-machine
+proofs do not block broad migration. A simulation of lock logic does not replace actual LFS/server
+integration evidence, and another checkout on the same host is not a second machine. Reuse passing
+checks; rerun only for a relevant change, failure or unresolved concern.
 
 ## 14. Gameplay, visual and multiplayer acceptance
 
@@ -1193,7 +1210,9 @@ not completed two-machine or packaged certification. It also records unverified
 horse/transition cases and a broken `switch-skate-bail` QA input. Do not copy
 “implemented” into the V2 inventory as “accepted.”
 
-Required sequence:
+The following remains the final multiplayer coverage reference. The owner will playtest live
+with his brother after construction; do not stop independent migration to run this sequence or
+create another operator-permission task for it.
 
 1. Port the relevant wire/serialization checks. The original suite names 19
    fixtures; inventory their intent and preserve coverage of retained behavior.
@@ -1223,8 +1242,9 @@ unless the new behavior has an explicitly justified replacement. Do not loosen
 a gameplay guarantee just because its first V2 test fails.
 
 This is game multiplayer, separate from the cross-machine development tests.
-Passing one does not establish the other. Larger memory ceilings are not
-implicitly authorized by this plan; follow the machine's current protections.
+Passing one does not establish the other. Supported larger guarded sessions are standing-authorized
+(owner 2026-11-08): use the needed ceiling, full broker reservation, normal guards and deadlines.
+Do not seek another per-session grant or alter the machine profile.
 
 ### Desktop and package behavior
 
@@ -1250,10 +1270,10 @@ its runtime data, signatures, permissions, audio, saves and launch behavior.
 
 ## 15. Budgets and how to measure them
 
-These are **proposed acceptance targets**, not measured claims. P0 records the
-reference machine and exact procedure. P3 measures them; an unachievable target
-requires a diagnosis and an explicit recorded adjustment before scaling up.
-Do not silently replace it with whatever time the implementation happens to take.
+These are the original **proposed acceptance targets**, not measured claims or a renewed gate
+on migration. Consult BUDGETS.md for recorded evidence. Reuse actual production job summaries
+and saved results; investigate only costs that materially delay delivery or hide a broken feature.
+Do not silently relabel a missed target as achieved or start another benchmark campaign.
 
 For warm tests, use five runs after one declared warm-up, and report median and
 slowest run. Report resource-queue wait separately. Start timing at the accepted
@@ -1296,8 +1316,8 @@ Production assets must not require fresh preparation/import on either path.
   time, subject to measurement noise established by repeated baseline runs.
 - A baseline below 60 fps is not a passing 60 fps result. Record the shortfall and
   address it or get an explicit accepted limit; never relabel it as achieved.
-- Keep the current normal 10 GiB game guard for ordinary development. Any
-  exception remains an explicit session decision, not a changed machine profile.
+- The default game guard remains 10 GiB. A supported larger ceiling is standing-authorized
+  when needed; reserve it in full and keep guards/deadlines, without changing the machine profile.
 - Include spawn, dense town/forest, high-speed skating, gliding, transport,
   interiors, a race/broadcast and multiplayer. Check loading spikes and growing
   memory over repeated routes, not only standing still.
@@ -1398,9 +1418,10 @@ V2 is complete only when all of these are true:
   or explicitly outside its scope. There is no obligation to maintain old build
   machinery just because it exists.
 
-**First implementation task: P0.** Inventory the real game, preserve its reference
-content, pin the environment, and remove irrelevant inherited obligations. The
-next major decision is the measured P3 result, before committing to the full port.
+**Current work:** finish the remaining original-game content, independent object editing and
+recoverable sources in the inventory; integrate accepted batches into playable checkpoints.
+Keep this design reference current when the owner changes policy, and record progress in the
+inventory rather than restarting P0 or requiring new P3 authorization.
 
 ## Reference map
 

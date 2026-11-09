@@ -34,6 +34,10 @@ uv run pytest path/to/test_file.py -q     # focused local tests; full suite runs
 - Before every commit, run `atelier lint` and read `git diff`. The Unreal editor rewrites `Config/*.ini` when it starts
   (it can add the Android file server's generated token): keep only the changes you meant.
 - Commit and push completed work at task boundaries, before starting the next task.
+- Keep affected Markdown, READMEs, TODOs and code comments current in the same change as the behavior or content
+  they describe. V2 progress belongs in `games/yorimichi_v2/docs/INVENTORY.md`; distinguish prepared, saved, merged,
+  packaged and verified work. Label historical evidence and pinned donor references instead of presenting them as
+  current instructions. Preserve original-source bytes and keep runtime/gameplay claims tied to their evidence.
 - For an authorized game release, use `uv run atelier release publish GAME PACKAGE_DIR --tag TAG --verification REPORT`
   with the existing independently verified package; add `--notes-file FILE` and `--source CHECKOUT` when needed.
   Follow [the publishing guide](docs/RELEASES.md) for clean source/evidence, bounded uploads and cancellation/resume.
@@ -257,14 +261,15 @@ contract review reads them on every PR. Playtests keep finding the same defects,
 
 ## Heavy jobs
 
-- Yorimichi's normal play defaults to forward lighting and optimized city trees. Use `atelier play yorimichi`
-  for the native 1440 window, or `--profile fullscreen` / `--profile desktop-1440` for fullscreen. Honor saved
+- Yorimichi V2's normal play defaults to forward lighting and optimized city trees. Use `atelier play yorimichi_v2`
+  for the native 1440 window, or `--profile fullscreen` for fullscreen. Honor saved
   `renderer` and `tree_optimization` preferences; do not silently force Lumen or disable tree optimization for
   routine development. The menu warns before enabling Lumen (higher GPU and memory use, restart required), and
   before disabling tree optimization. The launcher handles the confirmed renderer restart. Larger guarded sessions
   are standing-authorized: choose a supported needed ceiling with its full broker reservation, normal admission,
   memory guards and deadlines. Do not ask for another per-session memory grant. See
-  [desktop performance](games/yorimichi/docs/DESKTOP_PERFORMANCE.md) for the launch and readiness contract.
+  [the active V2 guide](games/yorimichi_v2/README.md) for current launch instructions; the original
+  [desktop performance notes](games/yorimichi/docs/DESKTOP_PERFORMANCE.md) are donor reference.
 - Heavy jobs (Unreal, Blender renders) run under the render lock and memory guard (`atelier.harness.safety`). `atelier play`
   and `atelier build` do this for you. A game's guard stops it above 10 GiB; `atelier play --memory-gib N` (10 to 24)
   raises that for one session that needs it (Quality graphics at 1080p, for example). In full capacity mode,
@@ -333,8 +338,8 @@ contract review reads them on every PR. Playtests keep finding the same defects,
 
 ## Reusing builds
 
-This section applies to games that generate their Unreal content (yorimichi, sandbox). Yorimichi V2's content
-arrives through Git LFS; only its separate-worktree rule below applies to it.
+This section applies to generated-content games such as the sandbox. The retired Yorimichi V1 pipeline is
+reference only. Yorimichi V2's content arrives through Git LFS; only the separate-worktree rule below applies to it.
 
 - Concurrent agents use separate Git worktrees for code changes. Share the machine's render board, lock and
   installed engine, while each agent owns its source checkout, generated assets and live game session.

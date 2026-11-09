@@ -1,4 +1,4 @@
-"""Visual parity of the slice (plan P3.6): compare donor and V2 captures of the same named poses.
+"""Visual parity: compare donor and V2 captures of the same named poses (initially plan P3.6).
 
     uv run python games/yorimichi_v2/tools/parity/compare.py DONOR_DIR V2_DIR --out OUT --min-ssim 0.8 \
         [--max-mad 0.05] [--poses games/yorimichi_v2/tools/parity/poses.json] [--only 'w07_*']

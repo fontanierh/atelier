@@ -1,6 +1,6 @@
 # Yorimichi module
 
-The original game's `Yorimichi` C++ module, copied unchanged in behavior and split into feature folders
+The original game's `Yorimichi` C++ module, ported to saved V2 scenery and split into feature folders
 (plan §7). The module name and every reflected type keep their names, so saved packages still resolve
 `/Script/Yorimichi.X`. Every folder is on the module's private include path (`Yorimichi.Build.cs`), so
 `#include "X.h"` works from any folder. Go-kart (X02) and phone streaming (X01) were removed.
@@ -20,10 +20,12 @@ The original game's `Yorimichi` C++ module, copied unchanged in behavior and spl
 
 ## Serialized changes
 
-These were removed from saved classes. Saved Blueprints and maps that derive from them must be load-tested:
+These were removed from saved classes. The four playable-character Blueprints have been cleaned of the
+excluded component in the merged city/train work. Fresh-load and package evidence is revision-bound;
+[the inventory](../../../docs/INVENTORY.md) tracks current implementation and final acceptance separately:
 
 - `AWandererCharacter`: the default subobject `CarRide` (`UDrivingComponent`) and its `UPROPERTY() Car`.
-  `BP_<Name>` overrides of `CarRide` will no longer find their subobject.
+  Stale `BP_<Name>` overrides must not be reintroduced; they no longer have a native subobject.
 - `UYorimichiLive`: the Blueprint-callable functions `CarState`, `CarFlip`, `CarRide` and `CarLoops`.
 - `UJapanPreferences`: the `desktop` preference (V2 always uses the desktop profile). It is still ignored in
   `settings.txt` and `-set=` like the retired `haze` and `supersample` keys.

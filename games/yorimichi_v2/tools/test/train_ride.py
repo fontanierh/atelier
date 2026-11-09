@@ -1,6 +1,6 @@
-"""Ride the Belmonte train in the running slice game through its live bridge and check it (plan P4: the train plays).
+"""Ride the Belmonte train in the running V2 game through its live bridge and check it (plan P4: the train plays).
 
-    uv run atelier play yorimichi_v2 --profile slice -- -RenderOffscreen      # first, and wait for the world
+    ATELIER_AGENT=OWNER nice -n 10 uv run atelier play yorimichi_v2 --profile slice --memory-gib 22 -- -RenderOffscreen      # first, and wait for the world
     uv run python games/yorimichi_v2/tools/test/train_ride.py --session ID --out OUT
 
 The original's scripted ride (games/yorimichi/tools/review_belmonte_train_ride.py), with a screenshot and a state line

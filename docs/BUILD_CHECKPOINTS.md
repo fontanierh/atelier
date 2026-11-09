@@ -1,6 +1,14 @@
 # Build checkpoints
 
-Use the normal commands. There is no separate fast-build command and no Git-revision equality requirement:
+**Scope:** this is the shared checkpoint mechanism for games configured to generate their content. The
+`yorimichi` commands below are retained examples of the retired V1 recipe, not instructions for the active port.
+V2's authoritative editable packages arrive through Git LFS and its pinned restricted fetch; its normal build
+validates and compiles without generation/import/cooking. Do not apply generated-workspace restoration or
+rebuild examples to V2 committed Content. Use the [V2 README](../games/yorimichi_v2/README.md) and
+[package guide](../games/yorimichi_v2/docs/PACKAGE.md), keeping each mutable checkout independently owned.
+
+Configured generated-content games use their normal commands. There is no separate fast-build command and no
+Git-revision equality requirement. Historical V1 example:
 
 ```sh
 uv sync
@@ -131,7 +139,7 @@ The implementation currently targets the installed macOS UE 5.8 toolchain.
 
 ## Expensive misses stop
 
-The game sets `[checkpoints] rebuild_budget_seconds = 600`. Unknown native costs or a cumulative estimate above
+The retained V1 recipe sets `[checkpoints] rebuild_budget_seconds = 600`; V2 does not declare that section. Unknown native costs or a cumulative estimate above
 that budget stop before command preparation/admission. The error explains how to inspect the plan:
 
 ```sh
@@ -225,7 +233,8 @@ receiving inputs and bytes are checked again before success publication. Preserv
 For a journaled partial transfer, `atelier cache abandon-transfer GAME` removes its journaled partial generated files while
 preserving tracked source and logs; then use the normal build.
 
-Configured games use UE dependency-tracked incremental cooking by default. This change was requested as a
+Games configured for this checkpoint workflow use UE dependency-tracked incremental cooking by default.
+This does not add a cook or import to V2's normal build. This change was requested as a
 source-first rollout without native builds/cooks. Python tests cover matching, transfer integrity and lifecycle
 boundaries; no packaged parity or tenfold speedup is claimed. A cooker may legitimately invalidate its prior
 state; the rebuild budget stops an expensive miss instead of silently authorizing it.

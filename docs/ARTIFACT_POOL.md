@@ -1,5 +1,13 @@
 # Build caches and independent reuse
 
+**V2 boundary:** the shared portable-product mechanisms below apply only to recipes that explicitly opt in.
+Yorimichi V2 commits its editable Unreal packages; they are not portable generated cache products. V2 normal
+build/play validates and compiles, while content writes use the owning asset's claimed targeted import or
+editor-save route. Follow the [V2 README](../games/yorimichi_v2/README.md) and current
+[inventory](../games/yorimichi_v2/docs/INVENTORY.md). The `yorimichi` texture-pool examples later in this page
+are retained V1 reference, not current port tasks. Manifest/schema “V1” and “V2” below name protocol versions,
+not the two game projects.
+
 Keep a complete playable canonical checkout warm. Feature worktrees keep independent generated
 files; all share the installed engine and its local derived-data cache. Never share mutable Unreal
 `Content`, `Binaries`, `Intermediate` or PCH trees. Cache hits must describe actual successful output,
@@ -308,8 +316,9 @@ no deployment, real upload, credential provisioning or native-product publicatio
 ## Portable output pool
 
 `atelier pool` is the older explicit pool for independently generated Python outputs. The recipe
-must declare exclusively owned `pool_roots`, no dependencies, and only Python commands. Yorimichi
-currently opts in the Hidamari and tree-house texture finishing steps. All other
+must declare exclusively owned `pool_roots`, no dependencies, and only Python commands. The retained V1
+recipe opted in the Hidamari and tree-house texture finishing steps; the commands below document that old
+generated-content workflow. They are not V2 import or setup instructions. All other
 steps refuse pooling. Pool entries stay in the machine-local ignored cache; licensed/private output
 must never be added to Git or uploaded to a public artifact store.
 
@@ -378,12 +387,14 @@ as the fallback. This first pool is explicit, rather than silently changing ever
 | Named portable products with `cache=True` | Automatic verified restoration during build; inspect/prune with `atelier cache` |
 | Opted-in portable texture folders | Publish/restore matching pool key with full output hashes; independent copies |
 | Other generated Blender/character/audio outputs | Keep them warm; extend recipe ownership and tool/dependency manifests before enabling cross-branch pooling |
-| Unreal imported assets | Keep complete source/output proof; normal incremental import unless a targeted delta proves the full changed-content allowlist, collision/material contracts and unaffected asset hashes |
+| Unreal imported assets in generated-content recipes | Keep complete source/output proof; normal incremental import unless a targeted delta proves the full changed-content allowlist, collision/material contracts and unaffected asset hashes |
+| Yorimichi V2 committed Unreal content | Git LFS plus pinned restricted fetch; writes only through the owning record's explicit claimed import or editor-save route, never normal-build generation or a portable product cache |
 | C++ and PCH | Compile incrementally per worktree; no shared mutable Intermediate or cross-branch Binaries certification |
 | Shaders/derived data | Reuse the engine's existing local per-user DDC; prewarm only the actual renderer/profile needed |
 
 A geometry or texture pool does not certify an Unreal import, shader profile or compiled ABI. Main
-must still rebuild/import each affected step and pass its validators after feature integration.
+must still run the affected recipe's validators after feature integration. Generated-content recipes rebuild/import
+the affected steps; V2 validates its already-saved committed packages and imports only when explicitly requested.
 Region source changes can affect terrain, vegetation and map inputs as well as park assets;
 copying a region alone is insufficient. Do not blanket-touch stamps or clear generated assets/DDC.
 

@@ -1,4 +1,4 @@
-"""Game side of route.py: runs inside the running slice game through its live bridge, with PARAMS set by route.py.
+"""Game side of route.py: runs inside the running V2 game through its live bridge, with PARAMS set by route.py.
 
 It installs a post-tick callback that plays the route's steps on game frames (no round trip per step), samples the
 player every SAMPLE seconds into PARAMS['out']/route.jsonl and, after the last step, writes PARAMS['out']/done.json

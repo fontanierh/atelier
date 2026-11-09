@@ -17,7 +17,7 @@ args = ["-game", "-windowed", "-resx=2560", "-resy=1440"]
 args = ["-game", "-fullscreen", "-ForceRes", "-resx=2560", "-resy=1440"]
 
 [play.slice]
-# The P3 slice map: coastal start and the Sunset Pier approach.
+# The migrated island map; the historical "slice" profile name remains compatible with authoring tools.
 args = ["/Game/V2/Maps/Slice", "-game", "-windowed", "-resx=2560", "-resy=1440"]
 
 [play.megapark]
@@ -32,9 +32,9 @@ args = ["/Game/MegaPark/Maps/SuperUltraMegaPark", "-game", "-fullscreen", "-Forc
 args = ["/Game/V2/Maps/TestMinimal", "-game", "-windowed", "-resx=1280", "-resy=720", "-RenderOffscreen"]
 
 [release.music]
-# The soundtrack stays out of the package: `atelier fetch` verifies the pinned bundle (the donor's, the same bytes and cache)
+# The soundtrack stays out of the package: assets/audio/music/fetch.py verifies the pinned bundle (same donor bytes/cache)
 # and the package's launcher clones it into the app's container for the game's -music= folder. Optional: without it the
-# game is silent, required sound effects are complete without it. The donor's copy is games/yorimichi/assets/audio/music.
+# music is silent; required sound effects remain available without it. The donor's copy is games/yorimichi/assets/audio/music.
 fetch = "assets/audio/music/fetch.py"
 cache = "music"
 into = "Library/Application Support/YorimichiV2/Music"

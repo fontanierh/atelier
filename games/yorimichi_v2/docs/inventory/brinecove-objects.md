@@ -1,12 +1,25 @@
-# Brine Cove fixed objects
+# Brine Cove fixed objects: donor boundaries and current migration
 
-Brine Cove scenery is runtime-spawned from `unreal/Content/Data/brinecove/runtime.json`. The donor generator
+Current snapshot: **main `3027366ced` (2026-11-09)**. Eleven small-prop placements, three new ship/hull
+placements and six market stalls are saved on main. Another 15 market stalls and seven town1 placements are
+saved on [PR #787](https://github.com/fontanierh/atelier/pull/787); town2–9 and old-tile retirement remain pending.
+See [brinecove-split.md](brinecove-split.md), [brinecove-ships.md](brinecove-ships.md) and
+[brinecove-market.md](brinecove-market.md) for the implemented routes. [INVENTORY](../INVENTORY.md) owns current status.
+
+## Donor grouping audit (historical)
+
+The remainder of this page records the **pre-split donor boundary investigation**, not current V2 saved ownership.
+Its extraction proposals and broad record names explain the migration; completed work must not be scheduled again
+from this table. Source closures and current record IDs are in the committed records and [sources.md](sources.md).
+
+In the audited donor, Brine Cove scenery was runtime-spawned from `unreal/Content/Data/brinecove/runtime.json`. The donor generator
 (`games/yorimichi/world/regions/brinecove`) bakes each feature collection into meshes `SM_BC_<Feature>_<tx>_<ty>[_Soft]`
 by 256 m tile of the face centre; `bounded_parts` may split a tile into `_PieceN`. An object is "alone" when its faces
 are the only ones in the group. Face buckets below were measured by running each generator function on its own
 (`modules.Builder`, no `bpy`), the same method as the wreck's.
 
-Saved in `world/regions/w09-brinecove/objects.toml`: wreck, galleon-adventure, lighthouse, fort.
+At the time of this audit, the saved set listed here was wreck, galleon-adventure, lighthouse and fort.
+The current saved set is larger, as described above.
 
 | Object | Generator | Group(s) | Alone or fused |
 |---|---|---|---|
@@ -27,7 +40,7 @@ Saved in `world/regions/w09-brinecove/objects.toml`: wreck, galleon-adventure, l
 | harbour cranes (2), rowboats, buoys | `modules.harbor`, `modules.props` | `Harbor_*`, `Props_*` | fused |
 | town houses | `modules.lower_town`, `upper_town`, `layout.BUILDINGS` | `TownLower_*`, `TownUpper_*` `_Piece` meshes | fused; not checked per building |
 
-## What extracting a fused object needs
+## Historical extraction proposals
 
 For every fused object: split its faces out of the tile mesh in the generator, export it as its own mesh, and rebuild the
 tile meshes without it. The exporter keys a face by centre, so the piece's faces must be excluded from the tile pass.
@@ -50,7 +63,7 @@ tile meshes without it. The exporter keys a face by centre, so the piece's faces
   random stalls at `modules.market` lines 758-777 draw from the shared `RNG`. Changes the `Market_3_3`, `_3_4*`,
   `_4_3`, `_4_4*` groups.
 
-## Source gaps and cautions
+## Donor-era source gaps and cautions
 
 - `modules.lighthouse` draws foliage from the shared `RNG`, so its `_Soft` planting depends on the draw order of earlier
   builders; the `Landmarks_1_3` hard mesh does not. Extracting the planting needs the RNG replayed or its positions saved.
@@ -60,7 +73,7 @@ tile meshes without it. The exporter keys a face by centre, so the piece's faces
   lofted hulls into other tiles.
 - Face-centre buckets were measured in this repository checkout, not read back from the exported meshes.
 
-## Suggested unit renames (the controller applies them)
+## Historical unit-name proposals (do not reapply to recovered records)
 
 | Now | Rename to | Reason |
 |---|---|---|

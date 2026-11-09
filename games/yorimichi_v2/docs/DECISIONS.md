@@ -1,7 +1,8 @@
 # Decisions
 
 Short records of real deviations from, or choices left open by, [the V2 plan](../../../docs/YORIMICHI_V2_PLAN.md).
-Newest last. Each says what was decided, why, and what would reopen it.
+Newest last. Each says what was decided, why, and what would reopen it. Historical setup decisions are marked
+as such; [INVENTORY.md](INVENTORY.md) is the current implementation status.
 
 ## D01 — Baseline identities (P0)
 
@@ -13,7 +14,11 @@ Newest last. Each says what was decided, why, and what would reopen it.
   source baseline. The release is a play reference only: where its behavior and the baseline's differ, the
   inventory row records which one V2 follows.
 
-## D02 — No editable donor project exists; build one once (P0.3)
+## D02 — Reconstruct the donor once (completed bootstrap decision)
+
+The donor was built and used for adoption. The following records the original reason and recovery route; it is
+not a request to rebuild the retired game or rerun its disabled tests. Preserve pinned originals and accepted
+outputs independently of the old donor checkout. See [donor/README.md](donor/README.md).
 
 A search of this machine found no completed editable Yorimichi Unreal project. The checkouts that still have
 `games/yorimichi/unreal/Content` hold only small V2 experiments (at most 40 packages). Every earlier full build
@@ -32,12 +37,14 @@ only as a recovery reference until P6.
   working assumption is a **macOS** collaborator. The Windows route is:
   **Windows workers do code and review only. All Unreal work uses owned workspaces on a supported Mac.** A
   Windows launch/admission adapter is out of scope unless a Windows host is actually assigned.
-- **Second machine for C02/C06/P3.4/P6.4/P7.3:** none is reachable from this session. These checks stay **blocked**, not substituted. A fresh clone on the same
-  machine does not count as a second machine (plan §12, P3 stop rule).
+- **Second machine for C02/C06/P3.4/P6.4/P7.3:** none is reachable from this session. These proofs remain **unverified**, not substituted. A fresh clone on the same
+  machine does not count as a second machine. Later owner direction (D11) permits independent migration while
+  these acceptance items wait.
 
 ## D04 — Bootstrap binary-content writer (§9)
 
-Until P2-B's claim service passes and adopts or releases every bootstrap lock, the **only** V2 binary-content
+**Historical bootstrap rule (closed below):** until P2-B's claim service passed and adopted or released every
+bootstrap lock, the **only** V2 binary-content
 writer on all machines is the owner `jim-macbook-5`, in workspace `atelier-yv2`. Other workers may change text
 code only. This record is the task record visible to every worker.
 
@@ -74,8 +81,8 @@ created set measured from the disk is exact by construction.
 
 ## D05 — Asset rights before public upload (§4, P0 pass/stop)
 
-The repository is public and Git LFS is not private storage. No source in the repository carries a license
-field, and there is no LICENSE file. The inventory (inventory/world.md §5) sorts V2 content into three groups:
+The repository is public and Git LFS is not private storage. At the initial baseline, source records did not establish editable-redistribution rights.
+A later source or package record must retain its actual provenance and approved route. The inventory (inventory/world.md §5) sorts V2 content into three groups:
 
 1. **Public LFS allowed, per source:** a package goes to public LFS only when its own source has a recorded
    permission for redistributing it in editable form: owner-made, AI-generated with a provenance record, or a
@@ -148,8 +155,8 @@ only split into sorted batches, takes a rule in `assets/adopted/groups.toml`: it
 (one record per feature, family or area, named by a capture of the package name; an unmatched package gets its
 own record), so two unrelated edits never claim one record. This took the 131 mixed Japan props, the skate clips
 and the atomic terrain and city cells from 74 records to 270, with the same 6820 packages and the same paths. Save
-validation records the record's bytes. A later edit is an ordinary claimed editor edit of that record, and a
-finer record (a prop, a region's map) may take packages over explicitly. Adoption refuses packages another
+validation records the record's bytes. Adoption records package ownership; it does not turn an imported binary into an Unreal-authored original.
+Source recovery can replace it with a generated record and its targeted import route (D11). A finer record (a prop, a region's map) may take packages over explicitly. Adoption refuses packages another
 record owns, reports every hard reference that resolves to nothing in V2, and reports packages whose bytes name
 a home folder or private host. Those need the editor scrub before commit. Runtime data (`Content/Data`) is
 copied from the donor's staged data and committed as runtime data. The rights groups of D05 decide which
@@ -159,7 +166,7 @@ folders are adopted publicly.
 
 The original's look came partly from its desktop launcher (`tools/desktop_preview.py` and the shipped launch
 script), not the game. Every forward start passed a sky light at a third (`r.SkylightIntensityMultiplier .33`), no
-distance fields, a 3 lux harbor fill, cascade caching off, a shadow slope bias of 3, and vsync. V2 has no launcher.
+distance fields, a 3 lux harbor fill, cascade caching off, a shadow slope bias of 3, and vsync. V2 does not depend on that donor launcher.
 `UJapanPreferences::Apply` sets the renderer-dependent part: forward has a third of the sky light, no
 distance-field AO and the harbor fill; Lumen has the full sky light. The fixed cvars are in `DefaultEngine.ini`
 `[SystemSettings]`, so play and a packaged build agree. Without them, the slice's surfaces were 10–34% brighter
@@ -181,17 +188,41 @@ to stay at runtime.
   is one unit: both meshes at world.json's `mega` origin, built by `AMegaRamp::MakePiece` (the same builder
   `AMegaRamp::Initialize` uses, so collision is unchanged: Mega_Ramp blocks and is ridden, Mega_Trim is look only). The
   runtime ramp is not spawned when the manifest lists both meshes as `mega:Mega_Ramp` and `mega:Mega_Trim` and their
-  packages exist. Model: `adopted/japan/assets/mega-park-pieces`.
+  packages exist. Models: `prop/mega/ramp` and `prop/mega/trim` (recovered targeted imports).
 - **Ronin camp props (W13), saved.** A new region `w13-swordcamp` (region.toml, a box around (-5400, 9400) cm) holds four
   objects, `object/swordcamp/{fire-pit,jinmaku,weapon-rack,bales}`, one SM_Camp* mesh each. Their placement is
   `SwordTrainer::RoninCampPropPlacement`, the same frame, table (`FindRoninCampProp`) and ground trace
   `SpawnRoninCamp` uses. `SpawnRoninCamp` skips a prop the manifest lists as `swordcamp:SM_Camp*`. The camp's Kasa
-  Ronin and the trainers are combat (F04, F05) and stay runtime. Model: `adopted/swordcamp/assets`.
-  **Open:** the camp's clearing (every instanced tree, bush and rock within 15.5 m, `SpawnRoninCamp`) runs only on the
-  AJapanWorld's own instances. Saved patches are separate actors and are not cleared, so trees can stand in the camp
-  until the clearing is baked into the area patches (inventory/world.md §0). Check this in the editor before accepting W13.
+  Ronin and the trainers are combat (F04, F05) and stay runtime. Models: `prop/swordcamp/camp-fire-pit`, `camp-jinmaku`, `camp-weapon-rack` and `camp-bales`.
+  **Recorded verification gap:** runtime clearing visits AJapanWorld-owned instances, whereas saved patches are
+  separate actors. Migration may already have baked the 15.5 m camp clearing; no revision-bound closure is
+  recorded here. Confirm the saved W13 clearing during the remaining appearance/editor acceptance, without
+  blocking unrelated migration. The donor rule is in inventory/world.md §0.
 - **Crater cloud (W12), runtime by design.** `ACraterCloud::Spawn` builds its five lens shells as
   `UProceduralMeshComponent`s from the committed record `craterpark/cloud.json` (1.2 MB, generated by the adopted
   craterpark cloud source). No static mesh asset exists for it. Saving it would mean new generated mesh assets with their
   own record and generator, for scenery with no collision, shadow, tick or replication. The record stays the single
   source of truth, so the runtime build is kept. Revisit only if the cloud becomes an editable object.
+
+## D11 — Finish the full port with recoverable, independently editable content (2026-11-07–09)
+
+The owner authorized the full original-game migration in small playable increments. Perfect slice measurements,
+unavailable collaborators and later human playtests do not block independent content work. Keep guards,
+claims, targeted imports, separate mutable checkouts and one controller per editor. Phone streaming and go-kart
+driving remain excluded; Mega Park is cleared in D05.
+
+Every useful object must be independently editable, even when rendering retains instancing or batching.
+Imported art needs its models, textures and applicable rig/animation inputs; generated art needs its generator,
+settings and inputs. Only content genuinely authored in Unreal can use its saved package as the original.
+Unknown sources stay unfinished until recovered or replaced, and restricted originals keep their pinned route.
+The first wreck/Brine Cove proof does not close this whole-game requirement.
+
+The warm editor queue and supported disjoint headless overlap are implemented; see
+[COLLABORATION_TESTS.md](COLLABORATION_TESTS.md). Preparation workers handle concrete separate batches while
+native queues run. Reuse existing batching and journals; preserve completed work for retries. Run focused checks
+for changed behavior and required hosted CI, not repeated full local suites or unrelated benchmarks.
+
+On 2026-11-09 the owner explicitly placed human and multiplayer playtesting after construction, including a live
+multiplayer session with his brother. Human-editor and actual second-machine proofs remain open acceptance
+items, not development gates. Track merged, saved, packaged and play-verified work separately in
+[INVENTORY.md](INVENTORY.md), updating it with each completed batch.

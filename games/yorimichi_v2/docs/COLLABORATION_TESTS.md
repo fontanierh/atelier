@@ -2,13 +2,16 @@
 
 One row per test: the revision it ran at, the workspaces and commands, and the evidence. A failed test stays
 listed until its fix and rerun are linked. "Blocked" names the missing prerequisite (DECISIONS D03: no second
-machine is reachable from this one, so the two-machine rows wait for a collaborator's machine).
+machine was available for those runs). These are revision-bound results, not instructions to repeat the suite.
+Human-editor and actual second-machine proofs remain open; owner direction allows independent migration to
+continue, and human/multiplayer playtesting follows construction. See [INVENTORY.md](INVENTORY.md) for current
+content and [PACKAGE.md](PACKAGE.md) for the current package.
 
 | Test | Status | Revision | Evidence |
 | --- | --- | --- | --- |
 | C01 one machine, three agents | pass (native, one machine) | main 40494d4e68 to aea8c3c860 | Unit: `tests/test_collaboration_harness.py`: three agents in their own Git worktrees, each under a disjoint fake claim (asset, editor-owned material, region), write through import, the build's editor guard and save validation, and land on main in sequence with no conflict, a clean change-set report and a clean content check after each merge; writes outside a claim, a new actor before its lock, D04 inside a claimed checkout and a stray committed edit are refused. Native run with real claims, GitHub LFS locks and Unreal: "C01 and C04 native run" below. |
 | C02 two machines, four workers | blocked | | D03: no second machine |
-| C03 human editor workflow | not run | | needs the slice content (P3) |
+| C03 human editor workflow | not run | | content is available; an observed human editor session remains an acceptance item, not a migration prerequisite |
 | C04 handoff | pass (native, one machine) | main 40494d4e68 to aea8c3c860 | Unit: `tests/test_collaboration_harness.py`: agent A imports under a claim and commits, the coordinator transfers the claim to B, who continues A's branch; A's next import is refused before any write and B's result lands with a clean report and content check. Native run with the real `recover --action transfer`: "C01 and C04 native run" below. It found the old holder still passing checks (fixed in #744). |
 | C05 warm no-op | pass (slice map) | e56fd809cd (slice); e56b885da9 (test map) | warm check + compile: up to date in 1 s, no authoring step; `editor.run` with `Scripts/open_close.py` opened TestMinimal in 27 s, dirty packages after open: none; `git status` unchanged before and after. On the slice map (2026-11-07, compiled asset workspace): check 4 s, compile up to date in 0 s, `editor.run` read-only (`V2_EDITOR_READ_ONLY=1`, no claim; the save guard active with 0 authorized files) opened `/Game/V2/Maps/Slice` in 31 s, dirty packages after open: none, "editor script wrote nothing", `git status` and the content index unchanged, `check.py --full` OK with 12291 files hashed. |
 | C06 clean second-machine checkout | partial | e56b885da9 | LFS round trip on this machine: a fresh `--depth 1` clone (227 s) holds pointers, and the check reports NOT_HYDRATED for all 7 files with the pull to run; `git lfs pull` skipped everything until `git lfs install --local` (now in the README and the check's hint); then the pull took 1 s, `check.py --full` passed with 7 files hashed, and the map is byte-identical. Compile, open and package on a second machine are blocked (D03). |
@@ -21,15 +24,31 @@ machine is reachable from this one, so the two-machine rows wait for a collabora
 | C13 delete/rename/move | pass (native, claims check) | native at aea8c3c860 | `test_changeset.py`. Native run: "Claims cases on the live service" below. |
 | C14 undeclared shared scope | pass (native, claims check) | native at aea8c3c860 | `test_changeset.py` out-of-scope write. Native run: "Claims cases on the live service" below. |
 | C15 missing payload, stale source, corrupt output | pass (test map; stale source in unit tests) | f1d2b1529a | on the real test map in a clean clone: one flipped byte in `TestMinimal.umap` → OUTPUT_CHANGED, a deleted HLOD layer → MISSING, an actor package restored to its LFS pointer → NOT_HYDRATED with the exact pull; exit 1, nothing regenerated, and after restoring, `check.py --full` passes with 7 files hashed. The hint for a changed or lost editor package now says to restore unless the change is a claimed edit (recording it would have stamped corrupt bytes as current). SOURCE_CHANGED: `test_content_check.py`, real import pending. |
-| C16 two live sessions plus stale record | partial pass (native) | PR #733 (merged) | unit: `test_live_sessions.py` with two fake bridges. Native, two `atelier play yorimichi_v2 --profile test` launches: each got its own session record and loopback port (26874, 26981); game A's bridge answered and `atelier live --session ID py -` ran inside it (PID 42089); with two records and no `--session` the CLI refused ("pass --session ID"); after stopping game A its session was refused ("no live session"), and `--prune` removed the stale records. Found and fixed on the way: the bridge started only once a player pawn was ready, so a map without world data never listened; `AJapanGameMode::BeginPlay` now starts it. Not yet shown: both games answering at once, and screenshots. Game B waited in the capacity queue the whole 20 minutes while the donor build held the CPU (admission working, not bypassed); rerun once the donor is done. |
+| C16 two live sessions plus stale record | partial pass (native) | PR #733 (merged) | unit: `test_live_sessions.py` with two fake bridges. Native, two `atelier play yorimichi_v2 --profile test` launches: each got its own session record and loopback port (26874, 26981); game A's bridge answered and `atelier live --session ID py -` ran inside it (PID 42089); with two records and no `--session` the CLI refused ("pass --session ID"); after stopping game A its session was refused ("no live session"), and `--prune` removed the stale records. Found and fixed on the way: the bridge started only once a player pawn was ready, so a map without world data never listened; `AJapanGameMode::BeginPlay` now starts it. Not yet shown: both games answering at once, and screenshots. Game B waited in the capacity queue the whole 20 minutes while the donor build held the CPU (admission working, not bypassed); the simultaneous-answer/screenshot proof remains unrecorded; this historical queue wait is not a current migration blocker. |
 | C17 pushed, not merged | pass (native, one machine) | PR #732; native at aea8c3c860 | claims release only on merge or cancel. Native run: "Claims cases on the live service" below. |
 | C18 push or LFS upload fails | partial pass | f1d2b1529a | in a scratch clone with `.githooks`, a commit carrying a new LFS package was pushed with LFS pointed at an unreachable endpoint: `git lfs pre-push` failed the batch upload ("connection refused"), the push exited 1, `git ls-remote` shows the branch never reached origin, and the commit and the 4 KB local package stayed. Claim retention on failure is the claims service rule (release only on merge or cancel, PR #732). Not yet run: the retry that reconciles before pushing again (needs a sandbox remote, not the public repository). |
-| C19 shared definition update | harness + native editor-owned case | main 3d85747c82 plus this change | `tests/test_collaboration_harness.py`: a claimed save of a shared material makes the check report exactly its direct `input_dependencies` dependents STALE_IMPORT and the import plan add the transitive one, nothing else; two dependent owners reimport under their own claims and main checks clean, with unrelated records and packages byte-identical. Native: a claimed edit of the shared `MI_Stone` changed only it and its record ("C19 native run" below). The slice has no generated asset with real `input_dependencies` yet; the dependent-reimport half waits for P4-A (skeletons and their clips) |
+| C19 shared definition update | harness + native editor-owned case | main 3d85747c82 plus this change | `tests/test_collaboration_harness.py`: a claimed save of a shared material makes the check report exactly its direct `input_dependencies` dependents STALE_IMPORT and the import plan add the transitive one, nothing else; two dependent owners reimport under their own claims and main checks clean, with unrelated records and packages byte-identical. Native: a claimed edit of the shared `MI_Stone` changed only it and its record ("C19 native run" below). The slice has no generated asset with real `input_dependencies` yet; the native dependent-reimport half is not evidenced by this run |
 | C20 cancel a guarded build | pass (test map) | f1d2b1529a | a guarded `editor.run` holding the editor (`Scripts/hold.py`) was cancelled with SIGTERM 16 s in: the build reported "BUILD INTERRUPTED during editor.run; completed steps stay published", its editor child (UnrealEditor-Cmd) was gone within 1 s, the hold script never finished, another owner's running build (the donor, same machine) kept its PID and kept running, and `git status` was unchanged. The next guarded editor run was admitted at once. |
 | C21 claimed new actors after D04 closes | pass (native, one machine) | main fa63a342cd plus the claims change of PR #739, in a scratch branch | Unit: `tests/test_d04.py`. Native run with Unreal and the real claims service and GitHub LFS locks, recorded under "C21 native run" below. |
 
-Unit rows prove the logic; each still needs its run on the slice (plan §13: "a simulation of lock logic does not
-replace actual LFS/server integration tests").
+Unit rows establish only the behavior they exercise. Keep unrun native/human/multi-machine cases explicit;
+reuse completed native evidence instead of launching a new campaign before migration can continue.
+
+## Warm queues and supported overlap (2026-11-08–09)
+
+- [PR #766](https://github.com/fontanierh/atelier/pull/766) added the warm editor queue; its 15-job native proof
+  completed. Jobs keep individual claims, save lists and checks while sharing one editor launch.
+- [PR #775](https://github.com/fontanierh/atelier/pull/775) added supported headless object queues and targeted
+  static-mesh imports. Two separately owned checkouts may overlap with disjoint complete package claims and
+  full broker reservations. The scratch proof was 27.59 s sequential versus 16.00 s parallel, with reopen and
+  cancellation/peer survival checked. This is not a full-game speed guarantee or a second-machine proof.
+- [PR #779](https://github.com/fontanierh/atelier/pull/779) added prepared import jobs to the queue, preserving
+  per-job authorization, journals and checked writes. The caller accepts results after native exit and preserves
+  completed work on failure. Production city (1,048 records) and train (67 records) batches subsequently landed
+  in [PR #784](https://github.com/fontanierh/atelier/pull/784); the accepted second train queue ran alongside city.
+- Shared environment/map packages stay in one sequential queue. Texture imports, rendered editors, games,
+  captures, compilation and cooking remain exclusive. No additional benchmark is needed to keep using these
+  supported paths; inspect saved job summaries for actual production progress.
 
 ## P3 targeted edits on the slice (plan P3 step 2)
 
@@ -48,8 +67,8 @@ These first edits ran as the D04 bootstrap writer. The claimed versions belong t
 `tools/test/route.py` passed again after the C++ edit, now starting through `Travel` (falling, then walking).
 At that point, the running slice game's static scenery was all saved: 510 `V2ScenePatch` and 9 `StaticMeshActor`
 OFPA actors, and `JapanWorld` spawned no meshes. Feature actors are still spawned at runtime: the `SkatePark`
-(the skate pier, from `skatepark/park.json`, 20 mesh components), 3 `SwordTrainer`s and the `FoxHunter`. They
-become saved, placed actors with the gameplay features in P4.
+(the skate pier, from `skatepark/park.json`, 20 mesh components), 3 `SwordTrainer`s and the `FoxHunter`. Later object migration saves the static parts; dynamic trainers and the fox remain gameplay services.
+Current object coverage is in INVENTORY.md, not this historical run.
 
 The first real import found that `import.<id>` was no valid build step name (`/` is not allowed). Import steps are
 now named `import.` plus the ID with `.` for `/` (`records.import_step`), and a collision fails the build.

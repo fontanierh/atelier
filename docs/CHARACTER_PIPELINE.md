@@ -1,5 +1,13 @@
 # Making a character
 
+**Current use:** this page explains how the original characters were authored. Its `games/yorimichi` links,
+Blender invocations and build/QA commands are retained donor examples from the retired V1 project, not a V2
+rebuild checklist. The V2 port reuses recovered originals and committed packages; normal build/play never
+exports, imports or regenerates a character. Use the [V2 README](../games/yorimichi_v2/README.md) for claimed
+targeted authoring and [INVENTORY.md](../games/yorimichi_v2/docs/INVENTORY.md) for remaining source work.
+Any new Blender preparation runs under the existing admission/memory guards in its owner's checkout; the
+historical bare commands below do not replace those protections. Retired V1 suites/scenarios stay disabled.
+
 Each step is a prompt or a script an agent runs, followed by a human look (often with a second AI reviewer). Cairo,
 Yorimichi's default player, is the example.
 
@@ -100,9 +108,9 @@ role, never for a file.
 
 <img src="media/character/07-clip-review.jpg" alt="The third sword strike from the front, the side and three-quarter, eight frames each">
 
-**9. Into the game.** `atelier build` exports the character's body, donor clips and textures, then imports its
-merged moves, sword and paraglider into Unreal; scripted QA runs check it in motion. Every playable character goes
-through the same data-driven steps ([make a character playable](../games/yorimichi/docs/PLAYABLE_CHARACTER.md)).
+**9. Into the original game (historical).** V1's `atelier build` exported the character's body, donor clips and
+textures, then imported its merged moves, sword and paraglider into Unreal; its scripted QA checked it in motion.
+Those generated-content steps are reference material ([make a character playable](../games/yorimichi/docs/PLAYABLE_CHARACTER.md)).
 
 ```sh
 uv run atelier build yorimichi unreal.cairo_adventure
@@ -112,7 +120,11 @@ uv run atelier live py "ONLY=['sword']; TAKE='combat_review'"
 uv run atelier live py - < games/yorimichi/scenarios/adventure_moves.py
 ```
 
-The tools for each step and their options are in
+For V2, edit the authoritative rig, animation or other source linked by the owning record, then use that
+record's supported targeted route with its complete claim. Preserve model, texture, rig and animation originals;
+a copied Unreal package does not by itself prove the originals were recovered.
+
+The historical tools for each step and their options are in
 [games/yorimichi/assets/characters/tools](../games/yorimichi/assets/characters/tools/README.md) and
 [games/yorimichi/docs](../games/yorimichi/docs). The fox hunter goes through the same steps (`fox_hunter_pipeline.py`).
 
@@ -134,4 +146,5 @@ That is a useful part of the process: AI makes the first version, a person spots
 a small tool to capture their intent, and code applies that correction consistently. To fix another bad grip,
 edit the saved pose, export it and restart the game; the solver can use the new targets without recompiling.
 The [grip guide](../games/yorimichi/docs/GRIPS.md#fix-a-grip-on-modori) gives the commands and checks. Modori's four
-calibrated sword and paraglider grips are committed, so a normal build already uses them.
+calibrated sword and paraglider grips were committed in that workflow. Check the corresponding V2 source and
+record when changing a grip; do not apply the donor's restart/build commands to a different live checkout.
