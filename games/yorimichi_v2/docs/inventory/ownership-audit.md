@@ -10,7 +10,7 @@ tracked in [sources.md](sources.md), and unfinished useful-object boundaries in 
 |---|---|---|
 | City surfaces | 1,048 generated `prop/citysurfaces/*` records, plus the adopted generator record | Accepted per-record source/import ownership; saved placements still have their own region ownership |
 | Island terrain | Recovered per-piece generated records; the old adopted family retains its generator record | Terrain recovery is no longer an unwritten units-map proposal |
-| Belmonte train | 67 generated `prop/belmontetrain/*` meshes; 24 remaining adopted records hold 592 other packages | Imported train meshes are recovered; residual material/texture/source closure is assessed separately |
+| Belmonte train | 67 generated `prop/belmontetrain/*` meshes; 24 remaining adopted records hold 592 other packages | Imported train meshes are recovered; the seven residual records (473 packages) are classified in [exceptions.md](exceptions.md): meshes and materials are blocked on the donor build, 21 of 27 textures have generator rows awaiting a verified import |
 | Gondola | 26 adopted records / 96 packages, 9 saved route placements | Saved stations and grouped pylons exist; a group of useful towers is not proof of independent editing of each tower |
 | Ferry | 4 adopted records / 66 packages, 2 saved terminal placements | Both terminals have saved placement ownership |
 | Railway | 14 adopted records / 146 packages, 13 saved route placements | Stations, bridge and track sections have saved ownership; broad fitting/area groups still need useful-object review |

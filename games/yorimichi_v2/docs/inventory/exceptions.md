@@ -58,6 +58,23 @@ This query is a **classification list**, not a claim that every package lacks an
 verify origin: procedural materials may need generator inputs; genuinely Unreal-authored maps/settings may use
 saved packages; imported files need their original bytes. Do not relabel unknown imports as editor originals.
 
+### Residual Belmonte train records (seven, 473 packages): classification
+
+The records `adopted/belmontetrain/{baggage-van,brake-van,first-class,locomotive,restaurant,second-class,tender}` hold
+73, 78, 73, 51, 75, 84 and 39 packages (473). None has `[[sources]]` or a recipe, and none is closed. Every package
+falls in one of three kinds, each with its own gap:
+
+| Kind | Packages | Origin | Gap |
+|---|---:|---|---|
+| `Source/SM_BT_<Vehicle>/LOD1` and `LOD2` meshes | 14 | The vehicle's Train Builder GLBs (`service/import-report.json` and the level files, read by `recover.py plan_belmontetrain`; `unreal/Scripts/import_belmonte_train.py`) | The donor build output is not present in this checkout (`build/yorimichi` is empty). Regenerating it needs the donor generator and Blender, which are outside this task. Blocked. |
+| `M_BT_*` material instances in each `LOD*` folder | 321 | The same GLB imports: each instance binds a glTF material of the vehicle mesh. `M_BT_BoardText` alone is authored by the import script | Same donor-build gap as the meshes. Blocked. |
+| `T_BT_*` textures in each `LOD*` folder | 138 (27 distinct names) | `generator/source/world/train/textures.py` draws 21 of the 27 names from a registry (`T_BT_Walnut` included), with nine pinned jpgs as inputs. Six `*Interior` names and `T_BT_Walnut1` have no registry row | The 21 rows are a candidate route, but verifying them needs an editor import that reproduces the committed texture packages, and accepted content is not re-imported. Prepared, unverified; the six unmatched names are blocked until their origin is found. |
+
+Adding `[[sources]]` to these records would change their import fingerprints and make `check.py` report `STALE_IMPORT`,
+so the records stay as they are until a verified import closes them. The donor-build route
+(`recover.py belmontetrain --donor <build/yorimichi/belmonte-train>`) is the first step for the mesh and material rows.
+The count and the texture coverage are pinned by `tests/test_belmontetrain_residual.py`.
+
 Brine Cove's source-preservation route at `5f2d21fbd1` is prepared but not applied on main. It is due after town9;
 see [sources.md](sources.md). It fixes preservation of fused originals without changing accepted package bytes.
 
