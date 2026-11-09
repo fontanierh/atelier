@@ -1838,13 +1838,13 @@ about = "the galleon Adventure's hero hull instance (its rig, deck and guns are 
 
 [[objects]]
 id = "object/brinecove/galleon-nightjar"
-groups = ["SM_BC_GalleonNightjar", "SM_BC_Hero_GalleonHull_cell_-1_-1#540", "SM_BC_Hero_GalleonHull_cell_-1_0#541", "SM_BC_Hero_GalleonHull_cell_0_-1#542", "SM_BC_Hero_GalleonHull_cell_0_0#543"]
+groups = ["SM_BC_GalleonNightjar", "SM_BC_Hero_GalleonHull_cell_-1_-1#498", "SM_BC_Hero_GalleonHull_cell_-1_0#499", "SM_BC_Hero_GalleonHull_cell_0_-1#500", "SM_BC_Hero_GalleonHull_cell_0_0#501"]
 model = ["prop/brinecove/galleon-nightjar", "adopted/brinecove/hero-galleon-hull"]
 about = "the galleon nightjar: rig and flags cut from the fused ship tiles (7600 triangles, by the generator's ship boundary) and its own hero hull instance"
 
 [[objects]]
 id = "object/brinecove/sloop-east"
-groups = ["SM_BC_SloopEast", "SM_BC_Hero_GalleonHull_cell_-1_-1#544", "SM_BC_Hero_GalleonHull_cell_-1_0#545", "SM_BC_Hero_GalleonHull_cell_0_-1#546", "SM_BC_Hero_GalleonHull_cell_0_0#547"]
+groups = ["SM_BC_SloopEast", "SM_BC_Hero_GalleonHull_cell_-1_-1#502", "SM_BC_Hero_GalleonHull_cell_-1_0#503", "SM_BC_Hero_GalleonHull_cell_0_-1#504", "SM_BC_Hero_GalleonHull_cell_0_0#505"]
 model = ["prop/brinecove/sloop-east", "adopted/brinecove/hero-galleon-hull"]
 about = "the sloop east: rig and flags cut from the fused ship tiles (9328 triangles, by the generator's ship boundary) and its own hero hull instance"
 
@@ -2245,12 +2245,6 @@ id = "object/brinecove/harbor-5-4"
 group = "SM_BC_Harbor_5_4"
 model = "prop/brinecove/harbor-5-4"
 about = "Brine Cove harbor-5-4 (1 group)"
-
-[[objects]]
-id = "object/brinecove/hero-galleon-hull"
-groups = ["SM_BC_Hero_GalleonHull_cell_-1_-1#498", "SM_BC_Hero_GalleonHull_cell_-1_0#499", "SM_BC_Hero_GalleonHull_cell_0_-1#500", "SM_BC_Hero_GalleonHull_cell_0_0#501", "SM_BC_Hero_GalleonHull_cell_-1_-1#502", "SM_BC_Hero_GalleonHull_cell_-1_0#503", "SM_BC_Hero_GalleonHull_cell_0_-1#504", "SM_BC_Hero_GalleonHull_cell_0_0#505"]
-model = "adopted/brinecove/hero-galleon-hull"
-about = "Brine Cove hero-galleon-hull (8 groups)"
 
 [[objects]]
 id = "object/brinecove/hero-harbor-capstan"

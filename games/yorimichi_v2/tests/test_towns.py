@@ -226,3 +226,16 @@ def test_shared_mesh_names_are_saved_by_key(state):
     assert len(shared) == 30
     saved = {g.split('@', 1)[0] for g in all_groups(text) if '#' in g}
     assert saved == shared
+
+
+@pytest.mark.parametrize('tag', TAGS)
+def test_saved_definitions_name_the_current_group_keys(state, tag):
+    """Retiring runtime groups shifts the later `#index` keys (towns.group_keys); objects.saved.json must be relabelled with
+    objects.toml, or objects.py refuses the next save of those objects as changed (yorimichi-v2-targeted-authoring)."""
+    text = state[tag][0]
+    path = towns.region_folder(tag, ROOT) / objects.SAVED
+    if not path.is_file():
+        pytest.skip(f'{tag} has no {objects.SAVED}')
+    saved = json.loads(path.read_text())['objects']
+    now = {item['id']: item.get('groups', [item.get('group')]) for item in tomllib.loads(text).get('objects', [])}
+    assert {k: v['groups'] for k, v in saved.items() if k in now and v['groups'] != now[k]} == {}
