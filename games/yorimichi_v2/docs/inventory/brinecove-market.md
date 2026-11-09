@@ -99,10 +99,10 @@ record, package and runtime group in place and `apply` never deletes, so until i
 are both drawn. After the import and `check`, retire it:
 
 ```
-$CMD retire --batch townN --donor $D --claim TASK --stage groups   # drops the groups from objects.toml, objects.saved.json, runtime
+$CMD retire --batch townN --donor $D --claim TASK --retire-stage groups   # drops the groups from objects.toml, objects.saved.json, runtime
 # delete the printed placements' actors and records (an object cannot change its groups after it was saved), then
 uv run python games/yorimichi_v2/tools/migrate/objects.py region/w09-brinecove --environment region/w00-island --claim TASK --only <those ids>
-$CMD retire --batch townN --donor $D --claim TASK --stage records  # deletes the emptied tile records and package files
+$CMD retire --batch townN --donor $D --claim TASK --retire-stage records  # deletes the emptied tile records and package files
 $CMD check --batch townN --donor $D --retired
 ```
 
