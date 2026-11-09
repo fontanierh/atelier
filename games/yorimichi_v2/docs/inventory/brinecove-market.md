@@ -63,14 +63,16 @@ Its full originals and carve selections replace in-place source mutation without
 ## Controller sequence
 
 ```
-D=<donor build/yorimichi>; bc_market() { uv run python games/yorimichi_v2/tools/migrate/brinecove_market.py "$@"; }
+D=DONOR_BUILD_DIR
+bc_market() { uv run python games/yorimichi_v2/tools/migrate/brinecove_market.py "$@"; }
 git lfs pull --include="games/yorimichi_v2/unreal/Content/Data/brinecove/runtime.json"
 bc_market plan  --batch market1 --donor "$D"          # parts, remainders, tile arithmetic
 bc_market paths --batch market1 --donor "$D"          # claim exactly the 'apply' list (--json for the scopes)
 bc_market apply --batch market1 --donor "$D" --claim TASK
 # Use the explicit changed record IDs from this batch plan.
 uv run python games/yorimichi_v2/tools/import/run.py ID... --claim TASK --batch 8
-uv run python games/yorimichi_v2/tools/migrate/objects.py region/w09-brinecove --environment region/w00-island --claim TASK --only OBJECT_IDS
+# Repeat --only once for each object ID from the batch plan.
+uv run python games/yorimichi_v2/tools/migrate/objects.py region/w09-brinecove --environment region/w00-island --claim TASK --only OBJECT_ID_1 --only OBJECT_ID_2
 bc_market check --batch market1 --donor "$D"          # counts, bounds, drawn once, and donor tile = parts + remainder + earlier parts
 uv run python games/yorimichi_v2/tools/content/check.py
 ```
@@ -111,7 +113,7 @@ are both drawn. After accepted imports, saved replacement objects and `check`, r
 ```
 bc_market retire --batch townN --donor "$D" --claim TASK --retire-stage groups   # drops the groups from objects.toml, objects.saved.json, runtime
 # delete the printed placements' actors and records (an object cannot change its groups after it was saved), then
-uv run python games/yorimichi_v2/tools/migrate/objects.py region/w09-brinecove --environment region/w00-island --claim TASK --only <those ids>
+uv run python games/yorimichi_v2/tools/migrate/objects.py region/w09-brinecove --environment region/w00-island --claim TASK --only OBJECT_ID_1 --only OBJECT_ID_2
 bc_market retire --batch townN --donor "$D" --claim TASK --retire-stage records  # deletes the emptied tile records and package files
 bc_market check --batch townN --donor "$D" --retired
 ```

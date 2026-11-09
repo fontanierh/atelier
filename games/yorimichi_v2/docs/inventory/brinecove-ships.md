@@ -59,7 +59,8 @@ bc_ships paths --donor "$DONOR" --json            # claim exactly 'apply' first,
 bc_ships apply --donor "$DONOR" --claim TASK
 uv run python games/yorimichi_v2/tools/import/run.py prop/brinecove/galleon-nightjar prop/brinecove/sloop-east --claim TASK
 uv run python games/yorimichi_v2/tools/migrate/objects.py region/w09-brinecove --environment region/w00-island --claim TASK \
-  --only object/brinecove/galleon-nightjar,object/brinecove/sloop-east,object/brinecove/galleon-adventure-hull
+  --only object/brinecove/galleon-nightjar --only object/brinecove/sloop-east \
+  --only object/brinecove/galleon-adventure-hull
 bc_ships check --donor "$DONOR"
 uv run python games/yorimichi_v2/tools/test/saved_objects.py --session ID --region w09-brinecove --zone brinecove_quay      # each ship and hull drawn once
 bc_ships retire --donor "$DONOR" --claim TASK     # refuses unless check passes; then rerun towns.py (below)
