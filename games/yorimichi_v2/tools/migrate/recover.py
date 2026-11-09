@@ -417,7 +417,7 @@ def _retarget(game: Path, plan: Plan, moved_from: dict[str, set[str]]) -> list[s
     Links to records that lost nothing (materials, generators) are untouched."""
     new_owner = {g.package: g.id for g in plan.generated}
     retargeted = []
-    for asset_toml in sorted((game / 'assets').glob('**/asset.toml')):
+    for asset_toml in records.record_paths(game):   # a record's copied donor sources may hold their own asset.toml
         asset = records.load_asset(asset_toml)
         hit = [r for r in asset.references + asset.input_dependencies if moved_from.get(r)]
         if not hit or asset.id in new_owner.values():
