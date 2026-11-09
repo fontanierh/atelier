@@ -48,7 +48,9 @@ def dangling(game: Path, only=None) -> dict[str, dict[str, list[str]]]:
             if all(m in by_id for m in objects.models(item)):
                 continue
             record = by_id.get(item['id'])
-            new = [r for r in (record.references if record else []) if r in by_id]
+            # Only records that own packages are models; a placement's references can name other placements.
+            new = [r for r in (record.references if record else []) if r in by_id and by_id[r].kind != 'placement'
+                   and by_id[r].outputs]
             if not new:
                 raise ModelError(f'{item["id"]}: model {objects.models(item)} names no record and its own record names '
                                  'none to take its place')
@@ -104,7 +106,11 @@ def sync_saved(game: Path, claim: str | None, only=None) -> list[str]:
                 continue
             rest = {k for k in set(old) | set(now) if old.get(k) != now.get(k)}
             if rest <= {'model', 'models'}:
-                old.update({k: now[k] for k in rest if k in now})
+                for k in rest:
+                    if k in now:
+                        old[k] = now[k]
+                    else:
+                        del old[k]   # a list model became one: no stale `models`
                 moved.append(item['id'])
         text = json.dumps(saved, indent=2, sort_keys=True) + '\n'
         if text != path.read_text():

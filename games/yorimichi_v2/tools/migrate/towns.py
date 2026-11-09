@@ -104,13 +104,20 @@ def package_records(game: Path) -> dict[str, list[str]]:
 
 
 def saved_units(game: Path) -> dict[str, dict[str, set[str]]]:
-    """{region tag: {record id: the units of the region's saved objects (object/<tag>/<unit>) that name it}}."""
-    units: dict[str, dict[str, set[str]]] = collections.defaultdict(lambda: collections.defaultdict(set))
-    for path in sorted((game / 'assets/object').glob('*/*/asset.toml')):
-        data = tomllib.loads(path.read_text())
-        _, tag, unit = data['id'].split('/', 2)
-        for ref in data.get('references', []):
-            units[tag][ref].add(unit)
+    """{region tag: {model record id: the units of the region's saved objects (object/<tag>/<unit>) whose saved
+    definition (objects.saved.json) names it as a model}}."""
+    units: dict[str, dict[str, set[str]]] = {}
+    for tag in REGIONS:
+        units[tag] = collections.defaultdict(set)
+        path = region_folder(tag, game) / 'objects.saved.json'
+        saved = json.loads(path.read_text())['objects'] if path.is_file() else {}
+        for oid, item in saved.items():
+            prefix = f'object/{tag}/'
+            if not oid.startswith(prefix):
+                continue
+            models = item.get('models') or ([item['model']] if isinstance(item.get('model'), str) else item.get('model', []))
+            for model in models:
+                units[tag][model].add(oid[len(prefix):])
     return units
 
 
@@ -184,12 +191,15 @@ def unit_of(record: str) -> str:
     return record.split('/', 2)[2]
 
 
-def record_unit(tag: str, key: str, record: str, units: dict[str, set[str]] | None) -> str | None:
+def record_unit(tag: str, key: str, record: str, units: dict[str, set[str]] | None,
+                taken: set[str] = frozenset()) -> str | None:
     """An adopted record's own unit, or the one saved object unit that names a recovered record (None: no saved object
     names it yet; the split that made it gives it one)."""
     if record.startswith('adopted/'):
         return unit_of(record)
-    named = sorted({unit.removesuffix('-planting') for unit in (units or {}).get(record, ())})   # see classify `taken`
+    # A unit classify suffixed with -planting (its base id is taken by the region's own objects) folds back to the base.
+    named = sorted({unit.removesuffix('-planting') if f'object/{tag}/{unit.removesuffix("-planting")}' in taken else unit
+                    for unit in (units or {}).get(record, ())})
     if len(named) > 1:
         raise TownError(f'{tag}: {key} is owned by {record}, which saved objects {named} of {tag} all name; a recovered '
                         'record must keep the one unit its saved object took')
@@ -239,7 +249,7 @@ def classify(tag: str, data: dict, covered: set[str], owners: dict[str, list[str
         adopted = sorted(owners.get(package, []))
         # A plant group keeps its own family unit; any other group its record unit (one building, tile or family).
         whole_unit = adopted and (f'plant-{kebab(mesh_name(entry))}' if entry['plant'] else
-                                  record_unit(tag, key, adopted[0], saved))
+                                  record_unit(tag, key, adopted[0], saved, taken))
         if not whole_unit:
             blocked['no record'].append((key, package))
             handled.add(key)
