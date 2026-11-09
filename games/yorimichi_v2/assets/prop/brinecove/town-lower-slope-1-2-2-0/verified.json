@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/town-lower-slope-1-2-2-0",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_TownLowerSlopeP1220.uasset": "85946cd21fed6ec9c32bc64566d16c40fee02d34296e9816a486182ba800776e"
+  },
+  "input_fingerprint": "c599e72844f97e02589f70afffdeb3489998a1342a3d58c96853d547cdd44faa",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_TownLowerSlopeP1220": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}
