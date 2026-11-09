@@ -137,6 +137,10 @@ def _apply_mesh_settings(asset, settings):
         editor = _static_mesh_editor()
         if editor.get_simple_collision_count(asset) or editor.get_convex_collision_count(asset):
             editor.remove_collisions(asset)
+    trace = import_settings.collision_trace(settings)
+    if trace is not None:
+        # The saved package's own trace flag (default, simple-as-complex, ...) when it differs from the collision mode's.
+        _set(asset.get_editor_property('body_setup'), dict(collision_trace_flag=getattr(U.CollisionTraceFlag, trace)))
     if 'triangles' in settings:
         # Unreal drops a few degenerate slivers from a procedural kit; more than 2 % is a broken import.
         count, wanted = asset.get_num_triangles(0), int(settings['triangles'])

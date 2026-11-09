@@ -34,3 +34,10 @@ def test_legacy_fbx_is_read():
     assert s.legacy_fbx({'legacy_fbx': True}) is True
     with pytest.raises(s.SettingError):
         s.legacy_fbx({'legacy_fbx': 'yes'})
+
+
+def test_collision_trace_is_absent_by_default_and_checked():
+    assert s.collision_trace({}) is None
+    assert s.collision_trace({'collision_trace': 'CTF_USE_DEFAULT'}) == 'CTF_USE_DEFAULT'
+    with pytest.raises(s.SettingError):
+        s.collision_trace({'collision_trace': 'DEFAULT'})
