@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/town-lower-shore-w4",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_TownLowerShoreW4.uasset": "4ffeab8ace53563e2e585ae0f1fb07fa37234aad149e390be6d4b597e40369bf"
+  },
+  "input_fingerprint": "3e527119df4a2eec0b87705dfb4b0efcd868ede1f8870e23e7bbf05b73fdf2f1",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_TownLowerShoreW4": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}
