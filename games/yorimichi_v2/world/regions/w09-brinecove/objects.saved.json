@@ -7494,8 +7494,7 @@
     },
     "object/brinecove/townlower-1-2": {
       "groups": [
-        "SM_BC_TownLower_1_2",
-        "SM_BC_TownLower_1_2_Soft"
+        "SM_BC_TownLower_1_2"
       ],
       "id": "object/brinecove/townlower-1-2",
       "model": [
@@ -7509,8 +7508,7 @@
     },
     "object/brinecove/townlower-1-3": {
       "groups": [
-        "SM_BC_TownLower_1_3",
-        "SM_BC_TownLower_1_3_Soft"
+        "SM_BC_TownLower_1_3"
       ],
       "id": "object/brinecove/townlower-1-3",
       "model": [
@@ -7524,8 +7522,7 @@
     },
     "object/brinecove/townlower-2-3": {
       "groups": [
-        "SM_BC_TownLower_2_3",
-        "SM_BC_TownLower_2_3_Soft"
+        "SM_BC_TownLower_2_3"
       ],
       "id": "object/brinecove/townlower-2-3",
       "model": [
@@ -7539,22 +7536,12 @@
     },
     "object/brinecove/townlower-2-4": {
       "groups": [
-        "SM_BC_TownLower_2_4_Piece00",
         "SM_BC_TownLower_2_4_Piece01",
-        "SM_BC_TownLower_2_4_Piece02",
-        "SM_BC_TownLower_2_4_Piece030",
-        "SM_BC_TownLower_2_4_Piece031",
-        "SM_BC_TownLower_2_4_Piece032",
-        "SM_BC_TownLower_2_4_Piece033",
         "SM_BC_TownLower_2_4_Piece10",
-        "SM_BC_TownLower_2_4_Piece110",
-        "SM_BC_TownLower_2_4_Piece111",
         "SM_BC_TownLower_2_4_Piece112",
         "SM_BC_TownLower_2_4_Piece113",
         "SM_BC_TownLower_2_4_Piece12",
         "SM_BC_TownLower_2_4_Piece13",
-        "SM_BC_TownLower_2_4_Piece20",
-        "SM_BC_TownLower_2_4_Piece21",
         "SM_BC_TownLower_2_4_Piece30",
         "SM_BC_TownLower_2_4_Piece31",
         "SM_BC_TownLower_2_4_Soft"
@@ -7615,8 +7602,6 @@
     },
     "object/brinecove/townlower-3-4": {
       "groups": [
-        "SM_BC_TownLower_3_4_Piece000",
-        "SM_BC_TownLower_3_4_Piece001",
         "SM_BC_TownLower_3_4_Piece002",
         "SM_BC_TownLower_3_4_Piece003",
         "SM_BC_TownLower_3_4_Piece01",
@@ -7626,7 +7611,6 @@
         "SM_BC_TownLower_3_4_Piece032",
         "SM_BC_TownLower_3_4_Piece033",
         "SM_BC_TownLower_3_4_Piece10",
-        "SM_BC_TownLower_3_4_Piece11",
         "SM_BC_TownLower_3_4_Piece12",
         "SM_BC_TownLower_3_4_Piece13",
         "SM_BC_TownLower_3_4_Piece2",
@@ -7727,8 +7711,7 @@
     },
     "object/brinecove/townlower-5-3": {
       "groups": [
-        "SM_BC_TownLower_5_3",
-        "SM_BC_TownLower_5_3_Soft"
+        "SM_BC_TownLower_5_3"
       ],
       "id": "object/brinecove/townlower-5-3",
       "model": [
@@ -7787,8 +7770,7 @@
     },
     "object/brinecove/townlower-6-2": {
       "groups": [
-        "SM_BC_TownLower_6_2",
-        "SM_BC_TownLower_6_2_Soft"
+        "SM_BC_TownLower_6_2"
       ],
       "id": "object/brinecove/townlower-6-2",
       "model": [
@@ -7802,8 +7784,7 @@
     },
     "object/brinecove/townlower-6-3": {
       "groups": [
-        "SM_BC_TownLower_6_3",
-        "SM_BC_TownLower_6_3_Soft"
+        "SM_BC_TownLower_6_3"
       ],
       "id": "object/brinecove/townlower-6-3",
       "model": [
@@ -7817,13 +7798,6 @@
     },
     "object/brinecove/townupper-2-4": {
       "groups": [
-        "SM_BC_TownUpper_2_4_Piece20",
-        "SM_BC_TownUpper_2_4_Piece21",
-        "SM_BC_TownUpper_2_4_Piece22",
-        "SM_BC_TownUpper_2_4_Piece230",
-        "SM_BC_TownUpper_2_4_Piece231",
-        "SM_BC_TownUpper_2_4_Piece232",
-        "SM_BC_TownUpper_2_4_Piece233",
         "SM_BC_TownUpper_2_4_Piece30",
         "SM_BC_TownUpper_2_4_Piece31",
         "SM_BC_TownUpper_2_4_Piece32",
@@ -7862,12 +7836,10 @@
     },
     "object/brinecove/townupper-2-5": {
       "groups": [
-        "SM_BC_TownUpper_2_5_Piece0",
         "SM_BC_TownUpper_2_5_Piece10",
         "SM_BC_TownUpper_2_5_Piece11",
         "SM_BC_TownUpper_2_5_Piece12",
         "SM_BC_TownUpper_2_5_Piece13",
-        "SM_BC_TownUpper_2_5_Piece3",
         "SM_BC_TownUpper_2_5_Soft"
       ],
       "id": "object/brinecove/townupper-2-5",
@@ -7963,7 +7935,6 @@
         "SM_BC_TownUpper_3_5_Piece02",
         "SM_BC_TownUpper_3_5_Piece03",
         "SM_BC_TownUpper_3_5_Piece1",
-        "SM_BC_TownUpper_3_5_Piece2",
         "SM_BC_TownUpper_3_5_Piece3",
         "SM_BC_TownUpper_3_5_Soft"
       ],
@@ -8069,7 +8040,6 @@
         "SM_BC_TownUpper_4_5_Piece12",
         "SM_BC_TownUpper_4_5_Piece13",
         "SM_BC_TownUpper_4_5_Piece2",
-        "SM_BC_TownUpper_4_5_Piece3",
         "SM_BC_TownUpper_4_5_Soft"
       ],
       "id": "object/brinecove/townupper-4-5",
@@ -8109,10 +8079,6 @@
         "SM_BC_TownUpper_5_4_Piece222",
         "SM_BC_TownUpper_5_4_Piece223",
         "SM_BC_TownUpper_5_4_Piece23",
-        "SM_BC_TownUpper_5_4_Piece30",
-        "SM_BC_TownUpper_5_4_Piece31",
-        "SM_BC_TownUpper_5_4_Piece32",
-        "SM_BC_TownUpper_5_4_Piece33",
         "SM_BC_TownUpper_5_4_Soft"
       ],
       "id": "object/brinecove/townupper-5-4",
@@ -8151,8 +8117,6 @@
         "SM_BC_TownUpper_5_5_Piece01",
         "SM_BC_TownUpper_5_5_Piece02",
         "SM_BC_TownUpper_5_5_Piece03",
-        "SM_BC_TownUpper_5_5_Piece1",
-        "SM_BC_TownUpper_5_5_Piece2",
         "SM_BC_TownUpper_5_5_Soft"
       ],
       "id": "object/brinecove/townupper-5-5",
