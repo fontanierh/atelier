@@ -281,7 +281,7 @@ def _build_lod_chain(asset, settings, resolve):
     # The attached levels are copies: unload the transient meshes, so a batch session ends the job with no dirty package.
     lod = None
     if transient:
-        U.PackageTools.unload_packages(transient)
+        U.EditorLoadingAndSavingUtils.unload_packages(transient)
     left = [p.get_name() for p in U.EditorLoadingAndSavingUtils.get_dirty_content_packages()
             if p.get_name().startswith(TRANSIENT)]
     if left:
