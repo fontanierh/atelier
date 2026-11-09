@@ -1,0 +1,34 @@
+{
+  "asset": "prop/citysurfaces/north-mountains-cell-18-15",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_18_15.uasset": "2981976e4530a1efb5ff477ef924d9273d4c1d51fffd619b3a55687254378557"
+  },
+  "input_fingerprint": "836fe5dc1df3a0e8184e8f1e933e6f7300c8160a89004d8fdffc6c49df5f22fa",
+  "kind": "imported",
+  "lods": {
+    "/Game/Experiments/CitySurfaces/v1_128m/HD_NorthMountains_cell_18_15": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

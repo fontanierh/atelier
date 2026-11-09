@@ -1,0 +1,34 @@
+{
+  "asset": "prop/citysurfaces/pavilion",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Pavilion.uasset": "efc1636e384c757dcf4fce41d683ee7d7432d43b1f4f7121f342ee960a8842f2"
+  },
+  "input_fingerprint": "c94f1d73a940897059913f8dc60affe1384666075d44b9575f49c90ba4d684fa",
+  "kind": "imported",
+  "lods": {
+    "/Game/Experiments/CitySurfaces/v1_128m/HD_Pavilion": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

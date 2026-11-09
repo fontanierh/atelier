@@ -1,0 +1,34 @@
+{
+  "asset": "prop/citysurfaces/square-cell-6-1-piece2",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Square_cell_6_1_Piece2.uasset": "480d130fdc401cab99e5245282fb0c751a65324f19411dd574368cc483ef0549"
+  },
+  "input_fingerprint": "1cffa37d0050efdfb1d5f631157aa0180f3ac1ed8356f5be7a7e8991e17393eb",
+  "kind": "imported",
+  "lods": {
+    "/Game/Experiments/CitySurfaces/v1_128m/HD_Square_cell_6_1_Piece2": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

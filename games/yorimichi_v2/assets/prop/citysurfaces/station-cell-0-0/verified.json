@@ -1,0 +1,46 @@
+{
+  "asset": "prop/citysurfaces/station-cell-0-0",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Station_cell_0_0.uasset": "7f087e1bae6c19fc5e8cc5409625a50b31044d45def5c05ff73535336f5ac4a3"
+  },
+  "input_fingerprint": "bb1f9d4a965ea4870a4a9f61072693ae4d7307f78a1387adc478ae2a0208a725",
+  "kind": "imported",
+  "lods": {
+    "/Game/Experiments/CitySurfaces/v1_128m/HD_Station_cell_0_0": {
+      "after": {
+        "count": 4,
+        "reductions": [
+          1.0,
+          0.5,
+          0.15000000596046448,
+          0.03999999910593033
+        ],
+        "screen_sizes": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "before": {
+        "count": 4,
+        "reductions": [
+          1.0,
+          0.5,
+          0.15000000596046448,
+          0.03999999910593033
+        ],
+        "screen_sizes": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

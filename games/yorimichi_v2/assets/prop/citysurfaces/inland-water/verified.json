@@ -1,0 +1,34 @@
+{
+  "asset": "prop/citysurfaces/inland-water",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_InlandWater.uasset": "729c4c07adb936b9203cb0411eb59c40b6edd0aee6fb7aa8a9f06f3a8b795e34"
+  },
+  "input_fingerprint": "5555a7ffcfede6e2e9f923ca972f6dc0ed16205049a7be7feeba9341e7f66d23",
+  "kind": "imported",
+  "lods": {
+    "/Game/Experiments/CitySurfaces/v1_128m/HD_InlandWater": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

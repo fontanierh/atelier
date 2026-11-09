@@ -11,7 +11,7 @@ are still pointer files, so their hashes differ until `git lfs pull` runs.
 
 | Group | Records | Packages | Status |
 |---|---:|---:|---|
-| Restricted, pinned | 801 | 5,997 | restricted original via pinned route (all 801 packages are in `restricted.lock.json`) |
+| Restricted, pinned | 801 | 6,768 | every package linked in `restricted.originals.json` (2026-11-09): 3,267 imported (FileMD5-checked), 3,324 keyed skate clips, 8 embedded textures, 169 editor-authored; 6,076 originals pinned |
 | Open, generator present | 479 | 2,946 | generator present; recipe not yet written |
 | Open, generator missing | 3 | 124 | the clip libraries are not in the donor |
 | Open, editor-owned | 2 | 2 | the saved packages are the source; not a generator case |
@@ -46,7 +46,7 @@ packages' meshes or textures. Status values: *generator present (recipe not writ
 | japan/animation | 1 | 1 | generator missing (animation origin not recorded) | none | none until the source is located |
 | megapark/standalone-level | 1 | 1 | editor-owned (a saved map) | none | `uv run python games/yorimichi_v2/tools/content/save_validate.py adopted/megapark/standalone-level` after a save |
 | seethrough | 1 | 1 | editor-owned candidate (material parameter collection) | none | confirm with the owner, then `save_validate.py` |
-| restricted: skateride 692, craterpark 68, japan 7, audio 5, character animation 29 | 801 | 5,997 | restricted, pinned | none (the restricted original) | `V2_RESTRICTED_SOURCE=DIR uv run python games/yorimichi_v2/tools/restricted/fetch.py fetch` |
+| restricted: skateride 692, craterpark 68, japan 7, audio 5, character animation 29 | 801 | 6,768 | restricted, pinned; originals linked and pinned (`tools/restricted/originals.py`) | the donor imports and the skate clip importer, each original pinned by sha256 | `V2_RESTRICTED_SOURCE=DIR uv run python games/yorimichi_v2/tools/restricted/fetch.py fetch`; `V2_RESTRICTED_ORIGINALS=DIR uv run python games/yorimichi_v2/tools/restricted/originals.py fetch` |
 
 The `ATELIER_AGENT=OWNER nice -n 10 uv run atelier build yorimichi <step>` commands are donor generation steps. Each one
 runs Blender under the controller's guard, so run `atelier build yorimichi --list` first to confirm the step name. A
@@ -81,3 +81,21 @@ The next step for each family is the donor generation step above, then:
   files, so its records must be measured again before any batch lands.
 - The 13 `asset.toml` files under `assets/adopted/japan/treehouse/prop-futon/source/` are donor sources, not records
   (`record_paths` excludes them).
+
+## Restricted originals
+
+`tools/restricted/originals.py scan --donor DONOR_CHECKOUT --classes CLASSES_JSON` links each package the restricted lock
+pins to what it was made from, in `restricted.originals.json` (`check` is the contract; `tests/test_restricted_originals.py`
+runs it on the committed files). Run 2026-11-09 against the donor checkout `atelier-yv2-donor`, classes from
+`unreal/Scripts/report_classes.py` (read-only `editor.run`):
+
+| Route | Packages | Evidence |
+|---|---:|---|
+| imported | 3,267 | the package's import data names the file; the donor file's MD5 equals its recorded FileMD5 (all 3,267) |
+| keyed | 3,324 | `SkateRide/Clips`: keyed by the donor's `import_clips.py` from the clip file, `rig.skate` and the bank metadata; the donor import state's fingerprint, recomputed with Unreal's Python 3.11.8, equals the recorded one |
+| embedded | 8 | character textures with no file of their own, made by the folder's skeletal-mesh import |
+| authored | 169 | no import data; editor-made classes (62 material instances, 26 materials, 26 skate motion banks, 18 blend spaces, 14 skeletons, 11 wanderer definitions, 4 Blueprints, 8 other data and settings assets) |
+
+6,076 originals (1.0 GB) are pinned by donor-relative path, sha256 and size. Their bytes stay in authorized restricted
+storage laid out like the donor checkout (`$V2_RESTRICTED_ORIGINALS`); a fetch from the donor checkout copied and
+verified all 6,076.

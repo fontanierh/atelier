@@ -297,7 +297,11 @@ def _build_lod_chain(asset, settings, resolve):
     if left:
         raise RuntimeError(f'{asset.get_path_name()}: transient LOD packages {left} are still loaded')
     if len(chain) > 1:
-        editor.set_lod_screen_sizes(asset, [screen for _, screen, _, _ in chain])
+        screens = [screen for _, screen, _, _ in chain]
+        editor.set_lod_screen_sizes(asset, screens)
+        got = [float(s) for s in editor.get_lod_screen_sizes(asset)][:len(chain)]
+        if len(got) != len(chain) or any(abs(a - b) > 1e-3 for a, b in zip(got, screens)):
+            raise RuntimeError(f'{asset.get_path_name()} has LOD screen sizes {got}, the record {screens}')
     got = [[str(m.get_editor_property('imported_material_slot_name')), _material_path(m)]
            for m in asset.get_editor_property('static_materials')]
     if got != [list(s) for s in slots]:
@@ -337,10 +341,11 @@ def main():
             # The chain the package had before this import; a new package has none.
             # A new package is checked first: loading a missing one logs an error, which fails the session's exit.
             existing = EAL.load_asset(package) if EAL.does_asset_exist(package) else None
+            # Read before any edit: removing collisions rebuilds the mesh, whose screen sizes then read 0 until built.
+            before = lod_preservation.read(_static_mesh_editor(), existing) if existing is not None else None
             if existing is not None and settings.get('collision') == 'simple_and_complex':
                 # An FBX reimport appends its UCX hulls to the saved ones: start from none.
                 _static_mesh_editor().remove_collisions(existing)
-            before = lod_preservation.read(_static_mesh_editor(), existing) if existing is not None else None
             slots = settings.get('slot_materials')
             if (existing is not None and slots is not None
                     and len(existing.get_editor_property('static_materials')) != len(slots)):
