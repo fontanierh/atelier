@@ -284,3 +284,257 @@ def test_a_failed_write_restores_every_file(tmp_path, monkeypatch):
         apply.run_step(game, small_plan(tmp_path), 'T', lockable=lambda g, rels: [])
     monkeypatch.setattr(Path, 'write_bytes', real)
     assert snapshot(game) == before and not (game / apply.JOURNAL).exists()
+
+
+@pytest.fixture
+def accepted_import(tmp_path):
+    """A replacement with an accepted import and a separate package companion, without an Unreal process."""
+    from types import SimpleNamespace
+    game = tmp_path / 'game'
+    folder = game / 'assets/prop/brinecove/cannon-west'
+    (folder / 'src').mkdir(parents=True)
+    source = folder / 'src/part.glb'
+    source.write_bytes(b'original source')
+    asset = apply.records.Asset(
+        id='prop/brinecove/cannon-west', kind='static-mesh', authority='generated',
+        owner='shared/brinecove/cannon-west', folder=folder,
+        sources=[apply.records.Source('src/part.glb', apply.records.sha256_file(source))],
+        recipe={'importer': 'static-mesh', 'version': 1, 'settings': {'triangles': 10}},
+        outputs=[apply.records.Output('/Game/Brinecove/Meshes/SM_BC_CannonWest', 'generated')])
+    primary = apply.records.package_files(game, asset.outputs[0].package)[0]
+    primary.parent.mkdir(parents=True)
+    primary.write_bytes(b'accepted package')
+    companion = primary.with_suffix('.uexp')
+    companion.write_bytes(b'accepted companion')
+    receipt = {'schema': apply.records.SCHEMA, 'kind': 'imported', 'engine': 'test',
+               'input_fingerprint': apply.records.input_fingerprint(asset, {}),
+               'files': {p.relative_to(game).as_posix(): apply.records.sha256_file(p) for p in (primary, companion)}}
+    asset.verified.write_text(json.dumps(receipt))
+    return SimpleNamespace(game=game, asset=asset, source=source, primary=primary, companion=companion, receipt=receipt)
+
+
+def test_retirement_accepts_only_the_current_import(accepted_import):
+    case = accepted_import
+    assert apply.import_problems(case.game, case.asset) == []
+    # A second apply pins a changed source but leaves the old import receipt and package bytes in place.
+    case.source.write_bytes(b'revised source')
+    case.asset.sources = [apply.records.Source('src/part.glb', apply.records.sha256_file(case.source))]
+    assert any('import is stale' in p for p in apply.import_problems(case.game, case.asset))
+
+
+def test_retirement_refuses_a_changed_recipe(accepted_import):
+    case = accepted_import
+    case.asset.recipe['settings']['triangles'] = 12
+    assert any('import is stale' in p for p in apply.import_problems(case.game, case.asset))
+
+
+@pytest.mark.parametrize('change', ['changed', 'missing', 'missing-companion', 'unrecorded-companion', 'omitted-package',
+                                  'editor-receipt', 'missing-receipt'])
+def test_retirement_refuses_unaccepted_output_bytes(accepted_import, change):
+    case = accepted_import
+    if change == 'changed':
+        case.primary.write_bytes(b'changed after acceptance')
+    elif change == 'missing':
+        case.primary.unlink()
+    elif change == 'missing-companion':
+        case.companion.unlink()
+    elif change == 'unrecorded-companion':
+        case.primary.with_suffix('.ubulk').write_bytes(b'not in the accepted receipt')
+    elif change == 'omitted-package':
+        del case.receipt['files'][case.primary.relative_to(case.game).as_posix()]
+        case.asset.verified.write_text(json.dumps(case.receipt))
+    elif change == 'editor-receipt':
+        case.receipt['kind'] = 'editor-saved'
+        case.asset.verified.write_text(json.dumps(case.receipt))
+    else:
+        case.asset.verified.unlink()
+    assert apply.import_problems(case.game, case.asset)
+
+
+def test_paths_list_only_what_changes(tmp_path, monkeypatch):
+    allow(monkeypatch)
+    game = mini_game(tmp_path)
+    plan = small_plan(tmp_path)
+    apply.run_step(game, plan, 'T', lockable=lambda g, rels: [])
+    assert apply.touched(game, plan)['paths'] == []                 # applied and unchanged: nothing to claim
+    assert apply.run_step(game, plan, 'T') == {'written': [], 'deleted': []}   # and no claim check, no write
+    plan['remainders']['Props_3_3']['file'].write_bytes(b'glTF-rest-2')        # the remainder changes
+    plan['remainders']['Props_3_3']['triangles'] = 4
+    paths = set(apply.touched(game, plan)['paths'])
+    g = apply.GAME_REL
+    assert f'{g}/assets/prop/brinecove/props-3-3/src/SM_BC_Props_3_3.glb' in paths
+    assert f'{g}/unreal/Content/Brinecove/Meshes/SM_BC_Props_3_3.uasset' in paths
+    assert not any('cannon-west' in p for p in paths)               # the unchanged part is not touched
+
+
+def stale_plan(tmp_path, game):
+    plan = small_plan(tmp_path)
+    plan['stale'] = [{'record': 'prop/brinecove/crane-west-soft', 'mesh': 'SM_BC_CraneWest_Soft',
+                      'package': apply.MESHES + 'SM_BC_CraneWest_Soft', 'object': 'crane-west'}]
+    plan['resave'] = ['object/brinecove/crane-west']
+    (game / 'assets/prop/brinecove/crane-west-soft/src').mkdir(parents=True)
+    (game / 'assets/prop/brinecove/crane-west-soft/asset.toml').write_text(
+        'schema = 1\nid = "prop/brinecove/crane-west-soft"\nkind = "static-mesh"\nauthority = "generated"\n'
+        'owner = "shared/brinecove/crane-west-soft"\n[[sources]]\npath = "src/x.glb"\nsha256 = "' + '0' * 64 + '"\n'
+        '[recipe]\nimporter = "static-mesh"\nversion = 1\n[[outputs]]\npackage = "/Game/Brinecove/Meshes/SM_BC_CraneWest_Soft"\n')
+    (game / 'assets/prop/brinecove/crane-west-soft/src/x.glb').write_bytes(b'x')
+    (game / 'assets/object/brinecove/crane-west').mkdir(parents=True)
+    (game / 'assets/object/brinecove/crane-west/asset.toml').write_text(
+        'schema = 1\nid = "object/brinecove/crane-west"\nkind = "placement"\nauthority = "editor"\n'
+        'owner = "region/w09-brinecove"\n[[outputs]]\npackage = "/Game/__ExternalActors__/V2/Maps/Slice/1/AB/ACTOR"\n')
+    pkg = game / 'unreal/Content/Brinecove/Meshes'
+    pkg.mkdir(parents=True, exist_ok=True)
+    (pkg / 'SM_BC_CraneWest_Soft.uasset').write_bytes(b'soft')
+    actor = game / 'unreal/Content/__ExternalActors__/V2/Maps/Slice/1/AB'
+    actor.mkdir(parents=True)
+    (actor / 'ACTOR.uasset').write_bytes(b'actor')
+    (game / 'world/regions/w09-brinecove/objects.saved.json').write_text(
+        json.dumps({'schema': 1, 'objects': {'object/brinecove/crane-west': {'id': 'x'}, 'object/brinecove/other': {}}}))
+    return plan
+
+
+def test_apply_keeps_stale_parts_and_retire_removes_them_with_the_resaved_object(tmp_path, monkeypatch):
+    allow(monkeypatch)
+    game = mini_game(tmp_path)
+    plan = stale_plan(tmp_path, game)
+    apply.run_step(game, plan, 'T', lockable=lambda g, rels: [])
+    assert (game / 'assets/prop/brinecove/crane-west-soft/asset.toml').is_file()          # apply deletes nothing
+    assert (game / 'unreal/Content/Brinecove/Meshes/SM_BC_CraneWest_Soft.uasset').is_file()
+    info = apply.touched(game, plan, retire=True)
+    g = apply.GAME_REL
+    assert {f'{g}/assets/prop/brinecove/crane-west-soft/asset.toml', f'{g}/assets/object/brinecove/crane-west/asset.toml',
+            f'{g}/unreal/Content/Brinecove/Meshes/SM_BC_CraneWest_Soft.uasset',
+            f'{g}/unreal/Content/__ExternalActors__/V2/Maps/Slice/1/AB/ACTOR.uasset',
+            f'{g}/world/regions/w09-brinecove/objects.saved.json'} <= set(info['paths'])
+    done = apply.run_step(game, plan, 'T', retire=True, lockable=lambda g, rels: [])
+    assert not (game / 'assets/prop/brinecove/crane-west-soft').exists() or not any(
+        (game / 'assets/prop/brinecove/crane-west-soft').rglob('*.*'))
+    assert not (game / 'unreal/Content/Brinecove/Meshes/SM_BC_CraneWest_Soft.uasset').exists()
+    assert not (game / 'unreal/Content/__ExternalActors__/V2/Maps/Slice/1/AB/ACTOR.uasset').exists()
+    saved = json.loads((game / 'world/regions/w09-brinecove/objects.saved.json').read_text())['objects']
+    assert list(saved) == ['object/brinecove/other']                                       # only the resaved object left it
+    assert 'SM_BC_CraneWest_Soft' not in apply.group_names(
+        json.loads((game / 'unreal/Content/Data/brinecove/runtime.json').read_text()))
+    assert done['deleted']
+
+
+def test_objects_step_needs_one_claim_with_both_regions(tmp_path):
+    step = apply.objects_step(mini_game(tmp_path), small_plan(tmp_path))
+    assert step['scopes'] == {'region/w09-brinecove', 'region/w00-island'}
+    assert f'{apply.GAME_REL}/world/regions/w09-brinecove/objects.saved.json' in step['paths']
+
+
+def test_a_tile_nothing_takes_from_any_more_goes_back_to_its_donor_record_text():
+    tile = {'record': 'prop/brinecove/harbor-2-3-soft', 'owner': 'shared/brinecove/harbor-2-3-soft',
+            'package': '/Game/Brinecove/Meshes/SM_BC_Harbor_2_3_Soft', 'references': ['adopted/brinecove/materials'],
+            'settings': {'slot_materials': [apply.MATERIALS + 'MI_BC_palm_frond'], 'triangles': 90, 'full_precision_uvs': True}}
+    rem = {'file': Path('x.glb'), 'triangles': 90, 'slots': tile['settings']['slot_materials'], 'restored': True}
+    gen = apply.tile_generated('Harbor_2_3_Soft', tile, rem)
+    assert gen.about == 'SM_BC_Harbor_2_3_Soft: one Brine Cove mesh (90 triangles)'
+    assert list(gen.settings) == ['slot_materials', 'triangles', 'full_precision_uvs']
+
+
+@pytest.fixture
+def cli_batch(tmp_path, monkeypatch):
+    """Real tiny GLBs and records exercise separate planner/CLI calls; only claim admission and native imports are faked."""
+    from types import SimpleNamespace
+    game, donor, stage = mini_game(tmp_path), tmp_path / 'donor', tmp_path / 'stage'
+    allow(monkeypatch)
+    objects = {
+        'cannon-west': dict(x=0, y=0, radius=2, tiles=('Props_3_3',)),
+        'sloop-east': dict(x=0, y=0, radius=2, tiles=('Ships_4_3',)),
+        'crane-west': dict(x=0, y=0, radius=2, tiles=('Harbor_2_3', 'Harbor_2_3_Soft'))}
+    monkeypatch.setattr(apply.split, 'OBJECTS', objects)
+    groups = []
+    for stem, count, material in [('Props_3_3', 2, 'BC_wood'), ('Ships_4_3', 1, 'BC_wood'),
+                                  ('Harbor_2_3', 2, 'BC_wood'), ('Harbor_2_3_Soft', 1, 'BC_rope')]:
+        positions = [(x + dx, y, z) for x in range(0, count * 10, 10)
+                     for dx, y, z in [(0, 1, 0), (1, 1, 0), (0, 2, 1)]]
+        model = {'materials': [material], 'prims': [{'material': 0, 'positions': positions,
+                                                   'indices': list(range(count * 3))}]}
+        source = donor / 'brinecove/glb' / f'SM_BC_{stem}.glb'
+        source.parent.mkdir(parents=True, exist_ok=True)
+        apply.split.write_subset(model, range(count), source)
+        gen = apply.recover.Generated(id=apply.tile_record(stem), kind='static-mesh', owner='shared/brinecove',
+            package=apply.MESHES + f'SM_BC_{stem}', source=source, references=[], about='fixture tile',
+            settings={'slot_materials': [apply.MATERIALS + 'MI_' + material], 'triangles': count})
+        text, name = apply.record_files(gen)
+        folder = game / 'assets' / gen.id
+        (folder / 'src').mkdir(parents=True)
+        (folder / 'asset.toml').write_text(text)
+        (folder / 'src' / name).write_bytes(source.read_bytes())
+        groups.append(group(f'SM_BC_{stem}', collision=not stem.endswith('_Soft')))
+    (game / 'unreal/Content/Data/brinecove/runtime.json').write_text(json.dumps({'groups': groups}))
+
+    def accept():
+        for path in apply.records.record_paths(game):
+            asset = apply.records.load_asset(path)
+            if asset.kind != 'static-mesh':
+                continue
+            fingerprint = apply.records.input_fingerprint(asset, {})
+            package = apply.records.package_files(game, asset.outputs[0].package)[0]
+            package.parent.mkdir(parents=True, exist_ok=True)
+            package.write_bytes(('accepted ' + fingerprint).encode())
+            apply.records.write_json(asset.verified, {'schema': 1, 'kind': 'imported', 'engine': 'test',
+                'input_fingerprint': fingerprint,
+                'files': {package.relative_to(game).as_posix(): apply.records.sha256_file(package)}})
+
+    def actor(oid):
+        folder = game / 'assets' / oid
+        folder.mkdir(parents=True)
+        (folder / 'asset.toml').write_text(f'schema = 1\nid = "{oid}"\nkind = "placement"\nauthority = "editor"\n'
+            'owner = "region/w09-brinecove"\n[[outputs]]\npackage = "/Game/__ExternalActors__/V2/Maps/Slice/1/AB/ACTOR"\n')
+        package = game / 'unreal/Content/__ExternalActors__/V2/Maps/Slice/1/AB/ACTOR.uasset'
+        package.parent.mkdir(parents=True, exist_ok=True)
+        package.write_bytes(b'saved actor')
+        (game / f'world/regions/{apply.REGION}/objects.saved.json').write_text(json.dumps({'objects': {oid: {}}}))
+        return package
+
+    def run(command, selection):
+        return apply.main([command, '--game', str(game), '--donor', str(donor), '--stage', str(stage),
+                           '--only', selection, '--claim', 'T'])
+    return SimpleNamespace(game=game, donor=donor, objects=objects, accept=accept, actor=actor, run=run)
+
+
+def test_cli_retirement_refuses_a_different_applied_selection(cli_batch, capsys):
+    case = cli_batch
+    assert case.run('apply', 'cannon-west') == 0
+    case.accept()
+    case.actor(apply.RETIRED_OBJECT)
+    before = snapshot(case.game)
+    assert case.run('retire', 'sloop-east') == 1
+    assert 'differs from the applied selection' in capsys.readouterr().err
+    assert snapshot(case.game) == before               # B's exhausted tile and old actor survive A's accepted imports
+
+
+def test_cli_handoff_preserves_pending_removals_until_success(cli_batch, monkeypatch):
+    case = cli_batch
+    assert case.run('apply', 'crane-west') == 0
+    case.accept()
+    actor = case.actor('object/brinecove/crane-west')
+    stale = case.game / 'unreal/Content/Brinecove/Meshes/SM_BC_CraneWest_Soft.uasset'
+    case.objects['crane-west']['exclude_materials'] = ['BC_rope']       # palm correction drops the old soft part
+    assert case.run('apply', 'crane-west') == 0
+    case.accept()
+    pending = json.loads((case.game / apply.EXPECTED).read_text())['pending']
+    assert [p['record'] for p in pending['stale']] == ['prop/brinecove/crane-west-soft']
+    assert pending['resave'] == ['object/brinecove/crane-west']
+    before = snapshot(case.game)
+    assert case.run('apply', 'cannon-west') == 1        # one manifest cannot discard an outstanding batch's cleanup
+    assert snapshot(case.game) == before
+    real_unlink = Path.unlink
+
+    def fail_removal(path, *args, **kwargs):
+        if path == stale:
+            raise PermissionError('retirement interrupted')
+        return real_unlink(path, *args, **kwargs)
+    monkeypatch.setattr(Path, 'unlink', fail_removal)
+    with pytest.raises(PermissionError, match='retirement interrupted'):
+        case.run('retire', 'crane-west')
+    assert snapshot(case.game) == before              # journal restores pending state and every deletion
+    monkeypatch.setattr(Path, 'unlink', real_unlink)
+    assert case.run('retire', 'crane-west') == 0        # fresh CLI/build still has the pending stale/resave work
+    assert not stale.exists() and not actor.exists()
+    saved = json.loads((case.game / apply.EXPECTED).read_text())
+    assert saved['pending'] == {'stale': [], 'resave': []} and saved['retired'] is True
+    assert case.run('apply', 'cannon-west') == 0        # the next batch is now allowed

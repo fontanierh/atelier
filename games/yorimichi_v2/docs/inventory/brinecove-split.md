@@ -119,7 +119,7 @@ and `sloop-east` are held back until the Nightjar's hull follows its upperworks:
 | `paths --donor DONOR [--json]` | prints the complete touched sets (apply, then retire) and the claim scopes |
 | `apply --donor DONOR --claim TASK` | preflight, claim check, then write; never deletes |
 | `check [--donor DONOR]` | after the import: triangles, bounds, hashes, partition, drawn once |
-| `retire --donor DONOR --claim TASK --only ...` | deletes retired tile records and packages and the retired actor; refuses unless `check` passes |
+| `retire --donor DONOR --claim TASK` | deletes stale parts, retired tiles and the actors that must be saved again, and their runtime groups; refuses unless `check --records` passes |
 
 **What `apply` writes** (only after every check passed): one generated record per part, `assets/prop/brinecove/<object>`
 (`<object>-soft` for a part cut from a Soft tile, which has no collision), source = the part GLB copied into its `src/` and
@@ -142,22 +142,45 @@ then deletes them, with the retired actor's entries in `objects.toml`, `objects.
 
 ### Controller sequence
 
+The expectation file holds one outstanding removal batch. Use the same `--only` selection for apply and retire;
+finish its accepted imports and retirement before applying a different selection when empty tiles, stale parts or
+changed actors still need removal. Pending actions survive retries and clear only after successful journaled retirement.
+This rule applies to this helper, not to a separate town planner's manifest. For an older apply that already lost its
+pending actions, recover the exact cleanup set from the prior applied manifest before retirement; keep accepted imports.
+
 ```
-DONOR=build/yorimichi                      # the donor export the records were recovered from
+DONOR=build/yorimichi
 CMD="uv run python games/yorimichi_v2/tools/migrate/brinecove_split_apply.py"
 git lfs pull --include="games/yorimichi_v2/unreal/Content/Data/brinecove/runtime.json"
-$CMD plan  --donor $DONOR                  # read the plan
-$CMD paths --donor $DONOR                  # the exact touched set and scopes: claim exactly the 'apply' list first
-$CMD apply --donor $DONOR --claim TASK     # preflight, claim check, journal, write; refuses with no change on any failure
+$CMD plan  --donor $DONOR                  # read the plan: parts, remainders, stale parts, objects to save again
+$CMD paths --donor $DONOR                  # three lists (apply, retire, objects step) and every scope
+#   ONE claim TASK holds all three lists and every scope printed: objects.py needs a single active claim whose scopes
+#   cover both region/w09-brinecove and region/w00-island.
+$CMD apply --donor $DONOR --claim TASK     # exactly the changed records; refuses with no change on any failure
 IDS=$(git status --porcelain games/yorimichi_v2/assets/prop/brinecove | sed -n 's#.*assets/\(prop/brinecove/[^/]*\)/asset.toml#\1#p' | sort -u)
 uv run python games/yorimichi_v2/tools/import/run.py $IDS --claim TASK --batch 8     # one claimed warm batch
+$CMD check --records --donor $DONOR        # records, sources, receipts, vertex-level partition (placements not yet)
+$CMD retire --donor $DONOR --claim TASK    # stale parts, and objects that must be saved again, are deleted
 uv run python games/yorimichi_v2/tools/migrate/objects.py region/w09-brinecove --environment region/w00-island \
-  --claim TASK --only <the new object ids>                     # saves the new actors; kept actors are untouched
-$CMD check --donor $DONOR                  # triangles, bounds, partition, drawn-once
+  --claim TASK --only <the new and re-saved object ids>        # saves them; kept actors are untouched
+$CMD check --donor $DONOR                  # everything, drawn-once included
 uv run python games/yorimichi_v2/tools/content/check.py
-# only when ships are included (--only): after the check passes, claim the 'retire' list from `paths`, then
-$CMD retire --donor $DONOR --claim TASK --only galleon-nightjar,sloop-east,...
 ```
+
+### Updating a batch already applied (the palm correction)
+
+The first batch's radius rule took the harbour palms standing next to the west crane (-330, 72) and the fish shed (300, 72)
+(donor `procedural/harbor.py` lines 97-103: stone planter, trunk and fronds) into `crane-west`, `crane-west-soft` and
+`fish-shed-soft`. The anchors for those two objects now carry `exclude_zones` (the palm's base, 5 m: a palm's trunk, planter
+and every frond card lie within it), so each whole palm stays in its tile. Rerunning the tool on a tree that already holds the
+first result re-plans from the expectation file (`split-batch1.json` keeps each tile's original settings), so:
+
+- `crane-west` (410 to 168 triangles; it now equals `crane-east`) and `fish-shed` (678 to 468) are rewritten;
+- `Harbor_2_3` and `Harbor_5_3` remainders grow (2,436 to 2,678 and 3,198 to 3,408), and `Harbor_2_3_Soft` and
+  `Harbor_5_3_Soft` go back to the donor's own 90-triangle meshes (nothing takes from them any more);
+- `crane-west-soft` and `fish-shed-soft` are empty and become *stale*: `apply` leaves them, `retire` deletes their
+  records, packages and runtime groups, and drops the objects whose group list changed from the saved list so
+  objects.py saves them again (an object's saved definition may not change).
 
 Remainder actors that were saved before the split keep working: a remainder keeps its package name, so its actor shows the
 new remainder after the re-import. Where a remainder lost a material, its slot list shrinks (listed by `plan`), so those
