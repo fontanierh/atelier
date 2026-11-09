@@ -94,6 +94,16 @@ def test_bundled_dependency_outside_the_package_fails(tmp_path, tools):
     assert acceptance.check_bundled_deps(app)[0].ok
 
 
+def test_a_sandboxed_app_needs_the_coreaudio_lookup(tmp_path, tools):
+    app = make_app(tmp_path)
+    sandbox = {'com.apple.security.app-sandbox': True}
+    tools['codesign'] = Ok(0, plistlib.dumps(sandbox), b'')
+    assert not acceptance.check_entitlements(app)[0].ok
+    sandbox[acceptance.MACH_LOOKUP] = [acceptance.AUDIO_LOOKUP]
+    tools['codesign'] = Ok(0, plistlib.dumps(sandbox), b'')
+    assert acceptance.check_entitlements(app)[0].ok
+
+
 def test_excluded_names_fail(tmp_path, tools):
     app = make_app(tmp_path, extra=['Contents/UE/YorimichiV2/Content/Japan/Kart/Car.pak'])
     assert not acceptance.check_excluded(app)[0].ok
