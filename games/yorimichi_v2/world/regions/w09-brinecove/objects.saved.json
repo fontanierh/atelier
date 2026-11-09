@@ -882,6 +882,66 @@
         "prop/brinecove/market-auction-block"
       ]
     },
+    "object/brinecove/market-stall-01": {
+      "groups": [
+        "SM_BC_MarketStall01"
+      ],
+      "id": "object/brinecove/market-stall-01",
+      "model": "prop/brinecove/market-stall-01",
+      "models": [
+        "prop/brinecove/market-stall-01"
+      ]
+    },
+    "object/brinecove/market-stall-02": {
+      "groups": [
+        "SM_BC_MarketStall02"
+      ],
+      "id": "object/brinecove/market-stall-02",
+      "model": "prop/brinecove/market-stall-02",
+      "models": [
+        "prop/brinecove/market-stall-02"
+      ]
+    },
+    "object/brinecove/market-stall-06": {
+      "groups": [
+        "SM_BC_MarketStall06"
+      ],
+      "id": "object/brinecove/market-stall-06",
+      "model": "prop/brinecove/market-stall-06",
+      "models": [
+        "prop/brinecove/market-stall-06"
+      ]
+    },
+    "object/brinecove/market-stall-07": {
+      "groups": [
+        "SM_BC_MarketStall07"
+      ],
+      "id": "object/brinecove/market-stall-07",
+      "model": "prop/brinecove/market-stall-07",
+      "models": [
+        "prop/brinecove/market-stall-07"
+      ]
+    },
+    "object/brinecove/market-stall-08": {
+      "groups": [
+        "SM_BC_MarketStall08"
+      ],
+      "id": "object/brinecove/market-stall-08",
+      "model": "prop/brinecove/market-stall-08",
+      "models": [
+        "prop/brinecove/market-stall-08"
+      ]
+    },
+    "object/brinecove/market-stall-09": {
+      "groups": [
+        "SM_BC_MarketStall09"
+      ],
+      "id": "object/brinecove/market-stall-09",
+      "model": "prop/brinecove/market-stall-09",
+      "models": [
+        "prop/brinecove/market-stall-09"
+      ]
+    },
     "object/brinecove/market-well": {
       "groups": [
         "SM_BC_MarketWell",
