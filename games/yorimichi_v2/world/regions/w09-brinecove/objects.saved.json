@@ -1047,6 +1047,76 @@
         "prop/brinecove/market-stall-14"
       ]
     },
+    "object/brinecove/market-stall-15": {
+      "groups": [
+        "SM_BC_MarketStall15"
+      ],
+      "id": "object/brinecove/market-stall-15",
+      "model": "prop/brinecove/market-stall-15",
+      "models": [
+        "prop/brinecove/market-stall-15"
+      ]
+    },
+    "object/brinecove/market-stall-16": {
+      "groups": [
+        "SM_BC_MarketStall16"
+      ],
+      "id": "object/brinecove/market-stall-16",
+      "model": "prop/brinecove/market-stall-16",
+      "models": [
+        "prop/brinecove/market-stall-16"
+      ]
+    },
+    "object/brinecove/market-stall-17": {
+      "groups": [
+        "SM_BC_MarketStall17"
+      ],
+      "id": "object/brinecove/market-stall-17",
+      "model": "prop/brinecove/market-stall-17",
+      "models": [
+        "prop/brinecove/market-stall-17"
+      ]
+    },
+    "object/brinecove/market-stall-18": {
+      "groups": [
+        "SM_BC_MarketStall18"
+      ],
+      "id": "object/brinecove/market-stall-18",
+      "model": "prop/brinecove/market-stall-18",
+      "models": [
+        "prop/brinecove/market-stall-18"
+      ]
+    },
+    "object/brinecove/market-stall-19": {
+      "groups": [
+        "SM_BC_MarketStall19"
+      ],
+      "id": "object/brinecove/market-stall-19",
+      "model": "prop/brinecove/market-stall-19",
+      "models": [
+        "prop/brinecove/market-stall-19"
+      ]
+    },
+    "object/brinecove/market-stall-south-east": {
+      "groups": [
+        "SM_BC_MarketStallSouthEast"
+      ],
+      "id": "object/brinecove/market-stall-south-east",
+      "model": "prop/brinecove/market-stall-south-east",
+      "models": [
+        "prop/brinecove/market-stall-south-east"
+      ]
+    },
+    "object/brinecove/market-stall-south-west": {
+      "groups": [
+        "SM_BC_MarketStallSouthWest"
+      ],
+      "id": "object/brinecove/market-stall-south-west",
+      "model": "prop/brinecove/market-stall-south-west",
+      "models": [
+        "prop/brinecove/market-stall-south-west"
+      ]
+    },
     "object/brinecove/market-well": {
       "groups": [
         "SM_BC_MarketWell",
