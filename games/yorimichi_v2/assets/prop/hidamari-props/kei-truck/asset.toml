@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): HD_P_kei_truck: a street prop (12101 triangles, 1 hull).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/hidamari-props/kei-truck"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/hidamari-props/kei-truck"
+references = ["adopted/japan/hidamari/prop-kei-truck"]
+
+[[sources]]
+path = "src/HD_P_kei_truck.fbx"
+sha256 = "68b9932168c40fc07297f48361c55141e2352c228867fcb26a98ceef33862b5a"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Hidamari/Materials/MI_HD_P_kei_truck"]
+triangles = 12101
+collision = "simple_and_complex"
+hulls = 1
+
+[[outputs]]
+package = "/Game/Japan/Assets/HD_P_kei_truck"

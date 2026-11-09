@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): TH_P_kamado: a tree house prop (8774 triangles, 1 hull).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/treehouse-props/kamado"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/treehouse-props/kamado"
+references = ["adopted/japan/treehouse/prop-kamado"]
+
+[[sources]]
+path = "src/TH_P_kamado.fbx"
+sha256 = "79f09754857d49af689dd2008404cdccce1afb325d7a71c16cca5038de8160f8"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Treehouse/Materials/MI_TH_P_kamado"]
+triangles = 8774
+collision = "simple_and_complex"
+hulls = 1
+
+[[outputs]]
+package = "/Game/Japan/Assets/TH_P_kamado"

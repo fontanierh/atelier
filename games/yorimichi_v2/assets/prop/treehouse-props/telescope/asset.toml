@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): TH_P_telescope: a tree house prop (8638 triangles, 0 hull).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/treehouse-props/telescope"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/treehouse-props/telescope"
+references = ["adopted/japan/treehouse/prop-telescope"]
+
+[[sources]]
+path = "src/TH_P_telescope.fbx"
+sha256 = "fc73b0bad5e79cd45e4b4a6d525bc382b48e439a09c92faf700db0bfae45f89f"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Treehouse/Materials/MI_TH_P_telescope"]
+triangles = 8638
+collision = "boxes"
+boxes = []
+
+[[outputs]]
+package = "/Game/Japan/Assets/TH_P_telescope"

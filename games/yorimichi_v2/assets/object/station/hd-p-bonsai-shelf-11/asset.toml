@@ -6,7 +6,7 @@ id = "object/station/hd-p-bonsai-shelf-11"
 kind = "placement"
 authority = "editor"
 owner = "region/w07-hidamari-station"
-references = ["adopted/japan/assets/hd-p-bonsai-shelf"]
+references = ["prop/hidamari-props/bonsai-shelf"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/3/T5/H1LCE15SXND0KDHSL23BF6"

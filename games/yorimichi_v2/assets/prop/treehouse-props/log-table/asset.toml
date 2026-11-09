@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): TH_P_log_table: a tree house prop (7450 triangles, 1 hull).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/treehouse-props/log-table"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/treehouse-props/log-table"
+references = ["adopted/japan/treehouse/prop-log-table"]
+
+[[sources]]
+path = "src/TH_P_log_table.fbx"
+sha256 = "57c9e49edaa087f8978e97d9c9c9214f40721b13f15184db61f89c4762864508"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Treehouse/Materials/MI_TH_P_log_table"]
+triangles = 7450
+collision = "simple_and_complex"
+hulls = 1
+
+[[outputs]]
+package = "/Game/Japan/Assets/TH_P_log_table"

@@ -6,7 +6,7 @@ id = "object/station/hd-p-ac-unit-39"
 kind = "placement"
 authority = "editor"
 owner = "region/w07-hidamari-station"
-references = ["adopted/japan/assets/hd-p-ac-unit"]
+references = ["prop/hidamari-props/ac-unit"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/0/ZO/AW4HBFHPO1AJ75IOP1PCCD"

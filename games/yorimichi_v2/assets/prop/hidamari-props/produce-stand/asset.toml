@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): HD_P_produce_stand: a street prop (10618 triangles, 1 hull).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/hidamari-props/produce-stand"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/hidamari-props/produce-stand"
+references = ["adopted/japan/hidamari/prop-produce-stand"]
+
+[[sources]]
+path = "src/HD_P_produce_stand.fbx"
+sha256 = "ee19afd8ca3033226e817ec0d42b4b124a469f05bb73df69f2d7fa7da3affc0c"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Hidamari/Materials/MI_HD_P_produce_stand"]
+triangles = 10618
+collision = "simple_and_complex"
+hulls = 1
+
+[[outputs]]
+package = "/Game/Japan/Assets/HD_P_produce_stand"

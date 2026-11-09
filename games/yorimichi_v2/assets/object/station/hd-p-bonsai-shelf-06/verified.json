@@ -1,8 +1,6 @@
 {
   "asset": "object/station/hd-p-bonsai-shelf-06",
-  "dependencies": {
-    "adopted/japan/assets/hd-p-bonsai-shelf": "afdb372d55a23136450135cdab969afa72796b45722c85084a092bebda851933"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/C/L8/KC086DDG2ZBCTUAQ3VEQBF.uasset": "f3c800bedb13619a899006bf011f563b886f6a5a7fe71723572f9145e081d176"

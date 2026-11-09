@@ -6,7 +6,7 @@ id = "object/harbour/hd-p-laundry-stand-31"
 kind = "placement"
 authority = "editor"
 owner = "region/w07-hidamari-harbour"
-references = ["adopted/japan/assets/hd-p-laundry-stand"]
+references = ["prop/hidamari-props/laundry-stand"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/8/AM/UA85UAXH9183B3KE46SH46"

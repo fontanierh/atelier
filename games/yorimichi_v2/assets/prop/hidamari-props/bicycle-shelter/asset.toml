@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): HD_P_bicycle_shelter: a street prop (10785 triangles, 1 hull).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/hidamari-props/bicycle-shelter"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/hidamari-props/bicycle-shelter"
+references = ["adopted/japan/hidamari/prop-bicycle-shelter"]
+
+[[sources]]
+path = "src/HD_P_bicycle_shelter.fbx"
+sha256 = "130b76bc4f47af52ac86ebc428fb3a343a55dff78e1fe013adcc8b35ecd04365"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Hidamari/Materials/MI_HD_P_bicycle_shelter"]
+triangles = 10785
+collision = "simple_and_complex"
+hulls = 1
+
+[[outputs]]
+package = "/Game/Japan/Assets/HD_P_bicycle_shelter"

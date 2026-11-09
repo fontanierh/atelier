@@ -6,7 +6,7 @@ id = "object/station/hd-p-tanuki-04"
 kind = "placement"
 authority = "editor"
 owner = "region/w07-hidamari-station"
-references = ["adopted/japan/assets/hd-p-tanuki"]
+references = ["prop/hidamari-props/tanuki"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/0/AX/5KZQJXZYBGNXYNMYXX6JYA"

@@ -6,7 +6,7 @@ id = "object/station/hd-p-curve-mirror-06"
 kind = "placement"
 authority = "editor"
 owner = "region/w07-hidamari-station"
-references = ["adopted/japan/assets/hd-p-curve-mirror"]
+references = ["prop/hidamari-props/curve-mirror"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/7/A7/GR19NZRWNF2R2HZNN3QUOT"

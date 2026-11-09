@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): HD_P_water_basin: a street prop (9637 triangles, 1 hull).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/hidamari-props/water-basin"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/hidamari-props/water-basin"
+references = ["adopted/japan/hidamari/prop-water-basin"]
+
+[[sources]]
+path = "src/HD_P_water_basin.fbx"
+sha256 = "b5ceebd5704c51e193684b00614eccd709a1ddb4c9966cf914f2fa2ac8785d73"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Hidamari/Materials/MI_HD_P_water_basin"]
+triangles = 9637
+collision = "simple_and_complex"
+hulls = 1
+
+[[outputs]]
+package = "/Game/Japan/Assets/HD_P_water_basin"

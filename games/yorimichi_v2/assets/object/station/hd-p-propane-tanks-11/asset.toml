@@ -6,7 +6,7 @@ id = "object/station/hd-p-propane-tanks-11"
 kind = "placement"
 authority = "editor"
 owner = "region/w07-hidamari-station"
-references = ["adopted/japan/assets/hd-p-propane-tanks"]
+references = ["prop/hidamari-props/propane-tanks"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/B/FE/2D2OHJKB6HZHBNNJ9X7TY1"

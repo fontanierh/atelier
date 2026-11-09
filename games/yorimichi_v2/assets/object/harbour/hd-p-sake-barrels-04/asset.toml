@@ -6,7 +6,7 @@ id = "object/harbour/hd-p-sake-barrels-04"
 kind = "placement"
 authority = "editor"
 owner = "region/w07-hidamari-harbour"
-references = ["adopted/japan/assets/hd-p-sake-barrels"]
+references = ["prop/hidamari-props/sake-barrels"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/D/SF/RNORBHRYOWQQDP0UCJVDKD"

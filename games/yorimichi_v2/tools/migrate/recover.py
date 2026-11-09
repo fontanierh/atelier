@@ -760,10 +760,52 @@ FAMILIES.update({'japan/assets': plan_japan_assets, 'japan/treehouse': plan_japa
                  'japan/textures': plan_japan_textures})
 
 
+# --- Japan props (the tree house and Hidamari street props, /Game/Japan/Assets/TH_P_* and HD_P_*) -----------------------
+PROPS_SAVED = HERE / 'saved' / 'japanprops.json'
+FAMILY_SCOPE = {'japan/props': 'japan/assets'}      # a family that recovers part of another's source-less records
+
+
+def plan_japan_props(game: Path, donor: Path, owner: dict[str, str], all_owner: dict[str, str]) -> Plan:
+    """The 45 street and tree house props from the donor's hidamari_props and treehouse_props steps (one FBX each, a
+    UCX hull where the export names one). Their slot, material, triangles and collision flag are the saved V2 packages'
+    (saved/japanprops.json, from report_meshes.py): one slot, one LOD, no Nanite, single-sided geometry. The recipe
+    holds the saved hull count and flag; the donor export must agree on hulls, slot and triangles.
+
+    Importer gap: `simple_and_complex` sets CTF_USE_SIMPLE_AND_COMPLEX, but the saved packages carry
+    CTF_USE_DEFAULT (27, with a hull) or CTF_USE_SIMPLE_AS_COMPLEX with a hull (7). Both behave as the importer's
+    flag for a mesh with one hull; the trace flag itself is not reproduced. The 11 hull-less props use boxes=[]."""
+    saved = _json(PROPS_SAVED)['meshes']
+    generated, unmapped = [], []
+    for step, prefix, scope in (('hidamari_props', 'HD_P_', 'hidamari-props'), ('treehouse_props', 'TH_P_', 'treehouse-props')):
+        for row, path in atomic_rows(donor, step):
+            name = row['asset']
+            package = f'/Game/Japan/Assets/{name}'
+            if not name.startswith(prefix):
+                continue                 # the caldera conifers share the step: other records
+            mesh = saved.get(package)
+            if mesh is None or package not in owner:
+                unmapped.append(f'{path.relative_to(donor)} (its package is not a source-less japan/assets prop)')
+                continue
+            if (row['metadata']['slots'] != [mesh['slot']] or row['metadata']['collision_hulls'] != mesh['hulls']
+                    or not row['triangles'] * .98 <= mesh['triangles'] <= row['triangles']):
+                raise RecoverError(f'{name}: the donor export and the saved package disagree on slot, hulls or triangles')
+            collision = ({'collision': 'simple_and_complex', 'hulls': mesh['hulls']} if mesh['hulls']
+                         else {'collision': 'boxes', 'boxes': []})
+            japan_mesh(generated, unmapped, owner, all_owner, donor, row, path, package,
+                       f'prop/{scope}/{ident(name[len(prefix):])}', [mesh['material']], collision,
+                       f'{name}: a {"street" if prefix == "HD_P_" else "tree house"} prop ({row["triangles"]} triangles, '
+                       f'{mesh["hulls"]} hull)')
+    return Plan('japan/props', generated, unmapped, {})
+
+
+FAMILIES.update({'japan/props': plan_japan_props})
+
+
 def build_plan(game: Path, family: str, donor: Path) -> Plan:
     if family not in FAMILIES:
         raise RecoverError(f'unknown family {family!r}; known: {", ".join(sorted(FAMILIES))}')
-    owner = adopted_packages(game, family)
+    scope = FAMILY_SCOPE.get(family, family)
+    owner = adopted_packages(game, scope)
     plan = FAMILIES[family](game, donor, owner, record_owners(game))
     for gen in plan.generated:
         gen.origin = owner.get(gen.package, '')
@@ -773,7 +815,7 @@ def build_plan(game: Path, family: str, donor: Path) -> Plan:
             if asset_toml.is_file() and f'package = "{gen.package}"' in asset_toml.read_text():
                 gen.origin = 'applied'
             else:
-                raise RecoverError(f'{gen.package} is in no adopted {family} record; nothing to recover there')
+                raise RecoverError(f'{gen.package} is in no adopted {scope} record; nothing to recover there')
     ids = [g.id for g in plan.generated]
     packages = [g.package for g in plan.generated]
     if len(set(ids)) != len(ids) or len(set(packages)) != len(packages):
@@ -793,7 +835,7 @@ def build_plan(game: Path, family: str, donor: Path) -> Plan:
     generated_packages = set(packages)
     for path in records.record_paths(game):
         asset = records.load_asset(path)
-        if in_family(asset.id, family):
+        if in_family(asset.id, scope):
             left = [o.package for o in asset.outputs if o.package not in generated_packages]
             kept[asset.id] = left
     plan.kept = kept

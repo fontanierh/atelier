@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): HD_P_phone_booth: a street prop (12020 triangles, 1 hull).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/hidamari-props/phone-booth"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/hidamari-props/phone-booth"
+references = ["adopted/japan/hidamari/prop-phone-booth"]
+
+[[sources]]
+path = "src/HD_P_phone_booth.fbx"
+sha256 = "386c6136dfdd88d619222a1211651c4233e634882dd84cccdc893c082642efd2"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Hidamari/Materials/MI_HD_P_phone_booth"]
+triangles = 12020
+collision = "simple_and_complex"
+hulls = 1
+
+[[outputs]]
+package = "/Game/Japan/Assets/HD_P_phone_booth"

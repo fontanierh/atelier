@@ -6,7 +6,7 @@ id = "object/harbour/hd-p-bicycle-22"
 kind = "placement"
 authority = "editor"
 owner = "region/w07-hidamari-harbour"
-references = ["adopted/japan/assets/hd-p-bicycle"]
+references = ["prop/hidamari-props/bicycle"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/7/75/5ISH0IQJ02KYUW2TJO4Y7X"

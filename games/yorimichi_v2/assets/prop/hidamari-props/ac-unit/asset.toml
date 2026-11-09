@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): HD_P_ac_unit: a street prop (11454 triangles, 1 hull).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/hidamari-props/ac-unit"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/hidamari-props/ac-unit"
+references = ["adopted/japan/hidamari/prop-ac-unit"]
+
+[[sources]]
+path = "src/HD_P_ac_unit.fbx"
+sha256 = "f8351f2a45946df7f10f6f0eb9d6d69ed0fa4c4b0c72e5b971799de3a515eec3"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Hidamari/Materials/MI_HD_P_ac_unit"]
+triangles = 11454
+collision = "simple_and_complex"
+hulls = 1
+
+[[outputs]]
+package = "/Game/Japan/Assets/HD_P_ac_unit"

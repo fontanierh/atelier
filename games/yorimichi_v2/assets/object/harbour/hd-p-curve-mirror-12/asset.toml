@@ -6,7 +6,7 @@ id = "object/harbour/hd-p-curve-mirror-12"
 kind = "placement"
 authority = "editor"
 owner = "region/w07-hidamari-harbour"
-references = ["adopted/japan/assets/hd-p-curve-mirror"]
+references = ["prop/hidamari-props/curve-mirror"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/B/LM/IZ1BN41GRTN9VF1NLNWQIY"

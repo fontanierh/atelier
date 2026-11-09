@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): HD_P_komainu: a street prop (12890 triangles, 1 hull).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/hidamari-props/komainu"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/hidamari-props/komainu"
+references = ["adopted/japan/hidamari/prop-komainu"]
+
+[[sources]]
+path = "src/HD_P_komainu.fbx"
+sha256 = "4ccacf65be978de0dcebd0f3fb77ed2fe962070214fabeeb50befae3528ff771"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Hidamari/Materials/MI_HD_P_komainu"]
+triangles = 12890
+collision = "simple_and_complex"
+hulls = 1
+
+[[outputs]]
+package = "/Game/Japan/Assets/HD_P_komainu"

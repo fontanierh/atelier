@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): HD_P_scooter: a street prop (11396 triangles, 0 hull).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/hidamari-props/scooter"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/hidamari-props/scooter"
+references = ["adopted/japan/hidamari/prop-scooter"]
+
+[[sources]]
+path = "src/HD_P_scooter.fbx"
+sha256 = "5722b26b78db5a1fbfab0c4f569f6469c101a5cf3063d678eced107f4a856e58"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Hidamari/Materials/MI_HD_P_scooter"]
+triangles = 11396
+collision = "boxes"
+boxes = []
+
+[[outputs]]
+package = "/Game/Japan/Assets/HD_P_scooter"

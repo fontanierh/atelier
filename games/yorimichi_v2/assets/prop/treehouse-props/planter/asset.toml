@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): TH_P_planter: a tree house prop (5823 triangles, 1 hull).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/treehouse-props/planter"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/treehouse-props/planter"
+references = ["adopted/japan/treehouse/prop-planter"]
+
+[[sources]]
+path = "src/TH_P_planter.fbx"
+sha256 = "09e6c759e798bd800801e12fa53b7bfdea790cf71f6198fde24565541863f3e8"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Treehouse/Materials/MI_TH_P_planter"]
+triangles = 5823
+collision = "simple_and_complex"
+hulls = 1
+
+[[outputs]]
+package = "/Game/Japan/Assets/TH_P_planter"

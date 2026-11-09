@@ -6,7 +6,7 @@ id = "object/harbour/hd-p-komainu-02"
 kind = "placement"
 authority = "editor"
 owner = "region/w07-hidamari-harbour"
-references = ["adopted/japan/assets/hd-p-komainu"]
+references = ["prop/hidamari-props/komainu"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/D/3X/S6Y78C2S2KN5RNKPV48S4V"

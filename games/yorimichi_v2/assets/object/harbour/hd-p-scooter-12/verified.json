@@ -1,8 +1,6 @@
 {
   "asset": "object/harbour/hd-p-scooter-12",
-  "dependencies": {
-    "adopted/japan/assets/hd-p-scooter": "e0ea5c5d9be351b86d832a4f542536efcf889d6d8d1fd074e002793fe5dc7ff9"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/__ExternalActors__/V2/Maps/Slice/7/95/CL7UG0P2Q7L2MTO4T68C85.uasset": "88ab1cdbed114a4ce314b7b93ff0eb1f8d87bb6e423a4272fff756e545bc3fc5"
