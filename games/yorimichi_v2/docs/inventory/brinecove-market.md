@@ -105,22 +105,38 @@ Tiles cut by two of these batches (two remainder reimports): `TownLower_4_4_Piec
 (town7, town9). `town1` shares six hard tiles with town2 and town4. The contract test checks that `town1` to `town9`
 cover every lot of `list --components TownLower,TownUpper` exactly once and that the nine plans chain without conflict.
 
-### Emptied tiles: retire in two stages
+### Emptied tiles: retire in three stages
 
 A town tile is often made only of lots, so a batch can take every triangle (no remainder). `apply` leaves such a tile's
 record, package and runtime group in place and `apply` never deletes, so until it is retired the old tile and the new parts
-are both drawn. After accepted imports, saved replacement objects and `check`, retire it under the same complete claim:
+are both drawn. After accepted imports and `check`, retire them under the same complete claim, in this order:
+
+1. `groups`: drops the emptied tiles' groups from objects.toml, objects.saved.json and the runtime file.
+2. `placements`: deletes each affected placement's record folder and the actor packages it lists as outputs. It refuses
+   unless the groups stage is done and the check passes, and it prints the placement IDs to save again. A saved object
+   cannot change its groups, so these actors must be saved again.
+3. `records` (after the placements were saved again): deletes the emptied tile records and package files.
+
+The stages take `--batch all` (every market and town batch, in apply order) or a comma list. Each stage runs its batches
+in turn, and the placements stage deletes each placement once for the union, so the same actors are not re-saved per batch.
+Batches with nothing emptied are skipped. The placements are found from their records as well as from objects.toml,
+because the groups stage removes the groups from objects.toml but not from a record. A rerun of the placements stage finds
+nothing to delete; keep the list the first run printed.
 
 ```
-bc_market retire --batch townN --donor "$D" --claim TASK --retire-stage groups   # drops the groups from objects.toml, objects.saved.json, runtime
-# delete the printed placements' actors and records (an object cannot change its groups after it was saved), then
-uv run python games/yorimichi_v2/tools/migrate/objects.py region/w09-brinecove --environment region/w00-island --claim TASK --only OBJECT_ID_1 --only OBJECT_ID_2
-bc_market retire --batch townN --donor "$D" --claim TASK --retire-stage records  # deletes the emptied tile records and package files
-bc_market check --batch townN --donor "$D" --retired
+D=DONOR_BUILD_DIR
+TASK=claim-task-id
+bc_market() { uv run python games/yorimichi_v2/tools/migrate/brinecove_market.py "$@"; }
+bc_market paths --batch all --donor "$D" --json                       # the union of paths, scopes and placements (read-only)
+bc_market retire --batch all --donor "$D" --claim "$TASK" --retire-stage groups
+bc_market retire --batch all --donor "$D" --claim "$TASK" --retire-stage placements   # prints the placement IDs to save again
+uv run python games/yorimichi_v2/tools/migrate/objects.py region/w09-brinecove --environment region/w00-island --claim "$TASK" --only OBJECT_ID_1 --only OBJECT_ID_2
+bc_market retire --batch all --donor "$D" --claim "$TASK" --retire-stage records
+bc_market check --batch all --donor "$D" --retired
 ```
 
-`paths` lists both stages and the affected placements (`townlower-*` and `townupper-*` cell objects). Retiring all the
-town batches' emptied tiles in one pass per placement, after town9, saves re-saving the same actors repeatedly.
+The single-batch form (`--batch townN`) runs the same three stages for one batch; the placements of a single batch are
+deleted in that batch's own pass. For a batch set that shares a placement, use `all` (or the list) so it is deleted once.
 
 Before applying a batch, the claim base must match the accepted integration base and cover every touched package
 and companion. A stale claim is repaired with completed work preserved; it is not a reason to repeat accepted imports.
