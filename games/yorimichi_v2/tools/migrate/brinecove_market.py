@@ -728,7 +728,7 @@ def retire(game: Path, plan: dict, claim: str | None, batch: str, stage: str = '
     `groups` drops their groups from the placements and the runtime file; after the affected placements were deleted and
     saved again, `records` deletes the tile records and packages."""
     apply_ = _apply()
-    problems = check(game, donor, batch, retired=(stage == 'records'))
+    problems = check(game, donor, batch, groups=(stage == 'records'))   # records: the groups stage is done, the tiles not yet
     if problems:
         raise apply_.SplitError('refusing to retire before the import and check pass: ' + '; '.join(problems[:3]))
     set_batch(batch).require_applied_plan(game, plan)   # the checked batch, not a fresh selection under its name
