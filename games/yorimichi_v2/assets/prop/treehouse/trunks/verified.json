@@ -3,9 +3,9 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/TH_Trunks.uasset": "05f2adce27d69d50ebe0a9971ffabdd1bb608756562e5e900727ab65861e21b7"
+    "unreal/Content/Japan/Assets/TH_Trunks.uasset": "daf33533b71e514a55a6c9942e9c6b1609925d6ce86a369619c6db1088610d7a"
   },
-  "input_fingerprint": "23168192174f72feeb295a27095e5ee3699eea5ad89165d62d2a3d89a4240b93",
+  "input_fingerprint": "ebb7e332189effd451894c900b1a837e0f926455d6c70e36d7e8adfc32a68fdf",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/TH_Trunks": {

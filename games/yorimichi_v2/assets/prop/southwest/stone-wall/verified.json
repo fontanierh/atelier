@@ -3,9 +3,9 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Southwest/Pieces/SW_StoneWall.uasset": "89b66564180eef3cda8a96188018cba7f891fc14012f31ef82dcf262aebae588"
+    "unreal/Content/Japan/Southwest/Pieces/SW_StoneWall.uasset": "3bae5611bbfcb5e345b638e62236794630563c3f0047253a526e072c9bbaa4c8"
   },
-  "input_fingerprint": "f33b14edc6172bdd0f0f1d9476c5dd4cf4b46d4c413292c95e5a52dc0df458c9",
+  "input_fingerprint": "39f3a4cf73d734de7d5fbe9555d5db85b6ad5b7b7375c1f8214591269c85fef8",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Southwest/Pieces/SW_StoneWall": {

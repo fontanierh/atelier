@@ -3,9 +3,9 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/ZP_City.uasset": "0347c0cdb5fcf749b3057035e7fbf4d4991c5312ad090badb6c328c0b5d98767"
+    "unreal/Content/Japan/Assets/ZP_City.uasset": "38b04e2f14377055f033b2a2cc682e1e425160af07bc4354b50f9f8f77c9f555"
   },
-  "input_fingerprint": "68e2ef53dbf0ff508446691b84f3751f9afc3eddef5adb6882157bf80e078025",
+  "input_fingerprint": "3cbe1df4e75fc5775675d538e8135b3fe952fbf3b63a023df4d44fb91d5d9d2b",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/ZP_City": {

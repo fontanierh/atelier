@@ -3,9 +3,9 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/SkatePark/SM_SkateParkFurniture.uasset": "5de4f64fe26d03cc5b5748526a1f9be324c7c3456b4237cd603a8c614edd8f67"
+    "unreal/Content/SkatePark/SM_SkateParkFurniture.uasset": "1f6c107327709b91721eb5a8e2148f3ce1d0dd161f0d672b1ba550c37a934e19"
   },
-  "input_fingerprint": "51fa1da99aa7de863dd038c1ea8a4ceb5211d2f0cd8fe761dad78e5a6fce39ce",
+  "input_fingerprint": "8f7c1918b3c6ff607e2b2e5b4087b509717c53648dcfea8dca72461651a719ff",
   "kind": "imported",
   "lods": {
     "/Game/SkatePark/SM_SkateParkFurniture": {

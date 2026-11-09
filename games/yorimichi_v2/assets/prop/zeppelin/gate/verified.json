@@ -3,9 +3,9 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/ZP_Gate.uasset": "5feb4e76a642b1291d7884d480c5338f24e2b9f7433f044e2fb9495a1d7f2de2"
+    "unreal/Content/Japan/Assets/ZP_Gate.uasset": "9b4590b9734e040158dbd7d87513bd60afeb9cba783e8ae9962b025715cd6cec"
   },
-  "input_fingerprint": "4ebb6faf01f0b0992611a576ca8284f8b08072d5e0f2d287133178718ce83672",
+  "input_fingerprint": "e21a9039605be03d4a88b5fa45f9115b78dccf33cc8ce63551717a1de4e0cddd",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/ZP_Gate": {

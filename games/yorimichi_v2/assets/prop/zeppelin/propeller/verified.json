@@ -3,9 +3,9 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/ZP_Propeller.uasset": "0fe34a64276a6684a9221e0c177d39f88b3bd91c9632e25d8462b8de25d6a630"
+    "unreal/Content/Japan/Assets/ZP_Propeller.uasset": "f11c633c9eccb73d91f9c08b7e3e0fcafd1107f014a0773b78a224b1af9fda8d"
   },
-  "input_fingerprint": "60ab0bc118af71ff8f565dd88298ff78af56c2857908291530d66a12f645ee42",
+  "input_fingerprint": "42ba077922c9d2765f28a324ebda8c7844e2ad7f969be9298198175e40386cfa",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/ZP_Propeller": {

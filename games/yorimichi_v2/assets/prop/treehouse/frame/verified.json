@@ -3,9 +3,9 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/TH_Frame.uasset": "728a0999f8b68d603a14f195e2b907b5f49bf9fd1e04401e786648a0c0fbe212"
+    "unreal/Content/Japan/Assets/TH_Frame.uasset": "c2e0ecd5b7646291bda2936862d823177b6a033a3d2c8dca9a8215ff588840b1"
   },
-  "input_fingerprint": "0bf21513419914353ae7f63f6527b45b1ed7f0abe966d44153949fab71a88340",
+  "input_fingerprint": "c5537dd8ecbcf790502d3e8d8074f6a9ad09ced0c1c322287bcb11d72a7b3fa8",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/TH_Frame": {

@@ -3,9 +3,9 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/ZP_Gangway.uasset": "4f3b30d05d4cec326252bad62814360ab212d39ea71d71cf3ece9bf2b635286d"
+    "unreal/Content/Japan/Assets/ZP_Gangway.uasset": "851823b4d2df4b269bf10c3529e161fd604d2567c29bb0fa69f8c5df9db28a50"
   },
-  "input_fingerprint": "1b28a266902e10bb373423231b80589dc7a9a6180a731dc0d835ca3d4ff7c41e",
+  "input_fingerprint": "5ad948bb469299e5b45fdcbb730245854e2b6f75e8e2e1b79452f6412a81835e",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/ZP_Gangway": {

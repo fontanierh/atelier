@@ -3,9 +3,9 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Lake/Pieces/Lake_Trail.uasset": "899752879a44a8c58ef7038612f4464433b042d47603429017773fe51a8d109a"
+    "unreal/Content/Japan/Lake/Pieces/Lake_Trail.uasset": "39ffb63bc5af481bc5b9c40f15d4b59480bf94d479358269333c64abcd8ffc63"
   },
-  "input_fingerprint": "13aa87442f06b4533d4b47a7808a33f3a9c230966283befcb8c0cf012ae225e3",
+  "input_fingerprint": "27a5fc3fb5a0716ea68023a510a93c4f3399316192076c8e8984aa6b9c98f64c",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Lake/Pieces/Lake_Trail": {

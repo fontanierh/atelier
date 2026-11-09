@@ -3,9 +3,9 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Southwest/Pieces/SW_CoconutStand.uasset": "8010e39cc9bb195eea0cf96313b14a10075d92eeeaaf58895e31eecac664d517"
+    "unreal/Content/Japan/Southwest/Pieces/SW_CoconutStand.uasset": "ef4279e74a3ceaea7afdf72bba967e6dce153bf3bc158056ad15f3ba9687c2cd"
   },
-  "input_fingerprint": "a29e53c6e7308b1df9c7bb953dbc3443cc4fdb89fca436ee2561127859f684fc",
+  "input_fingerprint": "50dc95261979da39dc9a26e042c4714b1903a7d9f8edfb73cb05f85b2b19288c",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Southwest/Pieces/SW_CoconutStand": {

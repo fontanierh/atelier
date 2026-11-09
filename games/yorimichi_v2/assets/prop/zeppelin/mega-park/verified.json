@@ -3,9 +3,9 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/ZP_MegaPark.uasset": "a8bedff757227ca4183535de430f8e9c6337854054d9cb42377a213aa5819793"
+    "unreal/Content/Japan/Assets/ZP_MegaPark.uasset": "3d5295dbe43acbdaead43acddaf88cb1f4133cb2cc0d15a83f0ef7ebf5732977"
   },
-  "input_fingerprint": "ef98385ae12b9a0cc908dff4ff79bc4831b8b155cdfaee5aba09420c394289ac",
+  "input_fingerprint": "1073b74fcf49f7254d876c864e44cfbbae6e0535399006f83210f0ac72bf870e",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/ZP_MegaPark": {

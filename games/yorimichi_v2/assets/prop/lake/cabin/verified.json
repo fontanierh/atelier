@@ -3,9 +3,9 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Lake/Pieces/Lake_Cabin.uasset": "6a180907cc27a3e0651a97450429ca6b501cc0abebcf2355b30de7a26b9c77dc"
+    "unreal/Content/Japan/Lake/Pieces/Lake_Cabin.uasset": "13d87bf0ed7f1016320675ec7c1a29cbf60ba00400cf5b5fe549ffe329d5e4b7"
   },
-  "input_fingerprint": "a7ffc7d2d07a2ca7b0a56881dc47129bfdde81808fcf0618357b9efba00c8155",
+  "input_fingerprint": "9f9f590e62d0710ad9154f4e6b2bf60ba7600e7c14f6ec82469442e3a83b8827",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Lake/Pieces/Lake_Cabin": {
