@@ -212,6 +212,9 @@ def _apply_texture_settings(asset, settings):
         mode = _texture_address(settings['address'])
         asset.set_editor_property('address_x', mode)
         asset.set_editor_property('address_y', mode)
+    mip = import_settings.mip_gen(settings)
+    if mip is not None:
+        asset.set_editor_property('mip_gen_settings', getattr(U.TextureMipGenSettings, mip))
     _read_back_texture_settings(asset, settings)
 
 
@@ -238,6 +241,8 @@ def _read_back_texture_settings(asset, settings):
         checks.append(('lod_group', getattr(U.TextureGroup, import_settings.lod_group(settings))))
     if 'address' in settings:
         checks += [('address_x', _texture_address(settings['address'])), ('address_y', _texture_address(settings['address']))]
+    if import_settings.mip_gen(settings) is not None:
+        checks.append(('mip_gen_settings', getattr(U.TextureMipGenSettings, import_settings.mip_gen(settings))))
     for prop, want in checks:
         got = asset.get_editor_property(prop)
         if got != want:
@@ -636,9 +641,19 @@ def _material_master_with_builder(plan, builder):
     scratch = f'{TRANSIENT}/MasterCheck/{package.rsplit("/", 1)[1]}'
     if EAL.does_asset_exist(scratch):
         EAL.delete_asset(scratch)
+    allow_change = bool(plan.get('allow_graph_change'))
     try:
         fresh = master_digest.read(builder(scratch, reads, **arguments))
-        problems = master_digest.accept(saved, fresh)
+        if allow_change:
+            problems = []
+            if 'error' in saved or 'error' in fresh:
+                problems.append('unreadable saved or rebuilt master digest')
+            else:
+                dropped = sorted(set(saved.get('parameters', [])) - set(fresh.get('parameters', [])))
+                if dropped and not plan.get('allow_removed_parameters'):
+                    problems.append('parameters removed from saved master: ' + ', '.join(dropped[:4]))
+        else:
+            problems = master_digest.accept(saved, fresh)
     finally:
         if EAL.does_asset_exist(scratch):
             EAL.delete_asset(scratch)
@@ -654,7 +669,7 @@ def _material_master_with_builder(plan, builder):
     if not EAL.save_asset(package, only_if_is_dirty=False):
         raise RuntimeError(f'could not save {package}')
     back = master_digest.read(EAL.load_asset(package))
-    problems = master_digest.accept(saved, back)
+    problems = master_digest.accept(fresh if allow_change else saved, back)
     if 'error' not in back and sorted(back.get('unwired', [])) != sorted(fresh.get('unwired', [])):
         problems.append(f'{len(back.get("unwired", []))} unwired expression(s) after the save, the fresh build has '
                         f'{len(fresh.get("unwired", []))}')
@@ -820,16 +835,19 @@ def main():
                 # The collision settings rebuild the mesh, whose screen sizes then read 0: the chain's are set again.
                 _static_mesh_editor().set_lod_screen_sizes(asset, [screen for _, screen, _, _ in settings['lod_chain']])
             reduction = import_settings.reduction_plan(settings)
-            if existing is None and reduction is not None and asset.get_num_lods() == 1:
-                # A new package takes the record's reduction plan (the donor's generate_lods, which the donor ran on every
-                # Brine Cove plant): preserve() below restores a chain only when the package already had one.
+            force_lods = import_settings.apply_lods(settings)
+            if reduction is not None and (force_lods or (existing is None and asset.get_num_lods() == 1)):
+                # A new package (or an explicit apply_lods=true record) takes the record's reduction plan.
                 levels = _static_mesh_editor()
                 if levels.set_lods(asset, _reduction_options(reduction)) != len(reduction):
                     raise RuntimeError(f'{package}: the LOD reduction plan did not set {len(reduction)} levels')
                 levels.set_lod_screen_sizes(asset, [screen for _, screen in reduction])
-            after = lod_preservation.preserve(_static_mesh_editor(), asset, before, settings.get('lods'),
-                                              _reduction_options)
-            lod_results[package] = {'before': before, 'after': after}
+            after = lod_preservation.preserve(_static_mesh_editor(), asset, before, reduction if force_lods else settings.get('lods'),
+                                              _reduction_options, apply_lods=force_lods)
+            entry = {'before': before, 'after': after}
+            if force_lods and reduction is not None:
+                entry['target'] = {'count': len(reduction), 'screen_sizes': [s for _, s in reduction]}
+            lod_results[package] = entry
         elif plan['importer'] == 'texture':
             asset = _import(source, package, _texture(settings))
             _apply_texture_settings(asset, settings)

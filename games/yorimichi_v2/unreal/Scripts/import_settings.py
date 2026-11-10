@@ -11,6 +11,7 @@ import os
 
 TEXTURE_GROUPS = {'TEXTUREGROUP_WORLD', 'TEXTUREGROUP_EFFECTS', 'TEXTUREGROUP_CHARACTER', 'TEXTUREGROUP_UI',
                   'TEXTUREGROUP_WORLD_NORMAL_MAP', 'TEXTUREGROUP_WORLD_SPECULAR'}
+MIP_GEN_SETTINGS = {'TMGS_FROM_TEXTURE_GROUP', 'TMGS_SIMPLE_AVERAGE', 'TMGS_NO_MIPMAPS'}
 
 
 TRACE_FLAGS = {'CTF_USE_DEFAULT', 'CTF_USE_SIMPLE_AND_COMPLEX', 'CTF_USE_SIMPLE_AS_COMPLEX', 'CTF_USE_COMPLEX_AS_SIMPLE'}
@@ -57,6 +58,21 @@ def lod_group(settings: dict):
     if value not in TEXTURE_GROUPS:
         raise SettingError(f'unknown lod_group {value!r}')
     return value
+
+
+def mip_gen(settings: dict):
+    """The TMGS_* mipmap generation mode to set, or None."""
+    if 'mip_gen' not in settings:
+        return None
+    value = settings['mip_gen']
+    if value not in MIP_GEN_SETTINGS:
+        raise SettingError(f'unknown mip_gen {value!r}')
+    return value
+
+
+def apply_lods(settings: dict) -> bool:
+    """True when the record explicitly opts into applying `lods` even onto an existing 1-LOD or changed mesh."""
+    return bool(_flag(settings, 'apply_lods'))
 
 
 def legacy_fbx(settings: dict) -> bool:

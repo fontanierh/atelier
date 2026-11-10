@@ -168,11 +168,12 @@ MATERIAL_RECIPE_KEYS = {'importer', 'version', 'settings'}
 MATERIAL_SETTINGS = {'parent', 'textures', 'scalars', 'vectors', 'switches', 'base'}
 # A texture recipe's optional settings (unreal/Scripts/import_settings.py reads them; an absent key leaves the texture as
 # the importer made it). TEXTURE_GROUPS mirrors import_settings.TEXTURE_GROUPS; tests/test_texture_settings.py pins the match.
-TEXTURE_KEYS = {'srgb', 'compression', 'max_texture_size', 'lod_group', 'address'}
+TEXTURE_KEYS = {'srgb', 'compression', 'max_texture_size', 'lod_group', 'address', 'mip_gen'}
 TEXTURE_GROUPS = frozenset({'TEXTUREGROUP_WORLD', 'TEXTUREGROUP_EFFECTS', 'TEXTUREGROUP_CHARACTER', 'TEXTUREGROUP_UI',
                             'TEXTUREGROUP_WORLD_NORMAL_MAP', 'TEXTUREGROUP_WORLD_SPECULAR'})
 TEXTURE_COMPRESSION = re.compile(r'^TC_[A-Z0-9_]+$')
 TEXTURE_ADDRESS = frozenset({'wrap', 'mirror'})
+TEXTURE_MIP_GEN = frozenset({'TMGS_FROM_TEXTURE_GROUP', 'TMGS_SIMPLE_AVERAGE', 'TMGS_NO_MIPMAPS'})
 PARAMETER_NAME = re.compile(r'^[A-Za-z_][A-Za-z0-9_]*$')
 REGION_KEYS = {'schema', 'id', 'bounds_cm', 'neighbours', 'maps', 'shared', 'about', 'patch_m'}
 
@@ -272,6 +273,8 @@ def texture_settings(recipe: dict, where: Path) -> dict:
         raise RecordError(f'{where}: unknown lod_group {settings["lod_group"]!r}')
     if 'address' in settings and settings['address'] not in TEXTURE_ADDRESS:
         raise RecordError(f'{where}: unknown address {settings["address"]!r}')
+    if 'mip_gen' in settings and settings['mip_gen'] not in TEXTURE_MIP_GEN:
+        raise RecordError(f'{where}: unknown mip_gen {settings["mip_gen"]!r}')
     return settings
 
 

@@ -35,9 +35,22 @@ def check_plan(lods, count: int):
         raise LodError(f'the recipe names {len(lods)} LOD level(s), the chain has {count}')
 
 
-def preserve(editor, mesh, before, lods, make_options) -> dict:
-    """The chain after the import, kept as `before` had it. `before` is None for a new package, and one LOD needs no
-    action. `make_options(lods)` builds the editor's reduction options for the recipe's plan."""
+def preserve(editor, mesh, before, lods, make_options, *, apply_lods: bool = False) -> dict:
+    """The chain after the import, kept as `before` had it unless `apply_lods` explicitly sets `lods`.
+    `before` is None for a new package, and one LOD needs no action unless `apply_lods` is True."""
+    if apply_lods:
+        if not lods:
+            raise LodError('apply_lods = true requires a non-empty `lods` reduction plan')
+        target = {'count': len(lods), 'screen_sizes': [float(s) for _, s in lods]}
+        after = read(editor, mesh)
+        if not same_chain(target, after):
+            editor.set_lods(mesh, make_options(lods))
+            editor.set_lod_screen_sizes(mesh, [screen for _, screen in lods])
+            after = read(editor, mesh)
+        if not same_chain(target, after):
+            raise LodError(f'the applied LOD chain ({after["count"]} LODs, screens {after["screen_sizes"]}) does not match '
+                           f'the target plan ({target["count"]}, screens {target["screen_sizes"]})')
+        return after
     after = read(editor, mesh)
     if before is None or before['count'] <= 1:
         return after
@@ -58,8 +71,13 @@ def preserve(editor, mesh, before, lods, make_options) -> dict:
 
 
 def verify_record(result: dict) -> None:
-    """The host-side check of a recorded result: a chain that had several LODs must have the same chain after."""
-    before, after = result.get('before'), result.get('after')
+    """The host-side check of a recorded result: an explicit target chain or multi-LOD `before` must match `after`."""
+    before, after, target = result.get('before'), result.get('after'), result.get('target')
+    if target is not None:
+        if after is None or not same_chain(target, after):
+            raise LodError(f'the applied LOD chain does not match target ({target["count"]} expected, '
+                           f'{None if after is None else after["count"]} after)')
+        return
     if before is None or before['count'] <= 1:
         return
     if after is None or not same_chain(before, after):

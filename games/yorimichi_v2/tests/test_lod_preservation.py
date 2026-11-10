@@ -142,3 +142,15 @@ def test_the_host_check_rejects_a_recorded_chain_that_changed():
     lp.verify_record({'before': four, 'after': four})
     with pytest.raises(lp.LodError, match='changed: 4 LODs before, 1 after'):
         lp.verify_record({'before': four, 'after': one})
+
+
+def test_apply_lods_explicitly_sets_chain_on_a_one_lod_mesh_and_verifies_target():
+    editor, mesh = FakeMeshEditor(), Mesh([(1.0, 1.0)])
+    before = lp.read(editor, mesh)
+    after = lp.preserve(editor, mesh, before, PLAN, options, apply_lods=True)
+    assert editor.set_lods_calls == 1 and after['count'] == 4
+    lp.verify_record({'before': before, 'after': after,
+                      'target': {'count': 4, 'screen_sizes': [1.0, 0.3, 0.12, 0.04]}})
+    with pytest.raises(lp.LodError, match='target'):
+        lp.verify_record({'before': before, 'after': before,
+                          'target': {'count': 4, 'screen_sizes': [1.0, 0.3, 0.12, 0.04]}})
