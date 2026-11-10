@@ -904,3 +904,42 @@ def test_only_plans_just_the_named_records_and_their_generators(tmp_path):
     assert plan.generators == []
     with pytest.raises(recover.RecoverError, match='plans no record prop/bike/nope'):
         recover.build_plan(game, 'japan/assets', donor, {'prop/bike/nope'})
+
+
+DONOR_PINS = {  # the sha256 of each donor source at the donor commit 7eec0f98dd (git show 7eec0f98dd:<path> | shasum -a 256)
+    'see_through.py': '9d7da40163a6e4023d91e8fc2aaacdd2578bf07ef02f05b4e10dcc1c4c8fd105',
+    'shared_materials.py': '8cf144f9752bffe771bbddfe984091ad4c288259bc00abba4a64fad5d6678720',
+    'simulation_package.py': '84f307127502952c546e1e1c2e53e76fcdd9493ba3b1d0635bc205370538a1a9',
+    'motion_text.py': '94178096aaa86604ef32cef6a24decf64e34398829a7d9169095d67e2fd16ba5',
+    'runtime_text.py': '9a7eb144e23105b04e2599b87f636a830fcf4e129e9c878ffa8031e925ade9f5',
+    'import_runtime.py': 'faa0eae5b4bede1444e9faa7fac6e4de246683463d3629800df7d72cd5b611b8',
+    'SkateRuntimeData.cpp': '16a79f0d9f95d5dd4b5147e5df3b9711411245e27165fad1f06f40fd87a07425',
+    'SkateDataLibrary.h': '6a7b27a22d0218cd2fdee5b9dc1a9c392823f0e9738c4c8860fd81725ad8d26f',
+}
+
+
+@pytest.mark.parametrize('family,record_id', [('seethrough', 'generator/seethrough/collection'),
+                                              ('skateruntime', 'generator/skate/runtime')])
+def test_generator_records_pin_the_donor_sources_and_leave_the_adopted_record(tmp_path, family, record_id):
+    """A blocked family's generator is written as a generator record only: each pin is the tracked donor file (the donor
+    commit's bytes), it has no outputs or recipe, and writing it twice changes nothing."""
+    game = tmp_path / 'game'
+    adopted = write(game / 'assets' / 'adopted' / family / 'asset.toml', 'schema = 1\nid = "x"\n')
+    before = adopted.read_bytes()
+    assert recover.write_generator_records(game, list(recover.GENERATOR_FAMILIES[family])) == [record_id]
+    generator = records.load_asset(game / 'assets' / record_id / 'asset.toml')
+    assert generator.kind == 'generator' and generator.outputs == [] and generator.recipe is None
+    sources = recover.GENERATOR_FAMILIES[family][0].sources
+    assert [s.path for s in generator.sources] == [f'src/{path.name}' for path in sources]
+    for path, pinned in zip(sources, generator.sources):
+        assert path.is_file() and records.sha256_file(path) == pinned.sha256 == DONOR_PINS[path.name]
+        assert records.sha256_file(game / 'assets' / record_id / pinned.path) == pinned.sha256
+    assert adopted.read_bytes() == before
+    assert recover.write_generator_records(game, list(recover.GENERATOR_FAMILIES[family])) == []
+
+
+def test_generator_records_refuse_a_folder_that_is_not_a_record(tmp_path):
+    game = tmp_path / 'game'
+    write(game / 'assets/generator/skate/runtime/notes.txt', 'mine')
+    with pytest.raises(recover.RecoverError, match='not a record of this tool'):
+        recover.write_generator_records(game, list(recover.GENERATOR_FAMILIES['skateruntime']))

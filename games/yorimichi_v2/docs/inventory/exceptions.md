@@ -44,7 +44,7 @@ can still need recoverable inputs and an accepted import. See [sources](sources.
 |---|---:|---|
 | `adopted/megapark/standalone-level` | 1 / 1 | Saved Unreal map; reference check remains. This is not an imported-model source gap |
 | `adopted/japan/assets/bike` | migrated | `BK_WheelFront` and `BK_WheelRear` are `prop/bike/wheel-front` and `wheel-rear`, generated from the pinned `generator/bike/wheels` and imported (BCBIKE; see "Bike residual packages") |
-| `adopted/seethrough`, `adopted/skateruntime` | 2 / 2 | `MPC_SeeThrough` and `RuntimeData` still need recoverable generator/settings/input routes; the earlier reads do not establish source closure |
+| `adopted/seethrough`, `adopted/skateruntime` | 2 / 2 | `MPC_SeeThrough` and `RuntimeData`: the generators are pinned (`generator/seethrough/collection`, `generator/skate/runtime`, donor sources by sha256, no outputs). Still blocked: no V2 importer takes a parameter collection or a data asset; the adopted records keep both packages |
 
 **Closed by claim `JAPANMI` (branch `jim5/yv2-japan-instances`, not yet in a package): 10 records / 45 instances.**
 `tools/migrate/held_instances.py` plans each family from the donor scripts' values (`small_instances.EXPECTED`) and
@@ -1330,20 +1330,30 @@ Four records, one package each. None is an import; each is a script product or a
   parameters are read; the master has no importer.
 - `adopted/racing` (`M_RacingTv`): `unreal/Scripts/racing_tv_material.py:12-16` creates the picture master in `/Game/Racing` with a graph and no texture input. Status: **need-read**, classified as a generator-built master. Loaded by the read as materials, not instances (`report_materials` cannot read them), so their parameters are unread. Open, as generator-built masters (no new recipe kind): each keeps its editor-authority record until its generator, settings and inputs are recoverable; a parameter read alone does not close it.
 - `adopted/seethrough` (`MPC_SeeThrough`): `unreal/Scripts/see_through.py:47` names the parameter collection and `:246-253`
-  creates it; the game's `USeeThroughComponent` writes it every frame (`SeeThrough.cpp`, cited in the script's header). It is a
-  parameter collection, which no importer kind takes. Status: **blocked**.
-- `adopted/skateruntime` (`RuntimeData`, 31 MB): `build.py:1813` lists it as an output of the skate runtime step, whose
-  inputs are `skate_ride/import_runtime.py`, `import_motion.py`, `verify_data.py` and the donor's `skate-data`
-  (`build/yorimichi/skate-data/verify.json` is the donor's check). It is a data asset, and no importer kind takes one; the
-  editor copy is the only one. Status: **blocked**.
+  creates it (`collection(create=True)`, called from `world_materials` at `:509-511`). The caller is
+  `unreal/Scripts/shared_materials.py:294`, run by the `unreal.materials` step (`games/yorimichi/foliage_build.py:102`). The
+  collection's content is its vector parameter list and defaults (`see_through.py` `VECTORS`); the game's
+  `USeeThroughComponent` writes it every frame. The donor asset (`MPC_SeeThrough.uasset`) has the same bytes as the V2
+  `verified.json` entry. Generator pinned as `generator/seethrough/collection` (`see_through.py`, `shared_materials.py`, sha256
+  equal to the donor commit). Status: **blocked**: V2 has no importer for a parameter collection (`import_asset.py` takes
+  static-mesh, texture, material-instance and material-master only; `master_digest` reads materials).
+- `adopted/skateruntime` (`RuntimeData`, 31 MB): `build.py:1804-1816` (`unreal.skate_data`) lists it at `:1813`. Its chain:
+  `build.py:1507-1515` (`skate.runtime`) runs `platform/engine/Plugins/Activities/Skate/Tools/simulation_package.py --assemble`
+  (with `motion_text.py` and `runtime_text.py`, `:164-168`) on the tracked `Skate/Data`; `skate_ride/import_runtime.py:11` calls
+  `SkateDataLibrary.import_runtime`, the C++ `USkateDataLibrary::ImportRuntime` (`SkateRuntimeData.cpp:451-465`), which saves the
+  data asset. Reproducible from tracked sources: a fresh assembly of the package is byte-identical to the donor's package
+  (every file, same `manifest_sha256`). The asset itself needs the editor (the C++ writer). Generator pinned as
+  `generator/skate/runtime` (6 sources). The donor `RuntimeData.uasset` has the same bytes as the V2 `verified.json` entry.
+  Status: **blocked**: no V2 importer for a data asset; the `Skate/Data` text inputs are not pinned by the record (a record
+  holds files, not a tree). `import_motion.py` and `MotionData` are the same step and are not covered here.
 
 Native reads still needed (read-only; editor and clean hydrate): `MI_HD_flat` through `report_materials.py`, with the list
 `docs/inventory/small-families-hidamari-materials.txt`. That list also names `M_RacingTv` and `MPC_SeeThrough`, which
 `report_materials.py` is not written to read: those two need a master or parameter-collection reader first. `RuntimeData`
 needs a data-asset reader. None of these is in this tree.
 
-Blockers: the `M_HDCity` master (for the instance); the racing and see-through graphs and parameter collection; the
-`RuntimeData` data asset has no importer kind.
+Blockers: the `M_HDCity` master (for the instance); the racing graphs and the see-through parameter collection (no importer
+kind); the `RuntimeData` data asset (no importer kind; the generator is pinned).
 
 - `adopted/japan/hidamari/surface-flat`: generated MI_HD_flat (parent M_HDCity). Evidence: city_material.py (hidamari generator), tools/hidamari_textures.py. Status: **need-read**. parent M_HDCity and T_HD_plaster are owned by adopted/japan/hidamari records
 - `adopted/racing`: generator master M_RacingTv. Evidence: racing_tv_material.py:12-16. Status: **need-read**. generator-built master; loaded, parameters unread. Loaded by the read as materials, not instances (report_materials cannot read them), so their parameters are unread. Open: a generator-built master keeps its editor-authority record until its generator, settings and inputs are recoverable; a parameter read alone does not close it.
@@ -1354,8 +1364,8 @@ Blockers: the `M_HDCity` master (for the instance); the racing and see-through g
 |---|---|---|---|---|
 | `MI_HD_flat` | `japan/hidamari/surface-flat` | need-read | Japan/Hidamari/Materials/M_HDCity, Japan/Hidamari/Materials/M_HDCity, Japan/Hidamari/Textures/T_HD_plaster | `report_materials` (material list) |
 | `M_RacingTv` | `racing` | need-read | - | `report_materials` (material list) |
-| `MPC_SeeThrough` | `seethrough` | blocked | - | `report_materials` (material list) |
-| `RuntimeData` | `skateruntime` | blocked | - | no reader in this tree |
+| `MPC_SeeThrough` | `seethrough` | blocked | generator `generator/seethrough/collection` | no importer for a parameter collection |
+| `RuntimeData` | `skateruntime` | blocked | generator `generator/skate/runtime` | no importer for a data asset |
 
 ### Historical: material-instance agreement with the editor reads
 

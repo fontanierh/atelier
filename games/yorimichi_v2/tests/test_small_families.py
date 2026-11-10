@@ -423,3 +423,25 @@ def test_bike_wheels_are_migrated_on_the_pinned_generator():
         assert sf.sha256_file(sf.recover.DONOR_GAME / rel) == source.sha256
         assert sf.sha256_file(sf.GAME / 'assets/generator/bike/wheels' / source.path) == source.sha256
     assert generator.sources[0].sha256 == '460f61c1cfb60fa810f1b32a2a61fd33617107c12e0c9bf45e1ec5ecdcf61084'
+
+
+def test_blocked_seethrough_and_skateruntime_name_their_generator_records():
+    """Both rows stay blocked (no V2 importer for a parameter collection or a data asset), their generator records pin
+    the donor sources, and the adopted records keep their outputs."""
+    for record, generator in (('adopted/seethrough', 'generator/seethrough/collection'),
+                              ('adopted/skateruntime', 'generator/skate/runtime')):
+        _, _, _, status, note = sf.REGISTRY[record]
+        assert status == 'blocked' and generator in note and record not in sf.MIGRATED
+        gen = records.load_asset(sf.GAME / f'assets/{generator}/asset.toml')
+        assert gen.kind == 'generator' and gen.outputs == [] and gen.recipe is None and gen.authority == 'editor'
+        assert all(sf.sha256_file(sf.GAME / 'assets' / generator / s.path) == s.sha256 for s in gen.sources)
+        adopted = records.load_asset(sf.GAME / f'assets/{record}/asset.toml')
+        assert adopted.outputs, record
+    seethrough = records.load_asset(sf.GAME / 'assets/generator/seethrough/collection/asset.toml')
+    assert {s.path: s.sha256 for s in seethrough.sources} == {
+        'src/see_through.py': '9d7da40163a6e4023d91e8fc2aaacdd2578bf07ef02f05b4e10dcc1c4c8fd105',
+        'src/shared_materials.py': '8cf144f9752bffe771bbddfe984091ad4c288259bc00abba4a64fad5d6678720'}
+    skate = records.load_asset(sf.GAME / 'assets/generator/skate/runtime/asset.toml')
+    assert [s.path for s in skate.sources] == [f'src/{n}' for n in (
+        'simulation_package.py', 'motion_text.py', 'runtime_text.py', 'import_runtime.py', 'SkateRuntimeData.cpp',
+        'SkateDataLibrary.h')]

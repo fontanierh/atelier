@@ -123,10 +123,23 @@ REGISTRY = {
         'city_material.py (hidamari generator), tools/hidamari_textures.py', 'need-read',
         'parent M_HDCity and T_HD_plaster are owned by adopted/japan/hidamari records'),
     'adopted/seethrough': ('seethrough', 'generator material parameter collection MPC_SeeThrough',
-        'see_through.py:47 and :246-253', 'blocked', 'no importer for parameter collections'),
+        'generator: unreal/Scripts/see_through.py:47 (MPC name), :246-253 (collection), :509-511 (world_materials, '
+        'collection(create=True)); the caller shared_materials.py:294 in the unreal.materials step (foliage_build.py:102)',
+        'blocked',
+        'generator pinned as generator/seethrough/collection (see_through.py and shared_materials.py, sha256, editor-owned); '
+        'the donor MPC bytes match the V2 verified.json (b29cbd68...). No V2 importer takes a MaterialParameterCollection: '
+        'import_asset.py IMPORTERS has static-mesh, texture, material-instance and material-master only, and master_digest '
+        'reads materials. Missing: a parameter-collection importer (plan: vector names and defaults from the pinned builder, '
+        'write, read back and compare)'),
     'adopted/skateruntime': ('skateruntime', 'generated RuntimeData data asset (31 MB)',
-        'build.py:1813 (RuntimeData output); unreal/Scripts/skate_ride/verify_data.py:15', 'blocked',
-        'no importer for data assets; the cooked data is the only copy in the editor'),
+        'build.py:1804-1816 (unreal.skate_data; RuntimeData output :1813); skate_ride/import_runtime.py:11 (SkateDataLibrary.'
+        'import_runtime); Skate Source/AtelierSkate/Private/SkateRuntimeData.cpp:451-465 (C++ writer); package assembled by '
+        'Tools/simulation_package.py:164-168', 'blocked',
+        'generator pinned as generator/skate/runtime (6 sources: package assembler, motion_text, runtime_text, import_runtime, '
+        'SkateRuntimeData.cpp, SkateDataLibrary.h). Reproducible: the assembled package equals the donor package file for file. '
+        'The RuntimeData writer is the C++ USkateDataLibrary::ImportRuntime (an editor call, not a V2 importer). Missing: a '
+        'data-asset importer that calls it; the text inputs under platform/engine/Plugins/Activities/Skate/Data (motion clips, '
+        'runtime text) are tracked but not pinned by this record'),
 }
 # The spec's families that name more than one registry family (their native lists cover all of them).
 FAMILY_GROUPS = {'hidamari': ('hidamari', 'broadcast', 'seethrough', 'skateruntime')}

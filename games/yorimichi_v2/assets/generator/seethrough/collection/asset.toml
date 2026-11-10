@@ -1,0 +1,18 @@
+# Donor generator (tools/migrate/recover.py): the camera see-through collection MPC_SeeThrough: see_through.py (its vector parameters, collection(create=True) and world_materials) and shared_materials.py (the unreal.materials step that calls world_materials).
+# It owns no package. Its sources are copied into src/ and pinned by sha256; the records it generated
+# reference it. Editor-owned: nothing here is imported.
+schema = 1
+id = "generator/seethrough/collection"
+kind = "generator"
+authority = "editor"
+owner = "shared/seethrough"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+
+[[sources]]
+path = "src/see_through.py"
+sha256 = "9d7da40163a6e4023d91e8fc2aaacdd2578bf07ef02f05b4e10dcc1c4c8fd105"
+
+[[sources]]
+path = "src/shared_materials.py"
+sha256 = "8cf144f9752bffe771bbddfe984091ad4c288259bc00abba4a64fad5d6678720"

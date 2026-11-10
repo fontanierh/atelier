@@ -3,7 +3,9 @@
     uv run python games/yorimichi_v2/tools/migrate/recover.py FAMILY --donor DONOR_OUT          (plan only)
     uv run python games/yorimichi_v2/tools/migrate/recover.py FAMILY --donor DONOR_OUT --apply  (write the records)
 
-FAMILY names an entry of FAMILIES. DONOR_OUT is the donor build's output folder for that family. For each donor
+FAMILY names an entry of FAMILIES, or of GENERATOR_FAMILIES (seethrough, skateruntime: only the generator record is
+written, from the tracked donor sources, and no --donor is needed). DONOR_OUT is the donor build's output folder for
+that family. For each donor
 output the family maps to the adopted package it became, the tool writes a generated record: the donor file is copied
 into the record's `src/` and pinned by sha256, its recipe is the donor's own import setting (only importers the V2
 editor supports: static-mesh and texture), and the record owns that one package. The adopted record that held the
@@ -71,6 +73,7 @@ class Generator:
     owner: str
     sources: list[Path]           # donor files (absolute, read only), copied into the record's src/
     about: str
+    provenance: str = 'donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)'
 
 
 @dataclass
@@ -1053,8 +1056,7 @@ def _generator_text(gen: Generator, digests: list[tuple[str, str]]) -> str:
              '# It owns no package. Its sources are copied into src/ and pinned by sha256; the records it generated',
              '# reference it. Editor-owned: nothing here is imported.',
              'schema = 1', f'id = "{gen.id}"', 'kind = "generator"', 'authority = "editor"', f'owner = "{gen.owner}"',
-             'license = "owner-published (docs/DECISIONS.md D05 group 1)"',
-             'provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"']
+             'license = "owner-published (docs/DECISIONS.md D05 group 1)"', f'provenance = "{gen.provenance}"']
     for name, digest in digests:
         lines += ['', '[[sources]]', f'path = "src/{name}"', f'sha256 = "{digest}"']
     return '\n'.join(lines) + '\n'
@@ -1098,6 +1100,59 @@ def _drop_verified(path: Path, packages: set[str]) -> None:
         path.unlink()
 
 
+def write_generator_records(game: Path, generators: list[Generator]) -> list[str]:
+    """The one writer of generator records (generated records' generators, and GENERATOR_FAMILIES). Idempotent: a record
+    already equal to its text and sources is left alone. Returns the created IDs."""
+    created = []
+    for gen in generators:
+        for path in gen.sources:
+            if not path.is_file():
+                raise RecoverError(f'donor source {path} is missing')
+        folder = game / 'assets' / gen.id
+        digests = [(path.name, records.sha256_file(path)) for path in gen.sources]
+        text = _generator_text(gen, digests)
+        if ((folder / 'asset.toml').is_file() and (folder / 'asset.toml').read_text() == text
+                and all((folder / 'src' / path.name).is_file() for path in gen.sources)):
+            continue
+        if folder.exists() and any(folder.iterdir()) and not (folder / 'asset.toml').is_file():
+            raise RecoverError(f'{folder} exists and is not a record of this tool; refusing to write over it')
+        (folder / 'src').mkdir(parents=True, exist_ok=True)
+        for path in gen.sources:
+            shutil.copy2(path, folder / 'src' / path.name)
+        (folder / 'asset.toml').write_text(text)
+        created.append(gen.id)
+    return created
+
+
+# The donor generators of the blocked families (small_families.py REGISTRY). Their outputs have no V2 importer, so only
+# the generator record is written and the adopted record is left as it is. Sources: the tracked donor tree (games/yorimichi)
+# and, for RuntimeData, the Skate plugin under platform/engine, which is tracked in this repository (not in games/yorimichi).
+ENGINE_SKATE = GAME.parents[1] / 'platform/engine/Plugins/Activities/Skate'
+SEETHROUGH_GENERATOR = Generator(
+    'generator/seethrough/collection', 'shared/seethrough',
+    [DONOR_GAME / 'unreal/Scripts/see_through.py', DONOR_GAME / 'unreal/Scripts/shared_materials.py'],
+    'the camera see-through collection MPC_SeeThrough: see_through.py (its vector parameters, collection(create=True) and '
+    'world_materials) and shared_materials.py (the unreal.materials step that calls world_materials)')
+SKATE_RUNTIME_GENERATOR = Generator(
+    'generator/skate/runtime', 'shared/skateruntime',
+    [ENGINE_SKATE / 'Tools/simulation_package.py', ENGINE_SKATE / 'Tools/motion_text.py', ENGINE_SKATE / 'Tools/runtime_text.py',
+     DONOR_GAME / 'unreal/Scripts/skate_ride/import_runtime.py',
+     ENGINE_SKATE / 'Source/AtelierSkate/Private/SkateRuntimeData.cpp', ENGINE_SKATE / 'Source/AtelierSkate/Public/SkateDataLibrary.h'],
+    'RuntimeData: the simulation package assembler (simulation_package.py with motion_text.py and runtime_text.py), the editor '
+    'import (import_runtime.py) and the C++ writer that saves the asset (SkateRuntimeData.cpp, SkateDataLibrary.h)',
+    provenance='donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02) for import_runtime.py; '
+               'the Skate plugin (simulation_package.py, motion_text.py, runtime_text.py, SkateRuntimeData.cpp, SkateDataLibrary.h) '
+               'is the tracked platform/engine tree at the same donor commit 7eec0f98dd, not games/yorimichi')
+GENERATOR_FAMILIES = {'seethrough': (SEETHROUGH_GENERATOR,), 'skateruntime': (SKATE_RUNTIME_GENERATOR,)}
+
+
+def generator_report(family: str) -> str:
+    lines = [f'family {family}: generator record(s) only, no generated or adopted record changes']
+    for gen in GENERATOR_FAMILIES[family]:
+        lines.append(f'  {gen.id:32} {len(gen.sources)} pinned source(s)  owner {gen.owner}')
+    return '\n'.join(lines)
+
+
 def apply(game: Path, plan: Plan, donor: Path, settle: bool = False) -> dict:
     """Write the generated records and shrink the adopted ones. Returns what changed (empty when already applied)."""
     changed = {'created': [], 'shrunk': [], 'deleted': []}
@@ -1117,20 +1172,7 @@ def apply(game: Path, plan: Plan, donor: Path, settle: bool = False) -> dict:
             shutil.copy2(path, folder / 'src' / path.name)
         (folder / 'asset.toml').write_text(text)
         changed['created'].append(gen.id)
-    for gen in plan.generators:
-        folder = game / 'assets' / gen.id
-        digests = [(path.name, records.sha256_file(path)) for path in gen.sources]
-        text = _generator_text(gen, digests)
-        if ((folder / 'asset.toml').is_file() and (folder / 'asset.toml').read_text() == text
-                and all((folder / 'src' / path.name).is_file() for path in gen.sources)):
-            continue
-        if folder.exists() and any(folder.iterdir()) and not (folder / 'asset.toml').is_file():
-            raise RecoverError(f'{folder} exists and is not a record of this tool; refusing to write over it')
-        (folder / 'src').mkdir(parents=True, exist_ok=True)
-        for path in gen.sources:
-            shutil.copy2(path, folder / 'src' / path.name)
-        (folder / 'asset.toml').write_text(text)
-        changed['created'].append(gen.id)
+    changed['created'].extend(write_generator_records(game, plan.generators))
     for record_id, left in sorted(plan.kept.items()):
         folder = game / 'assets' / record_id
         asset_toml = folder / 'asset.toml'
@@ -1287,13 +1329,21 @@ def report(plan: Plan) -> str:
 
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split('\n\n')[0])
-    parser.add_argument('family', choices=sorted(FAMILIES))
-    parser.add_argument('--donor', required=True, type=Path, help='the donor build output folder of the family')
+    parser.add_argument('family', choices=sorted({*FAMILIES, *GENERATOR_FAMILIES}))
+    parser.add_argument('--donor', type=Path, help='the donor build output folder of the family (not used for generator families)')
     parser.add_argument('--apply', action='store_true', help='write the records (default: plan only)')
     parser.add_argument('--only', help='comma-separated generated record IDs: plan and write only those')
     parser.add_argument('--game', type=Path, default=GAME, help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
     try:
+        if args.family in GENERATOR_FAMILIES:
+            print(generator_report(args.family))
+            if args.apply:
+                created = write_generator_records(args.game.resolve(), list(GENERATOR_FAMILIES[args.family]))
+                print(f'applied: created {len(created)}')
+            return 0
+        if args.donor is None:
+            parser.error(f'{args.family} needs --donor')
         only = {i.strip() for i in args.only.split(',') if i.strip()} if args.only else None
         plan = build_plan(args.game.resolve(), args.family, args.donor.resolve(), only)
         print(report(plan))
