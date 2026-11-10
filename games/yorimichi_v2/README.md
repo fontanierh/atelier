@@ -8,11 +8,14 @@ small owned parts, so several people and agents can change different things at o
 [docs/DECISIONS.md](docs/DECISIONS.md), and the pinned engine and tools are in [docs/TOOLCHAIN.md](docs/TOOLCHAIN.md).
 The retired original in `games/yorimichi` stays as a source reference; its tests remain disabled.
 
-**Current status:** [INVENTORY.md](docs/INVENTORY.md) is the canonical progress overview, including the
-whole-island package checkpoint, completed source recovery, saved follow-ups and the remaining object/source
-gaps. It distinguishes prepared, imported, saved, merged, packaged and human-verified work; a package alone
-does not establish gameplay or authoring acceptance.
-Human and multiplayer playtesting follows construction; it does not hold independent migration work.
+**Current scope (owner decision, 2026-11-10):** migration is complete; further useful-object splitting is on demand
+for the model or placement being changed. Start with its [owning record and targeted editing route](#how-content-is-owned-and-changed).
+There is no whole-game splitting prerequisite for a selected edit. Generated-model geometry edits still require an
+independent generator before the edit, as described below.
+
+[INVENTORY.md](docs/INVENTORY.md) remains the canonical progress overview for the whole-island package checkpoint
+and saved follow-ups. It distinguishes prepared, imported, saved, merged, packaged and human-verified work.
+The migration scope decision does not certify pending gameplay, authoring or multiplayer acceptance.
 
 Excluded from this version: phone streaming and the go-kart (`Driving`). Everything else in the original game is in
 scope.
