@@ -259,6 +259,81 @@ def record_text(rec: Rec) -> str:
     return '\n'.join(lines)
 
 
+# --- the evidence: the mesh read, compacted to what the records assert -------------------------------------------------------
+
+def _trace(value) -> str:
+    """A read collision trace flag's bare name ("CTF_USE_DEFAULT: 0>" -> "CTF_USE_DEFAULT")."""
+    return str(value).split(':')[0].strip()
+
+
+def evidence(plan_: Plan, read: dict) -> dict:
+    """The compact evidence of report_meshes.py for every planned package: the slot materials, each LOD's screen (3 decimals),
+    triangles and sections, and the collision facts the record can assert. The donor's absolute source paths are left out."""
+    out = {}
+    for rec in plan_.records:
+        for package in rec.outputs:
+            row = read[package]
+            out[package] = {
+                'family': rec.family,
+                'slots': [slot['material'] for slot in row['slots']],
+                'lods': [{'screen': round(lod['screen'], 3), 'triangles': lod['triangles'], 'sections': lod['sections']}
+                         for lod in row['lods']],
+                'collision': {'trace': _trace(row['collision']['trace']), 'convex': row['collision']['convex'],
+                              'simple': row['collision']['simple'], 'boxes': len(row['collision']['boxes']),
+                              'double_sided': row['collision']['double_sided']}}
+    return out
+
+
+def disagreements(plan_: Plan, ev: dict) -> list:
+    """Every way the plan disagrees with the read evidence (empty when it agrees). A plant's four levels must sit at the donor's
+    screens, never gain triangles, and its LOD0 must use every slot; a city LOD is one level; a _v4 chain must have the
+    planned screens and triangles and the original's convex hulls. An unset collision is the importer's default."""
+    out = []
+    for rec in plan_.records:
+        for package in rec.outputs:
+            got = ev.get(package)
+            if got is None:
+                out.append(f'{package}: no evidence')
+                continue
+            slots = rec.settings.get('slot_materials') or [v[1] for v in rec.settings.get('slots', [])]
+            if got['slots'] != slots:
+                out.append(f'{package}: slots {got["slots"]} are not {slots}')
+            lods = got['lods']
+            if lods[0]['sections'] != list(range(len(slots))):
+                out.append(f'{package}: LOD0 sections {lods[0]["sections"]} do not use every slot')
+            if lods[0]['triangles'] != rec.settings['triangles']:
+                out.append(f'{package}: LOD0 triangles {lods[0]["triangles"]} are not {rec.settings["triangles"]}')
+            collision = got['collision']
+            if rec.family == 'plants':
+                plan_lods = rec.settings['lods']
+                if len(lods) != len(plan_lods):
+                    out.append(f'{package}: {len(lods)} LOD(s), the plan has {len(plan_lods)}')
+                for lod, (_, screen) in zip(lods, plan_lods):
+                    if abs(lod['screen'] - screen) > 1e-3:
+                        out.append(f'{package}: screen {lod["screen"]} is not {screen}')
+                tris = [lod['triangles'] for lod in lods]
+                if any(b > a for a, b in zip(tris, tris[1:])):
+                    out.append(f'{package}: triangles {tris} grow with the level')
+                if (collision['trace'], collision['convex'], collision['simple'], collision['boxes']) != (
+                        'CTF_USE_DEFAULT', 1, 0, 0):
+                    out.append(f'{package}: collision {collision} is not the importer default (one convex hull)')
+            elif rec.family == 'city-lods':
+                if len(lods) != 1:
+                    out.append(f'{package}: {len(lods)} LOD(s), the plan has 1')
+                if (collision['trace'], collision['convex'], collision['simple']) != ('CTF_USE_DEFAULT', 0, 0):
+                    out.append(f'{package}: collision {collision} is not none')
+            else:
+                chain = rec.settings['lod_chain']
+                if [lod['triangles'] for lod in lods] != [c[2] for c in chain]:
+                    out.append(f'{package}: chain triangles {[l["triangles"] for l in lods]} are not {[c[2] for c in chain]}')
+                if [lod['screen'] for lod in lods] != [round(c[1], 3) for c in chain]:
+                    out.append(f'{package}: chain screens {[l["screen"] for l in lods]} are not {[c[1] for c in chain]}')
+                if collision['trace'] != 'CTF_USE_SIMPLE_AND_COMPLEX' or collision['convex'] != rec.settings.get('hulls', 0) \
+                        or collision['simple'] != 0:
+                    out.append(f'{package}: collision {collision} is not the original\'s (hulls {rec.settings.get("hulls", 0)})')
+    return out
+
+
 # --- the byte checks ------------------------------------------------------------------------------------------------------------
 
 def package_file(game: Path, package: str) -> Path:
@@ -405,17 +480,19 @@ def summary(plan_: Plan, checks: dict) -> str:
 
 
 def table(plan_: Plan, checks: dict) -> str:
+    """One row per package: its origin, its record, the committed bytes, and what the mesh read settled."""
     rows = ['| Package | Planned record | Donor origin and evidence | Committed bytes | Status |', '|---|---|---|---|---|']
+    status_of = {'city-lods': 'determined by the read (agrees); ready for the claimed import',
+                 'plants': 'determined by the read (agrees); waits on the editor run of the new-package LOD step',
+                 'city-v4': 'determined by the read (agrees); waits on the editor run of the FBX chain-level step'}
+    origin_of = {'plants': 'GLB LOD0 and the donor generate_lods plan', 'city-lods': 'donor FBX level (standalone)',
+                 'city-v4': 'citysurfaces original FBX and two donor FBX levels'}
     for rec in plan_.records:
         for package in rec.outputs:
             status, notes = checks.get(package, ('no bytes', []))
-            origin = {'plants': 'GLB LOD0 + generate_lods plan', 'city-lods': 'donor FBX level (standalone)',
-                      'city-v4': 'citysurfaces original FBX + two donor FBX levels'}[rec.family]
             pin = rec.sources[0].sha256[:10] + '…'
-            steps = {'plants': 'the new-package LOD step (implemented, not run)',
-                     'city-v4': 'the FBX chain-level step (implemented, not run)'}.get(rec.family, '')
-            rows.append(f'| `{package}` | `{rec.id}` | {origin}; {rec.sources[0].path} sha256 `{pin}` | '
-                        f'{"; ".join(notes)} | {status}: mesh read (report_meshes.py)' + (f'; {steps}' if steps else '') + ' |')
+            rows.append(f'| `{package}` | `{rec.id}` | {origin_of[rec.family]}; {rec.sources[0].path} sha256 `{pin}` | '
+                        f'{"; ".join(notes)} | {status_of[rec.family]} |')
     return '\n'.join(rows)
 
 

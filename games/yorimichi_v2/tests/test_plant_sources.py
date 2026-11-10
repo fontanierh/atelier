@@ -185,3 +185,59 @@ def test_real_tree_plans_all_72_packages_without_unmapped_ones():
     assert len(p.records) == 72 and len(p.packages) == 72
     families = [r.family for r in p.records]
     assert families.count('plants') == 36 and families.count('city-lods') == 24 and families.count('city-v4') == 12
+
+
+def agreeing_read(plan_):
+    """A report_meshes row for every planned package that agrees with its record (the fake read the checks are shown on)."""
+    read = {}
+    for rec in plan_.records:
+        slots = rec.settings.get('slot_materials') or [v[1] for v in rec.settings.get('slots', [])]
+        for package in rec.outputs:
+            if rec.family == 'plants':
+                lods = [{'screen': scr, 'triangles': max(1, rec.settings['triangles'] // (2 ** i)), 'sections': list(range(len(slots)))}
+                        for i, (_, scr) in enumerate(rec.settings['lods'])]
+                collision = {'trace': 'CTF_USE_DEFAULT: 0>', 'convex': 1, 'simple': 0, 'boxes': [], 'double_sided': False}
+            elif rec.family == 'city-lods':
+                lods = [{'screen': 1.0, 'triangles': rec.settings['triangles'], 'sections': [0]}]
+                collision = {'trace': 'CTF_USE_DEFAULT: 0>', 'convex': 0, 'simple': 0, 'boxes': [], 'double_sided': False}
+            else:
+                lods = [{'screen': c[1], 'triangles': c[2], 'sections': [0]} for c in rec.settings['lod_chain']]
+                collision = {'trace': 'CTF_USE_SIMPLE_AND_COMPLEX: 1>', 'convex': rec.settings.get('hulls', 0), 'simple': 0,
+                             'boxes': [], 'double_sided': False}
+            read[package] = {'slots': [{'name': 'S', 'material': m} for m in slots], 'lods': lods, 'collision': collision}
+    return read
+
+
+def test_the_fake_read_that_agrees_with_the_plan_has_no_disagreement(fake):
+    p = ps.plan(fake['game'], fake['donor'])
+    assert ps.disagreements(p, ps.evidence(p, agreeing_read(p))) == []
+
+
+def test_a_read_that_disagrees_is_named_by_package(fake):
+    p = ps.plan(fake['game'], fake['donor'])
+    read = agreeing_read(p)
+    plant = '/Game/Brinecove/Meshes/SM_BC_Plant_Broad0'
+    read[plant]['lods'][1]['screen'] = 0.5                                 # the donor's screen is 0.3
+    read[plant]['lods'][2]['triangles'] = read[plant]['lods'][0]['triangles'] + 1   # a level that gains triangles
+    v4 = '/Game/Experiments/CityTrees/v4/HD_ArcadeTree_cell_-1_-1_v4'
+    read[v4]['collision']['convex'] = 1                                    # the original has two hulls
+    out = ps.disagreements(p, ps.evidence(p, read))
+    assert any(plant in d and 'screen 0.5 is not 0.3' in d for d in out)
+    assert any(plant in d and 'grow with the level' in d for d in out)
+    assert any(v4 in d and 'collision' in d for d in out)
+
+
+def test_the_committed_read_evidence_has_no_donor_paths_and_names_the_72_packages():
+    text = (ROOT / 'docs' / 'inventory' / 'plants-and-city-tree-read.json').read_text()
+    assert '/Users/' not in text and 'atelier-yv2-donor' not in text
+    evidence = json.loads(text)
+    listed = (ROOT / 'docs' / 'inventory' / 'plants-and-city-tree-packages.txt').read_text().split()
+    assert sorted(evidence) == sorted(listed) and len(listed) == 72
+
+
+@pytest.mark.skipif(not REAL_DONOR or not (Path(REAL_DONOR).expanduser() / 'brinecove' / 'build-report.json').is_file(),
+                    reason='needs the donor build (YV2_DONOR_BUILD)')
+def test_the_plan_agrees_with_the_committed_mesh_read_evidence():
+    plan_ = ps.plan(ROOT, Path(REAL_DONOR).expanduser())
+    evidence = json.loads((ROOT / 'docs' / 'inventory' / 'plants-and-city-tree-read.json').read_text())
+    assert ps.disagreements(plan_, evidence) == []
