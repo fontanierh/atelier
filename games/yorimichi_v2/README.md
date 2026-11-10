@@ -3,7 +3,7 @@
 The original Yorimichi island, rebuilt as an Unreal 5.8 project whose **editable content is committed** to Git LFS.
 After hydrating Git LFS and fetching the pinned restricted content, a checkout opens the game without Blender
 or a world-generation/import job. Work is split into
-small owned parts, so several people and agents can change different things at once. The migration follows
+small owned parts, so several people and agents can change different things at once. The migration design is in
 [the V2 plan](../../docs/YORIMICHI_V2_PLAN.md). Status is in [docs/INVENTORY.md](docs/INVENTORY.md), choices are in
 [docs/DECISIONS.md](docs/DECISIONS.md), and the pinned engine and tools are in [docs/TOOLCHAIN.md](docs/TOOLCHAIN.md).
 The retired original in `games/yorimichi` stays as a source reference; its tests remain disabled.
@@ -41,7 +41,8 @@ This describes the existing implementation; human verification on the current pa
 | `tools/review/` | the change-set report for reviews |
 | `restricted.toml`, `restricted.lock.json`, `restricted.originals.json`, `tools/restricted/` | restricted packages and recoverable originals: declared roots, pinned hashes, links and verified fetch |
 | `tools/test/` | the native automation test runner |
-| `tools/migrate/` | one-time migration: donor adoption, the world migration runner, scene dumps and their parity compare |
+| `tools/migrate/` | selected object/region authoring, retained donor adoption and migration recovery tools |
+| `tools/editor/`, `tools/package/` | claimed editor saves and warm batches; explicit packaging and acceptance checks |
 | `tools/parity/` | visual parity: the slice's named poses (`poses.json`) and the capture compare (`compare.py`) |
 | `unreal/` | `YorimichiV2.uproject`, `Config/`, `Source/` (by feature), `Plugins/HorseRacing`, `Scripts/` (editor scripts), **`Content/` (committed)** |
 | `tests/` | Python checks for these tools |
@@ -138,14 +139,18 @@ uv run python games/yorimichi_v2/tools/parity/capture_runtime.py --session ID --
 ATELIER_AGENT=OWNER nice -n 10 uv run python games/yorimichi_v2/tools/test/automation.py [FILTER...]   # native tests, guarded (default Yorimichi.V2)
 V2_EDITOR_CLAIM=TASK V2_EDITOR_PATHS="REPO_RELATIVE_PACKAGE_AND_COMPANION_PATHS" V2_EDITOR_SCRIPT=$PWD/games/yorimichi_v2/unreal/Scripts/move_actor.py V2_MOVE_ACTOR=/Game/__ExternalActors__/... V2_MOVE_BY_CM="X Y Z" \
   ATELIER_AGENT=OWNER nice -n 10 uv run atelier build yorimichi_v2 editor.run   # move one saved actor, save only its package (31 s)
-ATELIER_AGENT=OWNER nice -n 10 uv run atelier play yorimichi_v2 --memory-gib 22   # whole island; retains guards and prints its session ID
-ATELIER_AGENT=OWNER nice -n 10 uv run atelier play yorimichi_v2 --profile slice --memory-gib 22 -- -RenderOffscreen   # same island map; historical profile name
+ATELIER_AGENT=OWNER nice -n 10 uv run atelier play yorimichi_v2   # whole island, normal window; retains guards and prints its session ID
+ATELIER_AGENT=OWNER nice -n 10 uv run atelier play yorimichi_v2 --profile slice -- -RenderOffscreen   # same island map; historical profile name
 uv run python games/yorimichi_v2/tools/test/route.py --session ID --out DIR     # walk + skate route in that game, report.json
 uv run python games/yorimichi_v2/tools/test/train_ride.py --session ID --out DIR   # board, ride and leave the Belmonte train
 uv run python games/yorimichi_v2/tools/test/ferry_ride.py --session ID --start hidamari   # board, cross and leave the ferry
 uv run python games/yorimichi_v2/tools/test/gondola_ride.py --session ID --start hidamari belmonte floor   # ride each gondola line
 uv run python games/yorimichi_v2/tools/test/budgets.py open --out DIR           # a plan §15 budget: warm-up + 5 runs, receipt
 ```
+
+Routine play uses the saved renderer and tree-optimization preferences. If a session needs a larger memory ceiling,
+use the supported `--memory-gib N` option (10–24), with its full admission reservation and a recorded reason;
+larger guarded sessions are already authorized. Do not force a heavier renderer for routine work.
 
 `/Game/V2/Maps/TestMinimal` is the minimal World Partition map (`map/test-minimal`, `region/test-minimal`): it opens
 from a fresh checkout without donor content. Collaboration test results are kept in
@@ -212,5 +217,6 @@ uv run python games/yorimichi_v2/tools/package/acceptance.py automated --app "$H
 ATELIER_AGENT=OWNER nice -n 10 uv run atelier playtest yorimichi_v2 --app "$HOME/YorimichiV2-Package/YorimichiV2.app" --memory-gib 22
 ```
 
-The last line plays the extracted package under the render lock and memory guard. The 16.5 s load observation
-on 2026-11-09 belongs to the earlier package, not the later `3027366ced` checkpoint. Recording the manual items and the verdict is in [docs/PACKAGE.md](docs/PACKAGE.md).
+The last line plays the extracted package under the render lock and memory guard. The available package predates
+the final migration fixes. Use the [testing handoff](docs/PACKAGE.md#testing-the-final-handoff) to select current
+source or a matching package, record observed manual checks and keep each package's evidence separate.

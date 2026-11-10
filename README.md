@@ -17,7 +17,11 @@ Unreal content is committed in Git LFS: normal build/play validates and compiles
 packaging are explicit. The sandbox still demonstrates generated-content builds. Agents drive these workflows
 from the terminal, including the game itself while it plays.
 
-[The V2 inventory](games/yorimichi_v2/docs/INVENTORY.md) records current coverage and unfinished work.
+[The V2 inventory](games/yorimichi_v2/docs/INVENTORY.md) records the completed migration, current content and
+remaining acceptance checks. Further object splitting is on demand for the selected edit. Start testing with
+the [V2 setup and play guide](games/yorimichi_v2/README.md) and the
+[package revision and acceptance limits](games/yorimichi_v2/docs/PACKAGE.md); the available package is older than
+the final migration fixes.
 `games/yorimichi` (V1), Hakuba and the `build-v2` experiment are retained references, not active game/test targets.
 Platform streaming remains available to other games; phone streaming and go-kart driving are excluded from V2.
 
@@ -302,27 +306,30 @@ and browser review workflow.
 The **live bridge** is how agents work on a running game. `atelier live py` runs Python inside it: spawn and move
 props, teleport, press buttons, put a line on screen, take screenshots. `atelier live state` reports where the player
 and the camera are. It only listens on your own machine. Each game `atelier play` starts gets its own live session
-(a loopback port and an ID the game must answer with), so several games can run side by side: `atelier live` and
-`atelier qa` reach the one of this checkout, or the one `--session ID` names (`atelier live sessions` lists them).
+(a loopback port and an ID the game must answer with). `atelier live` and `atelier qa` reach the session of this
+checkout, or the one `--session ID` names (`atelier live sessions` lists them). Session selection does not grant
+admission for another game; the machine's guards still control concurrent native work.
 
 ```sh
 uv run atelier live state                              # where the player and the camera are
-uv run atelier qa yorimichi skatepark                  # a scripted check: games/<game>/scenarios/<scenario>.py
+uv run atelier qa GAME SCENARIO                       # an existing scenario in an active game's scenarios/ folder
 uv run python platform/studio/atelier/review/video_reference.py <take>  # timestamped frame sheets from a video
 ```
 
-QA scenarios drive the game like a player and check what happens; Yorimichi's range from skating controls to frame
-pacing, and some film takes for review. [Review sheets](platform/studio/atelier/review) turn clips and videos into contact sheets
+QA scenarios drive the game like a player and check what happens. V2 does not currently have a `scenarios/`
+directory; its [testing and package guide](games/yorimichi_v2/docs/PACKAGE.md) names the supported checks and
+unverified manual work. The retired V1 scenarios remain disabled. [Review sheets](platform/studio/atelier/review) turn clips and videos into contact sheets
 that a person or a second AI can judge at a glance.
 
 ### Play anywhere
 
 <img src="docs/media/phone-map.jpg" width="480" alt="The painted world map on the phone page, with numbered places to travel to">
 
-The game runs on your Mac and streams to a browser. `atelier stream <game> start --local` serves it at
+For a game configured for streaming, the game runs on your Mac and streams to a browser. `atelier stream <game> start --local` serves it at
 http://127.0.0.1:8080 (keyboard, mouse or a controller); without `--local` it is reachable from your phone over
 Tailscale. `/play/` is the plain player, and `/` serves the game's own touch page when its `game.toml` names one
-(Yorimichi's has touch controls, the painted map above, travel and settings). The [stream pages](platform/web/stream/README.md) say what a game provides.
+(the retired Yorimichi V1 page supplied the touch controls, map, travel and settings pictured above).
+V2 excludes phone/browser streaming. The [stream pages](platform/web/stream/README.md) say what a streaming game provides.
 
 ## Building blocks
 

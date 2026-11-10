@@ -32,8 +32,9 @@ stations are saved. [INVENTORY](../INVENTORY.md) tracks port status; this note d
   so the old service-actor `NoClimb` tag is not the only path protecting saved scenery.
 - Gondola pylons are saved as ten per-tower objects (`object/gondola/pylon-l<line>-<n>`) by
   the retired `tools/migrate/gondola_pylons.py` (git history); the three line groups are retired ([PR #790](https://github.com/fontanierh/atelier/pull/790); see the pylon section below). Cabins, ropes, the cable plan and station data are not part of that split.
-- Rendering batches may remain for performance. Several useful towers or fittings in one editable group still
-  require independent editing boundaries under the whole-game authoring requirement.
+- Rendering batches may remain for performance. For a future edit, split the selected tower or fitting if its
+  group is still bundled. Before changing generated geometry, make its generator independently selectable.
+  The owner's 2026-11-10 migration closure leaves further splitting on demand, not a whole-game completion gate.
 
 ## Gondola pylon split (saved)
 

@@ -5,8 +5,9 @@ selection rule, not the current whole-game placement count or a list of work sti
 recovered model IDs; `tools/migrate/object_models.py` retargets `model`/`models` in both definitions and saved
 receipts without re-saving unchanged actors. [INVENTORY](../INVENTORY.md) is the current status index.
 
-A real patch that still bundles several useful objects remains unfinished. The original one-worldwide-instance
-filter below was a conservative first-batch choice, not a permanent exemption for repeated useful objects.
+A patch that still bundles several useful objects belongs to the on-demand authoring backlog. Since the owner's
+2026-11-10 migration closure, split the selected object when an edit needs its own boundary. The original
+one-worldwide-instance filter below was a conservative first-batch choice, not a restriction on future editing.
 
 ## Current authoring commands
 

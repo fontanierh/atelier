@@ -1,5 +1,9 @@
 # Japan surface masters: prepared source handoff
 
+**Historical preparation.** These masters were subsequently imported, merged in #804 and included in package
+`c89f535441be`. The instructions and pending claims below describe the preparation checkpoint, not work still
+to start. See [INVENTORY](../INVENTORY.md) for current status and the limits of the accepted evidence.
+
 Prepared from donor `7eec0f98dd`, on the PR #803 baseline `085749fd1d`. This is generator preparation only: no asset record,
 package or receipt has changed, and native acceptance remains open. The family is `japan_surfaces`.
 

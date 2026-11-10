@@ -1,10 +1,14 @@
 # Remaining exceptions to independent editing and recoverable sources
 
-Audited snapshot: **main `da0a41f891` (2026-11-10, through #803/#804/#809/#810)**. See [INVENTORY](../INVENTORY.md) for package evidence and forecasts.
+Audited snapshot: **main `1abaab9d70` (2026-11-10, final migration handoff)**. See [INVENTORY](../INVENTORY.md) for
+current content, the on-demand authoring backlog and separate package evidence.
 The earlier "320 remaining records" total came from a preparation branch before source recovery and object saves;
 it is retired. Counts of records, packages, cells and useful objects are not interchangeable.
 
-A useful object needs an editing boundary of its own and a recoverable original. Rendering can remain batched.
+Migration is complete by owner decision. Create a useful object's editing boundary when that object needs an edit;
+the remaining bundled content is an authoring backlog, not a migration gate. Rendering can remain batched.
+Before changing generated geometry, make the selected model independently generatable; a post-generation cut is
+not enough. Preserve recoverable originals and the [model-edit workflow](../../../../docs/WORLD_BUILD_PRACTICES.md#make-a-model-independent-before-editing-it).
 For imported content, an editor-saved package is not a substitute for the imported model and its relevant inputs.
 
 ## Closed or superseded groups
@@ -26,19 +30,23 @@ For imported content, an editor-saved package is not a substitute for the import
 | Brine Cove town | All 265 town objects saved on main (#787); the 42 emptied tiles and the three ship tiles are retired | None for the town objects |
 | Other Brine Cove features | Existing fort, lighthouse and other saved units remain | Other useful objects still bundled in residual tiles need a real object boundary, not just a smaller package. **Signal mast and shipyard slip: saved** (claim MASTSLIP: apply, check, import of 9 records, two object saves). Boundaries from the donor GLBs (`tools/migrate/brinecove_mastslip.py plan`, every triangle matched once): mast 508 triangles in Market pieces 113, 131 (Market_3_4) and 002, 020 (Market_4_4); slip whole, 408 triangles (Harbor_5_3 380, Harbor_5_4 28), of which 206 are taken back from `shipyard-yard` (9,558 to 9,352). The yard re-cut keeps every other yard triangle identical and in order; `brinecove_mastslip.py check` passes |
 | Transport groups | Two ferry terminal objects, sixteen gondola objects (including ten pylons) and twenty-four railway objects (including twelve fittings) saved | Pylon groups and the track-fittings group are retired (by the retired `gondola_pylons.py` and `railway_fittings.py`, see git history; fittings routed by row, `SM_TK_<mesh>#@<i>`). Preserve route data and moving services while splitting their editing boundaries |
-| Area patches (G6) | Saved terrain, ground and scatter patches are legitimate scopes | A patch-name tally is only a candidate list. Any patch that still bundles several useful buildings or props remains unfinished until they are independently editable |
+| Area patches (G6) | Saved terrain, ground and scatter patches are legitimate scopes | A patch-name tally is only a candidate list. Split a bundled building or prop when an edit needs its own boundary; the remaining list is an on-demand backlog |
 
 The counts above describe saved definitions and known plans, not a full new geometry audit. Use actual object
-membership, not a name pattern, to decide whether a remaining patch is complete. Do not make useful-object splitting
-optional simply because a patch is legal to save.
+membership, not a name pattern, to identify the boundary needed for a selected edit. A legal saved patch does not
+prove that its contents are independently editable or independently generatable.
 
 ## Current source classification
 
 This table is derived from canonical `record_paths` at the audited main revision, excluding nested donor
-`asset.toml` inputs. Of 807 adopted records without direct sources or a recipe, 800 use restricted-manifest routes and
-three use the 124 Adventure/animation links. The remaining **2 records / 2 packages** below have neither (the bike wheels migrated and the Mega Park map was checked since; both stay listed). This is a classification query, not a
-claim that those packages lack originals, nor a complete recovery backlog: generator records with pinned source files
-can still need recoverable inputs and an accepted import. See [sources](sources.md).
+`asset.toml` inputs. There are 7,658 canonical records, including 1,386 with an `adopted/` ID (1,384 of kind `adopted`
+and two source-only generators). Of those IDs, 582 have direct sources or a recipe. The other **804 records** divide
+into 800 whose 5,976 current output packages are covered by the restricted manifest, three whose 124 outputs use
+the Adventure/animation links, and one editor-authored Mega Park map. The manifest's 6,768 restricted entries cover
+a wider package set; they are not the output count of those 800 records.
+
+No unmatched imported family remains in this classification. That is not proof that every model has an independent
+generator, nor a substitute for source/input or import validation when editing it. See [sources](sources.md).
 
 | Main owner(s) | Records / packages | Current disposition |
 |---|---:|---|
@@ -46,7 +54,7 @@ can still need recoverable inputs and an accepted import. See [sources](sources.
 | `adopted/japan/assets/bike` | migrated | `BK_WheelFront` and `BK_WheelRear` are `prop/bike/wheel-front` and `wheel-rear`, generated from the pinned `generator/bike/wheels` and imported (BCBIKE; see "Bike residual packages") |
 | `adopted/skateruntime` | 0 / 0 | Done: `RuntimeData` moved to `data/skate/runtime` (claim `SKATERT`, importer `skate-runtime`), and `MPC_SeeThrough` to `material/seethrough/collection` (claim `SEETHRU`). No whole-source item remains |
 
-**Closed by claim `JAPANMI` (branch `jim5/yv2-japan-instances`, not yet in a package): 10 records / 45 instances.**
+**Merged in #812 (`09337b5470`), claim `JAPANMI`, not in the available package: 10 records / 45 instances.**
 `tools/migrate/held_instances.py` plans each family from the donor scripts' values (`small_instances.EXPECTED`) and
 writes one generated `material-instance` record per adopted record only where every stated value, base-property
 overrides included, agrees with the committed editor read (`docs/inventory/small-families-reads/instances/`):

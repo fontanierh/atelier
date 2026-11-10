@@ -4,7 +4,15 @@ The package workflow is implemented. A normal build validates and compiles; cook
 below run from the repository root of an owned checkout at a stopped native-job boundary. Publication uses the
 existing verified package and the [release workflow](../../../docs/RELEASES.md), without another cook.
 
-## Current main checkpoint (2026-11-10)
+<a id="current-main-checkpoint-2026-11-10"></a>
+
+## Available package checkpoint (2026-11-10)
+
+**This app is older than the final migration handoff.** Main `1abaab9d70` (#831) contains the final harbor2 batch
+and eleven repaired tile-placement material overrides. Package `c89f535441be` was built from `da0a41f891`; it
+predates #812 and the later splits, including #823–#831. It contains the earlier fused content and does not
+include the later override repairs; that does not establish a mismatch between its own older meshes and overrides.
+No package of the final handoff has been built. Do not use this app to accept the later fixes.
 
 - **Built:** clean main `da0a41f891` (after #803/#804/#809/#810); fingerprint `c89f535441be`.
   Guarded `unreal.package` completed in 255.7 s. The 49 recovered material masters and Hippodrome residual batch
@@ -19,7 +27,29 @@ existing verified package and the [release workflow](../../../docs/RELEASES.md),
   a real second-machine session. The recorded verification verdict fails on the six **unrecorded** manual items;
   it does not report six observed gameplay failures. Hosting/leave does not complete those checks.
 
-The following sections retain the earlier packages' evidence; their results apply only to their named revisions.
+## Testing the final handoff
+
+The migration is complete by owner decision; testing now checks the delivered game. Start from the
+[current inventory](INVENTORY.md), which separates implemented features, known baseline gaps and unverified playtests.
+
+1. Use an owned checkout containing `1abaab9d70` or a later main revision. Record the exact revision and any local
+   changes. Hydrate its LFS content and pinned restricted inputs through the [setup guide](../README.md#restricted-content-and-recoverable-originals).
+2. For current source testing, use normal guarded `atelier build yorimichi_v2` and `atelier play yorimichi_v2`
+   from that checkout. A normal build validates and compiles; it does not regenerate the world. Follow the
+   [collaboration checks](COLLABORATION_TESTS.md) only for the editing workflow being exercised.
+3. For package acceptance, build that selected revision through the explicit route below, extract it outside
+   checkouts, and start evidence for its own fingerprint. Preserve older apps and ledgers. Reuse passing evidence
+   for an unchanged app; rebuilding is needed to test changed packaged content, not to update documentation.
+4. Record observed input, map travel, gameplay, sound, settings/save persistence and visual results against the
+   tested revision or package. Test multiplayer with matching packages on two actual machines; host/leave in one
+   process does not cover joining or shared gameplay.
+
+Report a defect with its revision, region/location, reproduction steps and a capture when useful. Resolve the
+selected object through its [ownership records](../README.md); before changing generated geometry, follow the
+[independent-model rule](../../../docs/WORLD_BUILD_PRACTICES.md#make-a-model-independent-before-editing-it).
+Remaining fused objects are an on-demand authoring backlog, not a prerequisite to start testing or new features.
+
+The following sections retain earlier package evidence; results apply only to their named revisions.
 
 ## Integration package for #803 and #804 (2026-11-10)
 
@@ -65,7 +95,7 @@ The following sections retain the earlier packages' evidence; their results appl
   PRs #799 and #801 add material-master records preparation and inventory only; they change no packaged bytes.
 
 The owner directed on 2026-11-09 that human and multiplayer playtesting follows building; multiplayer will be
-played with his brother. These checks remain unverified acceptance work, not a block on independent migration.
+played with his brother. These checks remain unverified acceptance work after the owner closed migration on 2026-11-10.
 
 ## A quiet staging read
 
@@ -162,7 +192,7 @@ not prove another player can join from a second machine. Reuse passing evidence 
 
 `verify` exits successfully only when every selected automated and manual item passes for the current package.
 Its report records the package fingerprint, bundle identifier, checkout revision/dirty state and check results.
-A not-yet-complete verdict does not prohibit continuing content migration.
+A not-yet-complete verdict does not prohibit normal development, but it is not a verified release.
 
 ## Focused checks when this workflow changes
 
@@ -173,7 +203,10 @@ rebuild or broad local suite is needed for a documentation/status update.
 
 ## Still open
 
-- The remaining independently editable objects and recoverable-source work listed in [INVENTORY.md](INVENTORY.md).
-- Human gameplay, sound, settings/save persistence and two-machine playtests on the current package.
+- A package containing the final handoff, when testing needs the packaged version of those changes.
+- Human input, travel, gameplay, sound, settings/save persistence, visuals and two-machine playtests on the selected revision/package.
 - Any current defects found in those playtests. The missing-asset and performance observations in
   [PARITY.md](PARITY.md) are explicitly bound to older revisions, not an assertion that the latest app has them.
+
+The remaining object-splitting list lives in [INVENTORY.md](INVENTORY.md) as an authoring backlog. It is handled on
+demand; it is not an open migration or package-acceptance requirement.

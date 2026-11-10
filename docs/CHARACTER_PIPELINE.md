@@ -4,7 +4,8 @@
 Blender invocations and build/QA commands are retained donor examples from the retired V1 project, not a V2
 rebuild checklist. The V2 port reuses recovered originals and committed packages; normal build/play never
 exports, imports or regenerates a character. Use the [V2 README](../games/yorimichi_v2/README.md) for claimed
-targeted authoring and [INVENTORY.md](../games/yorimichi_v2/docs/INVENTORY.md) for remaining source work.
+targeted authoring and [INVENTORY.md](../games/yorimichi_v2/docs/INVENTORY.md) for the completed migration,
+on-demand authoring backlog and unverified acceptance checks.
 Any new Blender preparation runs under the existing admission/memory guards in its owner's checkout; the
 historical bare commands below do not replace those protections. Retired V1 suites/scenarios stay disabled.
 

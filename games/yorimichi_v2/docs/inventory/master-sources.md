@@ -2,9 +2,9 @@
 
 **Historical recovery design, prepared in #799/#801.** [INVENTORY](../INVENTORY.md) owns current progress.
 The following 27-master design and its “not done” statements describe that preparation checkpoint, not the
-current import backlog. #803 includes 36 saved material-master records with this change; #804 adds 13 Japan masters
-(49 total) and remains pending integration. Neither PR was merged at historical main checkpoint `028bc6243b`;
-neither is in package `0adbb5ab212e`.
+current import backlog. #803 and #804 subsequently merged 36 and 13 material masters respectively (49 total),
+included in package `c89f535441be`. Both were still pending at historical main checkpoint `028bc6243b`;
+neither is in the older package `0adbb5ab212e`.
 The machine-readable [master-sources.json](master-sources.json) and
 [small-families-masters.txt](small-families-masters.txt) retain their original scope and donor evidence;
 they are not current owner lists or instructions to re-import accepted masters.

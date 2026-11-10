@@ -1,7 +1,10 @@
 # Inventory
 
-**Current checkpoint: 2026-11-10. Package `c89f535441be` at clean main `da0a41f891` includes the 49 recovered material masters and Hippodrome follow-up (#803/#804), multiplayer manifest (#809) and host/leave check (#810). Automated checks, launch, shutdown and the host's return to Solo pass. Six manual checks and actual two-machine play remain open.**
-This is the status index for the full original-game port.
+**Migration complete by owner decision, 2026-11-10. Final handoff: main `1abaab9d70` (#831). Further splitting is on demand; the remaining list below is an authoring backlog.**
+This is the status index for the original-game port and subsequent authoring work.
+The latest available package, `c89f535441be` from `da0a41f891`, **predates the final handoff** and its material-slot
+repairs. Its automated checks, launch, shutdown and host-to-Solo checks passed. Six manual checks, human visual
+acceptance and actual two-machine play remain open; see [the testing handoff](PACKAGE.md#testing-the-final-handoff).
 The source baseline `7eec0f98dd` is documented separately in [features](inventory/features.md) and
 [world](inventory/world.md); those pages describe the donor, not today's V2 completion state.
 
@@ -15,23 +18,23 @@ The source baseline `7eec0f98dd` is documented separately in [features](inventor
   is not proof that every useful object inside it is independently editable.
 - **Packaged** names the revision that was cooked. Unmerged follow-ups are not included in that package.
 - **Verified** applies only to the specific check and revision cited. Final human gameplay, visual and
-  multiplayer acceptance is still open; the owner will playtest with his brother after construction.
-  Human-editor and second-machine proofs remain separate from same-host automation and do not block migration.
+  multiplayer acceptance is still open; the owner plans to playtest with his brother.
+  Human-editor and second-machine proofs remain separate from same-host automation and the migration closure.
 
 ## What is already delivered
 
 | Scope | Saved content / package checkpoint | Evidence and limits |
 | --- | --- | --- |
-| Whole island | W00–W20 have committed coverage (29 world region scopes); W14 keeps its disabled baseline. The region receipts contain 2,750 saved object definitions. | [Regions](../world/regions/), `actors.verified.json`, `objects.saved.json`; these counts are not the number of independently split source models. |
+| Whole island | W00–W20 have committed coverage (29 world region scopes); W14 keeps its disabled baseline. The 18 object receipts contain 2,937 saved object definitions. | [Regions](../world/regions/), `actors.verified.json`, `objects.saved.json`; these counts are not the number of independently split source models. |
 | Recovered models | Merged:<br>- 1,048 city records;<br>- 67 train mesh records, plus 159 train texture and material records (459 packages);<br>- ten families with 141 meshes and 29 textures;<br>- 100 Japan props;<br>- 72 Brine Cove plants and city tree residuals;<br>- the two Japan leaf instances.<br>The first small-families batch (21 records, 48 packages) is merged (#797). | [PR #784](https://github.com/fontanierh/atelier/pull/784), [PR #786](https://github.com/fontanierh/atelier/pull/786), [PR #792](https://github.com/fontanierh/atelier/pull/792), [PR #794](https://github.com/fontanierh/atelier/pull/794), [PR #796](https://github.com/fontanierh/atelier/pull/796); the read-back results are below. Source completeness and remaining fused objects are tracked below. |
-| Restricted and Adventure originals | 6,768 restricted package entries and 124 Adventure/animation entries have source routes; the manifest records 6,086 original pins. | [restricted.originals.json](../restricted.originals.json), [PR #785](https://github.com/fontanierh/atelier/pull/785). Private bytes stay on the pinned restricted route. This is not closure of every open source family. |
-| Brine Cove individual objects | All 21 market stalls, all 265 town objects, the two harbour Soft fragments, eleven small props and three ship objects have saved placements in main ([PR #787](https://github.com/fontanierh/atelier/pull/787)). The signal mast and the shipyard slip are saved, merged and packaged ([PR #798](https://github.com/fontanierh/atelier/pull/798), [PR #800](https://github.com/fontanierh/atelier/pull/800)). The 13 harbour rowboats, buoys and potted palms (`props1`) are merged ([PR #813](https://github.com/fontanierh/atelier/pull/813)); the 6 quay cargo clusters and 7 fish baskets (`props2`, [PR #815](https://github.com/fontanierh/atelier/pull/815)) are merged; the 32 lantern posts (`props3`, [PR #816](https://github.com/fontanierh/atelier/pull/816)) are merged; the 3 harbour piers and 12 quay palms (`harbor1`, [PR #817](https://github.com/fontanierh/atelier/pull/817)) are merged; the 45 loose barrels and crates (`props4`, [PR #818](https://github.com/fontanierh/atelier/pull/818)) are merged; the re-split of the six quay cargo clusters and the pier cargo into 54 pieces (`props5`, claim `BCPROPS5`) is applied and checked on its branch and in review. Other scenery still includes fused models/patches. | [Brine Cove scope](inventory/brinecove-objects.md), [split work](inventory/brinecove-split.md), [remaining exceptions](inventory/exceptions.md). |
+| Restricted and Adventure originals | 6,768 restricted package entries and 124 Adventure/animation entries have source routes; the manifest records 6,086 original pins. | [restricted.originals.json](../restricted.originals.json), [PR #785](https://github.com/fontanierh/atelier/pull/785). Private bytes stay on the pinned restricted route. These are source links, not gameplay acceptance. |
+| Brine Cove individual objects | All 21 market stalls, all 265 town objects, the two harbour Soft fragments, eleven small props and three ship objects have saved placements in main ([PR #787](https://github.com/fontanierh/atelier/pull/787)). The signal mast and the shipyard slip are saved, merged and packaged ([PR #798](https://github.com/fontanierh/atelier/pull/798), [PR #800](https://github.com/fontanierh/atelier/pull/800)). The 13 harbour rowboats, buoys and potted palms (`props1`) are merged ([PR #813](https://github.com/fontanierh/atelier/pull/813)); the 6 quay cargo clusters and 7 fish baskets (`props2`, [PR #815](https://github.com/fontanierh/atelier/pull/815)) are merged; the 32 lantern posts (`props3`, [PR #816](https://github.com/fontanierh/atelier/pull/816)) are merged; the 3 harbour piers and 12 quay palms (`harbor1`, [PR #817](https://github.com/fontanierh/atelier/pull/817)) are merged; the 45 loose barrels and crates (`props4`, [PR #818](https://github.com/fontanierh/atelier/pull/818)) are merged; the re-split of the six quay cargo clusters and the pier cargo into 54 pieces (`props5`, #823) is merged; the 3 fish-shed rope coils and 18 gulls (`props6`, #830) are merged; and the 8 shipyard crates and 8 open-water rowboats (`harbor2`, #831) are merged. Other scenery still includes fused models/patches. | [Brine Cove scope](inventory/brinecove-objects.md), [split work](inventory/brinecove-split.md), [remaining exceptions](inventory/exceptions.md). |
 | Transport objects | The 10 gondola pylons and 12 railway fittings are saved as their own objects; their fused groups and the train LOD records are retired. | [PR #790](https://github.com/fontanierh/atelier/pull/790), [exceptions](inventory/exceptions.md). |
 | Desktop package | Main `da0a41f891`, fingerprint `c89f535441be`: guarded package in 255.7 s; automated acceptance 8/8; host/leave 9/9; first launch (Slice in 15.9 s, peak 7.8 GiB, no error lines) and shutdown recorded passing. | [Package guide](PACKAGE.md#current-main-checkpoint-2026-11-10). Log-only launch evidence; human input, travel, gameplay, sound and persistence remain unrecorded. Host/leave covers one process, not a second machine joining. |
 | Earlier integration package (#803, #804) | Built 2026-11-10 13:03 Paris from branch `7f43b4ccf3`, fingerprint `88d415e733ec`; automated checks, first launch and shutdown passed. | [Historical package evidence](PACKAGE.md#integration-package-for-803-and-804-2026-11-10). It predates #808/#809 and cannot host; later success does not upgrade this older app. |
 | Appearance | Whole-island captures exist, as well as the earlier slice route/package measurements. | [PARITY](PARITY.md) retains their exact revisions and limits; those earlier captures do not accept every later split. |
 
-## Active work after this checkpoint
+## Merged content and package coverage
 
 Saved, prepared and packaged totals are kept separate:
 - **Earlier saved content retained:** package `c89f535441be` includes the small-families batch (#797), the Brine Cove
@@ -78,10 +81,16 @@ Saved, prepared and packaged totals are kept separate:
   [exceptions](inventory/exceptions.md#current-source-classification). Brine Cove `props1` (13 harbour objects, claim
   `BCPROPS1`, [PR #813](https://github.com/fontanierh/atelier/pull/813)) is merged too. Package `c89f535441be` predates
   both.
-- **Remaining source/detail work:** no whole-source item is left (#826, #827 merged): `MPC_SeeThrough` (claim
+- **Final source batches merged:** no whole-source item is left in the tracked recovery list (#826, #827 merged): `MPC_SeeThrough` (claim
   `SEETHRU`, the `parameter-collection` importer) and `RuntimeData` (claim `SKATERT`, the `skate-runtime` importer) are
   imported from their pinned generators; see
   [exceptions](inventory/exceptions.md#current-source-classification).
+
+The final handoff also repairs stale material-slot overrides in eleven Brine Cove placements: market-3-3,
+market-3-4, market-4-3, market-4-4, townlower-4-4, townupper-3-4, townupper-4-4 and harbor-2-3 through harbor-5-3.
+PR #831 re-saved them from their current tiles and added `brinecove-remainder-slots-resaved`; the all-batch retired
+check with donor evidence and the content check reported no problems. These saves are on main `1abaab9d70`,
+**not** in the available package. They still need human visual acceptance.
 
 After the migration (on demand, not acceptance gates):
 - Split the remaining useful objects when someone needs to edit them (backlog below); an imported package with an
@@ -102,7 +111,7 @@ After the migration (on demand, not acceptance gates):
   | Area | Bundled useful objects | Groups | Work | Batch |
   |---|---|---:|---|---|
   | Brine Cove props | 3 fish-shed rope coils, 18 gulls | 21 | done (#830) | `props6` |
-  | Brine Cove harbour | 8 shipyard crates, 8 open-water rowboats | 16 | done (this change) | `harbor2` |
+  | Brine Cove harbour | 8 shipyard crates, 8 open-water rowboats | 16 | done (#831) | `harbor2` |
   | Brine Cove lower town | walkways, waterfront bunting, fish crates, plant and sack pairs (likely 8 pieces) | 29 | cut, import, save | `townlower2` |
   | Brine Cove upper town | 3 terrace stairs, cistern, laundry line, 4 palms, bunting, pots, benches | 22 | cut, import, save | `townupper2` |
   | Brine Cove market | foreground stall, 34 parasols, 6 trees, 6 palms, 6 colonnade bays, 9 lantern strings, benches, bunting, carts, sacks | 114 | cut, import, save | `market4` |
@@ -125,7 +134,7 @@ After the migration (on demand, not acceptance gates):
 - The donor built most scenery at runtime. V2's `/Game/V2/Maps/Slice` now covers the island through saved
   World Partition scenery and stable ownership records. The map name and `slice` profile are historical names,
   not a coastal-only content limit. Dynamic services remain; `JapanWorld` consults the saved manifest instead
-  of duplicating covered scenery. Some fused scenery still needs finer object/source ownership.
+  of duplicating covered scenery. Fused scenery is split when a selected edit needs a finer boundary.
 - The kart component, phone profile and phone streaming are removed from the V2 runtime. Four character
   Blueprints were cleaned after the serialized component change. Exclusions are listed below.
 - V2 has its own project/build identity and `com.atelier.yorimichiv2` package identity. ElectraPlayer remains

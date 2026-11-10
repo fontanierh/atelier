@@ -1,6 +1,10 @@
 # Shared haze source handoff
 
-**Saved and accepted on the PR803 branch, not yet merged or packaged.** Commit `6c807a71f9` refreshes the three
+**Historical handoff, subsequently merged in #803/#804 and included in package `c89f535441be`.** The checks below
+apply to their recorded revisions and digest fields, not final visual acceptance. [INVENTORY](../INVENTORY.md)
+owns current status; do not repeat the accepted batch to satisfy this earlier handoff.
+
+At the original PR803 branch checkpoint, commit `6c807a71f9` refreshed the three
 records, pinned sources, packages and receipts under MASTERS2. All three were rebuilt in the accepted 14-master warm
 batch and matched their originals with the rooted topology-v2 digest. Preparation began at PR803 head `8527a978f8`.
 

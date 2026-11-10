@@ -1,5 +1,10 @@
 # Bounded static model pieces
 
+**Historical donor integration note.** The shared partitioner described below remains a reusable tool, but the
+Belmonte rollout, foliage-first conditions and unfinished producer work belong to retired V1. They do not reopen
+the completed V2 migration. For V2, use the [owning record's targeted route](../games/yorimichi_v2/README.md)
+and make a generated model independent before editing its geometry; rendering partitions alone do not do that.
+
 The shared `atelier.gltf_partition` operation partitions identity-node static GLBs through
 the same fixed-cell complete-face mechanism used by the regional Blender exporters. It
 preserves every encoded corner position, normal, tangent, colour, custom attribute and UV

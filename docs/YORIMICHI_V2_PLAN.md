@@ -1,7 +1,8 @@
 # Yorimichi V2: the game and the way we build it
 
-**Status: design and acceptance reference.** Written 6 November 2026; owner directions reconciled
-9 November 2026. [The inventory](../games/yorimichi_v2/docs/INVENTORY.md) is the current implementation
+**Status: historical migration design and retained authoring rules. Migration complete by owner decision.**
+Written 6 November 2026; owner directions reconciled 10 November 2026 after the final handoff (#831).
+[The inventory](../games/yorimichi_v2/docs/INVENTORY.md) is the current implementation
 status; [the V2 README](../games/yorimichi_v2/README.md) is the working command guide.
 The original milestone names below remain useful for tracing evidence, not as a fresh task list.
 
@@ -10,9 +11,13 @@ human-editor and second-machine proofs do not block independent migration. On 8 
 independent editing and recoverable sources for every useful object, permitted supported larger guarded
 sessions and disjoint headless editors, and asked the team to reuse existing queues and passing checks.
 On 9 November the owner placed human and multiplayer playtesting after construction, with his brother.
-Those checks remain unverified until performed; they must not become an operator-permission gate on building.
-V2 is already the active game. Its normal build, targeted imports, claims and warm editor queue exist;
-consult the inventory before treating any original milestone below as unfinished.
+On 10 November the owner closed migration and chose **splitting on demand**. Remaining bundled objects are an
+authoring backlog, not an acceptance gate or a continuing world-splitting campaign. Before changing generated
+geometry, make the selected model independently generatable; preserve its originals and targeted import route.
+Human gameplay, visual and actual two-machine checks remain unverified until performed.
+V2 is the active game. Its normal build, targeted imports, claims and warm editor queue exist. The original
+milestones below explain the design and evidence; they are not current work orders. Consult the inventory and
+[testing handoff](../games/yorimichi_v2/docs/PACKAGE.md#testing-the-final-handoff) for what remains to test.
 
 **Goal:** rebuild the original Yorimichi in Unreal, with its world, characters and
 gameplay, while letting people and agents work independently without repeatedly
@@ -30,8 +35,8 @@ service to prevent conflicting binary edits across all machines.
 
 ## 1. Read this before doing any work
 
-1. Continue the full port from the current inventory. Reuse completed P0–P3 work;
-   do not delay independent migration for outstanding human or second-machine evidence.
+1. Continue normal development from the current inventory. Reuse the completed migration and its evidence;
+   keep outstanding human and second-machine acceptance separate from the on-demand authoring backlog.
 2. Use `games/yorimichi_v2/` for the new game. Keep the original game available as
    a reference until V2 passes acceptance. Do not turn its working checkout into
    V2 in place.
@@ -196,8 +201,15 @@ games/yorimichi_v2/
     prepared/               optional pinned external import inputs, never a derived-output cache
     verified.json           authority-aware import/save record and package hashes
   schemas/                  formats shared by tools and runtime
-  tools/prepare/            one preparation route per asset kind
-  tools/import/             one importer per asset kind
+  tools/content/            record discovery, validation, planning and targeted preparation
+  tools/import/             targeted imports, journals and recovery
+  tools/editor/             claimed editor saves and bounded warm sessions
+  tools/migrate/            selected object/region authoring and retained migration helpers
+  tools/package/            package configuration and acceptance
+  tools/restricted/         pinned private-source fetch and original validation
+  tools/parity/             revision-bound route and comparison tools
+  tools/review/             authoring handoff reports
+  tools/test/               focused native checks
   world/regions/<region>/    region identity, bounds, neighbors, authored data
   unreal/
     YorimichiV2.uproject
@@ -205,7 +217,6 @@ games/yorimichi_v2/
     Content/                COMMITTED editable Unreal content, including actors
     Source/                 runtime and editor code, separated by feature
     Plugins/                game-specific plugins such as HorseRacing
-  scenarios/                V2 checks and repeatable visual routes
   docs/
     INVENTORY.md            feature/region coverage and evidence links
     TOOLCHAIN.md            exact engine, plugins and supported host tools
@@ -221,8 +232,11 @@ saved Unreal packages are its editable sources. Imported packages still need the
 textures and applicable rigs/animation inputs; generated art needs its generator, settings and inputs.
 Unknown originals remain unfinished. Do not relabel an imported binary as editor-authored to hide a gap.
 Derived, carved or baked intermediates belong under `build/yorimichi_v2/` (or the recorded Unreal output),
-not alongside or in place of the committed originals. Every useful object must be independently editable;
-rendering batches may remain for performance.
+not alongside or in place of the committed originals. Split a bundled object when the selected edit needs its
+own boundary. Before changing a generated model's geometry, first parameterize or extract its generator so it
+can build that model without unrelated geometry. Shared helpers and rendering batches may remain.
+There is currently no V2 `scenarios/` directory; use the existing parity/package tools and recorded playtests
+rather than a retired V1 `atelier qa` scenario.
 
 Reuse generic plugins from `platform/engine/Plugins`. Game-specific runtime code
 must live in the new game, not import Python or load files from the old game's
@@ -752,7 +766,7 @@ A final clean package is still required to establish that a milestone ships.
 | Targeted import | `tools/import/run.py`; warm `tools/editor/session.py` | Per-job authorization/checks, final acceptance after native exit |
 | Global ownership | Existing claims service and exact LFS lock binding | Fresh bases, complete touched sets and journal recovery remain required |
 | Live-session targeting | `atelier live --session ID` | Local multi-session success is not a second-machine proof |
-| Saved actors and ownership records | Region `objects.toml`, saved manifests and verification receipts | Whole-game object splitting/source closure remain work in progress |
+| Saved actors and ownership records | Region `objects.toml`, saved manifests and verification receipts | Tracked source-recovery batches are merged; further object splitting is on demand. Human editing/gameplay proof remains separate |
 
 Use the current V2 README and actual `--help`/build step list for invocation details. The inventory
 separates implementation, accepted content and final human evidence; do not start replacement tooling
@@ -760,10 +774,10 @@ because the original November 6 plan described an already implemented capability
 
 ## 11. Complete migration coverage
 
-The tables below are the minimum scope, derived from the original game and
+The tables below preserve the original coverage reference, derived from the original game and
 its documentation. The implementation inventory cross-checks source registrations, runtime loads,
-maps, assets and the reference game. Add anything real that these tables
-miss. Do not remove a row because its implementation is difficult.
+maps, assets and the reference game. Migration is closed; these tables help select gameplay checks and identify
+regressions, rather than restart the original rollout. Add newly found gaps to the current inventory with evidence.
 
 Each row in the implementation inventory needs: owner, dependencies, old source
 and package locations, new locations, baseline evidence, executable check or
@@ -1005,8 +1019,8 @@ unexplained binary churn; both machines reproduce the result.
 
 **Stop:** any repeated whole-world import, unresolved ownership race, cross-talk
 between games, missing committed dependency, or unexplained visual/performance
-regression. Fix the affected route while unrelated migration proceeds. Full migration is
-already authorized. One machine with four agents is not proof of two-machine collaboration.
+regression. These remain defects to fix while unrelated development proceeds. Migration was closed by owner
+decision on 10 November. One machine with four agents is not proof of two-machine collaboration.
 
 ### P4 — Restore shared gameplay and characters
 
@@ -1172,7 +1186,7 @@ the machines' safe capacity does not allow it.
 | C20 | Stop/cancel a build or preview owned by a worker | Its guarded child cleans up; another worker's process, locks and files remain intact |
 
 Keep C01–C20 evidence and remaining gaps in COLLABORATION_TESTS.md. Unavailable human/second-machine
-proofs do not block broad migration. A simulation of lock logic does not replace actual LFS/server
+proofs remain separate from the completed migration. A simulation of lock logic does not replace actual LFS/server
 integration evidence, and another checkout on the same host is not a second machine. Reuse passing
 checks; rerun only for a relevant change, failure or unresolved concern.
 
@@ -1211,8 +1225,8 @@ horse/transition cases and a broken `switch-skate-bail` QA input. Do not copy
 “implemented” into the V2 inventory as “accepted.”
 
 The following remains the final multiplayer coverage reference. The owner will playtest live
-with his brother after construction; do not stop independent migration to run this sequence or
-create another operator-permission task for it.
+with his brother. Reuse completed checks and select the remaining acceptance work; this historical sequence is
+not a requirement to repeat the whole suite or create another operator-permission task.
 
 1. Port the relevant wire/serialization checks. The original suite names 19
    fixtures; inventory their intent and preserve coverage of retained behavior.
@@ -1396,7 +1410,10 @@ the agent's conversation ended. Use an explicit preserved-work handoff.
 
 ## 18. Final definition of done
 
-V2 is complete only when all of these are true:
+**Historical full-acceptance definition.** The owner closed migration on 10 November and chose on-demand
+splitting ([D12](../games/yorimichi_v2/docs/DECISIONS.md#d12--migration-complete-split-on-demand-2026-11-10)).
+The evidence items below remain a reference for accepting gameplay and collaboration; they do not reopen
+migration or require completing every object split before normal development.
 
 - Every in-scope F/W inventory row is accepted with evidence; X01–X04 remain
   explicitly deferred and have no broken runtime dependencies.
@@ -1418,10 +1435,9 @@ V2 is complete only when all of these are true:
   or explicitly outside its scope. There is no obligation to maintain old build
   machinery just because it exists.
 
-**Current work:** finish the remaining original-game content, independent object editing and
-recoverable sources in the inventory; integrate accepted batches into playable checkpoints.
-Keep this design reference current when the owner changes policy, and record progress in the
-inventory rather than restarting P0 or requiring new P3 authorization.
+**Current work:** test the delivered game and develop requested changes. Split the selected object and make its
+generator independent when an edit requires it. Keep source recovery honest and preserve accepted content.
+Record new findings and progress in the inventory rather than restarting P0 or requiring new P3 authorization.
 
 ## Reference map
 
@@ -1443,6 +1459,5 @@ owner's V2 scope or require retaining obsolete machinery:
   [capacity workflow](BUILD_CAPACITY.md) and [verified release publication](RELEASES.md)
 
 External references are linked beside the relevant design claims. They explain
-engine/tool capabilities. The ownership protocol, task boundaries, budgets and
-migration gates in this file are recommendations for this project, to be proved
-by the specified experiment.
+engine/tool capabilities. The original proposed budgets, experiments and migration gates are historical;
+current commands, protections, evidence and acceptance limits live in the linked active guides.

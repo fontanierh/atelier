@@ -1,5 +1,9 @@
 # Dormant legacy operational epoch
 
+**Retired experiment.** This page describes `platform/build-v2`, not Yorimichi V2. Its tests are disabled,
+and the roadmap items below are historical, not current development requirements. Use the
+[active game guide](../../games/yorimichi_v2/README.md) for normal authoring, builds and tests.
+
 `platform/build-v2/src/legacy_epoch.rs` implements a private control-state machine. It is not
 connected to the legacy caller, a repair command, Python startup, checkpoint writer custody,
 or native launch. Production qualification returns `Unsupported`: there is no production
