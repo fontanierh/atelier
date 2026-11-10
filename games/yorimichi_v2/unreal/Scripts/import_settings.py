@@ -112,3 +112,33 @@ def donor_free(names, blank_folder: str) -> list:
     blank = os.path.normpath(blank_folder)
     return [name for name in names if name and os.path.normpath(name) != blank]
 
+
+def reduction_plan(settings: dict):
+    """Pure: the recipe's LOD reduction plan as [[percent, screen], ...] (LOD0 first), or None when the record names none.
+    LOD0 keeps every triangle and screen 1; the rest are a fraction of the triangles at a smaller screen size, as the donor's
+    generate_lods writes them. Anything else is refused, so a fresh import never takes an unknown plan."""
+    plan = settings.get('lods')
+    if plan is None:
+        return None
+    if not isinstance(plan, list) or not plan or any(not isinstance(row, list) or len(row) != 2 for row in plan):
+        raise SettingError('lods must be a non-empty list of [percent, screen] pairs, LOD0 first')
+    percents = [row[0] for row in plan]
+    screens = [row[1] for row in plan]
+    if any(isinstance(v, bool) or not isinstance(v, (int, float)) for v in percents + screens):
+        raise SettingError('lods values must be numbers')
+    if percents[0] != 1 or screens[0] != 1 or any(not 0 < p <= 1 for p in percents):
+        raise SettingError('lods LOD0 must be 100% at screen 1, and every level a fraction of the triangles')
+    if any(b >= a for a, b in zip(screens, screens[1:])):
+        raise SettingError('lods screen sizes must fall with each level')
+    return [[float(p), float(q)] for p, q in plan]
+
+
+def level_kind(source: str) -> str:
+    """Pure: which importer a chain level or LOD0 file goes through: 'fbx' for an FBX, 'gltf' for a glTF or GLB."""
+    lower = source.lower()
+    if lower.endswith('.fbx'):
+        return 'fbx'
+    if lower.endswith(('.glb', '.gltf')):
+        return 'gltf'
+    raise SettingError(f'{source}: a chain level must be an FBX, a GLB or a glTF file')
+

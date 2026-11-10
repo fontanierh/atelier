@@ -284,7 +284,20 @@ def _build_lod_chain(asset, settings, resolve):
     transient = []
     for level, (source, _, _, sections) in enumerate(chain[1:], 1):
         name = f'{asset.get_name()}_LOD{level}'
-        lod = _import(resolve(source), f'{TRANSIENT}/{name}', _gltf_static_mesh(name, collision=False))
+        # A level goes through the importer of its own file: an FBX the same way as the record's LOD0 (the donor's city
+        # tree levels are FBX), a glTF or GLB as before. Collision is off for every level.
+        if import_settings.level_kind(source) == 'fbx':
+            fbx = _fbx_static_mesh(dict(settings, collision='none'))
+            legacy = _legacy_fbx(settings)
+            if legacy:
+                U.SystemLibrary.execute_console_command(None, 'Interchange.FeatureFlags.Import.FBX 0')
+            try:
+                lod = _import(resolve(source), f'{TRANSIENT}/{name}', fbx)
+            finally:
+                if legacy:
+                    U.SystemLibrary.execute_console_command(None, 'Interchange.FeatureFlags.Import.FBX 1')
+        else:
+            lod = _import(resolve(source), f'{TRANSIENT}/{name}', _gltf_static_mesh(name, collision=False))
         bind(lod, sections)
         if editor.set_lod_from_static_mesh(asset, level, lod, 0, True) != level:
             raise RuntimeError(f'{asset.get_path_name()}: LOD{level} from {source} was not attached')
@@ -545,6 +558,14 @@ def main():
                 _build_lod_chain(asset, settings, resolve)
             _apply_material_slots(asset, plan)
             _apply_mesh_settings(asset, settings)
+            plan = import_settings.reduction_plan(settings)
+            if existing is None and plan is not None and asset.get_num_lods() == 1:
+                # A new package takes the record's reduction plan (the donor's generate_lods, which the donor ran on every
+                # Brine Cove plant): preserve() below restores a chain only when the package already had one.
+                levels = _static_mesh_editor()
+                if levels.set_lods(asset, _reduction_options(plan)) != len(plan):
+                    raise RuntimeError(f'{package}: the LOD reduction plan did not set {len(plan)} levels')
+                levels.set_lod_screen_sizes(asset, [screen for _, screen in plan])
             after = lod_preservation.preserve(_static_mesh_editor(), asset, before, settings.get('lods'),
                                               _reduction_options)
             lod_results[package] = {'before': before, 'after': after}
