@@ -1,0 +1,34 @@
+{
+  "asset": "prop/bike/wheel-front",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/BK_WheelFront.uasset": "4baa3f00e4d05323b9b7de03bb72f9ea54e9b5e13c3243c3ce984a691456da8c"
+  },
+  "input_fingerprint": "246a105b1410e1b895cefcdcc6518020aaa9508b9c2f39e3209eb0ce1e929986",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Assets/BK_WheelFront": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

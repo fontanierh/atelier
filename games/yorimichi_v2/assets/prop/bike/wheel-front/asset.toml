@@ -1,0 +1,25 @@
+# Recovered from the donor generator (tools/migrate/recover.py): BK_WheelFront: a bike wheel (26060 triangles after the import).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/bike/wheel-front"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/bike/wheel-front"
+references = ["generator/bike/wheels", "master/japan/base/bike"]
+
+[[sources]]
+path = "src/BK_WheelFront.fbx"
+sha256 = "b9d91c3ff4143f67e2957f9b916d4d703dfd8713aeb6ae62d50080ddbcc81482"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_Bike"]
+triangles = 26060
+allow_cpu_access = true
+
+[[outputs]]
+package = "/Game/Japan/Assets/BK_WheelFront"
