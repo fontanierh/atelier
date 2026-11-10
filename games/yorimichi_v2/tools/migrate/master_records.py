@@ -209,7 +209,7 @@ def state(game: Path, family: dict) -> str:
     if listed - packages - kept:
         raise PlanError(f'{family["adopted"]} also owns {sorted(listed - packages - kept)}; split it by hand first or '
                         'name them in keeps')
-    if not present and listed == packages | kept:
+    if not present and packages <= listed:   # the keeps may also name packages a family sharing the record moved since
         return 'unprepared'
     if len(present) == len(masters) and listed <= kept:   # a kept package may since have moved to a later family
         return 'done'
