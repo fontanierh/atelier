@@ -884,3 +884,23 @@ def test_japan_kit_matches_the_saved_collision_flag_and_builds_lod_chains(tmp_pa
     houses.write_text(json.dumps(data))
     with pytest.raises(recover.RecoverError, match='hulls'):
         recover.build_plan(game, 'japan/kit', donor)
+
+
+def test_only_plans_just_the_named_records_and_their_generators(tmp_path):
+    """--only keeps the named generated records and the generators they reference, so writing the wheels leaves every
+    other record of the family (the tree house frame) alone; an ID the family does not plan is refused."""
+    game, donor = tmp_path / 'game', japan_donor(tmp_path)
+    assets = '/Game/Japan/Assets'
+    japan_adopted(game, 'adopted/japan/assets/bike', f'{assets}/BK_Frame', f'{assets}/BK_WheelFront')
+    japan_adopted(game, 'adopted/japan/materials/base-materials', '/Game/Japan/Materials/M_Bike')
+    atomic(donor, 'vehicle_bike', {'BK_Frame': (25666, ['BikePalette']), 'BK_WheelFront': (26060, ['BikePalette'])})
+    write(donor / 'bike/import-report.json', json.dumps({'parts': {'BK_Frame': {'source_triangles': 25666, 'triangles': 25094},
+                                                                   'BK_WheelFront': {'source_triangles': 26060, 'triangles': 26060}}}))
+    plan = recover.build_plan(game, 'japan/assets', donor, {'prop/bike/wheel-front'})
+    assert [g.id for g in plan.generated] == ['prop/bike/wheel-front']
+    assert [g.id for g in plan.generators] == ['generator/bike/wheels']
+    assert plan.kept['adopted/japan/assets/bike'] == [f'{assets}/BK_Frame']    # the frame stays where it is
+    plan = recover.build_plan(game, 'japan/assets', donor, {'prop/bike/frame'})
+    assert plan.generators == []
+    with pytest.raises(recover.RecoverError, match='plans no record prop/bike/nope'):
+        recover.build_plan(game, 'japan/assets', donor, {'prop/bike/nope'})

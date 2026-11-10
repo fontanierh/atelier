@@ -968,12 +968,20 @@ FAMILY_SCOPE['japan/foliage'] = 'japan/assets'
 FAMILIES.update({'japan/kit': plan_japan_kit, 'japan/foliage': plan_japan_foliage})
 
 
-def build_plan(game: Path, family: str, donor: Path) -> Plan:
+def build_plan(game: Path, family: str, donor: Path, only: set[str] | None = None) -> Plan:
+    """The family's plan. `only` keeps just those generated records (and the generators they reference), so one part of
+    a family can be written without rewriting records a later change edited by hand (the tree house frame)."""
     if family not in FAMILIES:
         raise RecoverError(f'unknown family {family!r}; known: {", ".join(sorted(FAMILIES))}')
     scope = FAMILY_SCOPE.get(family, family)
     owner = adopted_packages(game, scope)
     plan = FAMILIES[family](game, donor, owner, record_owners(game))
+    if only is not None:
+        unknown = sorted(only - {g.id for g in plan.generated})
+        if unknown:
+            raise RecoverError(f'{family} plans no record {", ".join(unknown)}')
+        plan.generated = [g for g in plan.generated if g.id in only]
+        plan.generators = [g for g in plan.generators if any(g.id in x.references for x in plan.generated)]
     for gen in plan.generated:
         gen.origin = owner.get(gen.package, '')
         if not gen.origin:
@@ -1282,10 +1290,12 @@ def main(argv=None) -> int:
     parser.add_argument('family', choices=sorted(FAMILIES))
     parser.add_argument('--donor', required=True, type=Path, help='the donor build output folder of the family')
     parser.add_argument('--apply', action='store_true', help='write the records (default: plan only)')
+    parser.add_argument('--only', help='comma-separated generated record IDs: plan and write only those')
     parser.add_argument('--game', type=Path, default=GAME, help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
     try:
-        plan = build_plan(args.game.resolve(), args.family, args.donor.resolve())
+        only = {i.strip() for i in args.only.split(',') if i.strip()} if args.only else None
+        plan = build_plan(args.game.resolve(), args.family, args.donor.resolve(), only)
         print(report(plan))
         if args.apply:
             changed = apply(args.game.resolve(), plan, args.donor.resolve(), settle=True)
