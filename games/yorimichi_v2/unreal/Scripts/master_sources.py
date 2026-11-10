@@ -11,15 +11,18 @@ import sys
 from types import ModuleType
 import uuid
 
+# The record kinds whose generator is their pinned .py sources, run by the importer (tools/import/run.py GENERATOR_BUILT).
+GENERATOR_BUILT = ('material-master', 'parameter-collection')
+
 
 def checked_sources(game, asset, plan):
     """@cc [owner:fontanierh,label:correctness] material-master-plan-sources
-    At each write boundary the prepared master plan MUST match its canonical record's recipe, ordered source paths and
+    At each write boundary the prepared master (or parameter collection) plan MUST match its canonical record's recipe, ordered source paths and
     packages. Read and verify every source against its recorded pin before any source executes. Return those exact byte
     snapshots for the loader, so a file changed after this check cannot substitute different executable bytes.
     """
-    if asset is None or asset.kind != 'material-master' or asset.authority != 'generated':
-        raise RuntimeError('the import plan has no generated material-master record')
+    if asset is None or asset.kind not in GENERATOR_BUILT or asset.authority != 'generated':
+        raise RuntimeError('the import plan has no generated material-master or parameter-collection record')
     game = Path(game).resolve()
     folder = asset.folder.resolve()
     paths = [(folder / source.path).resolve() for source in asset.sources]

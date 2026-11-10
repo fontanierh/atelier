@@ -78,9 +78,9 @@ Saved, prepared and packaged totals are kept separate:
   [exceptions](inventory/exceptions.md#current-source-classification). Brine Cove `props1` (13 harbour objects, claim
   `BCPROPS1`, [PR #813](https://github.com/fontanierh/atelier/pull/813)) is merged too. Package `c89f535441be` predates
   both.
-- **Remaining source/detail work:** the `MPC_SeeThrough` and `RuntimeData` routes (their generators are pinned, an
-  importer for each is missing): 2 records / 2 packages in
-  [exceptions](inventory/exceptions.md#current-source-classification).
+- **Remaining source/detail work:** none of the whole-source items is left: `MPC_SeeThrough` (claim `SEETHRU`, the
+  `parameter-collection` importer) and `RuntimeData` (claim `SKATERT`, the `skate-runtime` importer) are imported from their
+  pinned generators; see [exceptions](inventory/exceptions.md#current-source-classification).
 
 Remaining construction work:
 - Close the other useful-object/source gaps in [exceptions](inventory/exceptions.md) and

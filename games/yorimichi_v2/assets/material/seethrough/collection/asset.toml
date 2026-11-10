@@ -1,0 +1,26 @@
+# The camera see-through collection /Game/SeeThrough/MPC_SeeThrough, written by its donor generator: see_through.py
+# collection(create=True), with the VECTORS defaults (lines 47-55, 246-268). The importer (parameter-collection@1) only
+# appends: every parameter the saved collection has keeps its id, so the masters that read it stay bound.
+schema = 1
+id = "material/seethrough/collection"
+kind = "parameter-collection"
+authority = "generated"
+owner = "shared/seethrough"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+provenance = "donor generator games/yorimichi/unreal/Scripts/see_through.py at 7eec0f98dd (generator/seethrough/collection) at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+references = ["generator/seethrough/collection"]
+
+[[sources]]
+path = "src/see_through.py"
+sha256 = "9d7da40163a6e4023d91e8fc2aaacdd2578bf07ef02f05b4e10dcc1c4c8fd105"
+
+[recipe]
+importer = "parameter-collection"
+version = 1
+
+[recipe.settings]
+builder = "collection"
+arguments = { create = true }
+
+[[outputs]]
+package = "/Game/SeeThrough/MPC_SeeThrough"

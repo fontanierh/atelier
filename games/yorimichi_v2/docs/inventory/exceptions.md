@@ -44,7 +44,7 @@ can still need recoverable inputs and an accepted import. See [sources](sources.
 |---|---:|---|
 | `adopted/megapark/standalone-level` | checked | Saved Unreal map (editor-authored); the reference check is done: all 79 `/Game` dependencies resolve to their records ([megapark-map-refs.json](small-families-reads/megapark-map-refs.json)). Not an imported-model source gap |
 | `adopted/japan/assets/bike` | migrated | `BK_WheelFront` and `BK_WheelRear` are `prop/bike/wheel-front` and `wheel-rear`, generated from the pinned `generator/bike/wheels` and imported (BCBIKE; see "Bike residual packages") |
-| `adopted/seethrough`, `adopted/skateruntime` | 2 / 2 | `MPC_SeeThrough` and `RuntimeData`: the generators are pinned (`generator/seethrough/collection`, `generator/skate/runtime`, donor sources by sha256, no outputs). Still blocked: no V2 importer takes a parameter collection or a data asset; the adopted records keep both packages |
+| `adopted/skateruntime` | 0 / 0 | Done: `RuntimeData` moved to `data/skate/runtime` (claim `SKATERT`, importer `skate-runtime`), and `MPC_SeeThrough` to `material/seethrough/collection` (claim `SEETHRU`). No whole-source item remains |
 
 **Closed by claim `JAPANMI` (branch `jim5/yv2-japan-instances`, not yet in a package): 10 records / 45 instances.**
 `tools/migrate/held_instances.py` plans each family from the donor scripts' values (`small_instances.EXPECTED`) and
@@ -1338,17 +1338,25 @@ Four records, one package each. None is an import; each is a script product or a
   collection's content is its vector parameter list and defaults (`see_through.py` `VECTORS`); the game's
   `USeeThroughComponent` writes it every frame. The donor asset (`MPC_SeeThrough.uasset`) has the same bytes as the V2
   `verified.json` entry. Generator pinned as `generator/seethrough/collection` (`see_through.py`, `shared_materials.py`, sha256
-  equal to the donor commit). Status: **blocked**: V2 has no importer for a parameter collection (`import_asset.py` takes
-  static-mesh, texture, material-instance and material-master only; `master_digest` reads materials).
+  equal to the donor commit). Status: **done** (claim `SEETHRU`): `material/seethrough/collection` (kind
+  `parameter-collection`) pins `see_through.py` and is written by its `collection(create=True)`. The importer
+  (`parameter-collection@1`, `unreal/Scripts/collection_params.py`) refuses a saved collection the generator cannot make,
+  lets the generator append only, and reads back the 11 vector parameters with each saved parameter id kept (read from the
+  struct's text export; Python cannot read the protected `Id`). The three japan surface masters that read it name the new
+  record as their input.
 - `adopted/skateruntime` (`RuntimeData`, 31 MB): `build.py:1804-1816` (`unreal.skate_data`) lists it at `:1813`. Its chain:
   `build.py:1507-1515` (`skate.runtime`) runs `platform/engine/Plugins/Activities/Skate/Tools/simulation_package.py --assemble`
   (with `motion_text.py` and `runtime_text.py`, `:164-168`) on the tracked `Skate/Data`; `skate_ride/import_runtime.py:11` calls
   `SkateDataLibrary.import_runtime`, the C++ `USkateDataLibrary::ImportRuntime` (`SkateRuntimeData.cpp:451-465`), which saves the
   data asset. Reproducible from tracked sources: a fresh assembly of the package is byte-identical to the donor's package
   (every file, same `manifest_sha256`). The asset itself needs the editor (the C++ writer). Generator pinned as
-  `generator/skate/runtime` (6 sources). The donor `RuntimeData.uasset` has the same bytes as the V2 `verified.json` entry.
-  Status: **blocked**: no V2 importer for a data asset; the `Skate/Data` text inputs are not pinned by the record (a record
-  holds files, not a tree). `import_motion.py` and `MotionData` are the same step and are not covered here.
+  `generator/skate/runtime` (7 sources). The donor `RuntimeData.uasset` has the same bytes as the V2 `verified.json` entry.
+  Status: **done** (claim `SKATERT`): `data/skate/runtime` (kind `data`, importer `skate-runtime@1`) pins the assembler code
+  and `skate_runtime_inputs.sha256`, the 3,336 `Skate/Data` files the assembler reads, each by sha256
+  (`tools/import/skate_runtime.py`: the tree must hold exactly those files). The import assembles the package in a fresh
+  stage from those bytes only (manifest `add4fc56...`), runs `ImportRuntime`, then the plugin's `Verify` as the read-back
+  (byte-exact runtime files, replays and negative controls), and its report must agree with the receipt
+  (`unreal/Scripts/skate_verify.py`). `import_motion.py` and `MotionData` are the same step and are not covered here.
 
 Native reads still needed (read-only; editor and clean hydrate): `MI_HD_flat` through `report_materials.py`, with the list
 `docs/inventory/small-families-hidamari-materials.txt`. That list also names `M_RacingTv` and `MPC_SeeThrough`, which
@@ -1360,15 +1368,15 @@ kind); the `RuntimeData` data asset (no importer kind; the generator is pinned).
 
 - `adopted/japan/hidamari/surface-flat`: generated MI_HD_flat (parent M_HDCity). Evidence: city_material.py (hidamari generator), tools/hidamari_textures.py. Status: **need-read**. parent M_HDCity and T_HD_plaster are owned by adopted/japan/hidamari records
 - `adopted/racing`: generator master M_RacingTv. Evidence: racing_tv_material.py:12-16. Status: **need-read**. generator-built master; loaded, parameters unread. Loaded by the read as materials, not instances (report_materials cannot read them), so their parameters are unread. Open: a generator-built master keeps its editor-authority record until its generator, settings and inputs are recoverable; a parameter read alone does not close it.
-- `adopted/seethrough`: generator material parameter collection MPC_SeeThrough. Evidence: see_through.py:47 and :246-253. Status: **blocked**. no importer for parameter collections
-- `adopted/skateruntime`: generated RuntimeData data asset (31 MB). Evidence: build.py:1813 (RuntimeData output); unreal/Scripts/skate_ride/verify_data.py:15. Status: **blocked**. no importer for data assets; the cooked data is the only copy in the editor
+- `adopted/seethrough`: generator material parameter collection MPC_SeeThrough. Evidence: see_through.py:47 and :246-253. Status: **migrated** to `material/seethrough/collection` (`SEETHRU`)
+- `adopted/skateruntime`: generated RuntimeData data asset (31 MB). Evidence: build.py:1813 (RuntimeData output); unreal/Scripts/skate_ride/verify_data.py:15. Status: **migrated** to `data/skate/runtime` (`SKATERT`)
 
 | Package | Record | Status | Inputs (owner records) | Native read still needed |
 |---|---|---|---|---|
 | `MI_HD_flat` | `japan/hidamari/surface-flat` | need-read | Japan/Hidamari/Materials/M_HDCity, Japan/Hidamari/Materials/M_HDCity, Japan/Hidamari/Textures/T_HD_plaster | `report_materials` (material list) |
 | `M_RacingTv` | `racing` | need-read | - | `report_materials` (material list) |
-| `MPC_SeeThrough` | `seethrough` | blocked | generator `generator/seethrough/collection` | no importer for a parameter collection |
-| `RuntimeData` | `skateruntime` | blocked | generator `generator/skate/runtime` | no importer for a data asset |
+| `MPC_SeeThrough` | `seethrough` | migrated | generator `generator/seethrough/collection` | none: imported by `material/seethrough/collection` |
+| `RuntimeData` | `skateruntime` | migrated | generator `generator/skate/runtime` | none: imported and verified by `data/skate/runtime` |
 
 ### Historical: material-instance agreement with the editor reads
 

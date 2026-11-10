@@ -21,6 +21,7 @@ import material_base  # noqa: E402
 import lod_preservation  # noqa: E402
 from mesh_materials import assign_materials  # noqa: E402
 import master_digest  # noqa: E402
+import collection_params  # noqa: E402
 import skate_verify  # noqa: E402
 from master_sources import builder as _master_builder, checked_sources as _checked_master_sources  # noqa: E402
 
@@ -662,6 +663,45 @@ def _material_master_with_builder(plan, builder):
     U.log(f'V2 import wrote {package} from {plan["portable_sources"][0]}')
 
 
+def _parameter_collection(plan):
+    """@cc [owner:fontanierh,label:correctness] importer-writes-only-record-outputs
+    Write one generator-built material parameter collection from its pinned builder, appending only. The builder's own
+    module states the package (MPC) and the parameters (VECTORS, and SCALARS when it has any); a module whose MPC is not
+    the record's one output is refused. The saved collection, if there is one, is read first and refused before any write
+    when the generator could not make it (collection_params.problems_before). The builder then appends what is missing,
+    the package is saved and read back, and it must be exactly the generator's parameters with each saved one's id kept
+    (collection_params.accept), so every material that reads the collection still finds its parameters."""
+    if not plan['sources'] or len(plan['packages']) != 1:
+        raise RuntimeError('a parameter collection names an entry builder with optional helpers and writes one package')
+    game = Path(__file__).resolve().parents[2]
+    sys.path.insert(0, str(game / 'tools/content'))
+    import authority
+    asset = authority.discovered(game).by_id.get(plan['asset'])
+    contents = _checked_master_sources(game, asset, plan)
+    package = plan['packages'][0]
+    with _master_builder(plan['sources'], plan['settings']['builder'], source_bytes=contents) as builder:
+        names = builder.__globals__
+        if names.get('MPC') != package:
+            raise RuntimeError(f'{plan["portable_sources"][0]} writes {names.get("MPC")!r}, not {package}')
+        expected = collection_params.expected_of(names['VECTORS'], names.get('SCALARS', ()))
+        saved = collection_params.read(EAL.load_asset(package)) if EAL.does_asset_exist(package) else None
+        problems = collection_params.problems_before(expected, saved)
+        if problems:
+            raise RuntimeError(f'{package} is not what its generator makes; nothing written: ' + '; '.join(problems[:8]))
+        written = builder(**dict(plan['settings'].get('arguments', {})))
+    if written is None or written.get_path_name().split('.')[0] != package:
+        raise RuntimeError(f'the builder returned {written!r}, not {package}')
+    if not EAL.save_asset(package, only_if_is_dirty=False):
+        raise RuntimeError(f'could not save {package}')
+    back = collection_params.read(EAL.load_asset(package))
+    problems = collection_params.accept(expected, saved, back)
+    if problems:
+        raise RuntimeError(f'{package} reads back different from its generator: ' + '; '.join(problems[:8]))
+    added = len(back['vectors']) + len(back['scalars']) - (len(saved['vectors']) + len(saved['scalars']) if saved else 0)
+    U.log(f'V2 import wrote {package} from {plan["portable_sources"][0]} '
+          f'({len(back["vectors"])} vector, {len(back["scalars"])} scalar parameters, {added} added)')
+
+
 def _skate_library_call(call, *args):
     """A USkateDataLibrary call: Unreal Python drops the bool return when there are out parameters, so success returns
     the (empty) Error string and failure returns None or the error."""
@@ -706,6 +746,10 @@ def main():
         return
     if plan['importer'] == 'skate-runtime':
         _skate_runtime(plan)
+        U.log(MARKER)
+        return
+    if plan['importer'] == 'parameter-collection':
+        _parameter_collection(plan)
         U.log(MARKER)
         return
     if plan['importer'] == 'material-instance':

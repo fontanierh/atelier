@@ -3,7 +3,7 @@ japan_surfaces.py takes M_Painted and M_Village with the same builder module.
 
 Imported (master_records.py; docs/inventory/master-sources.md). keeps lists the base-materials record's other packages
 at that import; only MPC_Wind is still adopted there, with its generator in that record's pinned source tree, so
-`--refresh` regenerates these records. The camera collection is read from adopted/seethrough.
+`--refresh` regenerates these records. The camera collection is read from material/seethrough/collection.
 """
 WHITE = '/Game/Japan/Textures/T_white'
 WIND = '/Game/Japan/Materials/MPC_Wind'
@@ -33,11 +33,11 @@ FAMILY = {
     ],
     'masters': [
         {'id': 'master/japan/surfaces/foliage', 'package': '/Game/Japan/Materials/M_Foliage',
-         'builder': 'foliage_material', 'reads': [WHITE, WIND, SEE_THROUGH], 'inputs': ['texture/japan/white', ADOPTED, 'adopted/seethrough'],
+         'builder': 'foliage_material', 'reads': [WHITE, WIND, SEE_THROUGH], 'inputs': ['texture/japan/white', ADOPTED, 'material/seethrough/collection'],
          'arguments': {'white': WHITE, 'wind': WIND, 'see_through': SEE_THROUGH}},
         {'id': 'master/japan/surfaces/grass', 'package': '/Game/Japan/Materials/M_Grass',
          'builder': 'grass_material', 'reads': [WHITE, WIND, COVERAGE, SEE_THROUGH],
-         'inputs': ['texture/japan/white', ADOPTED, 'adopted/seethrough'],
+         'inputs': ['texture/japan/white', ADOPTED, 'material/seethrough/collection'],
          'arguments': {'white': WHITE, 'wind': WIND, 'coverage': COVERAGE, 'see_through': SEE_THROUGH}},
     ],
 }
