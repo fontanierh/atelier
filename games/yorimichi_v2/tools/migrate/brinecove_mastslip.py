@@ -7,9 +7,10 @@ face by the source block that made it:
 
 - `signal-mast`: the block of `procedural/market.py` market() from its `# Signal mast` comment to the `# Well.` comment
   (the mast, crossyard, rigging, bunting and crow's nest; 250 faces, all in the Market tiles at 3,4 and 4,4).
-- `shipyard-slip`: the stone faces `brinecove/landmarks.py` `_slipway()` makes (the slip's stone block, its dressed kerbs
-  and the wet centre strip). The wood sleepers and ground ways of `_slipway()` are not this object's: batch1 already
-  took part of them into `shipyard-yard`, so they are reported as `shipyard-ways` and left in their tiles.
+- `shipyard-slip`: every face `brinecove/landmarks.py` `_slipway()` makes: the stone block, kerbs and wet centre strip,
+  and the wood sleepers and ground ways. The object is whole. Batch 1 already cut part of the wood into `shipyard-yard`
+  (the same radius rule reproduces its 9,558 triangles), so `plan` reports those triangles as taken from the yard: the
+  yard keeps only what is left of its own geometry.
 
 Every generated face is then matched to the donor GLB triangle with the same float32 positions (brinecove_market.py's
 face index), so each triangle gets its generating object or none. Nothing is measured by distance; the donor generator is
@@ -68,9 +69,9 @@ OBJECTS = {
     'signal-mast': dict(component='Market', module='market', tile_prefix='Market'),
     'shipyard-slip': dict(component='Harbor', module='harbor', tile_prefix='Harbor'),
 }
-# Owner names that are not claimed objects but still need a generated face (so their triangles are matched, not lost).
-OTHER_OWNERS = {'shipyard-ways': 'Harbor'}
-PREFIX_OF = {name: spec['tile_prefix'] for name, spec in OBJECTS.items()} | OTHER_OWNERS
+PREFIX_OF = {name: spec['tile_prefix'] for name, spec in OBJECTS.items()}
+YARD = 'shipyard-yard'          # batch 1's object that holds part of the slipway's wood (split.OBJECTS)
+YARD_TRIANGLES = 9558           # its saved triangle count (split-batch1.json)
 
 
 def soft_prefixes() -> tuple:
@@ -117,7 +118,7 @@ def owner_rule(name: str, source: str):
     def slip(frame, mat):
         while frame is not None:
             if frame.f_code.co_name == '_slipway' and _under(frame.f_code.co_filename, LANDMARKS_FILE):
-                return 'shipyard-slip' if mat.startswith('stone') else 'shipyard-ways'
+                return 'shipyard-slip'
             if _under(frame.f_code.co_filename, HARBOR_FILE):
                 return None
             frame = frame.f_back
@@ -244,7 +245,7 @@ def expand(tile: str, stems: list[str]) -> list[str]:
     return [s for s in stems if s == tile or re.fullmatch(re.escape(tile) + r'_Piece\d+', s)] or [tile]
 
 
-def claim_set(donor: Path | None, summaries: dict) -> dict:
+def claim_set(donor: Path | None, summaries: dict, result: dict | None = None) -> dict:
     """The complete claim set for the two objects (a superset of what apply writes): folders end with '/', plus the
     scopes and the lock. Residual tile records come from the donor GLB names when --donor is given."""
     paths, scopes = set(), set()
@@ -256,13 +257,22 @@ def claim_set(donor: Path | None, summaries: dict) -> dict:
         paths.add(f'{GAME_REL}/assets/{record}/src/{part_mesh(name)}.glb')
         scopes.add((f'asset/{record}', 'shared/brinecove/' + name))
         scopes.add((f'object/brinecove/{name}', f'region/{REGION}'))
-    tiles = sorted({t for name in OBJECTS for t in summaries.get(name, {}).get('tiles', {})})
-    for tile in tiles:
-        for glb_stem in expand(tile, stems):
-            record = tile_record(glb_stem)
-            paths.add(f'{GAME_REL}/assets/{record}/asset.toml')
-            paths.add(f'{GAME_REL}/assets/{record}/src/{carve_name(glb_stem)}')
-            scopes.add((f'asset/{record}', 'shared/brinecove/' + record.rsplit('/', 1)[1]))
+    if result is not None:
+        # exact: the GLB files the plan trims (each carve it changes), not every piece of the generator's tile
+        tiles = sorted(result['trimmed'])
+        glb_stems = tiles
+    else:
+        tiles = sorted({t for name in OBJECTS for t in summaries.get(name, {}).get('tiles', {})})
+        glb_stems = [g for tile in tiles for g in expand(tile, stems)]
+    for glb_stem in glb_stems:
+        record = tile_record(glb_stem)
+        paths.add(f'{GAME_REL}/assets/{record}/asset.toml')
+        paths.add(f'{GAME_REL}/assets/{record}/src/{carve_name(glb_stem)}')
+        scopes.add((f'asset/{record}', 'shared/brinecove/' + record.rsplit('/', 1)[1]))
+    # batch 1's shipyard-yard part gives up the slipway's wood: its record and its expectation change too
+    paths.add(f'{GAME_REL}/assets/prop/brinecove/shipyard-yard/')
+    scopes.add(('asset/prop/brinecove/shipyard-yard', 'shared/brinecove/shipyard-yard'))
+    paths.add(f'{GAME_REL}/world/regions/{REGION}/split-batch1.json')
     paths.add(f'{GAME_REL}/world/regions/{REGION}/{EXPECTED_NAME}')
     paths.add(f'{GAME_REL}/world/regions/{REGION}/objects.toml')
     paths.add(f'{GAME_REL}/{RUNTIME_LOCK}')
@@ -279,10 +289,28 @@ def carve_name(stem: str) -> str:
     return f'SM_BC_{stem}.carve.json'
 
 
-def plan(donor: Path, src: Path) -> dict:
-    """Match every donor GLB triangle of the Market and Harbor tiles to the generated faces; per object, its triangles by
-    donor GLB file (as half-open ordinal ranges) and bounds, and per trimmed file the removed and kept counts. Raises
-    unless every triangle is matched by exactly one generated face (brinecove_market.owners_of)."""
+def carved_kept(game: Path, stem: str) -> set | None:
+    """The triangle ordinals a tile's existing carve keeps (its remainder before this batch), or None if it was never
+    carved. Earlier batches' carves are the base: this batch removes its objects from what they left."""
+    path = game / 'assets' / tile_record(stem) / 'src' / f'SM_BC_{stem}.carve.json'
+    if not path.is_file():
+        return None
+    return {i for a, b in json.loads(path.read_text())['kept'] for i in range(a, b)}
+
+
+def yard_ordinals(glb: Path) -> dict:
+    """{tile stem: set of ordinals} that batch 1's radius rule cut into shipyard-yard (split.compute, unchanged)."""
+    radial = split.compute(glb, {YARD: split.OBJECTS[YARD]})
+    return {stem: set(owned.get(YARD, [])) for stem, owned in radial['owned'].items()}
+
+
+def plan(donor: Path, src: Path, game: Path = HERE.parents[1]) -> dict:
+    """Match every donor GLB triangle of the Market and Harbor tiles to the generated faces, then account each object
+    against the tile's existing carve (the remainder left by earlier batches). Per object: triangles per GLB file as
+    half-open ordinal ranges, bounds, the triangles still in the remainder and those taken from shipyard-yard. Per
+    trimmed file: kept before and after. The yard's count before and after. Raises unless every triangle is matched
+    by exactly one face, every mast triangle is still in its tile's remainder, and every slip triangle is either in the
+    remainder or in batch 1's shipyard-yard part. Writes nothing."""
     glb = donor / 'brinecove' / 'glb'
     combined = {'verts': [], 'faces': [], 'mats': [], 'owner': []}
     for name in OBJECTS:
@@ -293,28 +321,49 @@ def plan(donor: Path, src: Path) -> dict:
         combined['mats'] += built['mats']
         combined['owner'] += built['owner']
     index = market.face_index(combined)
-    out = {'objects': {name: {'triangles': 0, 'files': {}, 'min': None, 'max': None} for name in OBJECTS},
-           'trimmed': {}, 'shipyard_ways_triangles': 0}
+    yards = yard_ordinals(glb)
+    out = {'objects': {name: {'triangles': 0, 'from_residual': 0, 'from_shipyard_yard': 0, 'files': {}, 'min': None,
+                              'max': None} for name in OBJECTS},
+           'trimmed': {}, 'shipyard_yard': {'before': YARD_TRIANGLES, 'removed': 0, 'after': YARD_TRIANGLES,
+                                             'files': {}}}
     for stem in donor_stems(donor):
         model = split.read_glb(glb / f'SM_BC_{stem}.glb')
         tris = list(split.triangles(model))
         owners = market.owners_of(tris, index)
+        kept = carved_kept(game, stem)
+        if kept is None:
+            kept = set(range(len(tris)))
         taken = defaultdict(list)
         for ordinal, owner in enumerate(owners):
             if owner in OBJECTS:
                 taken[owner].append(ordinal)
-            elif owner == 'shipyard-ways':
-                out['shipyard_ways_triangles'] += 1
+        if not taken:
+            continue
+        removed_now = 0
         for name, members in taken.items():
+            residual = [i for i in members if i in kept]
+            from_yard = [i for i in members if i not in kept]
+            foreign = [i for i in from_yard if i not in yards.get(stem, set())]
+            if name == 'signal-mast' and from_yard:
+                raise MastSlipError(f'{stem}: {len(from_yard)} mast triangles already taken by an earlier batch')
+            if foreign:
+                raise MastSlipError(f'{stem}: {len(foreign)} {name} triangles are neither in the remainder nor in '
+                                    f'{YARD}')
             lo, hi = split.bounds(tris, members)
             item = out['objects'][name]
             item['triangles'] += len(members)
+            item['from_residual'] += len(residual)
+            item['from_shipyard_yard'] += len(from_yard)
             item['files'][stem] = ranges(members)
             item['min'] = list(lo) if item['min'] is None else [min(a, b) for a, b in zip(item['min'], lo)]
             item['max'] = list(hi) if item['max'] is None else [max(a, b) for a, b in zip(item['max'], hi)]
-        if taken:
-            removed = sum(len(m) for m in taken.values())
-            out['trimmed'][stem] = {'triangles': len(tris), 'removed': removed, 'kept': len(tris) - removed}
+            removed_now += len(residual)
+            if from_yard:
+                out['shipyard_yard']['files'][stem] = len(from_yard)
+                out['shipyard_yard']['removed'] += len(from_yard)
+        before = len(kept)
+        out['trimmed'][stem] = {'kept_before': before, 'removed': removed_now, 'kept_after': before - removed_now}
+    out['shipyard_yard']['after'] = YARD_TRIANGLES - out['shipyard_yard']['removed']
     return out
 
 
@@ -332,7 +381,7 @@ def main(argv=None) -> int:
         if args.command == 'plan':
             if donor is None or src is None:
                 parser.error('plan needs --donor (the donor GLB triangles)')
-            print(json.dumps(plan(donor, src), indent=2, default=list))
+            print(json.dumps(plan(donor, src, args.game.resolve()), indent=2, default=list))
             return 0
         if src is None:
             # paths without a donor reads only the generator (for the object list and tile names)
@@ -340,7 +389,8 @@ def main(argv=None) -> int:
         summaries: dict = {}
         for name in OBJECTS:
             summaries.update(summary(replay(src, name)))
-        info = claim_set(donor, summaries)
+        result = plan(donor, src, args.game.resolve()) if donor else None
+        info = claim_set(donor, summaries, result)
         if args.json:
             print(json.dumps(info, indent=2))
         else:

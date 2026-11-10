@@ -54,24 +54,19 @@ def test_real_signal_mast_bounds_are_the_mast_and_nothing_else():
     assert hi == pytest.approx([18.02, 164.028, 27.9], abs=0.01)
 
 
-def test_real_slip_is_the_stone_faces_of_slipway_in_harbor_5_3():
-    info = mast.summary(built('shipyard-slip'))
-    slip = info['shipyard-slip']
-    assert slip['faces'] == 24 and slip['triangles'] == 48
-    assert slip['tiles'] == {'Harbor_5_3': 48}
-    assert all(m.startswith('stone') for m in slip['materials'])
-    ways = info['shipyard-ways']
-    assert ways['tiles'] == {'Harbor_5_3': 332, 'Harbor_5_4': 28}
-    assert not set(ways['materials']) & {'stone', 'stone_dark', 'stone_light'}
+def test_real_slip_is_every_slipway_face_in_harbor_5_3_and_5_4():
+    slip = mast.summary(built('shipyard-slip'))['shipyard-slip']
+    assert slip['tiles'] == {'Harbor_5_3': 380, 'Harbor_5_4': 28}      # 48 stone + 332 wood, and 28 wood
+    assert slip['triangles'] == 408
+    assert {'stone', 'stone_dark', 'stone_light', 'wood', 'wood_dark'} <= set(slip['materials'])
 
 
-def test_real_slip_bounds():
-    b = built('shipyard-slip')
-    pts = [b['verts'][i] for f, o in zip(b['faces'], b['owner']) if o == 'shipyard-slip' for i in f]
-    lo = [min(p[k] for p in pts) for k in range(3)]
-    hi = [max(p[k] for p in pts) for k in range(3)]
-    assert lo == pytest.approx([346.8, 21.974, -5.5], abs=0.01)
-    assert hi == pytest.approx([357.2, 65.026, 4.943], abs=0.01)
+def test_carved_kept_reads_the_tiles_existing_selection(tmp_path):
+    assert mast.carved_kept(tmp_path, 'Harbor_5_3') is None
+    src = tmp_path / 'assets' / 'prop' / 'brinecove' / 'harbor-5-3' / 'src'
+    src.mkdir(parents=True)
+    (src / 'SM_BC_Harbor_5_3.carve.json').write_text('{"kept": [[0, 3], [5, 7]]}')
+    assert mast.carved_kept(tmp_path, 'Harbor_5_3') == {0, 1, 2, 5, 6}
 
 
 def test_ranges_are_half_open_and_merged():
@@ -105,7 +100,7 @@ def test_claim_set_names_both_records_tiles_scopes_and_the_lock():
                  'games/yorimichi_v2/world/regions/w09-brinecove/objects.toml',
                  'games/yorimichi_v2/runtime-data.lock.json'):
         assert want in paths, want
-    assert info['residual_tiles'] == ['Harbor_5_3', 'Market_3_4', 'Market_4_4']
+    assert info['residual_tiles'] == ['Harbor_5_3', 'Harbor_5_4', 'Market_3_4', 'Market_4_4']
     assert info['locks'] == ['games/yorimichi_v2/runtime-data.lock.json']
     assert 'region/w09-brinecove' in info['scopes'] and 'region/w00-island' in info['scopes']
     assert info['paths'] == sorted(info['paths'])
@@ -152,19 +147,34 @@ def test_plan_matches_synthetic_donor_tiles_to_the_generator(tmp_path):
     mast_b = built('signal-mast')
     slip_b = built('shipyard-slip')
     mast_faces = [i for i, o in enumerate(mast_b['owner']) if o == 'signal-mast' and mast.tile_of(mast_b, mast_b['faces'][i]) == (3, 4)]
+    assert len(mast_faces) == 66                    # 66 quads = the 132 triangles of Market_3_4
     _write_tile(glb / 'SM_BC_Market_3_4.glb', mast_b, mast_faces)
-    harbor_faces = [i for i, f in enumerate(slip_b['faces']) if slip_b['mats'][i] and mast.tile_of(slip_b, f) == (5, 3)
+    harbor_faces = [i for i, f in enumerate(slip_b['faces']) if mast.tile_of(slip_b, f) == (5, 3)
                     and not slip_b['mats'][i].startswith(mast.soft_prefixes())]
     _write_tile(glb / 'SM_BC_Harbor_5_3.glb', slip_b, harbor_faces)
-    assert len(mast_faces) == 66 and len(harbor_faces) > 0    # 66 quads = the 132 triangles of Market_3_4
-    result = mast.plan(tmp_path, SRC)
+    result = mast.plan(tmp_path, SRC, tmp_path)     # no carves under tmp_path: the whole file is the remainder
     assert result['objects']['signal-mast']['triangles'] == 132
+    assert result['objects']['signal-mast']['from_residual'] == 132
     assert list(result['objects']['signal-mast']['files']) == ['Market_3_4']
-    assert result['objects']['shipyard-slip']['triangles'] == 48
-    assert list(result['objects']['shipyard-slip']['files']) == ['Harbor_5_3']
-    assert result['shipyard_ways_triangles'] == 332
-    assert result['trimmed']['Harbor_5_3']['removed'] == 48
-    assert result['trimmed']['Harbor_5_3']['kept'] == result['trimmed']['Harbor_5_3']['triangles'] - 48
+    slip = result['objects']['shipyard-slip']
+    assert slip['triangles'] == 380 and list(slip['files']) == ['Harbor_5_3']
+    assert slip['from_residual'] + slip['from_shipyard_yard'] == 380
+    assert result['trimmed']['Harbor_5_3']['kept_before'] == result['trimmed']['Harbor_5_3']['kept_after'] + \
+        result['trimmed']['Harbor_5_3']['removed']
+    assert result['shipyard_yard']['after'] == 9558 - result['shipyard_yard']['removed']
+
+
+def test_plan_refuses_a_mast_triangle_an_earlier_batch_already_took(tmp_path):
+    glb = tmp_path / 'brinecove' / 'glb'
+    glb.mkdir(parents=True)
+    mast_b = built('signal-mast')
+    faces = [i for i, o in enumerate(mast_b['owner']) if o == 'signal-mast' and mast.tile_of(mast_b, mast_b['faces'][i]) == (3, 4)]
+    _write_tile(glb / 'SM_BC_Market_3_4.glb', mast_b, faces)
+    src = tmp_path / 'assets' / 'prop' / 'brinecove' / 'market-3-4' / 'src'
+    src.mkdir(parents=True)
+    (src / 'SM_BC_Market_3_4.carve.json').write_text('{"kept": [[1000000, 1000001]]}')   # none of the mast is kept
+    with pytest.raises(mast.MastSlipError, match='already taken'):
+        mast.plan(tmp_path, SRC, tmp_path)
 
 
 def test_plan_refuses_a_donor_triangle_no_generator_face_makes(tmp_path):
@@ -175,4 +185,4 @@ def test_plan_refuses_a_donor_triangle_no_generator_face_makes(tmp_path):
              'material_docs': [{'name': 'wood'}]}
     split.write_subset(stray, range(1), glb / 'SM_BC_Harbor_5_3.glb')
     with pytest.raises(market.MarketError, match='no generated face'):
-        mast.plan(tmp_path, SRC)
+        mast.plan(tmp_path, SRC, tmp_path)
