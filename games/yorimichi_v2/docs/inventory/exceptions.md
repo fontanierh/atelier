@@ -20,7 +20,7 @@ For imported content, an editor-saved package is not a substitute for the import
 
 | Area | Landed | Still open |
 |---|---|---|
-| Brine Cove small props | Eleven placements saved, including the corrected crane/fish-shed split, and the two harbour Soft fragments (#787); the signal mast and the whole shipyard slip are saved as their own objects (see the next row); the 4 rowboats, 3 buoys and 6 potted palms (`props1`, #813) the 6 cargo clusters and 7 fish baskets (`props2`, #815) and the 32 lantern posts (`props3`) ([brinecove-market](brinecove-market.md#harbour-props-props1)) | Finish any remaining useful fused objects; preserve each whole palm |
+| Brine Cove small props | Eleven placements saved, including the corrected crane/fish-shed split, and the two harbour Soft fragments (#787); the signal mast and the whole shipyard slip are saved as their own objects (see the next row); the 4 rowboats, 3 buoys and 6 potted palms (`props1`, #813) the 6 cargo clusters and 7 fish baskets (`props2`, #815) the 32 lantern posts (`props3`, #816) and the 3 piers and 12 quay palms (`harbor1`) ([brinecove-market](brinecove-market.md#harbour-props-props1)) | Finish any remaining useful fused objects; preserve each whole palm |
 | Brine Cove ships | Nightjar, sloop and Adventure hull placements saved with per-instance hull groups; the three emptied ship tiles and obsolete grouped placements retired in #787 | None for that saved/retired batch |
 | Brine Cove market | All 21 stalls saved on main (market1–3, #786 and #787) | None for the stalls themselves |
 | Brine Cove town | All 265 town objects saved on main (#787); the 42 emptied tiles and the three ship tiles are retired | None for the town objects |

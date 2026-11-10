@@ -1,4 +1,4 @@
-# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_Harbor_3_3: one Brine Cove mesh (8742 triangles).
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_Harbor_3_3: one Brine Cove mesh, what remains after batch 1 took its objects (3754 triangles).
 # The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
 # verified by tools/import/run.py, never edited by hand.
 schema = 1
@@ -12,13 +12,23 @@ references = ["adopted/brinecove/materials"]
 path = "src/SM_BC_Harbor_3_3.glb"
 sha256 = "293808db1e3d5d82a633f4044f2abe8fdb9f10c4e2dfb2c5d3caae4329289731"
 
+[[sources]]
+path = "src/SM_BC_Harbor_3_3.carve.json"
+sha256 = "9f91262e4166b608c4d8d5bf59a80b39bb4027706f43597b9d141ee355609dd8"
+
+[derive]
+kind = "carve"
+version = 1
+original = "src/SM_BC_Harbor_3_3.glb"
+selection = "src/SM_BC_Harbor_3_3.carve.json"
+
 [recipe]
 importer = "static-mesh"
 version = 1
 
 [recipe.settings]
-slot_materials = ["/Game/Brinecove/Materials/MI_BC_autumn_olive", "/Game/Brinecove/Materials/MI_BC_clay", "/Game/Brinecove/Materials/MI_BC_cobble", "/Game/Brinecove/Materials/MI_BC_cobble_dark", "/Game/Brinecove/Materials/MI_BC_lantern", "/Game/Brinecove/Materials/MI_BC_metal", "/Game/Brinecove/Materials/MI_BC_rope", "/Game/Brinecove/Materials/MI_BC_stone", "/Game/Brinecove/Materials/MI_BC_stone_dark", "/Game/Brinecove/Materials/MI_BC_stone_light", "/Game/Brinecove/Materials/MI_BC_wood", "/Game/Brinecove/Materials/MI_BC_wood_dark", "/Game/Brinecove/Materials/MI_BC_wood_light"]
-triangles = 8742
+slot_materials = ["/Game/Brinecove/Materials/MI_BC_cobble", "/Game/Brinecove/Materials/MI_BC_cobble_dark", "/Game/Brinecove/Materials/MI_BC_metal", "/Game/Brinecove/Materials/MI_BC_stone", "/Game/Brinecove/Materials/MI_BC_stone_dark", "/Game/Brinecove/Materials/MI_BC_stone_light", "/Game/Brinecove/Materials/MI_BC_wood", "/Game/Brinecove/Materials/MI_BC_wood_dark", "/Game/Brinecove/Materials/MI_BC_wood_light"]
+triangles = 3754
 collision = "complex"
 full_precision_uvs = true
 

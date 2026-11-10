@@ -683,17 +683,12 @@
     },
     "object/brinecove/harbor-2-3": {
       "groups": [
-        "SM_BC_Harbor_2_3",
-        "SM_BC_Harbor_2_3_Soft"
+        "SM_BC_Harbor_2_3"
       ],
       "id": "object/brinecove/harbor-2-3",
-      "model": [
-        "prop/brinecove/harbor-2-3",
-        "prop/brinecove/harbor-2-3-soft"
-      ],
+      "model": "prop/brinecove/harbor-2-3",
       "models": [
-        "prop/brinecove/harbor-2-3",
-        "prop/brinecove/harbor-2-3-soft"
+        "prop/brinecove/harbor-2-3"
       ]
     },
     "object/brinecove/harbor-2-4": {
@@ -706,29 +701,14 @@
         "prop/brinecove/harbor-2-4"
       ]
     },
-    "object/brinecove/harbor-3-2": {
-      "groups": [
-        "SM_BC_Harbor_3_2"
-      ],
-      "id": "object/brinecove/harbor-3-2",
-      "model": "prop/brinecove/harbor-3-2",
-      "models": [
-        "prop/brinecove/harbor-3-2"
-      ]
-    },
     "object/brinecove/harbor-3-3": {
       "groups": [
-        "SM_BC_Harbor_3_3",
-        "SM_BC_Harbor_3_3_Soft"
+        "SM_BC_Harbor_3_3"
       ],
       "id": "object/brinecove/harbor-3-3",
-      "model": [
-        "prop/brinecove/harbor-3-3",
-        "prop/brinecove/harbor-3-3-soft"
-      ],
+      "model": "prop/brinecove/harbor-3-3",
       "models": [
-        "prop/brinecove/harbor-3-3",
-        "prop/brinecove/harbor-3-3-soft"
+        "prop/brinecove/harbor-3-3"
       ]
     },
     "object/brinecove/harbor-3-4": {
@@ -753,17 +733,12 @@
     },
     "object/brinecove/harbor-4-3": {
       "groups": [
-        "SM_BC_Harbor_4_3",
-        "SM_BC_Harbor_4_3_Soft"
+        "SM_BC_Harbor_4_3"
       ],
       "id": "object/brinecove/harbor-4-3",
-      "model": [
-        "prop/brinecove/harbor-4-3",
-        "prop/brinecove/harbor-4-3-soft"
-      ],
+      "model": "prop/brinecove/harbor-4-3",
       "models": [
-        "prop/brinecove/harbor-4-3",
-        "prop/brinecove/harbor-4-3-soft"
+        "prop/brinecove/harbor-4-3"
       ]
     },
     "object/brinecove/harbor-4-4": {
@@ -778,17 +753,12 @@
     },
     "object/brinecove/harbor-5-3": {
       "groups": [
-        "SM_BC_Harbor_5_3",
-        "SM_BC_Harbor_5_3_Soft"
+        "SM_BC_Harbor_5_3"
       ],
       "id": "object/brinecove/harbor-5-3",
-      "model": [
-        "prop/brinecove/harbor-5-3",
-        "prop/brinecove/harbor-5-3-soft"
-      ],
+      "model": "prop/brinecove/harbor-5-3",
       "models": [
-        "prop/brinecove/harbor-5-3",
-        "prop/brinecove/harbor-5-3-soft"
+        "prop/brinecove/harbor-5-3"
       ]
     },
     "object/brinecove/harbor-5-4": {
@@ -799,6 +769,216 @@
       "model": "prop/brinecove/harbor-5-4",
       "models": [
         "prop/brinecove/harbor-5-4"
+      ]
+    },
+    "object/brinecove/harbor-palm-e110": {
+      "groups": [
+        "SM_BC_HarborPalmE110",
+        "SM_BC_HarborPalmE110_Soft"
+      ],
+      "id": "object/brinecove/harbor-palm-e110",
+      "model": [
+        "prop/brinecove/harbor-palm-e110",
+        "prop/brinecove/harbor-palm-e110-soft"
+      ],
+      "models": [
+        "prop/brinecove/harbor-palm-e110",
+        "prop/brinecove/harbor-palm-e110-soft"
+      ]
+    },
+    "object/brinecove/harbor-palm-e180": {
+      "groups": [
+        "SM_BC_HarborPalmE180",
+        "SM_BC_HarborPalmE180_Soft"
+      ],
+      "id": "object/brinecove/harbor-palm-e180",
+      "model": [
+        "prop/brinecove/harbor-palm-e180",
+        "prop/brinecove/harbor-palm-e180-soft"
+      ],
+      "models": [
+        "prop/brinecove/harbor-palm-e180",
+        "prop/brinecove/harbor-palm-e180-soft"
+      ]
+    },
+    "object/brinecove/harbor-palm-e200": {
+      "groups": [
+        "SM_BC_HarborPalmE200",
+        "SM_BC_HarborPalmE200_Soft"
+      ],
+      "id": "object/brinecove/harbor-palm-e200",
+      "model": [
+        "prop/brinecove/harbor-palm-e200",
+        "prop/brinecove/harbor-palm-e200-soft"
+      ],
+      "models": [
+        "prop/brinecove/harbor-palm-e200",
+        "prop/brinecove/harbor-palm-e200-soft"
+      ]
+    },
+    "object/brinecove/harbor-palm-e280": {
+      "groups": [
+        "SM_BC_HarborPalmE280",
+        "SM_BC_HarborPalmE280_Soft"
+      ],
+      "id": "object/brinecove/harbor-palm-e280",
+      "model": [
+        "prop/brinecove/harbor-palm-e280",
+        "prop/brinecove/harbor-palm-e280-soft"
+      ],
+      "models": [
+        "prop/brinecove/harbor-palm-e280",
+        "prop/brinecove/harbor-palm-e280-soft"
+      ]
+    },
+    "object/brinecove/harbor-palm-e300": {
+      "groups": [
+        "SM_BC_HarborPalmE300",
+        "SM_BC_HarborPalmE300_Soft"
+      ],
+      "id": "object/brinecove/harbor-palm-e300",
+      "model": [
+        "prop/brinecove/harbor-palm-e300",
+        "prop/brinecove/harbor-palm-e300-soft"
+      ],
+      "models": [
+        "prop/brinecove/harbor-palm-e300",
+        "prop/brinecove/harbor-palm-e300-soft"
+      ]
+    },
+    "object/brinecove/harbor-palm-e330": {
+      "groups": [
+        "SM_BC_HarborPalmE330",
+        "SM_BC_HarborPalmE330_Soft"
+      ],
+      "id": "object/brinecove/harbor-palm-e330",
+      "model": [
+        "prop/brinecove/harbor-palm-e330",
+        "prop/brinecove/harbor-palm-e330-soft"
+      ],
+      "models": [
+        "prop/brinecove/harbor-palm-e330",
+        "prop/brinecove/harbor-palm-e330-soft"
+      ]
+    },
+    "object/brinecove/harbor-palm-w110": {
+      "groups": [
+        "SM_BC_HarborPalmW110",
+        "SM_BC_HarborPalmW110_Soft"
+      ],
+      "id": "object/brinecove/harbor-palm-w110",
+      "model": [
+        "prop/brinecove/harbor-palm-w110",
+        "prop/brinecove/harbor-palm-w110-soft"
+      ],
+      "models": [
+        "prop/brinecove/harbor-palm-w110",
+        "prop/brinecove/harbor-palm-w110-soft"
+      ]
+    },
+    "object/brinecove/harbor-palm-w180": {
+      "groups": [
+        "SM_BC_HarborPalmW180",
+        "SM_BC_HarborPalmW180_Soft"
+      ],
+      "id": "object/brinecove/harbor-palm-w180",
+      "model": [
+        "prop/brinecove/harbor-palm-w180",
+        "prop/brinecove/harbor-palm-w180-soft"
+      ],
+      "models": [
+        "prop/brinecove/harbor-palm-w180",
+        "prop/brinecove/harbor-palm-w180-soft"
+      ]
+    },
+    "object/brinecove/harbor-palm-w200": {
+      "groups": [
+        "SM_BC_HarborPalmW200",
+        "SM_BC_HarborPalmW200_Soft"
+      ],
+      "id": "object/brinecove/harbor-palm-w200",
+      "model": [
+        "prop/brinecove/harbor-palm-w200",
+        "prop/brinecove/harbor-palm-w200-soft"
+      ],
+      "models": [
+        "prop/brinecove/harbor-palm-w200",
+        "prop/brinecove/harbor-palm-w200-soft"
+      ]
+    },
+    "object/brinecove/harbor-palm-w280": {
+      "groups": [
+        "SM_BC_HarborPalmW280",
+        "SM_BC_HarborPalmW280_Soft"
+      ],
+      "id": "object/brinecove/harbor-palm-w280",
+      "model": [
+        "prop/brinecove/harbor-palm-w280",
+        "prop/brinecove/harbor-palm-w280-soft"
+      ],
+      "models": [
+        "prop/brinecove/harbor-palm-w280",
+        "prop/brinecove/harbor-palm-w280-soft"
+      ]
+    },
+    "object/brinecove/harbor-palm-w300": {
+      "groups": [
+        "SM_BC_HarborPalmW300",
+        "SM_BC_HarborPalmW300_Soft"
+      ],
+      "id": "object/brinecove/harbor-palm-w300",
+      "model": [
+        "prop/brinecove/harbor-palm-w300",
+        "prop/brinecove/harbor-palm-w300-soft"
+      ],
+      "models": [
+        "prop/brinecove/harbor-palm-w300",
+        "prop/brinecove/harbor-palm-w300-soft"
+      ]
+    },
+    "object/brinecove/harbor-palm-w330": {
+      "groups": [
+        "SM_BC_HarborPalmW330",
+        "SM_BC_HarborPalmW330_Soft"
+      ],
+      "id": "object/brinecove/harbor-palm-w330",
+      "model": [
+        "prop/brinecove/harbor-palm-w330",
+        "prop/brinecove/harbor-palm-w330-soft"
+      ],
+      "models": [
+        "prop/brinecove/harbor-palm-w330",
+        "prop/brinecove/harbor-palm-w330-soft"
+      ]
+    },
+    "object/brinecove/harbor-pier-central": {
+      "groups": [
+        "SM_BC_HarborPierCentral"
+      ],
+      "id": "object/brinecove/harbor-pier-central",
+      "model": "prop/brinecove/harbor-pier-central",
+      "models": [
+        "prop/brinecove/harbor-pier-central"
+      ]
+    },
+    "object/brinecove/harbor-pier-east": {
+      "groups": [
+        "SM_BC_HarborPierEast"
+      ],
+      "id": "object/brinecove/harbor-pier-east",
+      "model": "prop/brinecove/harbor-pier-east",
+      "models": [
+        "prop/brinecove/harbor-pier-east"
+      ]
+    },
+    "object/brinecove/harbor-pier-west": {
+      "groups": [
+        "SM_BC_HarborPierWest"
+      ],
+      "id": "object/brinecove/harbor-pier-west",
+      "model": "prop/brinecove/harbor-pier-west",
+      "models": [
+        "prop/brinecove/harbor-pier-west"
       ]
     },
     "object/brinecove/hero-harbor-capstan": {

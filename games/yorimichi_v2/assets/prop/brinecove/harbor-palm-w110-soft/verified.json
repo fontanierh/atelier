@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/harbor-palm-w110-soft",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_HarborPalmW110_Soft.uasset": "9e08fdea0934397ec09d385f6146399fbab7fc3068fdbad3fd3df4d6b5b77f79"
+  },
+  "input_fingerprint": "9fb17fa8d524dd57a1286b935577cf42128690c7fc7a0d9ee3fcd7f61330b0f7",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_HarborPalmW110_Soft": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}
