@@ -64,6 +64,11 @@ SCOPES = (
          key="'buoy-%s%d' % ('w' if x < 0 else 'e', abs(x))"),
     dict(component='Props', module='props', loop='for x, y in [(-300, 300), (-170, 300), (120, 300), (280, 300), (-40, 236), (45, 236)]:',
          key="'potted-palm-%s%d' % ('w' if x < 0 else 'e', abs(x))"),
+    # Working-quay clutter: each cargo cluster (two crates, two barrels and a rope coil) and each fish basket by the market
+    # shed is its loop body. The two net racks are batch 1 objects (net-rack-west/east), so they have no scope here.
+    dict(component='Props', module='props', loop='for cx, cy in ((-250, 94), (-170, 94), (120, 94), (270, 94), (-60, 84), (60, 84)):',
+         key="'cargo-%s%d' % ('w' if cx < 0 else 'e', abs(cx))"),
+    dict(component='Props', module='props', loop='for i in range(7):', key="'fish-basket-%d' % (i + 1)"),
 )
 
 
@@ -283,6 +288,9 @@ BATCHES['props1'] = ('props-rowboat-w155', 'props-rowboat-e145', 'props-rowboat-
                      'props-buoy-w200', 'props-buoy-e190', 'props-buoy-w90',
                      'props-potted-palm-w300', 'props-potted-palm-w170', 'props-potted-palm-e120', 'props-potted-palm-e280',
                      'props-potted-palm-w40', 'props-potted-palm-e45')
+# The working quay: six cargo clusters and the seven fish baskets by the market shed (nothing emptied).
+BATCHES['props2'] = ('props-cargo-w250', 'props-cargo-w170', 'props-cargo-e120', 'props-cargo-e270', 'props-cargo-w60',
+                     'props-cargo-e60', *(f'props-fish-basket-{i}' for i in range(1, 8)))
 
 COMPONENT_OF = {'market-': 'Market', 'town-lower-': 'TownLower', 'town-upper-': 'TownUpper', 'props-': 'Props'}
 ALL_OBJECTS = frozenset(o for names in BATCHES.values() for o in names)
