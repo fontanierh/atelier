@@ -394,7 +394,7 @@ def test_the_default_plan_runs_after_the_claim_and_reports_the_moved_records():
     moved = sorted(r['record'] for r in result['records'] if r['status'] == 'migrated')
     assert moved == sorted(sf.MIGRATED)
     assert all(not (ROOT / f'assets/{record}/asset.toml').is_file() for record in moved)
-    assert sum(f['migrated'] for f in result['families'].values()) == len(sf.MIGRATED) == 20
+    assert sum(f['migrated'] for f in result['families'].values()) == len(sf.MIGRATED) == 21
     assert sf.summary_lines(result)[0].split()[-1] == 'migrated'
 
 
