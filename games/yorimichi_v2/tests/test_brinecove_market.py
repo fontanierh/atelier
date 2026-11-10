@@ -156,6 +156,39 @@ def test_a_batch_is_not_applied_again_over_tiles_a_later_batch_cut(tmp_path):
     assert market._apply().later_tiles(tmp_path) == {'Market_3_4', 'TownLower_1_2'}    # batch 1 sees every other batch
 
 
+def test_a_tile_a_later_batch_emptied_and_retired_has_no_remainder_problem(tmp_path):
+    """props1 left a remainder in Props_2_3 that props6 emptied: once props6 deleted the record, props1's check drops its
+    missing record and runtime group (and only then), and still reports any other problem of that tile."""
+    region = tmp_path / 'world' / 'regions' / market._apply().REGION
+    region.mkdir(parents=True)
+    tile = {'record': 'prop/brinecove/props-2-3', 'remainder': {'triangles': 22}}
+    (region / 'split-props1.json').write_text(json.dumps({'tiles': {'Props_2_3': tile}, 'parts': {}}))
+    (region / 'split-props6.json').write_text(json.dumps({'tiles': {'Props_2_3': {**tile, 'remainder': None}}}))
+    record = tmp_path / 'assets' / 'prop' / 'brinecove' / 'props-2-3' / 'asset.toml'
+    record.parent.mkdir(parents=True)
+    record.write_text('')
+    assert market.retired_later(tmp_path, 'props1') == set()      # emptied, but not retired yet
+    assert not market.recarved_later(tmp_path, 'props1', 'prop/brinecove/props-2-3: remainder record missing')
+    record.unlink()
+    assert market.retired_later(tmp_path, 'props1') == {'Props_2_3'}
+    assert market.retired_later(tmp_path, 'props6') == set()
+    assert market.recarved_later(tmp_path, 'props1', 'prop/brinecove/props-2-3: remainder record missing')
+    assert market.recarved_later(tmp_path, 'props1', 'SM_BC_Props_2_3 appears 0 times in the runtime file')
+    assert not market.recarved_later(tmp_path, 'props1', 'prop/brinecove/props-2-3: record package differs')
+
+
+def test_the_mast_and_slip_split_counts_as_later_for_the_market_and_town_batches(tmp_path):
+    """brinecove_mastslip.py re-cut market2's pieces after town9 and before props1, so market2's expected remainders of
+    those pieces are stale by design, and a props batch does not see the mast split as later."""
+    order = market.split_order()
+    assert order.index('town9') + 1 == order.index('mastslip') == order.index('props1') - 1
+    region = tmp_path / 'world' / 'regions' / market._apply().REGION
+    region.mkdir(parents=True)
+    (region / 'split-mastslip.json').write_text(json.dumps({'tiles': {'Market_3_4_Piece113': {}}}))
+    assert market.later_tiles(tmp_path, 'market2') == {'Market_3_4_Piece113'}
+    assert market.later_tiles(tmp_path, 'props1') == set()
+
+
 def test_compute_partitions_with_an_earlier_batch(tmp_path, monkeypatch):
     """Tile = stall parts + remainder + earlier batch, and a stall triangle already taken earlier is a problem."""
     g = market.glb_point

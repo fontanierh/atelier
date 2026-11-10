@@ -813,9 +813,22 @@ def build(game: Path, donor: Path, src: Path, stage: Path, batch: str, names: li
     return plan
 
 
-def later_tiles(game: Path, batch: str) -> set[str]:
-    """The donor tiles that the batches after this one (in BATCHES order) have applied cuts from."""
+# Other split tools whose expectation re-cut this module's tiles, and the batch each came before: the signal mast and
+# shipyard slip (tools/migrate/brinecove_mastslip.py, split-mastslip.json) re-cut market2's pieces after town9.
+OTHER_SPLITS = {'mastslip': 'props1'}
+
+
+def split_order() -> list[str]:
+    """Every split expectation in the order it was applied: the batches, with the other split tools in place."""
     order = list(BATCHES)
+    for name, before in OTHER_SPLITS.items():
+        order.insert(order.index(before), name)
+    return order
+
+
+def later_tiles(game: Path, batch: str) -> set[str]:
+    """The donor tiles that the splits after this batch (batches and other split tools, in applied order) have cut."""
+    order = split_order()
     region = game / 'world' / 'regions' / _apply().REGION
     later = set()
     for name in order[order.index(batch) + 1:]:
@@ -825,17 +838,35 @@ def later_tiles(game: Path, batch: str) -> set[str]:
     return later
 
 
+def retired_later(game: Path, batch: str) -> set[str]:
+    """The donor tiles that a batch after this one emptied and whose record its records stage has deleted."""
+    order = list(BATCHES)
+    region = game / 'world' / 'regions' / _apply().REGION
+    gone = set()
+    for name in order[order.index(batch) + 1:]:
+        path = region / f'split-{name}.json'
+        if path.is_file():
+            gone |= {s for s, t in json.loads(path.read_text())['tiles'].items()
+                     if t['remainder'] is None and not (game / 'assets' / t['record'] / 'asset.toml').exists()}
+    return gone
+
+
 def recarved_later(game: Path, batch: str, problem: str) -> bool:
     """@cc [owner:fontanierh,label:correctness] brinecove-recarved-remainder
     A tile that a later batch cut again has that batch's remainder: this batch's expected remainder (sha, triangles) is
-    stale by design and is not a problem here. The later batch's check owns the remainder; the donor proof below still
-    partitions the tile with every batch's parts and the current remainder."""
+    stale by design and is not a problem here. A tile a later batch emptied and retired has no remainder record and no
+    runtime group at all, so those two problems are dropped for it too (only once its record is really gone). The later
+    batch's check owns the remainder and the retirement; the donor proof below still partitions the tile with every
+    batch's parts and the current remainder, which a retired tile does not have."""
     apply_ = set_batch(batch)
     exp = json.loads((game / apply_.EXPECTED).read_text())
     stems = set(exp['tiles']) & later_tiles(game, batch)
     records = {exp['tiles'][s]['record'] for s in stems}
+    retired = set(exp['tiles']) & retired_later(game, batch)
     return (any(problem in (f'{r}: remainder differs from the expectation', f'{r}: derived remainder differs from the expectation')
-                for r in records) or any(problem == f'{s}: remainder plus parts is not the tile' for s in stems))
+                for r in records) or any(problem == f'{s}: remainder plus parts is not the tile' for s in stems)
+            or any(problem in (f'{exp["tiles"][s]["record"]}: remainder record missing',
+                               f'SM_BC_{s} appears 0 times in the runtime file') for s in retired))
 
 
 def split_later(exp: dict, replaced: dict, problem: str) -> bool:
@@ -919,8 +950,9 @@ def check(game: Path, donor: Path | None, batch: str, retired: bool = False, gro
             pieces.append(drawn_triangles(game, rid, p))   # a part carved again draws its carve remainder
         except (OSError, ValueError, apply_.carve.CarveError):
             return problems + [f'{rid}: not hydrated, the donor proof is skipped']
+    retired = retired_later(game, batch)                               # emptied by a later batch: no remainder left
     for s, t in exp['tiles'].items():                                   # the remainders are derived, never read from src
-        if t['remainder']:
+        if t['remainder'] and s not in retired:
             asset = records.load_asset(game / 'assets' / t['record'] / 'asset.toml')
             if asset.derive is None:
                 return problems + [f'{t["record"]}: carved in the old form, the donor proof is skipped']
