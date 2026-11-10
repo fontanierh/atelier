@@ -251,9 +251,11 @@ def megapark_report(donor: Path | None) -> dict:
             'names': sorted('MI_' + key[2:] for key in materials)}
 
 
-# The adopted records the SMALLFAM write moved into generated records (PR #797); their rows report `migrated`.
+# The adopted records a later write moved into generated records (SMALLFAM, PR #797; MASTERHD, the hippodrome masters);
+# their rows report `migrated`.
 MIGRATED = frozenset({
     'adopted/belmonte/shared-metal-glass', 'adopted/belmonte/shared-water', 'adopted/hippodrome/loose_files',
+    'adopted/hippodrome/materials',
     'adopted/japan/textures/plaza-harbor', 'adopted/japan/treehouse/surface-flat', 'adopted/japan/treehouse/surface-glass',
     'adopted/japan/treehouse/surface-rope', 'adopted/japan/treehouse/surface-trunk',
     'adopted/megapark/shared-materials-pavement', 'adopted/megapark/shared-materials-wood'})

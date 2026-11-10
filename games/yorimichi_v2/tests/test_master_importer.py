@@ -17,6 +17,8 @@ sys.path.insert(0, str(ROOT / 'tools' / 'migrate'))
 import records  # noqa: E402
 import master_records as planner  # noqa: E402
 
+HD = planner.load_families()['hippodrome']
+
 spec = importlib.util.spec_from_file_location('v2_hippodrome_masters', SCRIPTS / 'material_masters' / 'hippodrome_masters.py')
 builders = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(builders)
@@ -91,7 +93,7 @@ def test_the_module_imports_without_the_editor_and_defines_the_builders():
 
 
 def test_each_pilot_master_arguments_bind_to_its_builder():
-    for master in planner.MASTERS:
+    for master in HD['masters']:
         builder = getattr(builders, master['builder'])
         inspect.signature(builder).bind(master['package'], {r: object() for r in master['reads']}, **master['arguments'])
 
@@ -142,7 +144,7 @@ def test_the_structure_builder_wires_the_white_base_into_emissive_with_the_donor
 
 
 def test_no_builder_saves_its_material_the_importer_does():
-    names = {name for master in planner.MASTERS for name in [master['builder']]}
+    names = {name for master in HD['masters'] for name in [master['builder']]}
     for builder in names:
         log = trace(getattr(builders, builder), '/Game/Hippodrome/Materials/M_X', {'r': 'x'},
                     **({'texture': 'r'} if builder == 'structure_material' else {'roughness': .5, 'two_sided': False,
@@ -240,19 +242,19 @@ def test_the_report_names_the_wiring_digest_and_the_editor_reads_are_guarded():
 def make_game(tmp_path, *, adopted=True, records_present=()):
     game = tmp_path / 'game'
     if adopted:   # the adopted record as it stood before the migration retired it from the real tree
-        dest = game / 'assets' / planner.ADOPTED
+        dest = game / 'assets' / HD['adopted']
         dest.mkdir(parents=True)
-        outputs = ''.join(f'\n[[outputs]]\npackage = "{m["package"]}"\n' for m in planner.MASTERS)
-        (dest / 'asset.toml').write_text(f'schema = 1\nid = "{planner.ADOPTED}"\nkind = "adopted"\nauthority = "editor"\n'
+        outputs = ''.join(f'\n[[outputs]]\npackage = "{m["package"]}"\n' for m in HD['masters'])
+        (dest / 'asset.toml').write_text(f'schema = 1\nid = "{HD["adopted"]}"\nkind = "adopted"\nauthority = "editor"\n'
                                          f'owner = "shared/hippodrome/materials"\nprovenance = "donor"\nlicense = "owner"\n'
                                          + outputs)
         (dest / 'verified.json').write_text('{}\n')
-    for master in planner.MASTERS:
+    for master in HD['masters']:
         if master['id'] in records_present:
             folder = game / 'assets' / master['id']
             (folder / 'src').mkdir(parents=True)
-            (folder / 'src' / 'hippodrome_masters.py').write_bytes(planner.BUILDER.read_bytes())
-            (folder / 'asset.toml').write_text(planner.record_text(master, planner.builder_sha()))
+            (folder / 'src' / 'hippodrome_masters.py').write_bytes(planner.builder_path(HD).read_bytes())
+            (folder / 'asset.toml').write_text(planner.record_text(HD, master, planner.builder_sha(HD)))
     return game
 
 
@@ -267,21 +269,21 @@ def apply_ops(game, ops):
 
 def test_the_planner_is_unprepared_before_the_claim_and_plans_five_records(tmp_path):
     game = make_game(tmp_path)
-    assert planner.state(game) == 'unprepared'
-    ops = planner.claim_ops(game)
+    assert planner.state(game, HD) == 'unprepared'
+    ops = planner.claim_ops(game, HD)
     assert len([p for p in ops['writes'] if p.endswith('asset.toml')]) == 5
     assert len([p for p in ops['writes'] if p.endswith('src/hippodrome_masters.py')]) == 5
-    assert sorted(ops['deletes']) == [f'assets/{planner.ADOPTED}/asset.toml', f'assets/{planner.ADOPTED}/verified.json']
+    assert sorted(ops['deletes']) == [f'assets/{HD["adopted"]}/asset.toml', f'assets/{HD["adopted"]}/verified.json']
 
 
 def test_the_planned_records_load_as_material_masters_and_name_their_pinned_builder(tmp_path):
     game = make_game(tmp_path)
-    apply_ops(game, planner.claim_ops(game))
-    for master in planner.MASTERS:
+    apply_ops(game, planner.claim_ops(game, HD))
+    for master in HD['masters']:
         asset = records.load_asset(game / 'assets' / master['id'] / 'asset.toml')
         assert asset.kind == 'material-master' and asset.authority == 'generated'
         assert asset.recipe['settings']['builder'] == master['builder']
-        assert [s.sha256 for s in asset.sources] == [planner.builder_sha()]
+        assert [s.sha256 for s in asset.sources] == [planner.builder_sha(HD)]
         assert [o.package for o in asset.outputs] == [master['package']]
         owned = {dep: set(master['reads']) for dep in asset.input_dependencies}
         assert records.material_input_problems(asset, owned) == []
@@ -290,10 +292,10 @@ def test_the_planned_records_load_as_material_masters_and_name_their_pinned_buil
 
 def test_the_planner_is_done_after_the_claim_and_then_writes_nothing(tmp_path):
     game = make_game(tmp_path)
-    apply_ops(game, planner.claim_ops(game))
-    assert not (game / f'assets/{planner.ADOPTED}/asset.toml').exists()
-    assert planner.state(game) == 'done'
-    assert planner.claim_ops(game) == {'writes': {}, 'deletes': []}
+    apply_ops(game, planner.claim_ops(game, HD))
+    assert not (game / f'assets/{HD["adopted"]}/asset.toml').exists()
+    assert planner.state(game, HD) == 'done'
+    assert planner.claim_ops(game, HD) == {'writes': {}, 'deletes': []}
 
 
 def referencing_record(game, slug, slot):
@@ -302,7 +304,7 @@ def referencing_record(game, slug, slot):
     (folder / 'asset.toml').write_text(
         f'schema = 1\nid = "prop/hippodrome/{slug}"\nkind = "static-mesh"\nauthority = "generated"\n'
         f'owner = "shared/hippodrome/{slug}"\nprovenance = "donor"\nlicense = "owner"\n'
-        f'references = ["{planner.ADOPTED}", "texture/hippodrome/dirt"]\n\n'
+        f'references = ["{HD["adopted"]}", "texture/hippodrome/dirt"]\n\n'
         f'[[sources]]\npath = "src/x.glb"\nsha256 = "{"0" * 64}"\n\n'
         f'[recipe]\nimporter = "static-mesh"\nversion = 1\n\n[recipe.settings]\nslot_materials = ["{slot}"]\n\n'
         f'[[outputs]]\npackage = "/Game/Hippodrome/SM_{slug}"\n')
@@ -312,25 +314,25 @@ def referencing_record(game, slug, slot):
 def test_the_claim_points_every_reference_at_the_masters_the_record_slots(tmp_path):
     """@cc [owner:fontanierh,label:correctness] master-records-no-dangling-reference"""
     game = make_game(tmp_path)
-    surface = referencing_record(game, 'lane', planner.MASTERS[2]['package'])
+    surface = referencing_record(game, 'lane', HD['masters'][2]['package'])
     loose = referencing_record(game, 'tower', '/Game/Hippodrome/Meshes/SM_HD_Tower/HD_Tower')
-    apply_ops(game, planner.claim_ops(game))
+    apply_ops(game, planner.claim_ops(game, HD))
     assert records.load_asset(surface).references == ['master/hippodrome/dirt', 'texture/hippodrome/dirt']
-    assert records.load_asset(loose).references == [planner.STRUCTURE, 'texture/hippodrome/dirt']
-    assert planner.claim_ops(game) == {'writes': {}, 'deletes': []}
+    assert records.load_asset(loose).references == [HD['fallback'], 'texture/hippodrome/dirt']
+    assert planner.claim_ops(game, HD) == {'writes': {}, 'deletes': []}
 
 
 def test_a_half_moved_set_refuses_rather_than_extending(tmp_path):
     game = make_game(tmp_path, records_present=('master/hippodrome/grass',))
     with pytest.raises(planner.PlanError, match='half-moved'):
-        planner.state(game)
+        planner.state(game, HD)
 
 
 # --- the pin check: a builder that differs from its record is refused before any write ----------------------------------
 
 def test_a_master_whose_builder_differs_from_its_pin_is_refused(tmp_path):
     game = make_game(tmp_path)
-    apply_ops(game, planner.claim_ops(game))
+    apply_ops(game, planner.claim_ops(game, HD))
     folder = game / 'assets' / 'master/hippodrome/grass'
     asset = records.load_asset(folder / 'asset.toml')
     run.check_master_pins(asset)   # the pinned bytes pass
@@ -344,9 +346,38 @@ def test_the_runner_registers_the_material_master_importer_at_version_one():
 
 
 def test_an_engine_default_is_an_allowed_read_and_owns_nothing(tmp_path):
-    text = planner.record_text(planner.MASTERS[0], hashlib.sha256(b'x').hexdigest())
+    text = planner.record_text(HD, HD['masters'][0], hashlib.sha256(b'x').hexdigest())
     path = tmp_path / 'asset.toml'
     path.write_text(text)
     asset = records.load_asset(path)
     assert records.material_master_reads(asset) == ['/Engine/EngineResources/WhiteSquareTexture']
     assert records.material_input_problems(asset, {}) == []
+
+
+# --- the family registry --------------------------------------------------------------------------------------------------
+
+def test_every_committed_master_record_is_what_its_family_plans():
+    """@cc [owner:fontanierh,label:correctness] master-records-equal-plan"""
+    for family in planner.load_families().values():
+        for master in family['masters']:
+            path = ROOT / 'assets' / master['id'] / 'asset.toml'
+            if path.is_file():
+                assert path.read_text() == planner.record_text(family, master, planner.builder_sha(family)), master['id']
+                assert (path.parent / planner.builder_rel(family)).read_bytes() == planner.builder_path(family).read_bytes()
+
+
+def test_an_adopted_record_that_owns_other_packages_too_refuses(tmp_path):
+    game = make_game(tmp_path)
+    toml = game / 'assets' / HD['adopted'] / 'asset.toml'
+    toml.write_text(toml.read_text() + '\n[[outputs]]\npackage = "/Game/Hippodrome/Materials/MI_Other"\n')
+    with pytest.raises(planner.PlanError, match='split it by hand'):
+        planner.state(game, HD)
+
+
+def test_a_family_names_its_builder_and_a_fallback_among_its_masters(tmp_path):
+    folder = tmp_path / 'families'
+    folder.mkdir()
+    family = dict(HD, name='broken', fallback='master/elsewhere')
+    (folder / 'broken.py').write_text(f'FAMILY = {family!r}\n')
+    with pytest.raises(planner.PlanError, match='fallback'):
+        planner.load_families(folder)

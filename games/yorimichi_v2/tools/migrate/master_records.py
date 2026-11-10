@@ -1,23 +1,26 @@
-"""The hippodrome materials as material-master records: the pilot of docs/inventory/master-sources.md, section 5.
+"""Generator-built material masters as material-master records (docs/inventory/master-sources.md, section 5).
 
-    uv run python games/yorimichi_v2/tools/migrate/master_records.py                # the state and the claim paths; writes nothing
-    uv run python games/yorimichi_v2/tools/migrate/master_records.py --paths        # the claim paths and the scopes
-    uv run python games/yorimichi_v2/tools/migrate/master_records.py --claim TASK   # the one journaled write
+    CMD="uv run python games/yorimichi_v2/tools/migrate/master_records.py"
+    $CMD --family NAME                # the state and the claim paths; writes nothing
+    $CMD --family NAME --paths        # the claim paths and the scopes
+    $CMD --family NAME --claim TASK   # the one journaled write
 
-The adopted record assets/adopted/hippodrome/materials owns five masters. Each becomes its own material-master record,
-with the builder module unreal/Scripts/material_masters/hippodrome_masters.py copied into its src/ and pinned by sha256.
-The adopted record gives up every package, so it is deleted with its verified.json, and every record that references it
-references the masters it uses instead (reference_rewrites). The records are not imported here:
-the V2 editor builds and reads back each master (unreal/Scripts/import_asset.py, material-master), and tools/import/run.py
-writes its verified.json.
+A family (tools/migrate/master_families/NAME.py, one FAMILY dict) names the adopted record that owns its masters, the
+builder module under unreal/Scripts/material_masters/ and one entry per master. Each master becomes its own
+material-master record, with the builder module copied into its src/ and pinned by sha256. The adopted record gives up
+every package, so it is deleted with its verified.json, and every record that references it references the masters it
+uses instead (reference_rewrites). The records are not imported here: the V2 editor builds and reads back each master
+(unreal/Scripts/import_asset.py, material-master), and tools/import/run.py writes its verified.json.
 
-States: `unprepared` (the adopted record lists all five masters, no master record exists) and `done` (the five records
-exist, the adopted record is gone). Any other state refuses, so a half-moved set is never extended by a second write.
+States: `unprepared` (the adopted record lists exactly the family's masters, no master record exists) and `done` (every
+master record exists, the adopted record is gone). Any other state refuses, so a half-moved set is never extended by a
+second write. An adopted record that owns other packages too refuses: it is split by hand first.
 """
 from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib.util
 import json
 import re
 import sys
@@ -27,82 +30,96 @@ HERE = Path(__file__).resolve().parent
 GAME = HERE.parents[1]
 REPO = GAME.parents[1]
 GAME_REL = 'games/yorimichi_v2'
+BUILDERS = GAME / 'unreal/Scripts/material_masters'
+FAMILY_DIR = HERE / 'master_families'
 sys.path.insert(0, str(GAME / 'tools' / 'content'))
 sys.path.insert(0, str(HERE))
 import authority  # noqa: E402
 import records  # noqa: E402
 import brinecove_split_apply as apply  # noqa: E402  (the journaled write every migrate step uses)
 
-ADOPTED = 'adopted/hippodrome/materials'
-OWNER = 'shared/hippodrome/materials'
-LICENSE = 'owner-published (docs/DECISIONS.md D05 group 1)'
-BUILDER = GAME / 'unreal/Scripts/material_masters/hippodrome_masters.py'
-BUILDER_REL = 'src/hippodrome_masters.py'
-PROVENANCE = ('donor generator games/yorimichi/unreal/Scripts/import_hippodrome.py at the V2 source baseline '
-              '(docs/DECISIONS.md D01, D02)')
-DONOR_LINES = {'surface': '36-55', 'structure_material': '59-78'}
-TEXTURE_GRASS = '/Game/Hippodrome/Textures/T_Grass'
-TEXTURE_DIRT = '/Game/Hippodrome/Textures/T_Dirt'
-ENGINE_WHITE = '/Engine/EngineResources/WhiteSquareTexture'
-
-# One record per master. `arguments` are the builder's keyword arguments; `reads` the packages the builder receives.
-MASTERS = [
-    {'id': 'master/hippodrome/structure', 'package': '/Game/Hippodrome/Materials/M_HD_Structure',
-     'builder': 'structure_material', 'reads': [ENGINE_WHITE], 'inputs': [],
-     'arguments': {'texture': ENGINE_WHITE}},
-    {'id': 'master/hippodrome/grass', 'package': '/Game/Hippodrome/Materials/M_HD_Grass',
-     'builder': 'surface', 'reads': [TEXTURE_GRASS], 'inputs': ['texture/hippodrome/grass'],
-     'arguments': {'texture': TEXTURE_GRASS, 'roughness': 0.95, 'two_sided': False}},
-    {'id': 'master/hippodrome/dirt', 'package': '/Game/Hippodrome/Materials/M_HD_Dirt',
-     'builder': 'surface', 'reads': [TEXTURE_DIRT], 'inputs': ['texture/hippodrome/dirt'],
-     'arguments': {'texture': TEXTURE_DIRT, 'roughness': 0.95, 'two_sided': False}},
-    {'id': 'master/hippodrome/stone', 'package': '/Game/Hippodrome/Materials/M_HD_Stone',
-     'builder': 'surface', 'reads': [], 'inputs': [],
-     'arguments': {'colour_r': 0.36, 'colour_g': 0.35, 'colour_b': 0.32, 'roughness': 0.9, 'two_sided': True}},
-    {'id': 'master/hippodrome/rail', 'package': '/Game/Hippodrome/Materials/M_HD_Rail',
-     'builder': 'surface', 'reads': [], 'inputs': [],
-     'arguments': {'colour_r': 0.86, 'colour_g': 0.85, 'colour_b': 0.80, 'roughness': 0.6, 'two_sided': False}},
-]
+PROVENANCE = '{donor} at the V2 source baseline (docs/DECISIONS.md D01, D02)'
+REFERENCES_LINE = re.compile(r'^references = (\[.*\])$', re.M)
+FAMILY_KEYS = {'name', 'adopted', 'owner', 'license', 'builder', 'donor', 'donor_lines', 'fallback', 'masters'}
+MASTER_KEYS = {'id', 'package', 'builder', 'reads', 'inputs', 'arguments'}
 
 
 class PlanError(RuntimeError):
     pass
 
 
-STRUCTURE = 'master/hippodrome/structure'
-REFERENCES_LINE = re.compile(r'^references = (\[.*\])$', re.M)
+def load_families(folder: Path = FAMILY_DIR) -> dict:
+    """{name: family} from every master_families/*.py. A family is checked here, before any plan reads it."""
+    out = {}
+    for path in sorted(folder.glob('*.py')):
+        spec = importlib.util.spec_from_file_location(f'v2_master_family_{path.stem}', path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        family = module.FAMILY
+        if set(family) != FAMILY_KEYS or family['name'] != path.stem:
+            raise PlanError(f'{path.name}: a family has the keys {sorted(FAMILY_KEYS)} and is named after its file')
+        if not (BUILDERS / family['builder']).is_file():
+            raise PlanError(f'{path.name}: no builder module {family["builder"]} in unreal/Scripts/material_masters')
+        for master in family['masters']:
+            if set(master) != MASTER_KEYS or master['builder'] not in family['donor_lines']:
+                raise PlanError(f'{path.name}: {master.get("id")}: a master has the keys {sorted(MASTER_KEYS)} and a '
+                                'builder with donor lines')
+        if family['fallback'] not in {m['id'] for m in family['masters']}:
+            raise PlanError(f'{path.name}: the fallback is one of the family masters')
+        out[family['name']] = family
+    return out
 
 
-def reference_rewrites(game: Path) -> dict:
-    """{rel: bytes} for every record that references the adopted record: the reference becomes the masters the record's slot
-    materials name. A slot that is not a master is a mesh's own instance (the loose meshes, owned by adopted/hippodrome/meshes),
-    whose parent is M_HD_Structure. A references line this cannot rewrite refuses."""
-    by_package = {m['package']: m['id'] for m in MASTERS}
+def builder_path(family: dict) -> Path:
+    return BUILDERS / family['builder']
+
+
+def builder_rel(family: dict) -> str:
+    return f'src/{family["builder"]}'
+
+
+def builder_sha(family: dict) -> str:
+    return hashlib.sha256(builder_path(family).read_bytes()).hexdigest()
+
+
+def _packages_named(value) -> set:
+    """Every /Game package a recipe value names, object suffixes dropped."""
+    if isinstance(value, str):
+        return {value.split('.')[0]} if value.startswith('/Game/') else set()
+    if isinstance(value, dict):
+        return set().union(*map(_packages_named, value.values())) if value else set()
+    if isinstance(value, (list, tuple)):
+        return set().union(*map(_packages_named, value)) if value else set()
+    return set()
+
+
+def reference_rewrites(game: Path, family: dict) -> dict:
+    """{rel: bytes} for every record that references the adopted record: the reference becomes the masters whose packages
+    the record's recipe names, or the family's fallback master when it names none. A references line this cannot rewrite
+    refuses."""
+    adopted = family['adopted']
+    by_package = {m['package']: m['id'] for m in family['masters']}
     out = {}
     for path in records.record_paths(game):
         rel = path.relative_to(game).as_posix()
-        if rel == f'assets/{ADOPTED}/asset.toml':
+        if rel == f'assets/{adopted}/asset.toml':
             continue
         asset = records.load_asset(path)
-        if ADOPTED not in asset.references:
+        if adopted not in asset.references:
             continue
         text = path.read_text()
         match = REFERENCES_LINE.search(text)
         if match is None or json.loads(match.group(1)) != asset.references:
             raise PlanError(f'{rel}: its references are not one rewritable line')
-        slots = (asset.recipe.get('settings') or {}).get('slot_materials') or []
-        masters = sorted({by_package.get(slot, STRUCTURE) for slot in slots}) or [STRUCTURE]
+        named = _packages_named(asset.recipe or {})
+        masters = sorted({by_package[p] for p in named if p in by_package}) or [family['fallback']]
         new = []
         for ref in asset.references:
-            for item in (masters if ref == ADOPTED else [ref]):
+            for item in (masters if ref == adopted else [ref]):
                 if item not in new:
                     new.append(item)
         out[rel] = (text[:match.start(1)] + json.dumps(new) + text[match.end(1):]).encode()
     return out
-
-
-def builder_sha() -> str:
-    return hashlib.sha256(BUILDER.read_bytes()).hexdigest()
 
 
 def _value(value) -> str:
@@ -113,17 +130,18 @@ def _value(value) -> str:
     return repr(float(value)) if isinstance(value, float) else str(value)
 
 
-def record_text(master: dict, sha: str) -> str:
+def record_text(family: dict, master: dict, sha: str) -> str:
     """The material-master record of one master (asset.toml). Parsed back by records.load_asset in the tests."""
+    provenance = PROVENANCE.format(donor=f'donor generator {family["donor"]}')
     lines = [f'# Recovered as a material master (tools/migrate/master_records.py): {master["package"]}.',
-             f'# The builder is {BUILDER_REL}, pinned by sha256; the master is rebuilt by the V2 editor and read back',
+             f'# The builder is {builder_rel(family)}, pinned by sha256; the master is rebuilt by the V2 editor and read back',
              '# against its saved original, never edited by hand.',
              'schema = 1', f'id = "{master["id"]}"', 'kind = "material-master"', 'authority = "generated"',
-             f'owner = "{OWNER}"', f'license = "{LICENSE}"',
-             f'provenance = "{PROVENANCE}, {master["builder"]} lines {DONOR_LINES[master["builder"]]}"']
+             f'owner = "{family["owner"]}"', f'license = "{family["license"]}"',
+             f'provenance = "{provenance}, {master["builder"]} lines {family["donor_lines"][master["builder"]]}"']
     if master['inputs']:   # a top-level key: it must come before the first [[sources]] table
         lines.append('input_dependencies = [' + ', '.join(f'"{r}"' for r in master['inputs']) + ']')
-    lines += ['', '[[sources]]', f'path = "{BUILDER_REL}"', f'sha256 = "{sha}"',
+    lines += ['', '[[sources]]', f'path = "{builder_rel(family)}"', f'sha256 = "{sha}"',
               '', '[recipe]', 'importer = "material-master"', 'version = 1', '', '[recipe.settings]',
               f'builder = "{master["builder"]}"',
               'reads = [' + ', '.join(f'"{r}"' for r in master['reads']) + ']',
@@ -132,71 +150,81 @@ def record_text(master: dict, sha: str) -> str:
     return '\n'.join(lines)
 
 
-def state(game: Path) -> str:
+def state(game: Path, family: dict) -> str:
     """'unprepared', 'done', or a PlanError naming what is half-moved."""
-    adopted = game / f'assets/{ADOPTED}/asset.toml'
-    present = [m['id'] for m in MASTERS if (game / f'assets/{m["id"]}/asset.toml').is_file()]
-    packages = {m['package'] for m in MASTERS}
+    adopted = game / f'assets/{family["adopted"]}/asset.toml'
+    masters = family['masters']
+    present = [m['id'] for m in masters if (game / f'assets/{m["id"]}/asset.toml').is_file()]
+    packages = {m['package'] for m in masters}
     listed = {o.package for o in records.load_asset(adopted).outputs} if adopted.is_file() else set()
-    if not present and packages <= listed:
+    if listed - packages:
+        raise PlanError(f'{family["adopted"]} also owns {sorted(listed - packages)}; split it by hand first')
+    if not present and packages == listed:
         return 'unprepared'
-    if len(present) == len(MASTERS) and not (listed & packages):
+    if len(present) == len(masters) and not listed:
         return 'done'
-    raise PlanError(f'the hippodrome masters are half-moved: records {present}, adopted still lists '
+    raise PlanError(f'the {family["name"]} masters are half-moved: records {present}, adopted still lists '
                     f'{sorted(listed & packages)}; resolve by hand')
 
 
-def claim_ops(game: Path) -> dict:
-    """The one write: {'writes': {rel: bytes}, 'deletes': [rel]}. Empty when the state is done."""
-    if state(game) == 'done':
-        return {'writes': reference_rewrites(game), 'deletes': []}
-    sha = builder_sha()
-    writes = reference_rewrites(game)
-    for master in MASTERS:
+def claim_ops(game: Path, family: dict) -> dict:
+    """The one write: {'writes': {rel: bytes}, 'deletes': [rel]}. Empty when the state is done and nothing references
+    the adopted record."""
+    if state(game, family) == 'done':
+        return {'writes': reference_rewrites(game, family), 'deletes': []}
+    sha = builder_sha(family)
+    writes = reference_rewrites(game, family)
+    for master in family['masters']:
         folder = f'assets/{master["id"]}'
-        writes[f'{folder}/asset.toml'] = record_text(master, sha).encode()
-        writes[f'{folder}/{BUILDER_REL}'] = BUILDER.read_bytes()
-    deletes = [f'assets/{ADOPTED}/{name}' for name in ('asset.toml', 'verified.json')
-               if (game / f'assets/{ADOPTED}/{name}').is_file()]
+        writes[f'{folder}/asset.toml'] = record_text(family, master, sha).encode()
+        writes[f'{folder}/{builder_rel(family)}'] = builder_path(family).read_bytes()
+    deletes = [f'assets/{family["adopted"]}/{name}' for name in ('asset.toml', 'verified.json')
+               if (game / f'assets/{family["adopted"]}/{name}').is_file()]
     return {'writes': writes, 'deletes': deletes}
 
 
-def claim_paths(game: Path) -> list[str]:
-    ops = claim_ops(game)
+def claim_paths(game: Path, family: dict) -> list[str]:
+    ops = claim_ops(game, family)
     return sorted(set(ops['writes']) | set(ops['deletes']))
 
 
-def materialize(game: Path, claim: str, *, echo=print) -> None:
+def materialize(game: Path, family: dict, claim: str, *, echo=print) -> None:
     apply.Journal(game).recover(claim)
-    ops = claim_ops(game)
+    ops = claim_ops(game, family)
     if not ops['writes'] and not ops['deletes']:
-        echo('materialize: the hippodrome masters are already records and nothing references the adopted record; nothing written')
+        echo(f'materialize: the {family["name"]} masters are already records and nothing references the adopted record; '
+             'nothing written')
         return
-    paths = claim_paths(game)
+    paths = claim_paths(game, family)
     try:
         authority.authorize([f'{GAME_REL}/{rel}' for rel in paths], claim,
-                            'Yorimichi V2 hippodrome materials as material-master records', scopes=[OWNER])
+                            f'Yorimichi V2 {family["name"]} materials as material-master records', scopes=[family['owner']])
     except authority.Unauthorized as error:
         raise PlanError(str(error)) from None
-    apply.execute(game, ops, scopes=[OWNER])
+    apply.execute(game, ops, scopes=[family['owner']])
     echo(f'materialize: {len(paths)} path(s) under {claim}')
 
 
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split('\n\n')[0])
     parser.add_argument('--game', type=Path, default=GAME)
+    parser.add_argument('--family', required=True, help='a master_families/ module name')
     parser.add_argument('--paths', action='store_true', help='print the claim paths and the scope')
     parser.add_argument('--claim', metavar='TASK', help='the one journaled write')
     args = parser.parse_args(argv)
     try:
+        families = load_families()
+        if args.family not in families:
+            raise PlanError(f'no family {args.family}; known: {", ".join(sorted(families))}')
+        family = families[args.family]
         if args.claim:
-            materialize(args.game, args.claim)
+            materialize(args.game, family, args.claim)
             return 0
-        print(f'state: {state(args.game)}')
-        if args.paths or state(args.game) == 'unprepared':
-            for rel in claim_paths(args.game):
+        print(f'state: {state(args.game, family)}')
+        if args.paths or state(args.game, family) == 'unprepared':
+            for rel in claim_paths(args.game, family):
                 print(f'path {GAME_REL}/{rel}')
-            print(f'scopes: {OWNER}')
+            print(f'scopes: {family["owner"]}')
     except (PlanError, records.RecordError, authority.Unauthorized) as error:
         print(f'master_records: {error}', file=sys.stderr)
         return 1
