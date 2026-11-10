@@ -487,7 +487,9 @@ def hippo_slot(name: str) -> str:
     return f'/Game/Hippodrome/Meshes/{name}/HD_{part}'
 
 
-INSTANCE_FAMILIES = tuple(si.EXPECTED)   # the families whose instances the claim plans (tests narrow it)
+# The families whose agreeing instances the claim plans. Hidamari is held: its adopted surface record is referenced by 173
+# citysurfaces prop records (another owner), and a claim that rewrites them would need that scope. (tests narrow this.)
+INSTANCE_FAMILIES = tuple(f for f in si.EXPECTED if f != 'hidamari')
 
 
 def instance_record_text(rec: NewRecord) -> str:

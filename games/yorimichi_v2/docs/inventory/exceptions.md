@@ -1313,3 +1313,27 @@ Blockers: the `M_HDCity` master (for the instance); the racing and see-through g
 | `M_RacingTv` | `racing` | need-read | - | `report_materials` (material list) |
 | `MPC_SeeThrough` | `seethrough` | blocked | - | `report_materials` (material list) |
 | `RuntimeData` | `skateruntime` | blocked | - | no reader in this tree |
+
+### Material instances: agreement with the editor reads (planned, claimable)
+
+`tools/migrate/small_instances.py` computes what each generator script writes, from the donor, and compares it with the
+committed full read (`docs/inventory/small-families-reads/instances/`). An instance agrees when its parent, every
+parameter its script sets, and its texture bindings match the read. The agreeing instances are planned as
+material-instance records (version 2, one row per package, switches stated only where they differ from the parent,
+following `belmontetrain_materials.py`).
+
+| Family | Instances in the read | Agree | Held, and why |
+|---|---:|---:|---|
+| Mega Park (`shared-materials-wood`, `seam`, `shared-materials-pavement`) | 24 | 22 | `MI_4cef5bb305cb09eb_Seam`, `MI_b4686eeb54647811_Seam`: natural rows with a two-sided base-property override (recipe v2 cannot state it) |
+| Belmonte (`shared-metal-glass`, `shared-water`) | 7 | 7 | none |
+| Tree house (`surface-flat`, `-glass`, `-rope`, `-trunk`) | 5 | 4 | `MI_TH_pane`: no generator in `import_treehouse.py` names it |
+| Hidamari (`surface-flat`) | 1 instance (+2 masters) | 1 | not claimed: the adopted record is referenced by 173 `citysurfaces` prop records (another owner's scope) |
+| FX (`adopted/fx`) | 4 instances (+3 masters) | 4 | none; the three masters keep the adopted record |
+
+The masters in the reads (the 19 in `small-families-masters.txt`) are not instances: `report_materials` cannot read
+them, so they are held as not read. `unreal/Scripts/report_masters.py` reads them (not run here); a master becomes
+read-confirmed only when its read is consistent with its generator script.
+
+The claim writes the 37 agreeing instances (Mega Park 22, Belmonte 7, tree house 4, FX 4) into 10 material-instance
+records, in the same journaled write as the textures and meshes above. Their inputs are the owners of each parent and
+texture. The write also rewrites the `references` of 18 tree house prop records (their own family) to the new records.

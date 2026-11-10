@@ -59,8 +59,8 @@ def test_every_planned_instance_record_loads_and_names_its_outputs(tmp_path):
     import records
     import small_families as sf
     recs = sf.instance_records(sf.GAME, DONOR, {})
-    assert len(recs) == 11
-    assert sum(len(r.outputs) for r in recs) == 38
+    assert len(recs) == 10
+    assert sum(len(r.outputs) for r in recs) == 37
     for rec in recs:
         path = tmp_path / (rec.id.replace('/', '__') + '.toml')
         path.write_text(sf.instance_record_text(rec))
