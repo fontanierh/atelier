@@ -81,7 +81,7 @@ the 14 standalone LOD1/LOD2 meshes and their packages are gone (473 to 459).
 Next step, not run here: textures remain prepared,
 for all 138 donor-backed ids, after the generator's own source record is pinned.
 
-## Japan materials: source closure (prepared, not applied)
+## Japan materials: source closure (leaves imported; the rest read-confirmed)
 
 The seven adopted records `adopted/japan/materials/{bark, buildings, foliage, ground, rock-concrete, sky-wind, water}`
 hold 41 packages, all `MI_*` material instances in `/Game/Japan/Materials`, all `authority = "editor"`. They have no
@@ -91,8 +91,10 @@ two used leaves (`MI_LeafAmber`, `MI_LeafCrimson`) were moved out of `foliage` i
 
 Result: **0** imported textures or meshes (a). **41** generator-built instances (b): **Prepared, read-confirmed**,
 the saved parent and parameters match the donor script on every row. **2** used leaf instances
-(`MI_LeafAmber`, `MI_LeafCrimson`): **Prepared, recipe recorded**. No row is Blocked. Nothing here is verified
-closure: the read confirms parameters only, and no import has been compared with the accepted packages.
+(`MI_LeafAmber`, `MI_LeafCrimson`): **Imported and verified** on 2026-11-10 from their recipe under claim task
+`LEAVES`. A read-only parameter read before and after the import is identical (parent `M_Foliage`, only `Tex`
+overridden, effective `FadeMode`, `CutScale` and `Tint` unchanged), and `check.py` accepts both records. No row is
+Blocked. The 41 (b) rows are not verified closure: their read confirms parameters only.
 
 Method. Each saved `.uasset` matches its `verified.json` sha256 in the full donor checkout and in the fix checkout
 (43 of 43). Parent and texture references were read from those bytes with `LC_ALL=C grep -a`. Every (b) package is
