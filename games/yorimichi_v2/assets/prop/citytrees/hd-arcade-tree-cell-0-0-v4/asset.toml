@@ -1,0 +1,36 @@
+# Recovered from the donor (tools/migrate/plant_sources.py): HD_ArcadeTree_cell_0_0_v4: the citysurfaces original as LOD0 with its two donor FBX levels.
+# The donor files are committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/citytrees/hd-arcade-tree-cell-0-0-v4"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/experiments/citytrees"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/HD_ArcadeTree_cell_0_0.fbx"
+sha256 = "f783788fc7c9ff88a851bc0006a1cb04d3def6264a456dd4eac36c3abe6ea8ed"
+
+[[sources]]
+path = "src/HD_ArcadeTree_LOD1_cell_0_0.fbx"
+sha256 = "06f1914db61dbaba2466db7cdc9849c9422dd5d81aa5d9e5edd267f31ab2a411"
+
+[[sources]]
+path = "src/HD_ArcadeTree_LOD2_cell_0_0.fbx"
+sha256 = "0ad2b290184e31e2ad11183846a0a6f8946f3134717aa4a03bbf00e88dd46e52"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+lod_chain = [["src/HD_ArcadeTree_cell_0_0.fbx", 1.0, 23472, [0]], ["src/HD_ArcadeTree_LOD1_cell_0_0.fbx", 0.18, 11402, [0]], ["src/HD_ArcadeTree_LOD2_cell_0_0.fbx", 0.07, 6574, [0]]]
+slots = [["HidamariPalette", "/Game/Japan/Materials/M_Arcade"]]
+triangles = 23472
+collision = "simple_and_complex"
+hulls = 0
+full_precision_uvs = true
+
+[[outputs]]
+package = "/Game/Experiments/CityTrees/v4/HD_ArcadeTree_cell_0_0_v4"

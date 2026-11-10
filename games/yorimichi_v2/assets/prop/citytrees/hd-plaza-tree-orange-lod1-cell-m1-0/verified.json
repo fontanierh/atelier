@@ -1,0 +1,34 @@
+{
+  "asset": "prop/citytrees/hd-plaza-tree-orange-lod1-cell-m1-0",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CityTrees/v4/lods/HD_PlazaTreeOrange_LOD1_cell_-1_0.uasset": "4d142cbadedee84a65c2a6c99a7e80d5cd958753c862644df76194a645d3cffa"
+  },
+  "input_fingerprint": "1ebe2e338be86cf4eb107a8095f01cdbce038ed0cfa729168f5f14f587391839",
+  "kind": "imported",
+  "lods": {
+    "/Game/Experiments/CityTrees/v4/lods/HD_PlazaTreeOrange_LOD1_cell_-1_0": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

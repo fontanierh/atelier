@@ -131,7 +131,7 @@ def test_the_city_chain_is_the_original_then_the_two_donor_levels(fake):
                                      'src/HD_ArcadeTree_LOD2_cell_-1_-1.fbx']
     assert [c[1] for c in chain] == [1.0, 0.18, 0.07] and [c[2] for c in chain] == [19182, 9242, 5266]
     assert rec.settings['collision'] == 'simple_and_complex' and rec.settings['hulls'] == 2
-    assert rec.settings['slots'] == [['M_Arcade', '/Game/Japan/Materials/M_Arcade']]
+    assert rec.settings['slots'] == [['HidamariPalette', '/Game/Japan/Materials/M_Arcade']]
 
 
 def test_the_planned_records_are_valid_records_and_the_claim_moves_them(fake, tmp_path):

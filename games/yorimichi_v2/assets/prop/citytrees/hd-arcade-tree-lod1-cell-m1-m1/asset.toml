@@ -1,0 +1,24 @@
+# Recovered from the donor (tools/migrate/plant_sources.py): HD_ArcadeTree_LOD1_cell_-1_-1: the HD_ArcadeTree LOD level as a standalone mesh (donor FBX).
+# The donor files are committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/citytrees/hd-arcade-tree-lod1-cell-m1-m1"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/experiments/citytrees"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/HD_ArcadeTree_LOD1_cell_-1_-1.fbx"
+sha256 = "1eaf8732998d61e8a1cd1d7747d4adbaddf82b8405fc91ab724b7138fe86bd97"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_Arcade"]
+triangles = 9242
+
+[[outputs]]
+package = "/Game/Experiments/CityTrees/v4/lods/HD_ArcadeTree_LOD1_cell_-1_-1"

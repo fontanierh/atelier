@@ -6,7 +6,7 @@ id = "object/brinecove/plant-bloom"
 kind = "placement"
 authority = "editor"
 owner = "region/w09-brinecove"
-references = ["adopted/brinecove/plant-bloom"]
+references = ["prop/brinecove/plant-bloom0", "prop/brinecove/plant-bloom1"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/6/50/UAUIT9RE2RKZU4MM1HF4S6"

@@ -6,7 +6,7 @@ id = "object/brinecove/plant-emergent"
 kind = "placement"
 authority = "editor"
 owner = "region/w09-brinecove"
-references = ["adopted/brinecove/plant-emergent"]
+references = ["prop/brinecove/plant-emergent0", "prop/brinecove/plant-emergent1", "prop/brinecove/plant-emergent2"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/8/Z9/XLBY46BS6Y7RRM0EEQNZJU"

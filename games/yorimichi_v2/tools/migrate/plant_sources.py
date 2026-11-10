@@ -90,6 +90,8 @@ class Plan:
     donor: Path
 
 
+
+V4_SLOT = 'HidamariPalette'   # the original FBX's material name: the saved _v4 slot, as the editor import reads it
 def donor_default():
     root = os.environ.get(DONOR_ENV)
     return Path(root).expanduser() if root else None
@@ -213,7 +215,7 @@ def plan_city(game: Path, donor: Path, by_id: dict, owner_of: dict, unmapped: li
             for (lod, screen, file, _) in levels:
                 chain.append([f'src/{file.name}', screen, lod['triangles'], [0]])
                 files.append(Src(f'src/{file.name}', lod['sha256'], file))
-            v4_settings = {'lod_chain': chain, 'slots': [[slot.rsplit('/', 1)[1], slot]],
+            v4_settings = {'lod_chain': chain, 'slots': [[V4_SLOT, slot]],
                            'triangles': piece['original_triangles']}
             v4_settings.update({key: settings[key] for key in COPIED_SETTINGS if key in settings})
             out.append(Rec(id=f'prop/citytrees/{ident(name + "_v4")}', family='city-v4', owner=city.owner,

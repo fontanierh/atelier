@@ -6,7 +6,7 @@ id = "object/brinecove/plant-cover-grass-m3-m1"
 kind = "placement"
 authority = "editor"
 owner = "region/w09-brinecove"
-references = ["adopted/brinecove/plant-cover-grass"]
+references = ["prop/brinecove/plant-cover-grass0", "prop/brinecove/plant-cover-grass1", "prop/brinecove/plant-cover-grass2"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/B/AE/23AI0V0R56QB3AQTOVXKF8"

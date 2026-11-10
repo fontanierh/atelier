@@ -1,0 +1,36 @@
+# Recovered from the donor (tools/migrate/plant_sources.py): HD_PlazaTreeOrange_cell_0_0_v4: the citysurfaces original as LOD0 with its two donor FBX levels.
+# The donor files are committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/citytrees/hd-plaza-tree-orange-cell-0-0-v4"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/experiments/citytrees"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/HD_PlazaTreeOrange_cell_0_0.fbx"
+sha256 = "372286e4edcd4b18400991a963bf77f7c088dbaf73fd37e13a97bc43301f2a85"
+
+[[sources]]
+path = "src/HD_PlazaTreeOrange_LOD1_cell_0_0.fbx"
+sha256 = "b15629b2eb40750e15fd18897ac9b1c56caf11ca4a10071e5f50be0be8d55d5a"
+
+[[sources]]
+path = "src/HD_PlazaTreeOrange_LOD2_cell_0_0.fbx"
+sha256 = "2ea57c81e362c942064df917e5cbe09e38ee4bdf852068f63b25ea65fed94fa0"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+lod_chain = [["src/HD_PlazaTreeOrange_cell_0_0.fbx", 1.0, 14854, [0]], ["src/HD_PlazaTreeOrange_LOD1_cell_0_0.fbx", 0.18, 6644, [0]], ["src/HD_PlazaTreeOrange_LOD2_cell_0_0.fbx", 0.07, 3360, [0]]]
+slots = [["HidamariPalette", "/Game/Japan/Materials/M_Arcade"]]
+triangles = 14854
+collision = "simple_and_complex"
+hulls = 0
+full_precision_uvs = true
+
+[[outputs]]
+package = "/Game/Experiments/CityTrees/v4/HD_PlazaTreeOrange_cell_0_0_v4"

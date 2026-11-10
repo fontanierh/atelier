@@ -558,6 +558,9 @@ def main():
                 _build_lod_chain(asset, settings, resolve)
             _apply_material_slots(asset, plan)
             _apply_mesh_settings(asset, settings)
+            if resolve is not None:
+                # The collision settings rebuild the mesh, whose screen sizes then read 0: the chain's are set again.
+                _static_mesh_editor().set_lod_screen_sizes(asset, [screen for _, screen, _, _ in settings['lod_chain']])
             plan = import_settings.reduction_plan(settings)
             if existing is None and plan is not None and asset.get_num_lods() == 1:
                 # A new package takes the record's reduction plan (the donor's generate_lods, which the donor ran on every
