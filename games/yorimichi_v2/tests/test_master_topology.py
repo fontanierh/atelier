@@ -127,6 +127,19 @@ def test_component_mask_channel_changes_reject(channel):
     assert digest.accept(saved, digest.read(material))
 
 
+@pytest.mark.parametrize('axis', ['u_tiling', 'v_tiling'])
+def test_texture_coordinate_scale_changes_reject(axis):
+    """A changed UV scale must reject even when the node connections and other properties are unchanged."""
+    uv = node('MaterialExpressionTextureCoordinate', 'uv', coordinate_index=0, u_tiling=2.0, v_tiling=2.0)
+    texture = node('MaterialExpressionTextureSample', 'texture', texture=Asset('/Game/Surface'),
+                   inputs=[('UV', uv, '')])
+    material = Material([uv, texture], {'MP_BASE_COLOR': (texture, 'RGB')})
+    saved = digest.read(material)
+    assert digest.accept(saved, digest.read(material)) == []
+    uv.props[axis] = 1.0
+    assert digest.accept(saved, digest.read(material))
+
+
 @pytest.mark.parametrize('setting', ['is_sky', 'blendable_location', 'dithered_lod_transition',
                                      'tangent_space_normal', 'compute_fog_per_pixel'])
 def test_upcoming_render_settings_are_compared(setting):

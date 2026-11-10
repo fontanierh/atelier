@@ -58,13 +58,15 @@ Saved, prepared and packaged totals are kept separate:
   contains 36 generated material masters with pinned builders: Hippodrome, skating, FX, racing, Sword Camp, Mega Park,
   Hidamari city and 13 Japan base masters. The native batches were accepted by the digest at that revision; final
   review strengthens source-pin and graph checks. Their historical reports do not establish the newer rooted comparison.
+  Sword Camp's two masters and Hidamari city now pin the shared haze helper; their claimed refresh at `6c807a71f9`
+  passed the newer native comparison and saved read-back ([evidence](inventory/shared-haze-sources.md)).
   Source-only generator records retain all 30 Hidamari and 43 Mega Park pins.
 - **Imported on a branch, stacked on #803:** [PR #804](https://github.com/fontanierh/atelier/pull/804) adds the other 13
   Japan base masters: M_Sea and M_HarborWater (`japan_sea`), then 11 in one claimed batch (`japan_terrain`,
   `japan_terrain_ground`, `japan_sky_painterly`, `japan_surfaces`, `japan_vegetation`). Each saved package was read back
   and matched its original through the native input reader. The adopted base-materials record now keeps only
-  `MPC_Wind`, a collection rather than a material. The Sword Camp and Hidamari city masters were re-imported on the
-  shared `master_haze` helper in the same batch.
+  `MPC_Wind`, a collection rather than a material. Those reports predate the TextureCoordinate tiling fields of the
+  digest, so they do not establish texture-scale equality; the builders' donor traces cover the tiling values.
 - **Still open:** the remaining master inputs and kept packages, the Hidamari instance, held Mega Park seams and MI_TH_pane;
   see [exceptions](inventory/exceptions.md) and the current [master recovery status](inventory/master-sources.md).
 
