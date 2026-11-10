@@ -9,7 +9,12 @@ Each row is keyed by the instance's package path:
   overrides  the parameters the instance itself saves: {"scalar": {name: value}, "vector": {name: [r, g, b, a]},
              "texture": {name: texture path, or null}}
   effective  the same three maps for every parameter the parent exposes, with the value the instance renders
+  switches   every bHas* static switch the instance or its parent stores: {name: {"override": bool, "value": the
+             value the instance stores (inherited when not overridden), "parent": the parent's value, "effective":
+             the value the instance renders}}; a value a call could not read is null (never a guess)
   error      present only when that instance could not be read; the other rows are still written
+
+The vector rows carry the alpha channel too: an EmissiveFactor is reported as [r, g, b, a], so its alpha is read here.
 """
 import json
 import os
@@ -84,6 +89,90 @@ def _effective(inst, parent):
     return dict(scalar=scalar, vector=vector, texture=texture)
 
 
+SWITCH_PREFIX = 'bHas'
+
+
+def _flag(value):
+    return bool(value) if value is not None else None
+
+
+def _switch_entries(stored):
+    """Pure given the stored entries (each with name, override, value): the bHas* names and their own values."""
+    return {name: {'override': bool(override), 'value': _flag(value)}
+            for name, override, value in stored if name.startswith(SWITCH_PREFIX)}
+
+
+def _stored_switches(static_set):
+    """(name, override, value) of each switch in a static parameter set, read through the editor's properties."""
+    rows = []
+    for p in static_set.get_editor_property('static_switch_parameters'):
+        override = p.get_editor_property('override') if _has(p, 'override') else p.get_editor_property('b_override')
+        rows.append((_name(p), override, p.get_editor_property('value')))
+    return rows
+
+
+def _has(obj, name):
+    try:
+        obj.get_editor_property(name)
+        return True
+    except Exception:
+        return False
+
+
+def _effective_switch(inst, name):
+    try:
+        got = MEL.get_material_instance_static_switch_parameter_value(inst, name)
+        return _flag(got[0] if isinstance(got, tuple) else got)
+    except Exception:
+        return None
+
+
+def _stored(material):
+    """The switches a material's stored static parameter set holds, or {} where UE 5.8's Python does not expose
+    `static_parameters` on the class (MaterialInstanceConstant does not)."""
+    try:
+        return _switch_entries(_stored_switches(material.get_editor_property('static_parameters')))
+    except Exception:
+        return {}
+
+
+def _switch_names(material):
+    try:
+        return {str(n) for n in MEL.get_static_switch_parameter_names(material)}
+    except Exception:
+        return set()
+
+
+def _parent_switch(parent, name):
+    """The parent's value: an instance parent reads like the instance, a base material reads its default."""
+    if isinstance(parent, U.MaterialInstance):
+        return _effective_switch(parent, name)
+    try:
+        return _flag(MEL.get_material_default_static_switch_parameter_value(parent, name))
+    except Exception:
+        return None
+
+
+def _switches(inst, parent):
+    """Every bHas* switch of the instance and of its parent, with the instance's own override and value, the parent's
+    value and the effective value. Each read is independent: a failed one is null, the rest are still reported.
+    Where the stored set is not readable, `override` is null and `value` is the effective value; an effective value
+    that differs from the parent's is then the evidence of an override."""
+    own = _stored(inst)
+    inherited = _stored(parent)
+    names = {n for n in _switch_names(inst) | _switch_names(parent) | set(own) | set(inherited)
+             if n.startswith(SWITCH_PREFIX)}
+    out = {}
+    for name in sorted(names):
+        effective = _effective_switch(inst, name)
+        base = inherited.get(name, {}).get('value')
+        if base is None:
+            base = _parent_switch(parent, name)
+        mine = own.get(name, {'override': None if not own else False, 'value': None if own else effective})
+        out[name] = dict(override=mine['override'], value=mine['value'], parent=base, effective=effective)
+    return out
+
+
 def report(path):
     inst = EAL.load_asset(path)
     if not isinstance(inst, U.MaterialInstanceConstant):
@@ -91,7 +180,8 @@ def report(path):
     parent = inst.get_editor_property('parent')
     if parent is None:
         return {'error': f'{path} has no parent'}
-    return dict(parent=_path(parent), overrides=_overrides(inst), effective=_effective(inst, parent))
+    return dict(parent=_path(parent), overrides=_overrides(inst), effective=_effective(inst, parent),
+                switches=_switches(inst, parent))
 
 
 def main():
