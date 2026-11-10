@@ -5,9 +5,9 @@
   },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/SwordCamp/Materials/M_RoninBody.uasset": "04cfdb76c81723a8e8ddcf1e05e33964e8f975c1975e8a2755d502bc8a93d8a5"
+    "unreal/Content/SwordCamp/Materials/M_RoninBody.uasset": "9baee33d385a510064a4232ca5c3f59263defd5b5db766c3a273a867b5902f21"
   },
-  "input_fingerprint": "d8405f95c72b2c6c5ebc34701b40ab49804eeee59d4834bfbd8855ccc45e0a86",
+  "input_fingerprint": "baabadbb46435af9f8f0da794459e97a7019858f757fddd40b010700fdc07be8",
   "kind": "imported",
   "schema": 1,
   "tool": "material-master@1"
