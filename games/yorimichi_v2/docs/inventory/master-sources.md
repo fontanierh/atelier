@@ -63,7 +63,7 @@ Counts: **24 direct, 3 needs helper, 0 not recoverable.**
 
 ### 2a. The four plaza masters
 
-Family status: **not planned**. `adopted/japan/materials/base-materials` owns 27 packages, not only these four. The planner refuses an adopted record that owns more than its family's masters, so no `plaza` family is written. The other 23 are `MPC_Wind`, `M_Bike`, `M_CloudShadow`, `M_CoastRock`, `M_Foliage`, `M_ForestGround`, `M_ForestImpostor`, `M_ForestLakeWater`, `M_Grass`, `M_NorthGate`, `M_NorthMountains`, `M_Painted`, `M_Painterly`, `M_PlazaPaving`, `M_PlazaWater`, `M_PondWater`, `M_SailboatCloth`, `M_SailboatWake`, `M_Sea`, `M_Sky`, `M_Village`, `M_VillageResident`, `M_ZeppelinFabric`. The record must be split by hand first.
+Family status: **superseded by section 10**: `M_Arcade`, `M_ArcadePaving` and `M_Harbor` are planned in `japan_base`; `M_HarborWater` stays in the record. `adopted/japan/materials/base-materials` owns 27 packages, not only these four. The planner refuses an adopted record that owns more than its family's masters, so no `plaza` family is written. The other 23 are `MPC_Wind`, `M_Bike`, `M_CloudShadow`, `M_CoastRock`, `M_Foliage`, `M_ForestGround`, `M_ForestImpostor`, `M_ForestLakeWater`, `M_Grass`, `M_NorthGate`, `M_NorthMountains`, `M_Painted`, `M_Painterly`, `M_PlazaPaving`, `M_PlazaWater`, `M_PondWater`, `M_SailboatCloth`, `M_SailboatWake`, `M_Sea`, `M_Sky`, `M_Village`, `M_VillageResident`, `M_ZeppelinFabric`. The record is not split by hand: its other packages stay in it, as section 10 lists (the planner has no keeps mechanism yet).
 
 Pins: `arcade_material.py` sha256 `21ca3cbc06b18defbc95f7d5ae9a4c580027126bdcd90214d09d0eed016d10ab` (63 lines);
 `harbor_material.py` sha256 `7681f25484a4d5589b0fbc366203391039a6747ccc07ca8ec90dcc801acc59ad` (176 lines);
@@ -283,3 +283,79 @@ pinned helper bytes.
 What the importer pilot must decide (not decided here): the owner of T_HD_plaster, given that the adopted record already
 outputs it; whether helper bytes are copied into each master's src or read through a dependency on base-materials or
 brinecove; and whether the megapark defaults are re-homed to a generated texture record or stay in shared-textures-common.
+
+## 10. The japan base family: the 27 packages of `adopted/japan/materials/base-materials`
+
+Family `japan_base` (tools/migrate/master_families/japan_base.py, builders in unreal/Scripts/material_masters/japan_base_masters.py).
+The inventory rows are `japan_base` in [master-sources.json](master-sources.json); the four plaza rows of section 2a point at
+their planned records there. Hashes are the sha256 of the donor blob at `7eec0f98dd`. Line ranges are the donor's, not V2's.
+
+Counts: **14 direct, 12 needs helper, 1 not a material master**. Planned now: **13** (the 13 direct masters below, except
+`M_Sky`). Kept in the record: **14** (`MPC_Wind` and the 13 others).
+
+| Package | Donor generator (file:lines, function) | Blob sha256 (prefix) | Inputs (V2 owner) | Helpers | Fit | Record |
+|---|---|---|---|---|---|---|
+| `MPC_Wind` | shared_materials.py:21-34 `make_mpc` | 8cf144f9 | none | - | not a material master (a collection) | kept |
+| `M_Arcade` | arcade_material.py:24-63 `material(paving=False)` | 21ca3cbc | T_Arcade_timber (texture/japan/arcade-timber) | - | direct | planned `master/japan/base/arcade` |
+| `M_ArcadePaving` | arcade_material.py:24-63 `material(paving=True)`, colour at 45 | 21ca3cbc | T_Arcade_paving (texture/japan/arcade-paving) | - | direct | planned `master/japan/base/arcade-paving` |
+| `M_Bike` | bike_material.py:6-32 `material` | 0750998b | none | - | direct | planned `master/japan/base/bike` |
+| `M_CloudShadow` | shared_materials.py:84-100 `cloud_shadow_material` | 8cf144f9 | T_cloudmask (texture/japan/cloudmask) | material_assets.py:34-42 node, link (copied) | direct | planned `master/japan/base/cloud-shadow` |
+| `M_CoastRock` | forest_ground.py:62-112 `rock_material` | 90c1256d | T_CoastRock (adopted/japan/textures/rock) | atmosphere.py; coast_rock_look.py | needs helper | kept |
+| `M_Foliage` | shared_materials.py:169-223 `master(masked=True)` | 8cf144f9 | T_white (texture/japan/white); MPC_Wind (kept) | atmosphere.py | needs helper | kept |
+| `M_ForestGround` | forest_ground.py:16-59 `material` | 90c1256d | T_ground, T_ground_detail (adopted/japan/textures/ground) | atmosphere.py; ground_grain.py | needs helper | kept |
+| `M_ForestImpostor` | forest_impostor_material.py:6-53 `parent` | c7aa76c7 | WhiteSquareTexture (engine); default normal from the caller | atmosphere.py | needs helper | kept |
+| `M_ForestLakeWater` | forest_lake_material.py:20-36 RIPPLE, 39-86 `create` | 0a5a3ac6 | none | - | direct | planned `master/japan/base/forest-lake-water` |
+| `M_Grass` | shared_materials.py:224-250 `grass_material` (calls `master`) | 8cf144f9 | T_grass (adopted/japan/textures/ground); T_white; MPC_Wind (kept) | atmosphere.py | needs helper | kept |
+| `M_Harbor` | harbor_material.py:39-61 and 143-176 `material(water=False)` | 7681f254 | T_Harbor_paving, T_Harbor_timber (texture/japan/harbor-paving, harbor-timber) | - | direct | planned `master/japan/base/harbor` |
+| `M_HarborWater` | harbor_material.py:39-61 and 62-142 `material(water=True)` | 7681f254 | none (constants) | sea_look.py; world/coast_water.py (HARBOR_RECT) | needs helper | kept |
+| `M_NorthGate` | mountain_material.py:257-296 `gate_material`, _seamless 249-255 | 21238502 | T_ground (adopted/japan/textures/ground) | atmosphere.py | needs helper | kept |
+| `M_NorthMountains` | mountain_material.py:42-233 `material`; crater_hlsl and floor_hlsl 18-40 | 21238502 | T_VolcanicRock, T_NorthSnowMask, T_NorthCraterMask, T_NorthCraterFloor (adopted/japan/textures/rock) | atmosphere.py; ground_grain.py | needs helper | kept |
+| `M_Painted` | shared_materials.py:169-223 `master(masked=False)` | 8cf144f9 | T_white (texture/japan/white) | atmosphere.py | needs helper | kept |
+| `M_Painterly` | shared_materials.py:103-166 `painterly_material` | 8cf144f9 | none | painterly_kernel.py:1-57 | needs helper | kept |
+| `M_PlazaPaving` | plaza_material.py:37-68 `paving_material` | c25bcab3 | T_Arcade_paving (texture/japan/arcade-paving) | - | direct | planned `master/japan/base/plaza-paving` |
+| `M_PlazaWater` | plaza_material.py:5-34 `water_material(pond=False)` | c25bcab3 | none | - | direct | planned `master/japan/base/plaza-water` |
+| `M_PondWater` | plaza_material.py:5-34 `water_material(pond=True)`, overrides 16, 22 | c25bcab3 | none | - | direct | planned `master/japan/base/pond-water` |
+| `M_SailboatCloth` | sailboat_material.py:5-40 `material(wake=False)` | fd875fed | none | - | direct | planned `master/japan/base/sailboat-cloth` |
+| `M_SailboatWake` | sailboat_material.py:5-40 `material(wake=True)` | fd875fed | none | - | direct | planned `master/japan/base/sailboat-wake` |
+| `M_Sea` | import_southwest.py:32-70 `sea_material` | 2c7377af | none | sea_look.py | needs helper | kept |
+| `M_Sky` | shared_materials.py:169-223 `master(unlit=True, fixed_tex=T_sky)` | 8cf144f9 | T_sky (texture/japan/sky) | none (unlit skips atmosphere) | direct | kept (fits once `master` is split) |
+| `M_Village` | import_village.py:17-60 `material` | fccc0aae | none | atmosphere.py | needs helper | kept |
+| `M_VillageResident` | import_village.py:63-85 `resident_material` | fccc0aae | none | - | direct | planned `master/japan/base/village-resident` |
+| `M_ZeppelinFabric` | import_zeppelin.py:13-30 `fabric_material` | 0896301e | none | - | direct | planned `master/japan/base/zeppelin-fabric` |
+
+Helper pins (blob sha256, prefix): atmosphere.py `b59478df`, sea_look.py `ffae53cd`, coast_water.py `a7f9b6f4`,
+ground_grain.py `c802eea4`, painterly_kernel.py `70f9be7d`, coast_rock_look.py `cff84c03`, material_assets.py `4f48db12`.
+
+### 10.1 What was ported, and how it was checked
+
+- 13 masters in one family, `japan_base`, each with its own donor function and line pin in `donor_lines`. The donor code
+  strings are copied verbatim: a check over the builder module finds all 39 string literals of 13 characters or more in the
+  donor blobs.
+- The builders never save, load or import. Every texture arrives through `reads`. Every read is an output of its input record.
+- `tests/test_master_japanbase.py` traces each builder against the Recorder and asserts its property pins, codes, settings
+  and texture reads, and that nothing is saved or imported. It also checks that the planner loads the family and that each
+  read is an output of an input record on disk.
+- Not checked: the wiring digest against the saved original. That needs the editor (report_masters.py, native).
+
+### 10.2 What stays in `adopted/japan/materials/base-materials`, and why
+
+- `MPC_Wind`: a MaterialParameterCollection. The material-master importer handles class Material only.
+- The 12 "needs helper" masters use atmosphere.py (aerial perspective, 9 of them), sea_look.py (`M_Sea`, `M_HarborWater`),
+  coast_water.py, painterly_kernel.py, or the craterpark and hidamari build metadata (`M_NorthMountains`, `north_snow.json`,
+  not pinned). Their helpers are not yet copied into a builder.
+- `M_Sky` is direct, but it shares `master()` with `M_Painted`, `M_Foliage` and `M_Grass`. It waits until `master()` is split.
+
+The planner refuses while these 14 are in the record: `state` reports `adopted/japan/materials/base-materials also owns
+['/Game/Japan/Materials/MPC_Wind', ...]` with all 14 names. Nothing is claimed.
+
+### 10.3 Decisions for the owner
+
+1. **A keeps mechanism is required before any claim.** A dry run of `reference_rewrites` rewrites 939 referencing records.
+   809 of them name a kept master, most of them `M_NorthMountains` (675 by first match) and `M_Village` (126), then `M_NorthGate`
+   and others (`M_Foliage`, `M_Sky`, `M_Painted` and so on). Each would be pointed at a family master, which is wrong: their material is kept, so their reference to
+   the record must stay. Without keeps, the planner would retarget them to the fallback.
+2. **Fallback.** `master/japan/base/forest-lake-water` is a stand-in, not a derived choice. 49 adopted records (tree, bark,
+   ground, rock and water materials) name no master and reference the record only as their generator unit. Those records
+   have no instance parent in the record. A keeps mechanism that leaves `references` alone would make this choice unnecessary.
+3. The donor field of the family names no single file: one donor file per builder, in `donor_lines`. The provenance line
+   reads `donor generator games/yorimichi/unreal/Scripts (one file per builder, see donor_lines)`.
