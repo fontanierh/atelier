@@ -488,8 +488,10 @@ def _verify_batch(game, prepared, result, *, engine, echo):
 
 
 def import_batch(game, asset_ids, *, engine, claim, batch_size, runner=run_session, echo=print) -> dict:
-    """Import many generated assets through warm editor sessions: at most `batch_size` jobs per session, and a session
-    holds one asset kind only. A static-mesh session runs headless; a texture session stays rendered.
+    """@cc [owner:fontanierh,label:correctness] import-batch-ready-dependencies
+    Gather dependency-ready assets of one kind from the remaining queue, at most `batch_size` jobs per session.
+    A selected dependency MUST be verified and recorded before its dependent is prepared, including across kinds.
+    A static-mesh session runs headless; a texture session stays rendered.
 
     Each asset is prepared (fingerprint, authorize, journal, plan) and its write set journaled as import_one does. The
     session runs one job per asset in order. A finished job is verified and recorded; a failed job restores its
@@ -509,24 +511,28 @@ def import_batch(game, asset_ids, *, engine, claim, batch_size, runner=run_sessi
     queue = [a.id for a in ordered]
     session_no = 0
     while queue:
-        chunk, queue, blocked = [], list(queue), False
-        while queue and len(chunk) < batch_size:
-            asset_id = queue[0]
+        chunk, index, kind, blocked = [], 0, None, False
+        waiting = len(queue)
+        while index < len(queue) and len(chunk) < batch_size:
+            asset_id = queue[index]
             asset = by_id[asset_id]
-            if chunk and asset.kind != by_id[chunk[0].asset.id].kind:
-                break                                # one kind per session: the next chunk starts with this asset
+            if kind is not None and asset.kind != kind:
+                index += 1
+                continue                             # gather this kind beyond intervening dependents/other kinds
             failed_deps = [d for d in asset.input_dependencies if d in report['failed']]
             if failed_deps:
                 report['failed'][asset_id] = f'input dependency {failed_deps[0]} failed; not imported'
                 echo(f'failed     {asset_id}: {report["failed"][asset_id]}')
-                queue.pop(0)
+                queue.pop(index)
                 continue
             # A dependency still waiting in this batch must be recorded before its dependent is prepared.
             if any(d in queue and d != asset_id for d in asset.input_dependencies) or \
                     any(d in {p.asset.id for p in chunk} for d in asset.input_dependencies):
                 blocked = True
-                break
-            queue.pop(0)
+                index += 1
+                continue
+            queue.pop(index)
+            kind = asset.kind                        # keep the cohort even when its first assets are unchanged
             try:
                 prepared = _prepare_batch(game, asset, by_id, claim=claim, echo=echo, authorized=True)
             except ImportError_ as error:
@@ -538,7 +544,7 @@ def import_batch(game, asset_ids, *, engine, claim, batch_size, runner=run_sessi
             else:
                 chunk.append(prepared)
         if not chunk:
-            if blocked:                              # cannot happen for a plan that orders dependencies first
+            if blocked and len(queue) == waiting:    # no completed/unchanged asset freed the next kind
                 raise ImportError_('an input dependency is not ordered before its dependent; nothing was started')
             continue
         session_no += 1
