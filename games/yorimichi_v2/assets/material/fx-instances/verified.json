@@ -1,7 +1,8 @@
 {
   "asset": "material/fx-instances",
   "dependencies": {
-    "adopted/fx": "efd40ec0a24b6e9259a122ee67f870d806466803f2ba5de90bdfb5e1ea7b2e4f",
+    "master/fx/additive": "4ccd6d2879a8b1ab1852178f0659dd90899ebd1029bc25367aa8da16cff6b183",
+    "master/fx/dust": "e3550ebfa38948a5ee5a3c1a87c9fc568c9f67c2e3090bdfe77b1a77b907885b",
     "texture/fx/dust": "194011be7bd208c00cc2c73d55db65cc9006d24e7f88298460ec6ce5cf5d59ea",
     "texture/fx/glow": "667edb8e3623c1eb9b5677fb95ac5530ecd36590cca487d5f48dfcf2806e818c",
     "texture/fx/ring": "fd9d4d28c93aecb56fb590c01ab0d59972e29ac24ecadbb5564eeac3b6d2800a",
@@ -9,12 +10,12 @@
   },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/FX/MI_FX_Dust.uasset": "a7e067dbd7659600198056f0983e8399d1ccf5eb88e6d995ea02cd5ae8ccbc28",
-    "unreal/Content/FX/MI_FX_Glow.uasset": "fd655179b093aba2b3fe6afc7824a663cc63470637dd3736cc044c7ff80f4ce3",
-    "unreal/Content/FX/MI_FX_Ring.uasset": "7283884db2eb7b3d0e4f3aebc9541fce7eae0560ab0fbee9413f0bb3f8225360",
-    "unreal/Content/FX/MI_FX_Spark.uasset": "8be3319b56906164b8919ed6ab8f5f42274bf46be2a0dd76626dabb7a2487e2f"
+    "unreal/Content/FX/MI_FX_Dust.uasset": "2caf4f028c8d47b0c37da14a1927af396b1e821e8652e3e2eeb5f43058eef054",
+    "unreal/Content/FX/MI_FX_Glow.uasset": "7563fbdd06e613f883a100a478e56c2f5f65a4eeb263a7cf1249738edeaa5262",
+    "unreal/Content/FX/MI_FX_Ring.uasset": "a74c6b1849a0d340f3b008a0b1b06f43d2082c3bb01f58c7d152b1afe44b31e3",
+    "unreal/Content/FX/MI_FX_Spark.uasset": "5b64b05a11a36b5fa957504d7c8d469ddf0a242d1adf9bfc15358a986989420e"
   },
-  "input_fingerprint": "29f7e65c08e4983065609e47e8ad919320e93e8d418d55bfe9ceb1f7f5d60b8c",
+  "input_fingerprint": "242907a9276870df766c8db7bbe2042458cce86d9ca853e31ead60b3872e0b62",
   "kind": "imported",
   "schema": 1,
   "tool": "material-instance@2"
