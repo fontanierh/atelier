@@ -255,7 +255,7 @@ def wanted_tiles(glb_dir: Path, objects: dict[str, dict]) -> list[str]:
 def compute(glb_dir: Path, objects: dict[str, dict] | None = None, assigner=None) -> dict:
     """Split every donor tile the batch touches: {'models': {tile: model}, 'tris': {tile: [triangles]},
     'owned': {tile: {object or '': [ordinals]}}, 'problems': [...]}. The remainder ('') plus the parts is each tile's triangles.
-    `assigner(stem, tris, components, allowed)` replaces the anchored (radius) assignment, e.g. brinecove_ships.py's
+    `assigner(stem, tris, components, allowed)` replaces the anchored (radius) assignment, e.g. the retired brinecove_ships.py's
     generator-boundary assignment; it returns the same {object or '': [ordinals]}."""
     objects = objects or OBJECTS
     out = {'models': {}, 'tris': {}, 'owned': {}, 'problems': []}

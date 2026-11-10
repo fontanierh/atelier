@@ -5,7 +5,7 @@ and obsolete grouped placements are retired in merged [PR #787](https://github.c
 The result is included in package `0adbb5ab212e`.
 The shared hull mesh is reusable model data; each ship now has its own hull instance. See [INVENTORY](../INVENTORY.md).
 
-Tool: `tools/migrate/brinecove_ships.py` (tests `tests/test_brinecove_ships.py`). Pure Python, no Blender or Unreal.
+Tool (retired after PR #787; see git history): `tools/migrate/brinecove_ships.py`. Pure Python, no Blender or Unreal.
 It reuses `brinecove_split.py` / `brinecove_split_apply.py` with a ship-specific triangle assigner and the shared
 claimed journal/accepted-import retirement checks.
 
@@ -49,7 +49,7 @@ retire only after the replacement imports and saved objects are accepted. That c
   `objects.toml` and `objects.saved.json` entries).
 - `adopted/brinecove/hero-galleon-hull` stays: it is the shared mesh unit the three hull instances use.
 
-## Controller sequence
+## Controller sequence (historical; the tool is retired)
 
 ```
 DONOR=build/yorimichi                                  # generator found at DONOR/../../games/yorimichi/world/regions (or --generator DIR)
