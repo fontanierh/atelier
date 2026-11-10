@@ -8,13 +8,22 @@ small owned parts, so several people and agents can change different things at o
 [docs/DECISIONS.md](docs/DECISIONS.md), and the pinned engine and tools are in [docs/TOOLCHAIN.md](docs/TOOLCHAIN.md).
 The retired original in `games/yorimichi` stays as a source reference; its tests remain disabled.
 
-**Current state (2026-11-09):** main `3027366ced` has a whole-island package. Source recovery and independent
-object editing are still being completed; a packaged feature is not automatically a verified gameplay or
-authoring result. [INVENTORY.md](docs/INVENTORY.md) tracks merged content, saved follow-ups and remaining work.
+**Current status:** [INVENTORY.md](docs/INVENTORY.md) is the canonical progress overview, including the
+whole-island package checkpoint, completed source recovery, saved follow-ups and the remaining object/source
+gaps. It distinguishes prepared, imported, saved, merged, packaged and human-verified work; a package alone
+does not establish gameplay or authoring acceptance.
 Human and multiplayer playtesting follows construction; it does not hold independent migration work.
 
 Excluded from this version: phone streaming and the go-kart (`Driving`). Everything else in the original game is in
 scope.
+
+## Report a visual issue in game
+
+Open the menu and choose **Dev mode: fly and take notes**. Aim at the issue, press **N** (controller **Y**),
+write a note and press **Enter** to save. Press **X**, or choose **Export dev notes** in the menu, to export
+notes and screenshots as a zip on macOS. Each note records the map, camera/player coordinates and the hit
+actor/component name when the view hits something; it does not yet identify the stable V2 asset/source path.
+This describes the existing implementation; human verification on the current package remains open (INVENTORY F27).
 
 ## Layout
 

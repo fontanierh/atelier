@@ -1,6 +1,6 @@
 # Brine Cove split batch 1: saved small props
 
-Snapshot: **main `3027366ced` (2026-11-09)**. Batch 1 is implemented and its **11 useful small-object placements
+Snapshot: **main `028bc6243b` (2026-11-10)**. Batch 1 is implemented and its **11 useful small-object placements
 are saved**, not merely planned. The Nightjar/sloop work is separate and now saved too; see
 [brinecove-ships.md](brinecove-ships.md). Current overall status is [INVENTORY](../INVENTORY.md).
 
@@ -12,7 +12,7 @@ hashes rather than relying on a duplicated table in this document.
 
 | Object | Part triangles in the current expectation |
 |---|---:|
-| shipyard-yard | 9,558 |
+| shipyard-yard | 9,352 (after the whole-slip extraction in #798) |
 | crane-west / crane-east | 168 each |
 | fish-shed | 468 |
 | net-rack-west / net-rack-east | 672 each |
@@ -23,7 +23,7 @@ hashes rather than relying on a duplicated table in this document.
 
 The earlier 410-triangle west crane and 678-triangle fish shed incorrectly included neighbouring palms. The
 corrected exclusion zones return each whole palm to its tile. Their obsolete Soft parts are retired; the two
-remaining harbour Soft fragments still need saved placements in the follow-up checkpoint.
+harbour Soft fragments have saved placements in merged #787.
 
 ## Split and ownership
 
@@ -85,7 +85,8 @@ checks; investigate a changed or broken result with the smallest focused check, 
 
 ## Still outside this batch
 
-Signal mast, the stone shipyard slip welded into the quay, and remaining useful objects in fused town/harbour
-geometry are not completed merely by saving the 11 objects above. Market and town splits use the donor's actual
+The signal mast and whole shipyard slip were completed separately in #798/#800; all 21 market stalls and 265 town
+objects were completed in #787. Those batches are saved, merged and packaged. Remaining useful fused objects
+are tracked in [exceptions](exceptions.md); the initial batch is not the whole backlog. Market and town splits use the donor's actual
 constructor boundaries instead of radius selection. Each ship now combines its rig with its own hull instance;
 the rig-only triangle counts do not include the hero hull's deck and guns.
