@@ -13,8 +13,14 @@ PROC_PPID_ONLY = 6
 
 
 def started(pid):
+    """@cc [owner:fontanierh,label:safety] live-process-identity
+    Only a sampled live process MUST expose its pinned start identity. An exited process,
+    including an unreaped zombie, MUST return None; telemetry errors MUST propagate unless
+    they establish process absence.
+    """
     try:
-        return usage(pid).started
+        current = usage(pid)
+        return None if current.exited else current.started
     except ProcessLookupError:
         return None
 
