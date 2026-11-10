@@ -1,11 +1,11 @@
 {
   "asset": "object/brinecove/harbor-pier-west",
   "dependencies": {
-    "prop/brinecove/harbor-pier-west": "83a9df9cf3d536668d0cd41af7b4a77ca6659ba24a8b29c9e42854001b10265e"
+    "prop/brinecove/harbor-pier-west": "30886cef147401269ab8678427bda0dad181924e56e6de41b6b67646d9859a9a"
   },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/__ExternalActors__/V2/Maps/Slice/6/HN/H5UBQJFXLKPD2TW7J12910.uasset": "474084c4fc68b64eec50031ecd6c7f5a7e6c79344139efd75513d2ff8c5d7bbe"
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/6/HN/H5UBQJFXLKPD2TW7J12910.uasset": "fda9c5e656a81e04baf6ed901af14623c1c65f54871586a3f691f289a74c24a6"
   },
   "kind": "editor-saved",
   "schema": 1
