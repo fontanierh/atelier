@@ -1167,8 +1167,12 @@ def apply(game: Path, plan: Plan, donor: Path, settle: bool = False) -> dict:
         folder = game / 'assets' / gen.id
         digests = [(path.name, records.sha256_file(path)) for path in gen.files()]
         text = _record_text(gen, digests)
-        if ((folder / 'asset.toml').is_file() and (folder / 'asset.toml').read_text() == text
-                and all((folder / 'src' / path.name).is_file() for path in gen.files())):
+        if (folder / 'asset.toml').is_file() and (folder / 'asset.toml').read_text() == text:
+            stale = [name for name, digest in digests if not (folder / 'src' / name).is_file()
+                     or records.sha256_file(folder / 'src' / name) != digest]
+            if stale:
+                raise RecoverError(f'{gen.id}: src/{", src/".join(stale)} differs from its pinned donor file; restore it '
+                                   f'from the donor (recover.py {gen.id}, owner {gen.owner}), never edit it here')
             continue
         if folder.exists() and any(folder.iterdir()) and not (folder / 'asset.toml').is_file():
             raise RecoverError(f'{folder} exists and is not a record of this tool; refusing to write over it')
