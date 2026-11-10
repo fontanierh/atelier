@@ -1,6 +1,6 @@
 # Inventory
 
-**Current checkpoint: 2026-11-09, main `3027366ced` ([PR #786](https://github.com/fontanierh/atelier/pull/786)).**
+**Current checkpoint: 2026-11-10, main `91658129cd` ([PR #790](https://github.com/fontanierh/atelier/pull/790)), packaged.**
 This is the status index for the full original-game port.
 The source baseline `7eec0f98dd` is documented separately in [features](inventory/features.md) and
 [world](inventory/world.md); those pages describe the donor, not today's V2 completion state.
@@ -18,24 +18,23 @@ The source baseline `7eec0f98dd` is documented separately in [features](inventor
 
 ## What is already delivered
 
-| Scope | Main / package at `3027366ced` | Evidence and limits |
+| Scope | Main / package at `91658129cd` | Evidence and limits |
 | --- | --- | --- |
 | Whole island | W00–W20 have committed coverage (29 world region scopes); W14 keeps its disabled baseline. The region records contain 2,450 saved object definitions. | [Regions](../world/regions/), `actors.verified.json`, `objects.saved.json`; these counts are not the number of independently split source models. |
 | Recovered models | 1,048 city records, 67 train records, ten families with 141 meshes and 29 textures, and 100 Japan props are merged. | [PR #784](https://github.com/fontanierh/atelier/pull/784), [PR #786](https://github.com/fontanierh/atelier/pull/786); source completeness and remaining fused objects are tracked below. |
 | Restricted and Adventure originals | 6,768 restricted package entries and 124 Adventure/animation entries have source routes; the manifest records 6,086 original pins. | [restricted.originals.json](../restricted.originals.json), [PR #785](https://github.com/fontanierh/atelier/pull/785). Private bytes stay on the pinned restricted route. This is not closure of every open source family. |
-| Brine Cove individual objects | Eleven small props, three ship objects and six market stalls have saved placements in main. Other scenery still includes fused models/patches. | [Brine Cove scope](inventory/brinecove-objects.md), [split work](inventory/brinecove-split.md), [remaining exceptions](inventory/exceptions.md). |
-| Desktop package | Built from `3027366ced` on 2026-11-09; package command succeeded. Implementer reports all automated package checks passing. | [Package guide](PACKAGE.md). Human gameplay, input, travel, sound and persistence checks are not claimed complete. |
+| Brine Cove individual objects | All 21 market stalls, all 265 town objects, the two harbour Soft fragments, eleven small props and three ship objects have saved placements in main ([PR #787](https://github.com/fontanierh/atelier/pull/787)). Other scenery still includes fused models/patches. | [Brine Cove scope](inventory/brinecove-objects.md), [split work](inventory/brinecove-split.md), [remaining exceptions](inventory/exceptions.md). |
+| Transport objects | The 10 gondola pylons and 12 railway fittings are saved as their own objects; their fused groups and the train LOD records are retired. | [PR #790](https://github.com/fontanierh/atelier/pull/790), [exceptions](inventory/exceptions.md). |
+| Desktop package | Built 2026-11-10 from the #790 head `a363050d3d`, whose packaged content equals main `91658129cd`. All automated checks pass; first launch and shutdown were observed passing (fingerprint `f5947da8e8c2`). | [Package guide](PACKAGE.md). Human input, travel, gameplay, sound and persistence checks are not claimed complete. |
 | Appearance | Whole-island captures exist, as well as the earlier slice route/package measurements. | [PARITY](PARITY.md) retains their exact revisions and limits; those earlier captures do not accept every later split. |
 
 ## Active work after this checkpoint
 
-[PR #787](https://github.com/fontanierh/atelier/pull/787) completes the Brine Cove market and town split. With it,
-the 21 market stalls and all 265 town objects (town1–town9: 7, 25, 31, 45, 28, 33, 30, 26, 40) are saved as their own
-placements, and so are the two harbour Soft fragments. The 148 carved tile records keep their fused original plus a
-carve selection; each remainder derives byte-identically. The three ship tiles and the 42 town tiles the batches
-emptied are retired, and the 15 placements that named them were saved again. The first town2 import attempt was
-rolled back after a package-name collision and redone; only the redone town2 is accepted content. Saved, prepared
-(planned, not yet saved) and packaged (`3027366ced`) totals are separate. The package does not contain #787 yet.
+Saved, prepared and packaged totals are kept separate:
+- **Saved and packaged:** everything in the table above is in main and in the `f5947da8e8c2` package.
+- **Prepared on branches, not yet in main or saved:** the two used Japan leaf instances (MI_LeafAmber, MI_LeafCrimson) as
+  material-instance records, and the residual Belmonte train batch (138 texture and 21 material-instance records
+  covering 459 packages). Both wait on native reads and a claimed import; see [exceptions](inventory/exceptions.md).
 
 Remaining construction work:
 - Close the other useful-object/source gaps in [exceptions](inventory/exceptions.md) and
@@ -83,7 +82,7 @@ Remaining construction work:
 | F21 | Painterly materials, sky, sea, foliage, effects | World | implemented | W00 | Ported: saved environment/scenery and dynamic effects. Whole-island comparison evidence is in [PARITY](PARITY.md); it is not final visual acceptance. |
 | F22 | Multiplayer | Network | partial: local two-process tests only | F02–F14 | Ported: [Network](../unreal/Source/Yorimichi/Network/). Cross-machine gameplay acceptance remains; owner will test live with his brother after construction. |
 | F23 | Live bridge, QA, dev tools | Presentation/Dev | implemented: single port 8830 | P2-C | Ported: [Dev](../unreal/Source/Yorimichi/Dev/) and session-targeted LiveBridge. Native packaged build has no Python input route; see [PACKAGE](PACKAGE.md). |
-| F24 | Runtime data, saves, startup, packaging | World/Presentation | implemented | — | Packaged checkpoint at `3027366ced`; V2 identity and staged runtime files checked. Human save/persistence checks remain. |
+| F24 | Runtime data, saves, startup, packaging | World/Presentation | implemented | — | Packaged checkpoint `f5947da8e8c2` (content of main `91658129cd`); V2 identity and staged runtime files checked. Human save/persistence checks remain. |
 | F25 | Crater Park tower hoist | Travel | implemented | W12 | Ported: [CraterParkTower](../unreal/Source/Yorimichi/Travel/CraterParkTower.cpp). Hoist playtest remains. |
 | F26 | Mega Park standalone level and game mode | World | implemented | W11 | Ported: [standalone profile](../game.toml) and Mega Park map/game mode. Rights cleared; standalone playtest remains. |
 | F27 | In-game Dev mode and notes | Presentation/Dev | implemented | F17 | Ported: [DevNotes](../unreal/Source/Yorimichi/Dev/DevNotes.cpp). Human notes/export checks remain. |
