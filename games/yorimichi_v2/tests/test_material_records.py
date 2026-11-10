@@ -21,7 +21,7 @@ spec.loader.exec_module(run)
 LEAVES = {'amber': 'MI_LeafAmber', 'crimson': 'MI_LeafCrimson'}
 FOLIAGE_MASTER = ROOT / 'assets/master/japan/surfaces/foliage/asset.toml'   # M_Foliage, moved out of base-materials
 ATLASES = ROOT / 'assets/adopted/japan/textures/leaf-atlases/asset.toml'
-FOLIAGE = ROOT / 'assets/adopted/japan/materials/foliage'
+FOLIAGE = ROOT / 'assets' / 'material' / 'japan' / 'materials' / 'foliage-instances'   # was adopted/japan/materials/foliage (JAPANMI)
 
 
 def write(path, data):

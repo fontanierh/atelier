@@ -65,7 +65,7 @@ def test_the_seven_records_hold_41_packages_and_no_source_or_recipe():
         return
     for asset in assets.values():
         assert asset.kind == 'material-instance' and asset.authority == 'generated' and not asset.sources
-        rows = asset.recipe.settings['instances']
+        rows = asset.recipe['settings']['instances']
         assert sorted(r['package'] for r in rows) == sorted(o.package for o in asset.outputs)
     assert not any((FAMILY / name).exists() for name in RECORDS)
 
@@ -82,11 +82,12 @@ def test_the_packages_are_the_43_material_instances_and_each_has_a_verified_hash
     assert sorted(packages) == sorted(ALL)
     assert all(p.startswith('MI_') for p in packages)
     for name in RECORDS:
-        verified = (FAMILY / name / 'verified.json').read_text()
+        folder = INSTANCES / f'{name}-instances' if written() else FAMILY / name
+        verified = (folder / 'verified.json').read_text()
         for package in re.findall(r'"unreal/Content/Japan/Materials/(MI_[A-Za-z0-9]+)\.uasset"', verified):
             assert package in ALL
-        hashes = re.findall(r'"([0-9a-f]{64})"', verified)
-        assert len(hashes) == len(re.findall(r'\.uasset"', verified))
+        files = records.load_verified(folder / 'verified.json')['files']
+        assert len(files) == len(re.findall(r'\.uasset"', verified)) and all(re.fullmatch('[0-9a-f]{64}', h) for h in files.values())
 
 
 def test_the_classification_is_41_generator_rows_and_2_used_leaves_with_no_imported_original():

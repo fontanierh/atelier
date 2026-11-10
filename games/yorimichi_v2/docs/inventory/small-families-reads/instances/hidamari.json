@@ -1,5 +1,6 @@
 {
  "/Game/Japan/Hidamari/Materials/MI_HD_flat": {
+  "base": {},
   "effective": {
    "scalar": {
     "Gain": 1.0,

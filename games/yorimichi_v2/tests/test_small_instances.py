@@ -18,12 +18,13 @@ needs_donor = pytest.mark.skipif(DONOR is None or not (DONOR / 'build/yorimichi/
 
 
 @needs_donor
-def test_the_mega_park_instances_agree_except_the_two_natural_seams():
+def test_the_mega_park_instances_agree_the_two_natural_seams_with_their_two_sided_override():
     verdict = si.agreement('megapark', DONOR)
-    assert len(verdict) == 24
-    held = sorted(p for p, v in verdict.items() if not v['agree'])
-    assert held == ['/Game/MegaPark/Materials/MI_4cef5bb305cb09eb_Seam', '/Game/MegaPark/Materials/MI_b4686eeb54647811_Seam']
-    assert all(v['held'] == ['a two-sided base-property override (recipe v2 cannot state it)'] for p, v in verdict.items() if p in held)
+    assert len(verdict) == 24 and all(v['agree'] for v in verdict.values())
+    want = si.expected_megapark(DONOR)
+    natural = sorted(p for p, w in want.items() if w.get('base') and p in verdict)
+    assert natural == ['/Game/MegaPark/Materials/MI_4cef5bb305cb09eb_Seam', '/Game/MegaPark/Materials/MI_b4686eeb54647811_Seam']
+    assert all(want[p]['base'] == {'two_sided': True} for p in natural)
 
 
 @needs_donor
@@ -33,10 +34,9 @@ def test_the_belmonte_instances_all_agree():
 
 
 @needs_donor
-def test_the_tree_house_instances_agree_and_the_pane_is_not_named_by_its_generator():
+def test_the_tree_house_instances_agree_the_pane_included():
     verdict = si.agreement('treehouse', DONOR)
-    assert sorted(p for p, v in verdict.items() if not v['agree']) == ['/Game/Japan/Treehouse/Materials/MI_TH_pane']
-    assert verdict['/Game/Japan/Treehouse/Materials/MI_TH_pane']['held'] == ['the generator does not name this instance']
+    assert len(verdict) == 5 and all(v['agree'] for v in verdict.values())
 
 
 @needs_donor
@@ -67,7 +67,8 @@ def test_every_planned_instance_record_loads_and_names_its_outputs(tmp_path):
     if claim_written():
         paths = sorted((si.GAME / 'assets/material').glob('**/asset.toml'))
         loaded = [records.load_asset(p) for p in paths]
-        mi = [a for a in loaded if a.kind == 'material-instance' and a.id.endswith('-instances')]
+        mi = [a for a in loaded if a.kind == 'material-instance' and a.id.endswith('-instances')
+              and not a.id.startswith('material/japan/materials/')]   # held_instances.py writes those (JAPANMI)
         assert len(mi) == 10, len(mi)
         assert sum(len(a.outputs) for a in mi) == 37
         return

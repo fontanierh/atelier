@@ -533,6 +533,9 @@
   "switches": {}
  },
  "/Game/MegaPark/Materials/MI_4cef5bb305cb09eb_Seam": {
+  "base": {
+   "two_sided": true
+  },
   "effective": {
    "scalar": {
     "Albedo": 1.0,
@@ -1013,6 +1016,9 @@
   "switches": {}
  },
  "/Game/MegaPark/Materials/MI_b4686eeb54647811_Seam": {
+  "base": {
+   "two_sided": true
+  },
   "effective": {
    "scalar": {
     "Albedo": 1.0,
