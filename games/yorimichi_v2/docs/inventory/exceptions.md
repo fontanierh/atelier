@@ -22,10 +22,10 @@ For imported content, an editor-saved package is not a substitute for the import
 |---|---|---|
 | Brine Cove small props | Eleven placements saved, including the corrected crane/fish-shed split, and the two harbour Soft fragments (#787) | Finish any remaining useful fused objects (signal mast, shipyard slip); preserve each whole palm |
 | Brine Cove ships | Nightjar, sloop and Adventure hull placements saved with per-instance hull groups | Retire the three emptied ship tiles and obsolete grouped placements after accepted replacement checks |
-| Brine Cove market | Six market1 stalls saved on main | Fifteen more saved on PR #787; integrate them. The full market has 21 stalls, not the older 19-stall-only list |
-| Brine Cove town | Original town appearance still represented by the fused tiles | Seven town1 placements are on PR #787; town2–9 remain pending. Retire the 42 empty tiles only after their replacements are accepted and saved |
+| Brine Cove market | All 21 stalls saved on main (market1–3, #786 and #787) | None for the stalls themselves |
+| Brine Cove town | All 265 town objects saved on main (#787); the 42 emptied tiles and the three ship tiles are retired | None for the town objects |
 | Other Brine Cove features | Existing fort, lighthouse and other saved units remain | The signal mast, stone shipyard slip and other useful objects still bundled in residual tiles need a real object boundary, not just a smaller package |
-| Transport groups | Two ferry terminals, nine gondola route objects and thirteen railway route objects saved | Gondola pylon groups still bundle useful objects. Railway track-fittings group: prepared, not saved, as twelve per-fitting objects (routed by row, `SM_TK_<mesh>#@<i>`; a C++ change to `BelmonteTrack.cpp` and `V2MigrationTravel.cpp`, uncompiled). Preserve route data and moving services while splitting their editing boundaries |
+| Transport groups | Two ferry terminals, nine gondola route objects and thirteen railway route objects saved | Gondola pylon groups: ten per-tower objects prepared by `gondola_pylons.py` (not saved); the three line groups must be retired in the editor first. Railway track-fittings group: twelve per-fitting objects (routed by row, `SM_TK_<mesh>#@<i>`, by `railway_fittings.py`), being saved. Preserve route data and moving services while splitting their editing boundaries |
 | Area patches (G6) | Saved terrain, ground and scatter patches are legitimate scopes | A patch-name tally is only a candidate list. Any patch that still bundles several useful buildings or props remains unfinished until they are independently editable |
 
 The counts above describe saved definitions and known plans, not a full new geometry audit. Use actual object
