@@ -363,6 +363,31 @@ def material_master_settings(recipe: dict, where: Path, authority: str, sources:
     return settings
 
 
+SKATE_RUNTIME_IMPORTER = ('skate-runtime', 1)
+SKATE_RUNTIME_SOURCES = ['src/simulation_package.py', 'src/motion_text.py', 'src/runtime_text.py',
+                         'src/skate_runtime_inputs.sha256']
+
+
+def skate_runtime_settings(recipe: dict, where: Path, sources: list, outputs: list[str]) -> dict:
+    """@cc [owner:fontanierh,label:correctness] skate-runtime-record-pins
+    Validate a skate-runtime data [recipe]: `importer = "skate-runtime"`, version 1, and [recipe.settings] with only
+    `manifest_sha256` (the simulation package manifest the assembled package must hash to). Its [[sources]] are exactly the
+    pinned assembler code and the Skate/Data input list (SKATE_RUNTIME_SOURCES, in that order), so the import fingerprint
+    covers every byte the package is assembled from. It is one output, a /Game package named RuntimeData."""
+    _known(recipe, MATERIAL_RECIPE_KEYS, where, '[recipe]')
+    if (recipe.get('importer'), recipe.get('version')) != SKATE_RUNTIME_IMPORTER:
+        raise RecordError(f'{where}: a skate-runtime recipe is importer "skate-runtime" version 1')
+    if [source.path for source in sources] != SKATE_RUNTIME_SOURCES:
+        raise RecordError(f'{where}: a skate-runtime record pins exactly {SKATE_RUNTIME_SOURCES}')
+    settings = recipe.get('settings')
+    if not isinstance(settings, dict) or set(settings) != {'manifest_sha256'} \
+            or not HEX64.match(str(settings['manifest_sha256'])):
+        raise RecordError(f'{where}: [recipe.settings] holds only manifest_sha256, 64 lower-case hex digits')
+    if len(outputs) != 1 or outputs[0].rsplit('/', 1)[-1] != 'RuntimeData':
+        raise RecordError(f'{where}: a skate-runtime record is one output package named RuntimeData')
+    return settings
+
+
 def material_master_reads(asset: 'Asset') -> list[str]:
     """The /Game and /Engine packages a material master's graph samples, in the order its record states them."""
     return list((asset.recipe or {}).get('settings', {}).get('reads', []))
@@ -460,6 +485,8 @@ def load_asset(path: Path) -> Asset:
         else:
             if not sources:
                 raise RecordError(f'{path}: generated content needs at least one source')
+            if kind == 'data' and recipe.get('importer') == 'skate-runtime':
+                skate_runtime_settings(recipe, path, sources, [entry.get('package', '') for entry in data.get('outputs', [])])
             if kind == 'texture':
                 texture_settings(recipe, path)   # a texture's settings are checked after its original is required
     elif recipe is not None:

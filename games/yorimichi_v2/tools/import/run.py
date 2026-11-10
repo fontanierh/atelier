@@ -35,6 +35,8 @@ import authority  # noqa: E402
 import carve  # noqa: E402
 import lod_preservation  # noqa: E402
 import records  # noqa: E402
+sys.path.insert(0, str(TOOLS / 'import'))
+import skate_runtime  # noqa: E402
 from records import RecordError  # noqa: E402
 
 GAME = TOOLS.parent
@@ -47,7 +49,18 @@ IMPORTERS = {   # asset kind -> importer name and version understood by unreal/S
     'material-instance': ('material-instance', 2),   # 2: earlier overrides are cleared, strays refused
     'material-master': ('material-master', 1),       # 1: the pinned builder rebuilds, is read back, and must match the saved master
 }
+# A generated data asset names its importer in its record (a data asset has no single importer for its kind).
+DATA_IMPORTERS = {
+    'skate-runtime': ('skate-runtime', 1),   # 1: the pinned package is assembled here, imported natively and verified
+}
 BOOTSTRAP_WRITER = authority.BOOTSTRAP_WRITER
+
+
+def importer_of(asset):
+    """(importer, version) for the record's kind; a data asset's comes from its recipe (DATA_IMPORTERS). None if unknown."""
+    if asset.kind == 'data':
+        return DATA_IMPORTERS.get((asset.recipe or {}).get('importer'))
+    return IMPORTERS.get(asset.kind)
 LOD_RESULT = 'lod-result.json'   # written beside the plan by unreal/Scripts/import_asset.py
 
 
@@ -221,6 +234,12 @@ def write_plan(game, asset, by_id, kind, claim, write_set, plan_file: Path):
     allowed = {records.content_relative(game, f) for f in write_set}
     deps = {d: state_of(by_id, d) for d in asset.input_dependencies}
     sources = carve.plan_sources(asset, BUILD)      # a carved record's one source is its derived remainder
+    extra = {}
+    if kind[0] == 'skate-runtime':
+        # The package and its receipt, assembled from the record's pinned inputs only (skate_runtime.prepare).
+        build = BUILD / 'skate-runtime' / asset.id.replace('/', '.')
+        package, _ = skate_runtime.prepare(asset.folder, build)
+        extra = {'package_folder': str(package.resolve()), 'receipt': str((build / 'receipt.json').resolve())}
     plan_file.write_text(json.dumps({
         'asset': asset.id, 'kind': asset.kind, 'importer': kind[0], 'version': kind[1],
         'settings': asset.recipe.get('settings', {}),
@@ -230,6 +249,7 @@ def write_plan(game, asset, by_id, kind, claim, write_set, plan_file: Path):
         'references': {dep: [o.package for o in by_id[dep].outputs] for dep in asset.references + asset.input_dependencies},
         'claim': claim,
         'write_paths': sorted(f'games/yorimichi_v2/{rel}' for rel in allowed),
+        **extra,
     }, indent=2))
 
 
@@ -312,7 +332,7 @@ def import_one(game, asset, by_id, *, engine, claim, importer=native_import, ech
         echo(f'unchanged  {asset.id}')
         return False
     authorize(game, asset, claim)
-    kind = IMPORTERS.get(asset.kind)
+    kind = importer_of(asset)
     if kind is None or asset.recipe.get('importer') != kind[0] or asset.recipe.get('version') != kind[1]:
         raise ImportError_(f'{asset.id}: no importer {asset.recipe.get("importer")}@{asset.recipe.get("version")} '
                            f'for kind {asset.kind}')
@@ -454,7 +474,7 @@ def _prepare_batch(game, asset, by_id, *, claim, echo, authorized=False):
         return None
     if not authorized:
         authorize(game, asset, claim)
-    kind = IMPORTERS.get(asset.kind)
+    kind = importer_of(asset)
     if kind is None or asset.recipe.get('importer') != kind[0] or asset.recipe.get('version') != kind[1]:
         raise ImportError_(f'{asset.id}: no importer {asset.recipe.get("importer")}@{asset.recipe.get("version")} '
                            f'for kind {asset.kind}')

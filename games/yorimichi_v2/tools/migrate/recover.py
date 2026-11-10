@@ -1142,7 +1142,9 @@ SKATE_RUNTIME_GENERATOR = Generator(
     'generator/skate/runtime', 'shared/skateruntime',
     [ENGINE_SKATE / 'Tools/simulation_package.py', ENGINE_SKATE / 'Tools/motion_text.py', ENGINE_SKATE / 'Tools/runtime_text.py',
      DONOR_GAME / 'unreal/Scripts/skate_ride/import_runtime.py',
-     ENGINE_SKATE / 'Source/AtelierSkate/Private/SkateRuntimeData.cpp', ENGINE_SKATE / 'Source/AtelierSkate/Public/SkateDataLibrary.h'],
+     ENGINE_SKATE / 'Source/AtelierSkate/Private/SkateRuntimeData.cpp', ENGINE_SKATE / 'Source/AtelierSkate/Public/SkateDataLibrary.h',
+     # The 3,336 tracked Skate/Data files simulation_package.py --assemble reads, one sha256 per line (tools/import/skate_runtime.py).
+     GAME / 'tools/import/skate_runtime_inputs.sha256'],
     'RuntimeData: the simulation package assembler (simulation_package.py with motion_text.py and runtime_text.py), the editor '
     'import (import_runtime.py) and the C++ writer that saves the asset (SkateRuntimeData.cpp, SkateDataLibrary.h)',
     provenance='donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02) for import_runtime.py; '
