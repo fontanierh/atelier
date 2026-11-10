@@ -111,7 +111,8 @@ A town tile is often made only of lots, so a batch can take every triangle (no r
 record, package and runtime group in place and `apply` never deletes, so until it is retired the old tile and the new parts
 are both drawn. After accepted imports and `check`, retire them under the same complete claim, in this order:
 
-1. `groups`: drops the emptied tiles' groups from objects.toml, objects.saved.json and the runtime file.
+1. `groups`: drops the emptied tiles' groups from objects.toml, objects.saved.json and the runtime file, and their
+   records from each placement's model list (otherwise the re-saved placement still references them).
 2. `placements`: deletes each affected placement's record folder and the actor packages it lists as outputs. It refuses
    unless the groups stage is done and the check passes, and it prints the placement IDs to save again. A saved object
    cannot change its groups, so these actors must be saved again.
