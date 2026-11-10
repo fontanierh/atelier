@@ -110,66 +110,6 @@
         "GD_L3_1_Tower"
       ]
     },
-    "object/gondola/pylons-l1": {
-      "groups": [],
-      "id": "object/gondola/pylons-l1",
-      "model": [
-        "adopted/gondola/tower-l1-0",
-        "adopted/gondola/tower-l1-1",
-        "adopted/gondola/tower-l1-2",
-        "adopted/gondola/tower-l1-3"
-      ],
-      "models": [
-        "adopted/gondola/tower-l1-0",
-        "adopted/gondola/tower-l1-1",
-        "adopted/gondola/tower-l1-2",
-        "adopted/gondola/tower-l1-3"
-      ],
-      "route": [
-        "GD_L1_0_Tower",
-        "GD_L1_1_Tower",
-        "GD_L1_2_Tower",
-        "GD_L1_3_Tower"
-      ]
-    },
-    "object/gondola/pylons-l2": {
-      "groups": [],
-      "id": "object/gondola/pylons-l2",
-      "model": [
-        "adopted/gondola/tower-l2-0",
-        "adopted/gondola/tower-l2-1",
-        "adopted/gondola/tower-l2-2",
-        "adopted/gondola/tower-l2-3"
-      ],
-      "models": [
-        "adopted/gondola/tower-l2-0",
-        "adopted/gondola/tower-l2-1",
-        "adopted/gondola/tower-l2-2",
-        "adopted/gondola/tower-l2-3"
-      ],
-      "route": [
-        "GD_L2_0_Tower",
-        "GD_L2_1_Tower",
-        "GD_L2_2_Tower",
-        "GD_L2_3_Tower"
-      ]
-    },
-    "object/gondola/pylons-l3": {
-      "groups": [],
-      "id": "object/gondola/pylons-l3",
-      "model": [
-        "adopted/gondola/tower-l3-0",
-        "adopted/gondola/tower-l3-1"
-      ],
-      "models": [
-        "adopted/gondola/tower-l3-0",
-        "adopted/gondola/tower-l3-1"
-      ],
-      "route": [
-        "GD_L3_0_Tower",
-        "GD_L3_1_Tower"
-      ]
-    },
     "object/gondola/station-belmonte": {
       "groups": [],
       "id": "object/gondola/station-belmonte",
