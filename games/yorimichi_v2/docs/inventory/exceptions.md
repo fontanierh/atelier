@@ -1022,3 +1022,54 @@ need a referencer proof before any retirement.
 | `Color_72c00844-b377-41e6-8796-37d3e46331b9` | `hippodrome/meshes` | blocked | Hippodrome/Meshes/SM_HD_ToteBoard | no static-mesh reader in this tree |
 | `HD_ToteBoard` | `hippodrome/meshes` | blocked | Hippodrome/Materials/M_HD_Structure, Hippodrome/Materials/M_HD_Structure, Hippodrome/Meshes/SM_HD_ToteBoard ... | no static-mesh reader in this tree |
 | `HD_Dirt` | `hippodrome/meshes` | blocked | Hippodrome/Meshes/SM_HD_Track | no static-mesh reader in this tree |
+
+### Tree house surface materials (5 records, 8 packages)
+
+Donor evidence: `unreal/Scripts/import_treehouse.py:3-4` turns each `build/yorimichi/treehouse/textures/<slug>.png`
+(written by `tools/treehouse_textures.py finish`) into `T_TH_<slug>`, and gives `M_TreeHouse` the village look; `:10` says
+`MI_TH_trunk` is the bark of `TH_Trunks`. The import is a texture import of a generated PNG, so the texture importer fits.
+Byte evidence: the four `T_TH_*` packages and their `MI_TH_*` instances reference `M_TreeHouse` and `M_TH_Light`
+(owned by `adopted/japan/treehouse/generator`) and the textures named below.
+
+Donor PNG pins (sha256, from `build/yorimichi/treehouse/textures/`):
+
+| Texture package | Donor PNG | sha256 | Note |
+|---|---|---|---|
+| `T_TH_flat` | `flat.png` | `10b379bb6586c9e9…` | same bytes as `glass.png` |
+| `T_TH_glass` | `glass.png` | `10b379bb6586c9e9…` | `T_TH_glass` is 8303 bytes, `T_TH_flat` 8297: the 6-byte difference is the name length, so the two imports are probably identical, to be confirmed by a native read |
+| `T_TH_rope` | `rope.png` | `13d328aea5ed6186…` | |
+| `T_TH_bark` | `bark.png` | `89d2715329c84685…` | owned by `adopted/japan/treehouse/surface-bark`, not by these records |
+
+Status per record:
+- `surface-flat` (`MI_TH_flat`, `T_TH_flat`), `surface-glass` (`MI_TH_glass`, `T_TH_glass`), `surface-rope`
+  (`MI_TH_rope`, `T_TH_rope`): **planned**. Each texture takes a texture recipe with the donor PNG committed under `src/`
+  (not done here), and each instance a material-instance recipe with `M_TreeHouse` as parent and `Tex` set to its texture.
+  Nothing is imported.
+- `surface-pane` (`MI_TH_pane`, parent `M_TH_Light`): **need-read**. The instance has no texture of its own, so its
+  parameters come from a native read of the saved instance.
+- `surface-trunk` (`MI_TH_trunk`, parent `M_TreeHouse`, `T_TH_bark`): **need-read**. Its bark texture is owned by
+  `surface-bark`, which is outside these families, so the input owner is named but not changed here.
+
+Native reads still needed (read-only; editor and clean hydrate): the material list file
+`docs/inventory/small-families-treehouse-materials.txt` (the five `MI_TH_*` instances) through `report_materials.py`,
+with `V2_REPORT_PACKAGES` set to that list and `V2_REPORT_OUT` under `build/yorimichi_v2/reports/`, run as an `editor.run`
+step in the same form as the Japan read. Texture settings need the same kind of read for the four `T_TH_*` packages.
+
+Blockers: no claimed import; `glass` versus `flat` settings to confirm; `T_TH_bark` has an owner outside these records.
+
+- `adopted/japan/treehouse/surface-flat`: generated texture T_TH_flat and MI_TH_flat. Evidence: import_treehouse.py:3-4; build/yorimichi/treehouse/textures/flat.png. Status: **planned**. texture recipe from the donor PNG; the glass PNG has the same sha256 (see the table)
+- `adopted/japan/treehouse/surface-glass`: generated texture T_TH_glass and MI_TH_glass. Evidence: import_treehouse.py:3-4; build/yorimichi/treehouse/textures/glass.png. Status: **planned**. glass.png and flat.png are byte-identical in the donor; the two textures differ in V2 (8297 and 8303 bytes), so the import settings are not yet established
+- `adopted/japan/treehouse/surface-pane`: generated MI_TH_pane (parent M_TH_Light). Evidence: treehouse generator (adopted/japan/treehouse/generator); parent M_TH_Light. Status: **need-read**. material instance without its own texture; parameters need a native read
+- `adopted/japan/treehouse/surface-rope`: generated texture T_TH_rope and MI_TH_rope. Evidence: import_treehouse.py:3-4; build/yorimichi/treehouse/textures/rope.png. Status: **planned**. the MI parent M_TreeHouse is owned by adopted/japan/treehouse/generator; the import settings are not yet confirmed
+- `adopted/japan/treehouse/surface-trunk`: generated MI_TH_trunk (bark, RoomCut 0). Evidence: import_treehouse.py:10; texture T_TH_bark owned by adopted/japan/treehouse/surface-bark. Status: **need-read**. material instance; its bark texture is owned elsewhere
+
+| Package | Record | Status | Inputs (owner records) | Native read still needed |
+|---|---|---|---|---|
+| `MI_TH_flat` | `japan/treehouse/surface-flat` | planned | Japan/Treehouse/Materials/M_TreeHouse, Japan/Treehouse/Materials/M_TreeHouse, Japan/Treehouse/Textures/T_TH_flat | `report_materials` (material list) |
+| `T_TH_flat` | `japan/treehouse/surface-flat` | planned | Japan/Treehouse/Textures | no reader in this tree |
+| `MI_TH_glass` | `japan/treehouse/surface-glass` | planned | Japan/Treehouse/Materials/M_TreeHouse, Japan/Treehouse/Materials/M_TreeHouse, Japan/Treehouse/Textures/T_TH_glass | `report_materials` (material list) |
+| `T_TH_glass` | `japan/treehouse/surface-glass` | planned | Japan/Treehouse/Textures | no reader in this tree |
+| `MI_TH_pane` | `japan/treehouse/surface-pane` | need-read | Japan/Treehouse/Materials/M_TH_Light, Japan/Treehouse/Materials/M_TH_Light | `report_materials` (material list) |
+| `MI_TH_rope` | `japan/treehouse/surface-rope` | planned | Japan/Treehouse/Materials/M_TreeHouse, Japan/Treehouse/Materials/M_TreeHouse, Japan/Treehouse/Textures/T_TH_rope | `report_materials` (material list) |
+| `T_TH_rope` | `japan/treehouse/surface-rope` | planned | Japan/Treehouse/Textures | no reader in this tree |
+| `MI_TH_trunk` | `japan/treehouse/surface-trunk` | need-read | Japan/Treehouse/Materials/M_TreeHouse, Japan/Treehouse/Materials/M_TreeHouse, Japan/Treehouse/Textures/T_TH_bark | `report_materials` (material list) |

@@ -140,3 +140,25 @@ def test_real_donor_megapark_names_cover_the_family_instances():
     family = {o.package.rsplit('/', 1)[1] for r in sf.REGISTRY if r.startswith('adopted/megapark/')
               for o in sf.records.load_asset(sf.GAME / f'assets/{r}/asset.toml').outputs if '/MI_' in o.package}
     assert family <= set(report['names'])
+
+
+def test_treehouse_textures_take_their_donor_png_pins(tmp_path):
+    donor = tmp_path / 'donor'
+    textures = donor / 'build/yorimichi/treehouse/textures'
+    textures.mkdir(parents=True)
+    (textures / 'flat.png').write_bytes(b'same')
+    (textures / 'glass.png').write_bytes(b'same')
+    (textures / 'rope.png').write_bytes(b'other')
+    rows = {r['package']: r for r in sf.treehouse_textures(sf.GAME, donor)}
+    assert rows['/Game/Japan/Treehouse/Textures/T_TH_flat']['png_sha256'] == \
+        rows['/Game/Japan/Treehouse/Textures/T_TH_glass']['png_sha256']
+    assert rows['/Game/Japan/Treehouse/Textures/T_TH_rope']['png_sha256'] == hashlib.sha256(b'other').hexdigest()
+
+
+@pytest.mark.skipif(DONOR is None or not (DONOR / 'build/yorimichi/treehouse/textures/rope.png').is_file(),
+                    reason='no donor checkout')
+def test_real_donor_treehouse_pins():
+    rows = {r['package'].rsplit('/', 1)[1]: r for r in sf.treehouse_textures(sf.GAME, DONOR)}
+    assert rows['T_TH_flat']['png_sha256'].startswith('10b379bb6586c9e9')
+    assert rows['T_TH_glass']['png_sha256'] == rows['T_TH_flat']['png_sha256']
+    assert rows['T_TH_rope']['png_sha256'].startswith('13d328aea5ed6186')
