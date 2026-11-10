@@ -6,7 +6,7 @@ id = "prop/islandterrain/far-hills-cell-m1-0"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/islandterrain/far-hills-cell-m1-0"
-references = ["adopted/japan/materials/foliage"]
+references = ["material/japan/materials/foliage-instances"]
 
 [[sources]]
 path = "src/FarHills_cell_-1_0.fbx"

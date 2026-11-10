@@ -6,7 +6,7 @@ id = "prop/japan-kit/grass-b"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/japan-kit/grass-b"
-references = ["adopted/japan/materials/foliage"]
+references = ["material/japan/materials/foliage-instances"]
 
 [[sources]]
 path = "src/Grass_B.fbx"

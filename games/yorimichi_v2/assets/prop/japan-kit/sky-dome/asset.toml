@@ -6,7 +6,7 @@ id = "prop/japan-kit/sky-dome"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/japan-kit/sky-dome"
-references = ["adopted/japan/materials/sky-wind"]
+references = ["material/japan/materials/sky-wind-instances"]
 
 [[sources]]
 path = "src/SkyDome.fbx"

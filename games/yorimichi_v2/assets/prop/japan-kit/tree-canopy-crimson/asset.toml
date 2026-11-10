@@ -6,7 +6,7 @@ id = "prop/japan-kit/tree-canopy-crimson"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/japan-kit/tree-canopy-crimson"
-references = ["adopted/japan/materials/bark", "adopted/japan/materials/foliage", "material/japan/leaf-crimson"]
+references = ["material/japan/leaf-crimson", "material/japan/materials/bark-instances", "material/japan/materials/foliage-instances"]
 
 [[sources]]
 path = "src/Tree_Canopy_Crimson.fbx"

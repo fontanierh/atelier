@@ -6,7 +6,7 @@ id = "prop/japan-kit/tree-cedar-a"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/japan-kit/tree-cedar-a"
-references = ["adopted/japan/foliagelods/tree-cedar-a", "adopted/japan/materials/bark", "adopted/japan/materials/foliage"]
+references = ["adopted/japan/foliagelods/tree-cedar-a", "material/japan/materials/bark-instances", "material/japan/materials/foliage-instances"]
 
 [[sources]]
 path = "src/Tree_Cedar_A.fbx"

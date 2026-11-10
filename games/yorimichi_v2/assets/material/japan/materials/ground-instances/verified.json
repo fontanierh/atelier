@@ -1,0 +1,21 @@
+{
+  "asset": "material/japan/materials/ground-instances",
+  "dependencies": {
+    "adopted/japan/textures/ground": "184e0013594b69b4500ca3985b6a42ddfa5bbc946ba848b25694a9a236483cf0",
+    "master/japan/surfaces/foliage": "50b2af398b930c11068973fac7e808d6806519ce1b712fe07fc4601a30624e88",
+    "master/japan/surfaces/painted": "10657a1e86c5795172a095638c682bd6d6f4cc2c5e11d6733b8f8508a981def0",
+    "texture/japan/white": "5d52155722629ce5afa73ac696017dd3c663ebb3e376a74037b961092e3b6349"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Materials/MI_Ground.uasset": "faa2064a43f63e03a69002850e40f764a7684febcacaf2d0c3bd56ccc96bf516",
+    "unreal/Content/Japan/Materials/MI_Litter.uasset": "ff3117b3a9f494349e733e3b570bc297fe122bce3b81fd4a6f093eff590a56ea",
+    "unreal/Content/Japan/Materials/MI_Moss.uasset": "6e4807fa9d951e6d679c2971f6a126fa0de00ae58fa2a839e21517f4f840fb8c",
+    "unreal/Content/Japan/Materials/MI_Road.uasset": "19102a7a94cbd92cc504a2860e812a12368ea9eddeaff1741ab5a095adf80736",
+    "unreal/Content/Japan/Materials/MI_Sand.uasset": "c42eb8df1758932e2cebb876c0887ea6e20f5181912abbbca8402cbc01878154"
+  },
+  "input_fingerprint": "686254608ced76637be5fb521c87d3f41418df00b65253f363d2f200898c4938",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "material-instance@2"
+}

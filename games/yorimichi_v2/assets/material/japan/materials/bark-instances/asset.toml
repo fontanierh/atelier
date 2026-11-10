@@ -1,0 +1,45 @@
+# Planned from the donor (tools/migrate/small_instances.py): 3 instances of adopted/japan/materials/bark, each agreeing with its editor read.
+# The values are the generator's, agreeing with the committed editor read (docs/inventory/small-families-reads/
+# instances); the import writes each instance from its row and reads every value back. Never edited by hand.
+schema = 1
+id = "material/japan/materials/bark-instances"
+kind = "material-instance"
+authority = "generated"
+owner = "shared/japan/materials/bark-instances"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02); pinned by sha256"
+input_dependencies = ["adopted/japan/textures/bark", "master/japan/surfaces/painted"]
+
+[recipe]
+importer = "material-instance"
+version = 2
+
+[recipe.settings]
+
+[[recipe.settings.instances]]
+package = "/Game/Japan/Materials/MI_Bark"
+parent = "/Game/Japan/Materials/M_Painted"
+textures = {Tex = "/Game/Japan/Textures/T_bark"}
+base = {blend_mode = "BLEND_MASKED", opacity_mask_clip_value = 0.5, dithered_lod_transition = true}
+
+[[recipe.settings.instances]]
+package = "/Game/Japan/Materials/MI_BarkOlive"
+parent = "/Game/Japan/Materials/M_Painted"
+textures = {Tex = "/Game/Japan/Textures/T_bark_olive"}
+base = {dithered_lod_transition = true}
+
+[[recipe.settings.instances]]
+package = "/Game/Japan/Materials/MI_BarkTuscan"
+parent = "/Game/Japan/Materials/M_Painted"
+textures = {Tex = "/Game/Japan/Textures/T_bark_olive"}
+vectors = {Tint = [0.65, 0.55, 0.4, 1.0]}
+base = {dithered_lod_transition = true}
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_Bark"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_BarkOlive"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_BarkTuscan"

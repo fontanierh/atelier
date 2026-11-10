@@ -6,7 +6,7 @@ id = "prop/japan-kit/bush-flower-b"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/japan-kit/bush-flower-b"
-references = ["adopted/japan/materials/foliage"]
+references = ["material/japan/materials/foliage-instances"]
 
 [[sources]]
 path = "src/Bush_Flower_B.fbx"

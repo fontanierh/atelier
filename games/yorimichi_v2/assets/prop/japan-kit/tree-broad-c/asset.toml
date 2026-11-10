@@ -6,7 +6,7 @@ id = "prop/japan-kit/tree-broad-c"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/japan-kit/tree-broad-c"
-references = ["adopted/japan/foliagelods/tree-broad-c", "adopted/japan/materials/bark", "adopted/japan/materials/foliage"]
+references = ["adopted/japan/foliagelods/tree-broad-c", "material/japan/materials/bark-instances", "material/japan/materials/foliage-instances"]
 
 [[sources]]
 path = "src/Tree_Broad_C.fbx"

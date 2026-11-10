@@ -6,7 +6,7 @@ id = "prop/islandterrain/lane"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/islandterrain/lane"
-references = ["adopted/japan/materials/ground"]
+references = ["material/japan/materials/ground-instances"]
 
 [[sources]]
 path = "src/Lane.fbx"

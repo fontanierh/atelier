@@ -1,0 +1,155 @@
+# Planned from the donor (tools/migrate/small_instances.py): 17 instances of adopted/japan/materials/foliage, each agreeing with its editor read.
+# The values are the generator's, agreeing with the committed editor read (docs/inventory/small-families-reads/
+# instances); the import writes each instance from its row and reads every value back. Never edited by hand.
+schema = 1
+id = "material/japan/materials/foliage-instances"
+kind = "material-instance"
+authority = "generated"
+owner = "shared/japan/materials/foliage-instances"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02); pinned by sha256"
+input_dependencies = ["adopted/japan/textures/ground", "adopted/japan/textures/leaf-atlases", "master/japan/surfaces/foliage", "master/japan/surfaces/grass", "master/japan/surfaces/painted", "master/japan/terrain/forest-ground", "texture/japan/white"]
+
+[recipe]
+importer = "material-instance"
+version = 2
+
+[recipe.settings]
+
+[[recipe.settings.instances]]
+package = "/Game/Japan/Materials/MI_FarForest"
+parent = "/Game/Japan/Materials/M_ForestGround"
+
+[[recipe.settings.instances]]
+package = "/Game/Japan/Materials/MI_Feather"
+parent = "/Game/Japan/Materials/M_Painted"
+textures = {Tex = "/Game/Japan/Textures/T_white"}
+vectors = {Tint = [0.92, 0.92, 0.9, 1.0]}
+
+[[recipe.settings.instances]]
+package = "/Game/Japan/Materials/MI_FeatherDark"
+parent = "/Game/Japan/Materials/M_Painted"
+textures = {Tex = "/Game/Japan/Textures/T_white"}
+vectors = {Tint = [0.1, 0.1, 0.12, 1.0]}
+
+[[recipe.settings.instances]]
+package = "/Game/Japan/Materials/MI_Flower"
+parent = "/Game/Japan/Materials/M_Foliage"
+textures = {Tex = "/Game/Japan/Textures/T_flower"}
+
+[[recipe.settings.instances]]
+package = "/Game/Japan/Materials/MI_Grass"
+parent = "/Game/Japan/Materials/M_Grass"
+textures = {Tex = "/Game/Japan/Textures/T_grass"}
+
+[[recipe.settings.instances]]
+package = "/Game/Japan/Materials/MI_LeafBroad"
+parent = "/Game/Japan/Materials/M_Foliage"
+textures = {Tex = "/Game/Japan/Textures/T_leaf_broad"}
+
+[[recipe.settings.instances]]
+package = "/Game/Japan/Materials/MI_LeafCedar"
+parent = "/Game/Japan/Materials/M_Foliage"
+textures = {Tex = "/Game/Japan/Textures/T_leaf_cedar"}
+
+[[recipe.settings.instances]]
+package = "/Game/Japan/Materials/MI_LeafCypress"
+parent = "/Game/Japan/Materials/M_Foliage"
+textures = {Tex = "/Game/Japan/Textures/T_LeafCypress"}
+
+[[recipe.settings.instances]]
+package = "/Game/Japan/Materials/MI_LeafGinkgo"
+parent = "/Game/Japan/Materials/M_Foliage"
+textures = {Tex = "/Game/Japan/Textures/T_leaf_ginkgo"}
+vectors = {Tint = [1.0, 0.72, 0.42, 1.0]}
+
+[[recipe.settings.instances]]
+package = "/Game/Japan/Materials/MI_LeafMaple"
+parent = "/Game/Japan/Materials/M_Foliage"
+textures = {Tex = "/Game/Japan/Textures/T_leaf_maple"}
+
+[[recipe.settings.instances]]
+package = "/Game/Japan/Materials/MI_LeafOak"
+parent = "/Game/Japan/Materials/M_Foliage"
+textures = {Tex = "/Game/Japan/Textures/T_LeafOak"}
+
+[[recipe.settings.instances]]
+package = "/Game/Japan/Materials/MI_LeafOchre"
+parent = "/Game/Japan/Materials/M_Foliage"
+textures = {Tex = "/Game/Japan/Textures/T_leaf_ochre"}
+
+[[recipe.settings.instances]]
+package = "/Game/Japan/Materials/MI_LeafOchreSmall"
+parent = "/Game/Japan/Materials/M_Foliage"
+textures = {Tex = "/Game/Japan/Textures/T_leaf_ochre_small"}
+
+[[recipe.settings.instances]]
+package = "/Game/Japan/Materials/MI_LeafOlive"
+parent = "/Game/Japan/Materials/M_Foliage"
+textures = {Tex = "/Game/Japan/Textures/T_LeafOlive"}
+
+[[recipe.settings.instances]]
+package = "/Game/Japan/Materials/MI_LeafPine"
+parent = "/Game/Japan/Materials/M_Foliage"
+textures = {Tex = "/Game/Japan/Textures/T_leaf_pine"}
+
+[[recipe.settings.instances]]
+package = "/Game/Japan/Materials/MI_LeafSmall"
+parent = "/Game/Japan/Materials/M_Foliage"
+textures = {Tex = "/Game/Japan/Textures/T_leaf_small"}
+
+[[recipe.settings.instances]]
+package = "/Game/Japan/Materials/MI_LeafStonePine"
+parent = "/Game/Japan/Materials/M_Foliage"
+textures = {Tex = "/Game/Japan/Textures/T_LeafStonePine"}
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_FarForest"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_Feather"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_FeatherDark"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_Flower"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_Grass"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_LeafBroad"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_LeafCedar"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_LeafCypress"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_LeafGinkgo"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_LeafMaple"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_LeafOak"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_LeafOchre"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_LeafOchreSmall"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_LeafOlive"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_LeafPine"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_LeafSmall"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_LeafStonePine"

@@ -6,7 +6,7 @@ id = "prop/japan-kit/bush-green-a"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/japan-kit/bush-green-a"
-references = ["adopted/japan/materials/foliage"]
+references = ["material/japan/materials/foliage-instances"]
 
 [[sources]]
 path = "src/Bush_Green_A.fbx"

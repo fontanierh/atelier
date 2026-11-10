@@ -6,7 +6,7 @@ id = "prop/japan-kit/tree-tuscan-cypress"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/japan-kit/tree-tuscan-cypress"
-references = ["adopted/japan/foliagelods/tree-tuscan-cypress", "adopted/japan/materials/bark", "adopted/japan/materials/foliage", "adopted/japan/materials/tree-tuscan-cypress"]
+references = ["adopted/japan/foliagelods/tree-tuscan-cypress", "adopted/japan/materials/tree-tuscan-cypress", "material/japan/materials/bark-instances", "material/japan/materials/foliage-instances"]
 
 [[sources]]
 path = "src/Tree_Tuscan_Cypress.fbx"

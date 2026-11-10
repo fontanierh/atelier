@@ -1,0 +1,68 @@
+# Planned from the donor (tools/migrate/small_instances.py): 6 instances of adopted/japan/materials/rock-concrete, each agreeing with its editor read.
+# The values are the generator's, agreeing with the committed editor read (docs/inventory/small-families-reads/
+# instances); the import writes each instance from its row and reads every value back. Never edited by hand.
+schema = 1
+id = "material/japan/materials/rock-concrete-instances"
+kind = "material-instance"
+authority = "generated"
+owner = "shared/japan/materials/rock-concrete-instances"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02); pinned by sha256"
+input_dependencies = ["adopted/japan/textures/rock", "master/japan/surfaces/painted", "master/japan/terrain/coast-rock", "master/japan/terrain/forest-ground", "master/japan/terrain/north-mountains", "texture/japan/white"]
+
+[recipe]
+importer = "material-instance"
+version = 2
+
+[recipe.settings]
+
+[[recipe.settings.instances]]
+package = "/Game/Japan/Materials/MI_Coast"
+parent = "/Game/Japan/Materials/M_ForestGround"
+scalars = {NearGround = 1.0}
+
+[[recipe.settings.instances]]
+package = "/Game/Japan/Materials/MI_CoastRock"
+parent = "/Game/Japan/Materials/M_CoastRock"
+
+[[recipe.settings.instances]]
+package = "/Game/Japan/Materials/MI_Concrete"
+parent = "/Game/Japan/Materials/M_Painted"
+textures = {Tex = "/Game/Japan/Textures/T_concrete"}
+base = {blend_mode = "BLEND_MASKED", opacity_mask_clip_value = 0.5}
+
+[[recipe.settings.instances]]
+package = "/Game/Japan/Materials/MI_NorthRockCaps"
+parent = "/Game/Japan/Materials/M_NorthMountains"
+scalars = {Caps = 1.0}
+
+[[recipe.settings.instances]]
+package = "/Game/Japan/Materials/MI_Rock"
+parent = "/Game/Japan/Materials/M_Painted"
+textures = {Tex = "/Game/Japan/Textures/T_white"}
+vectors = {Tint = [0.3, 0.27, 0.24, 1.0]}
+
+[[recipe.settings.instances]]
+package = "/Game/Japan/Materials/MI_Stone"
+parent = "/Game/Japan/Materials/M_Painted"
+textures = {Tex = "/Game/Japan/Textures/T_white"}
+vectors = {Tint = [0.5, 0.5, 0.47, 1.0]}
+base = {blend_mode = "BLEND_MASKED", opacity_mask_clip_value = 0.5}
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_Coast"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_CoastRock"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_Concrete"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_NorthRockCaps"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_Rock"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_Stone"

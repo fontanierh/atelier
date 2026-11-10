@@ -6,7 +6,7 @@ id = "prop/citysurfaces/north-rock-b"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/citysurfaces/north-rock-b"
-references = ["adopted/japan/materials/rock-concrete"]
+references = ["material/japan/materials/rock-concrete-instances"]
 
 [[sources]]
 path = "src/HD_NorthRockB.fbx"
