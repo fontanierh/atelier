@@ -759,6 +759,28 @@ def test_an_earlier_check_drops_only_the_problems_a_later_split_explains():
     assert not any(market.split_later(exp, replaced, p) for p in kept)
 
 
+def test_a_carved_later_part_still_writes_its_expected_package(tmp_path):
+    """split_later drops the carved pier's package-or-count problem, so the package is compared apart."""
+    rid = 'prop/brinecove/harbor-pier-west'
+    folder = tmp_path / 'assets' / rid
+    folder.mkdir(parents=True)
+    sha = '0' * 64
+    def write(package):
+        (folder / 'asset.toml').write_text(
+            f'schema = 1\nid = "{rid}"\nkind = "static-mesh"\nauthority = "generated"\nowner = "o/x"\n'
+            f'[[sources]]\npath = "src/a.glb"\nsha256 = "{sha}"\n[recipe]\nimporter = "static-mesh"\nversion = 1\n'
+            f'[[outputs]]\npackage = "{package}"\n')
+    exp = {'parts': {rid: {'package': '/Game/BrineCove/SM_BC_HarborPierWest'}}}
+    replaced = {rid: {'mesh': 'SM_BC_HarborPierWest', 'after': {'triangles': 2136}},
+                'prop/brinecove/props-cargo-w60': {'mesh': 'SM_BC_PropsCargoW60', 'after': None}}
+    write('/Game/BrineCove/SM_BC_HarborPierWest')
+    assert market.split_later_packages(tmp_path, exp, replaced) == []
+    write('/Game/Elsewhere/SM_BC_HarborPierWest')
+    assert market.split_later_packages(tmp_path, exp, replaced) == [
+        f'{rid}: carved later, but its record writes [\'/Game/Elsewhere/SM_BC_HarborPierWest\'], '
+        'not /Game/BrineCove/SM_BC_HarborPierWest']
+
+
 @pytest.mark.skipif(not DONOR or not Path(DONOR).is_dir(), reason='needs the donor export (YV2_DONOR_BUILD)')
 def test_donor_props5_pieces_partition_each_coarse_cargo_object():
     """Every piece is matched whole inside its coarse object: each cargo cluster is exactly its five pieces (472

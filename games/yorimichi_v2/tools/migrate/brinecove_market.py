@@ -39,6 +39,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 import brinecove_split as split  # noqa: E402
+import records  # noqa: E402  (tools/content, on the path through brinecove_split)
 
 EXPECTED_NAME = 'split-market.json'
 PRIOR_EXPECTED = ('split-batch1.json',)      # earlier batches that already took triangles out of the same donor tiles
@@ -763,7 +764,8 @@ def split_later(exp: dict, replaced: dict, problem: str) -> bool:
     """@cc [owner:fontanierh,label:correctness] brinecove-split-later
     A part of this batch that a later batch split again (`replaced`) is that batch's to check: a retired one has no record,
     group or runtime entry by design, and a carved one's record counts the carve's triangles. Only those exact problems
-    are dropped; the donor proof (check) still partitions the tiles with the later pieces."""
+    are dropped; the donor proof (check) still partitions the tiles with the later pieces. The dropped problem of a carved
+    part also covers its package, so split_later_packages compares that apart: a carve never moves a record's package."""
     for rid, cut in replaced.items():
         if rid not in exp['parts']:
             continue
@@ -777,6 +779,20 @@ def split_later(exp: dict, replaced: dict, problem: str) -> bool:
     return False
 
 
+def split_later_packages(game: Path, exp: dict, replaced: dict) -> list[str]:
+    """The package half of the problem split_later drops for a carved part: its record must still write the package this
+    batch's expectation names. [] when every carved part's record does (or is missing, which apply's check reports)."""
+    problems = []
+    for rid, cut in sorted(replaced.items()):
+        toml = game / 'assets' / rid / 'asset.toml'
+        if rid not in exp['parts'] or cut['after'] is None or not toml.is_file():
+            continue
+        packages = [o.package for o in records.load_asset(toml).outputs]
+        if packages != [exp['parts'][rid]['package']]:
+            problems.append(f'{rid}: carved later, but its record writes {packages}, not {exp["parts"][rid]["package"]}')
+    return problems
+
+
 def check(game: Path, donor: Path | None, batch: str, retired: bool = False, groups: bool = False) -> list[str]:
     """apply's repository checks for this batch, plus the vertex-level proof when the donor is given: donor tile =
     this batch's parts + its remainder + the earlier batches' parts of the same tile.
@@ -787,6 +803,7 @@ def check(game: Path, donor: Path | None, batch: str, retired: bool = False, gro
     exp = json.loads((game / apply_.EXPECTED).read_text())
     problems = apply_.check(game, None)            # apply's own `retired` mode also tests the ships' actor: not used
     problems = [p for p in problems if not recarved_later(game, batch, p) and not split_later(exp, replaced, p)]
+    problems += split_later_packages(game, exp, replaced)
     problems += recut_problems(game, exp)
     if retired or groups:
         gone = {f'SM_BC_{s}': t['record'] for s, t in exp['tiles'].items() if t['remainder'] is None}
