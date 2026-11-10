@@ -53,11 +53,24 @@ def test_the_committed_reads_name_the_instances_the_tests_assume():
     assert counts == {'megapark': 24, 'belmonte': 7, 'treehouse': 5, 'hidamari': 3, 'fx': 7}
 
 
+def claim_written():
+    """True once the SMALLFAM claim has written its records: the adopted records it moves are then gone."""
+    return not (si.GAME / 'assets/adopted/megapark/shared-materials-wood/asset.toml').is_file()
+
+
 @needs_donor
 def test_every_planned_instance_record_loads_and_names_its_outputs(tmp_path):
-    """The material-instance records the claim plans load through the record loader, and each names one row per output."""
+    """Before the claim: the instance records the claim plans load through the record loader, one row per output.
+    After it: the written material records load, and together they name the 37 instances."""
     import records
     import small_families as sf
+    if claim_written():
+        paths = sorted((si.GAME / 'assets/material').glob('**/asset.toml'))
+        loaded = [records.load_asset(p) for p in paths]
+        mi = [a for a in loaded if a.kind == 'material-instance' and a.id.endswith('-instances')]
+        assert len(mi) == 10, len(mi)
+        assert sum(len(a.outputs) for a in mi) == 37
+        return
     recs = sf.instance_records(sf.GAME, DONOR, {})
     assert len(recs) == 10
     assert sum(len(r.outputs) for r in recs) == 37

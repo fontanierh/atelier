@@ -67,6 +67,10 @@ def region_of(game):
 
 # --- the committed entries ----------------------------------------------------------------------------------------------
 
+COURSE_MODELS = ['prop/hippodrome/ground', 'prop/hippodrome/lane', 'prop/hippodrome/lane-skirt', 'prop/hippodrome/rails',
+                 'prop/hippodrome/skirt', 'prop/hippodrome/track']
+
+
 def test_the_committed_hippodrome_objects_load_and_cover_every_mesh_once():
     loaded = objects.load_objects(SimpleNamespace(id=REGION, folder=COMMITTED.parent))
     assert loaded['tag'] == 'hippodrome' and loaded['data'] == 'hippodrome/hippodrome.json'
@@ -79,7 +83,14 @@ def test_the_committed_hippodrome_objects_load_and_cover_every_mesh_once():
     ]
     held = [name for o in loaded['objects'] for name in o['park']]
     assert sorted(held) == sorted(MESHES)
-    assert {o['model'] for o in loaded['objects']} == {'adopted/hippodrome/loose_files'}
+    # Each loose mesh's object names its own prop record (the SMALLFAM claim moved the meshes out of adopted/hippodrome/loose_files).
+    assert {o['id']: o['model'] for o in loaded['objects']} == {
+        'object/hippodrome/course': sorted(COURSE_MODELS),
+        'object/hippodrome/grandstand': 'prop/hippodrome/grandstand',
+        'object/hippodrome/judges-tower': 'prop/hippodrome/judges-tower',
+        'object/hippodrome/finish-post': 'prop/hippodrome/finish-post',
+        'object/hippodrome/tote-board': 'prop/hippodrome/tote-board',
+    }
 
 
 def test_the_committed_meshes_are_the_real_hippodrome_file_meshes():

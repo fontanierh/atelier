@@ -118,8 +118,6 @@ REGISTRY = {
     'adopted/japan/hidamari/surface-flat': ('hidamari', 'generated MI_HD_flat (parent M_HDCity)',
         'city_material.py (hidamari generator), tools/hidamari_textures.py', 'need-read',
         'parent M_HDCity and T_HD_plaster are owned by adopted/japan/hidamari records'),
-    'adopted/racing': ('racing', 'generator master M_RacingTv',
-        'racing_tv_material.py:12-16', 'need-read', 'generator-built master; loaded, parameters unread.'+MASTER_NOTE),
     'adopted/seethrough': ('seethrough', 'generator material parameter collection MPC_SeeThrough',
         'see_through.py:47 and :246-253', 'blocked', 'no importer for parameter collections'),
     'adopted/skateruntime': ('skateruntime', 'generated RuntimeData data asset (31 MB)',
@@ -127,9 +125,12 @@ REGISTRY = {
         'no importer for data assets; the cooked data is the only copy in the editor'),
 }
 # The spec's families that name more than one registry family (their native lists cover all of them).
-FAMILY_GROUPS = {'hidamari': ('hidamari', 'racing', 'seethrough', 'skateruntime')}
+FAMILY_GROUPS = {'hidamari': ('hidamari', 'broadcast', 'seethrough', 'skateruntime')}
+# The rows the registry keeps as data (docs/inventory/small-families-rows.json): the broadcast master's record.
+_EXTRA_ROWS = GAME / 'docs/inventory/small-families-rows.json'
+REGISTRY.update({k: tuple(v) for k, v in json.loads(_EXTRA_ROWS.read_text()).items()})
 FAMILY_ORDER = ('megapark', 'hippodrome', 'treehouse', 'skatepark', 'belmonte', 'fx', 'plaza', 'bike', 'swordcamp', 'hidamari',
-                'racing', 'seethrough', 'skateruntime')
+                'broadcast', 'seethrough', 'skateruntime')
 
 
 class FamilyError(RuntimeError):
@@ -657,8 +658,9 @@ def materialize(game: Path, donor: Path, claim: str, *, echo=print) -> None:
                             'Yorimichi V2 small families (hippodrome loose meshes, plaza textures)', scopes=scopes)
     except authority.Unauthorized as error:
         raise PlanError(str(error)) from None
+    written = len(claim_records(donor, game))   # counted before the write: afterwards no adopted record holds them
     apply.execute(game, ops, scopes=scopes)
-    echo(f'materialize: {len(claim_records(donor, game))} record(s) written; {len(paths)} path(s) under {claim}')
+    echo(f'materialize: {written} record(s) written; {len(paths)} path(s) under {claim}')
 
 
 

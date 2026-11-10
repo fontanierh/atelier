@@ -146,7 +146,10 @@ def test_the_base_property_rows_are_the_13_the_read_cannot_confirm():
 
 def test_the_doc_statuses_pin_41_read_confirmed_2_recipe_recorded_and_no_blocked():
     text = EXCEPTIONS.read_text()
-    rows = re.findall(r'^\| `(MI_[A-Za-z0-9]+)` \| `[^`]+` \| ([^|]+?) \|', text, re.M)
+    # The Japan section only: later sections (the small families) have their own tables of MI_ rows.
+    start = text.index('## Japan materials: source closure')
+    end = text.index('\n## ', start + 1)
+    rows = re.findall(r'^\| `(MI_[A-Za-z0-9]+)` \| `[^`]+` \| ([^|]+?) \|', text[start:end], re.M)
     status = dict(rows)
     assert len(rows) == 43 and len(status) == 43
     assert sorted(n for n, s in status.items() if s == 'Prepared, read-confirmed') == sorted(EXPECTED)

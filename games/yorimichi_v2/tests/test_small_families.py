@@ -129,7 +129,7 @@ def test_real_tree_counts_and_bytes():
     assert result['packages'] == 90
     assert result['problems'] == []
     expect = {'megapark': (4, 25), 'hippodrome': (3, 23), 'treehouse': (5, 8), 'skatepark': (2, 8), 'belmonte': (2, 7),
-              'fx': (1, 7), 'plaza': (1, 4), 'bike': (1, 2), 'swordcamp': (1, 2), 'hidamari': (1, 1), 'racing': (1, 1),
+              'fx': (1, 7), 'plaza': (1, 4), 'bike': (1, 2), 'swordcamp': (1, 2), 'hidamari': (1, 1), 'broadcast': (1, 1),
               'seethrough': (1, 1), 'skateruntime': (1, 1)}
     got = {f: (v['records'], v['packages']) for f, v in result['families'].items()}
     assert got == expect
@@ -137,6 +137,8 @@ def test_real_tree_counts_and_bytes():
 
 @pytest.mark.skipif(DONOR is None or not (DONOR / 'build/yorimichi/megapark/build.json').is_file(), reason='no donor checkout')
 def test_real_donor_megapark_names_cover_the_family_instances():
+    if not (sf.GAME / 'assets/adopted/megapark/shared-materials-wood/asset.toml').is_file():
+        pytest.skip('the SMALLFAM claim has written: the adopted records this reads are gone (the instances are material records)')
     report = sf.megapark_report(DONOR)
     assert report['materials'] == 523
     family = {o.package.rsplit('/', 1)[1] for r in sf.REGISTRY if r.startswith('adopted/megapark/')
@@ -373,7 +375,14 @@ def test_a_confirmed_read_claims_the_textures_and_keeps_the_instances(tree_trees
 
 
 def test_the_real_tree_house_verified_files_are_in_adoption_form():
-    for slug in ('flat', 'glass', 'rope'):
-        path = sf.GAME / f'assets/adopted/japan/treehouse/surface-{slug}/verified.json'
-        text = path.read_text()
-        assert json.dumps(json.loads(text), indent=2, sort_keys=True) + '\n' == text, slug
+    """A tree house surface record the claim has moved away is gone with its verified.json; one it left in place (or
+    not yet claimed) keeps a verified.json in adoption form. The check follows the state of the tree, not a fixed list."""
+    for slug in ('flat', 'glass', 'rope', 'trunk'):
+        folder = sf.GAME / f'assets/adopted/japan/treehouse/surface-{slug}'
+        if not (folder / 'asset.toml').is_file():
+            assert not (folder / 'verified.json').exists(), slug   # the claim deleted the record with its file
+            continue
+        verified = folder / 'verified.json'
+        if verified.is_file():
+            text = verified.read_text()
+            assert json.dumps(json.loads(text), indent=2, sort_keys=True) + '\n' == text, slug

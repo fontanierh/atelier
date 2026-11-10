@@ -1,0 +1,9 @@
+{
+ "adopted/racing": [
+  "broadcast",
+  "generator master M_RacingTv",
+  "racing_tv_material.py:12-16",
+  "need-read",
+  "generator-built master; loaded, parameters unread. Loaded by the read as materials, not instances (report_materials cannot read them), so their parameters are unread. Classified, not blocked: a generator-built master keeps its editor-authority record, and its saved package is the only byte-level original of an editor-scripted generator."
+ ]
+}
