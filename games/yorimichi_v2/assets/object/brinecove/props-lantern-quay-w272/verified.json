@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/props-lantern-quay-w272",
+  "dependencies": {
+    "prop/brinecove/props-lantern-quay-w272": "6f1b1f04da65dc54de2efc05d72d64bbfd24e68cb2658855745749b532e9efe5"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/0/N4/A5XHY72A8XEC14EUAPKZTJ.uasset": "3cb41729ccfc58301c256d7271440375504f5d56e326a03c90ba34f589ceeb17"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

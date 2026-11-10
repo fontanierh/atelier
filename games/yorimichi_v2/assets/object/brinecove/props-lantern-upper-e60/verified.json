@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/props-lantern-upper-e60",
+  "dependencies": {
+    "prop/brinecove/props-lantern-upper-e60": "53eedfcecdeb5ba0ae2977d6cab6ddda483acebac162a2083a00d2113ab486e0"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/3/6J/FRMSCCB8PLJ8GBC5SVMLMD.uasset": "ed0dde0e0f6bfe0741b70f561f271989ef3a5766fb3a8f8ab4c99adaed2baa73"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}
