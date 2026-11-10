@@ -39,6 +39,7 @@ import records  # noqa: E402
 import authority  # noqa: E402
 import subprocess  # noqa: E402
 import brinecove_split_apply as apply  # noqa: E402  (the journaled write every migrate step uses)
+import small_instances as si  # noqa: E402  (the instance agreement; the material-instance plan)
 import recover  # noqa: E402  (_toml, _drop_outputs)
 
 HIPPO_LOOSE = {   # adopted/hippodrome/loose_files package -> donor GLB name (region/glb, same bytes as the export)
@@ -347,7 +348,8 @@ class NewRecord:
     outputs: list
     adopted: str      # the adopted record that gives up this package
     about: str
-    inputs: list = field(default_factory=list)   # input_dependencies: the adopted records whose packages it binds
+    inputs: list = field(default_factory=list)   # input_dependencies: the records whose packages it binds
+    instances: list = field(default_factory=list)   # material-instance rows: {package, parent, textures, scalars, vectors}
 
 
 ADDRESS_MODES = {'TA_WRAP': 'wrap', 'TA_MIRROR': 'mirror'}   # report_textures.py's names -> a record's address setting
@@ -435,6 +437,47 @@ def claim_records(donor: Path, game: Path) -> list:
                 references=[], sources=[(f'src/{name}.png', PINS[rel], donor / rel)], settings=dict(TREE_SETTINGS),
                 outputs=[package], adopted=adopted,
                 about=f'{name}: the donor PNG {png}, imported sRGB at max size 1024 in the WORLD group (import_treehouse.py:39-46)'))
+    if INSTANCE_FAMILIES:
+        texture_owner = {p: r.id for r in out if r.kind == 'texture' for p in r.outputs}
+        out += instance_records(game, donor, texture_owner)
+    return out
+
+def instance_records(game: Path, donor: Path, texture_owner: dict) -> list:
+    """One material-instance record per adopted record whose instances agree with the read (small_instances.agreement).
+    Its inputs are the owners of each parent and texture it reads; a texture moving in this write names its new record."""
+    owner_of, adopted_of = dict(texture_owner), {}
+    for path in records.record_paths(game):
+        asset = records.load_asset(path)
+        for output in asset.outputs:
+            owner_of.setdefault(output.package, asset.id)
+            if asset.id.startswith('adopted/'):
+                adopted_of[output.package] = asset.id
+    out = []
+    for family in INSTANCE_FAMILIES:
+        agreed, expected = si.agreement(family, donor), si.EXPECTED[family](donor)
+        groups = {}
+        for package, verdict in sorted(agreed.items()):
+            if not verdict['agree']:
+                continue
+            if package not in adopted_of:
+                raise PlanError(f'{package}: no adopted record holds this instance')
+            groups.setdefault(adopted_of[package], []).append(package)
+        for adopted, packages in sorted(groups.items()):
+            rows = [{'package': pkg, 'parent': expected[pkg]['parent'],
+                     'textures': {k: v for k, v in expected[pkg]['textures'].items() if v},
+                     'scalars': expected[pkg]['scalars'], 'vectors': expected[pkg]['vectors']} for pkg in packages]
+            reads = {row['parent'] for row in rows} | {v for row in rows for v in row['textures'].values()}
+            inputs = set()
+            for package in reads:
+                if package not in owner_of:
+                    raise PlanError(f'{package}: read by an instance but owned by no record')
+                inputs.add(owner_of[package])
+            rid = f"material/{adopted[len('adopted/'):]}-instances"
+            out.append(NewRecord(
+                id=rid, kind='material-instance', owner='shared/' + rid[len('material/'):], references=[],
+                sources=[], settings={}, outputs=list(packages), adopted=adopted,
+                about=f'{len(rows)} instances of {adopted}, each agreeing with its editor read',
+                inputs=sorted(inputs), instances=rows))
     return out
 
 
@@ -444,7 +487,31 @@ def hippo_slot(name: str) -> str:
     return f'/Game/Hippodrome/Meshes/{name}/HD_{part}'
 
 
+INSTANCE_FAMILIES = tuple(si.EXPECTED)   # the families whose instances the claim plans (tests narrow it)
+
+
+def instance_record_text(rec: NewRecord) -> str:
+    lines = [f'# Planned from the donor (tools/migrate/small_instances.py): {rec.about}.',
+             '# The values are the generator\'s, agreeing with the committed editor read (docs/inventory/small-families-reads/',
+             '# instances); the import writes each instance from its row and reads every value back. Never edited by hand.',
+             'schema = 1', f'id = "{rec.id}"', 'kind = "material-instance"', 'authority = "generated"', f'owner = "{rec.owner}"',
+             f'license = "{LICENSE}"', f'provenance = "{PROVENANCE}"',
+             'input_dependencies = [' + ', '.join(f'"{r}"' for r in rec.inputs) + ']',
+             '', '[recipe]', 'importer = "material-instance"', 'version = 2', '', '[recipe.settings]']
+    for row in rec.instances:
+        lines += ['', '[[recipe.settings.instances]]', f'package = "{row["package"]}"', f'parent = "{row["parent"]}"']
+        for key in ('textures', 'scalars', 'vectors'):
+            if row[key]:
+                lines.append(f'{key} = {recover._toml(row[key])}')
+    lines += ['']
+    for package in rec.outputs:
+        lines += ['[[outputs]]', f'package = "{package}"', '']
+    return '\n'.join(lines)
+
+
 def record_text(rec: NewRecord) -> str:
+    if rec.kind == 'material-instance':
+        return instance_record_text(rec)
     lines = [f'# Recovered from the donor (tools/migrate/small_families.py): {rec.about}.',
              '# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and',
              '# verified by tools/import/run.py, never edited by hand.',

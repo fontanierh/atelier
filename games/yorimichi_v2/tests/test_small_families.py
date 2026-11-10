@@ -211,6 +211,7 @@ def adopted_text(record_id, owner, packages):
 
 @pytest.fixture()
 def claim_trees(tmp_path, monkeypatch):
+    monkeypatch.setattr(sf, 'INSTANCE_FAMILIES', ())   # the instance families need their donor builds: tested on the real donor
     donor = tmp_path / 'donor'
     files = {}
     for slug, name in sf.HIPPO_CLAIM.values():
