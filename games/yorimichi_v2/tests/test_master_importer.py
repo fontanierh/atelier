@@ -201,12 +201,21 @@ def test_a_different_opacity_cutoff_refuses():
 
 def test_the_digest_records_every_property_a_builder_writes():
     """@cc [owner:fontanierh,label:correctness] master-digest-covers-builders
-    Each rendering property a material-master builder writes is a digest setting or expression property. input_name is
-    a Custom node input recorded through inputs; desc is editor metadata and does not affect appearance."""
-    import re
+    Each literal rendering property a material-master builder writes directly or through node/_node keywords is a digest
+    setting or expression property. input_name is a Custom node input recorded through inputs; desc is editor metadata
+    and does not affect appearance."""
+    import ast
     written = set()
     for path in (SCRIPTS / 'material_masters').glob('*.py'):
-        written |= set(re.findall(r"set_editor_property\('([a-z_0-9]+)'", path.read_text()))
+        for call in ast.walk(ast.parse(path.read_text())):
+            if not isinstance(call, ast.Call):
+                continue
+            if isinstance(call.func, ast.Attribute) and call.func.attr == 'set_editor_property' and call.args:
+                name = call.args[0]
+                if isinstance(name, ast.Constant) and isinstance(name.value, str):
+                    written.add(name.value)
+            elif isinstance(call.func, ast.Name) and call.func.id in {'node', '_node'}:
+                written.update(keyword.arg for keyword in call.keywords if keyword.arg is not None)
     assert written - set(digest.SETTINGS) - set(digest.EXPRESSION_PROPERTIES) - {'input_name', 'desc'} == set()
 
 

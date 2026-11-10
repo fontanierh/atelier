@@ -1,16 +1,13 @@
 #include "MaterialInputAudit.h"
+#include "Materials/Material.h"
 #include "Materials/MaterialExpression.h"
 #include "MaterialExpressionIO.h"
 
-FMaterialInputAuditResult UMaterialInputAudit::ReadInput(UMaterialExpression* Expression, int32 InputIndex)
+namespace
+{
+FMaterialInputAuditResult AuditInput(const FExpressionInput* Input)
 {
     FMaterialInputAuditResult Result;
-    if (!IsValid(Expression) || InputIndex < 0 || InputIndex >= Expression->CountInputs())
-    {
-        Result.Error = TEXT("Invalid material expression or input index");
-        return Result;
-    }
-    const FExpressionInput* Input = Expression->GetInput(InputIndex);
     if (!Input || !IsValid(Input->Expression))
     {
         Result.Error = TEXT("Material input is absent or unconnected");
@@ -25,6 +22,29 @@ FMaterialInputAuditResult UMaterialInputAudit::ReadInput(UMaterialExpression* Ex
     Result.OutputIndex = Input->OutputIndex;
     Result.Masks = {Input->Mask, Input->MaskR, Input->MaskG, Input->MaskB, Input->MaskA};
     return Result;
+}
+}
+
+FMaterialInputAuditResult UMaterialInputAudit::ReadInput(UMaterialExpression* Expression, int32 InputIndex)
+{
+    if (!IsValid(Expression) || InputIndex < 0 || InputIndex >= Expression->CountInputs())
+    {
+        FMaterialInputAuditResult Result;
+        Result.Error = TEXT("Invalid material expression or input index");
+        return Result;
+    }
+    return AuditInput(Expression->GetInput(InputIndex));
+}
+
+FMaterialInputAuditResult UMaterialInputAudit::ReadPropertyInput(UMaterial* Material, EMaterialProperty Property)
+{
+    if (!IsValid(Material) || Property < 0 || Property >= MP_MAX)
+    {
+        FMaterialInputAuditResult Result;
+        Result.Error = TEXT("Invalid material or property");
+        return Result;
+    }
+    return AuditInput(Material->GetExpressionInputForProperty(Property));
 }
 
 #if WITH_DEV_AUTOMATION_TESTS
@@ -59,6 +79,29 @@ bool FMaterialInputAuditReadOnlyTest::RunTest(const FString& Parameters)
     TestFalse(TEXT("missing input refuses"), UMaterialInputAudit::ReadInput(Target, 2).Error.IsEmpty());
     Target->Inputs[1].Input.Expression = nullptr;
     TestFalse(TEXT("unconnected input refuses"), UMaterialInputAudit::ReadInput(Target, 1).Error.IsEmpty());
+
+    UMaterial* Material = NewObject<UMaterial>();
+    FExpressionInput* Root = Material->GetExpressionInputForProperty(MP_BaseColor);
+    TestNotNull(TEXT("base colour has a native input"), Root);
+    if (!Root) return false;
+    Root->Connect(0, Source);
+    Root->SetMask(1, 1, 1, 1, 0);
+    const FMaterialInputAuditResult RGB = UMaterialInputAudit::ReadPropertyInput(Material, MP_BaseColor);
+    Root->SetMask(1, 1, 0, 0, 0);
+    const bool RootWasDirty = Material->GetOutermost()->IsDirty();
+    const FMaterialInputAuditResult Red = UMaterialInputAudit::ReadPropertyInput(Material, MP_BaseColor);
+    TestTrue(TEXT("both root selections are readable"), RGB.Error.IsEmpty() && Red.Error.IsEmpty());
+    TestEqual(TEXT("root source is retained"), Red.SourcePath, Source->GetPathName());
+    TestEqual(TEXT("root output is retained"), Red.OutputIndex, 0);
+    TestTrue(TEXT("RGB root retains its mask"), RGB.Masks == TArray<int32>({1, 1, 1, 1, 0}));
+    TestTrue(TEXT("red root retains its mask"), Red.Masks == TArray<int32>({1, 1, 0, 0, 0}));
+    TestEqual(TEXT("root read does not dirty the package"), Material->GetOutermost()->IsDirty(), RootWasDirty);
+    TestEqual(TEXT("root read does not rewire the input"), Root->OutputIndex, 0);
+    TestEqual(TEXT("root read does not change its mask"), Root->MaskG, 0);
+    TestFalse(TEXT("null material refuses"), UMaterialInputAudit::ReadPropertyInput(nullptr, MP_BaseColor).Error.IsEmpty());
+    TestFalse(TEXT("invalid property refuses"), UMaterialInputAudit::ReadPropertyInput(Material, MP_MAX).Error.IsEmpty());
+    Root->Expression = nullptr;
+    TestFalse(TEXT("unconnected root refuses"), UMaterialInputAudit::ReadPropertyInput(Material, MP_BaseColor).Error.IsEmpty());
     return true;
 }
 #endif

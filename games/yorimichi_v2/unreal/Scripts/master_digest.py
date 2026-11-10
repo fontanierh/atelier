@@ -4,9 +4,9 @@ The digest records what a graph is, not how Unreal happens to list it: each expr
 (parameter name, default, texture, sampler, constants), each input connection (source expression and output, destination
 expression and input), each material property connection, and the blend mode, shading model and two-sided flag.
 Expression indices and object names are not recorded, since a rebuild in another package has other names. The three
-lists are compared as multisets for diagnostics. Version 2 also fingerprints the graph rooted at each material property,
-including each node's ordered input pins and upstream structure: identical local nodes must not hide different wiring.
-Older reports lack that structure and must be read again; their lossy connection labels cannot establish equivalence.
+lists are compared as multisets for diagnostics. Version 3 fingerprints the graph rooted at each material property,
+including each node's ordered input pins and upstream structure, plus each root's native output index and component masks.
+Older reports must be read again; lossy connection labels or roots without their masks cannot establish equivalence.
 
 The graph is what the master renders: the expressions reachable from its property pins. An expression wired to nothing
 compiles into no shader, so it is listed apart as `unwired` and not compared with historical originals. The importer clears
@@ -21,6 +21,7 @@ a partial digest never matches.
 import collections
 import hashlib
 import json
+import re
 
 try:
     import unreal as U
@@ -37,13 +38,22 @@ PROPERTY_PINS = ('MP_BASE_COLOR', 'MP_NORMAL', 'MP_ROUGHNESS', 'MP_METALLIC', 'M
                  'MP_PIXEL_DEPTH_OFFSET', 'MP_SUBSURFACE_COLOR', 'MP_CUSTOM_DATA0', 'MP_CUSTOM_DATA1', 'MP_TANGENT',
                  'MP_ANISOTROPY', 'MP_SHADING_MODEL')   # a pin this engine does not have is skipped on both sides alike
 EXPRESSION_PROPERTIES = ('parameter_name', 'default_value', 'r', 'constant', 'const_a', 'const_b', 'texture',
-                         'sampler_type', 'code', 'coordinate_index', 'u_tiling', 'v_tiling',
+                         'sampler_type', 'code', 'coordinate_index', 'u_tiling', 'v_tiling', 'un_mirror_u', 'un_mirror_v',
                          'output_type', 'data_index', 'const_default_value',
                          'inputs', 'scene_texture_id', 'collection', 'g', 'b', 'a', 'material_function',
-                         'use_custom_primitive_data', 'primitive_data_index')   # desc is editor-only metadata
+                         'use_custom_primitive_data', 'primitive_data_index',
+                         'transform_source_type', 'transform_type', 'world_position_shader_offset',
+                         'ignore_pause', 'override_period', 'period',
+                         # Defaults matter too: these are the remaining rendering fields of the used UE 5.8 node classes.
+                         'sampler_source', 'const_coordinate', 'mip_value_mode', 'const_mip_value',
+                         'automatic_view_mip_bias', 'gather_mode', 'const_alpha', 'included_offsets', 'local_origin',
+                         'const_periodic_world_tile_size', 'const_first_person_interpolation_alpha',
+                         'additional_outputs', 'additional_defines', 'include_file_paths', 'contains_clip_instruction')
+# Descriptions/UI/generated editor state are excluded. ExternalCodeIdentifiers is engine class configuration from
+# MaterialExpressions.ini; GetExternalCodeReferencesHash reads it from class default objects, not authored node settings.
 LISTS = ('expressions', 'connections', 'property_connections')
 SETS = ('parameters',)
-TOPOLOGY_VERSION = 2
+TOPOLOGY_VERSION = 3
 
 
 def _norm(value):
@@ -72,7 +82,7 @@ def accept(saved, rebuilt):
     """@cc [owner:fontanierh,label:correctness] master-digest-equals-saved
     A rebuilt master is accepted only when its wiring digest equals the saved original's, with nothing missing on either side:
     the settings, rooted topology with ordered input pins, the rendered graph and every parameter. An unwired expression
-    is not compared, unless it carries a parameter. An unreadable or legacy digest without version 2 topology refuses;
+    is not compared, unless it carries a parameter. An unreadable or legacy digest without version 3 topology refuses;
     lossy local-node labels MUST NOT be used to invent that topology. Returns differences; empty means accepted."""
     for label, digest in (('saved original', saved), ('rebuilt master', rebuilt)):
         if 'error' in digest:
@@ -141,6 +151,9 @@ def _value(value):
     name = _custom_input_name(value)
     if name is not None:   # a Custom node input: its name, never the struct's text
         return name
+    fields = {'CustomOutput': ('output_name', 'output_type'), 'CustomDefine': ('define_name', 'define_value')}
+    if type(value).__name__ in fields:
+        return [str(value.get_editor_property(field)) for field in fields[type(value).__name__]]
     if hasattr(value, 'get_path_name'):
         return value.get_path_name().split('.')[0]
     if hasattr(value, 'r') and hasattr(value, 'a'):
@@ -149,21 +162,33 @@ def _value(value):
 
 
 def _expression_text(expression):
-    """The class and its own settings, as canonical JSON. A property the class does not have is absent, on both sides alike."""
+    """The class and its settings, as canonical JSON. Only UE's explicit absent-property result may be skipped."""
+    kind = type(expression).__name__
     props = {}
     for prop in EXPRESSION_PROPERTIES:
+        # These exact fields are FExpressionInput connections in the installed headers, read by the native input audit.
+        # ComponentMask A/B and scalar/vector DefaultValue are real settings and must still be read (or refuse).
+        if (prop in ('a', 'b') and kind in {'MaterialExpressionAdd', 'MaterialExpressionAppendVector',
+                                          'MaterialExpressionLinearInterpolate', 'MaterialExpressionMultiply',
+                                          'MaterialExpressionDotProduct', 'MaterialExpressionSubtract',
+                                          'MaterialExpressionDivide'}) \
+                or (prop == 'default_value' and kind == 'MaterialExpressionPerInstanceCustomData'):
+            continue
         try:
             value = expression.get_editor_property(prop)
-        except Exception:
-            continue
+        except Exception as error:
+            # PyWrapperObject::FindEditorPropertyImpl + PyUtil::SetPythonError in UE 5.8. Protected/read/conversion
+            # failures of present properties have different messages and must make the whole digest unreadable.
+            missing = rf"[^\n]+: Failed to find property '[^'\n]+' for attribute '{re.escape(prop)}' on '[^'\n]+'"
+            if re.fullmatch(missing, str(error)):
+                continue
+            raise
         props[prop] = _norm(_value(value))
-    return json.dumps({'class': type(expression).__name__, 'props': props}, sort_keys=True)
+    return json.dumps({'class': kind, 'props': props}, sort_keys=True)
 
 
-def _input_output(expression, index, source):
-    """Use the native read-only accessor: protected FExpressionInput members cannot be read through Python reflection.
-    The source-node lookup returns only the first matching connection, so every connected input is read by index."""
-    selected = U.MaterialInputAudit.read_input(expression, index)
+def _selected_output(selected, source):
+    """Validate and label the native source/output/masks of either an expression input or a material-property root."""
     if selected.error:
         raise ValueError(f'material input audit: {selected.error}')
     if selected.source_path != source.get_path_name():
@@ -176,6 +201,12 @@ def _input_output(expression, index, source):
     if len(mask) != 5:
         raise ValueError('native input audit has an incomplete component mask')
     return json.dumps({'index': output, 'name': str(names[output]), 'mask': mask}, sort_keys=True)
+
+
+def _input_output(expression, index, source):
+    """Use the native read-only accessor: protected FExpressionInput members cannot be read through Python reflection.
+    The source-node lookup returns only the first matching connection, so every connected input is read by index."""
+    return _selected_output(U.MaterialInputAudit.read_input(expression, index), source)
 
 
 def _digest(material):
@@ -227,9 +258,9 @@ def _digest(material):
         nodes[expression.get_path_name()] = (named(expression), inputs)
     property_connections, roots = [], {}
     for pin, node in pins.items():
-        out = MEL.get_material_property_input_node_output_name(material, getattr(U.MaterialProperty, pin))
+        out = _selected_output(U.MaterialInputAudit.read_property_input(material, getattr(U.MaterialProperty, pin)), node)
         property_connections.append(f'{pin} <- {named(node)}.{out}')
-        roots[pin] = (str(out or ''), node.get_path_name())
+        roots[pin] = (out, node.get_path_name())
     return {'settings': settings, 'expressions': [named(e) for e in expressions], 'connections': connections,
             'property_connections': property_connections, 'parameters': parameters, 'unwired': unwired,
             'topology': _rooted_topology(nodes, roots)}

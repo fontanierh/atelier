@@ -57,12 +57,17 @@ Saved, prepared and packaged totals are kept separate:
 
     The donor meshes carried one convex hull, which the complex-as-simple recipe drops. That trace flag never
     uses a hull, so collision is unchanged.
-- **Saved follow-ups, not in main or the package at this documentation checkpoint (`028bc6243b`):**
-  [PR #803](https://github.com/fontanierh/atelier/pull/803) contains 36 material-master records, including the Hidamari
-  parent. [PR #804](https://github.com/fontanierh/atelier/pull/804), based on that work, adds
-  13 Japan masters (49 total); its base-materials adopted record retains only `MPC_Wind`. These supersede
-  the old “19 masters still to start” list, but remain subject to review/integration. Their imported receipts
-  do not upgrade the existing package or constitute final visual acceptance.
+- **Included with [PR #803](https://github.com/fontanierh/atelier/pull/803), not in the current package:** this change
+  contains 36 generated material masters with pinned builders: Hippodrome, skating, FX, racing, Sword Camp, Mega Park,
+  Hidamari city and 13 Japan base masters. Their native receipts cover the comparisons recorded at each revision.
+  Sword Camp's two masters and Hidamari city now pin the shared haze helper; their claimed refresh at `6c807a71f9`
+  passed the rooted native comparison and saved read-back ([evidence](inventory/shared-haze-sources.md)). Those reports
+  predate the later tiling, transform and Time fields and do not prove those settings equal. Source-only generator
+  records retain all 30 Hidamari and 43 Mega Park pins.
+- **Saved follow-up, pending integration:** [PR #804](https://github.com/fontanierh/atelier/pull/804) adds 13 Japan
+  masters (49 total with #803); its base-materials adopted record retains only `MPC_Wind`. At the historical main
+  audit `028bc6243b`, neither #803 nor #804 was merged. These batches supersede the old “19 masters still to start”
+  list. Their imported receipts do not upgrade package `0adbb5ab212e` or constitute final visual acceptance.
 - **Remaining source/detail work:** the Hippodrome mesh residuals (14 packages on main: four Color textures
   and ten instances), the two Mega Park seam instances with two-sided base-property overrides, the standalone
   Mega Park map's reference check, `MI_TH_pane`, the Hidamari `MI_HD_flat` instance and the 41 Japan
