@@ -92,7 +92,9 @@ SCOPES = (
          key="'crate-pier-%s-%s' % (_, 'shore' if yy == y0 - 24 else 'sea')"),
     # Harbour structures (procedural/harbor.py): each pier (deck, piles, braces, T-head, bollards and its two lanterns) and
     # each quay palm with its stone planter is its loop body. The quay wall, paving and steps belong to no object.
-    dict(component='Harbor', module='harbor', loop='for name, px, y0, y1, width in L.PIERS:', key="'pier-' + name"),
+    # The same header opens a second loop, the cargo clusters on each pier (crate, barrel and rope), so a pier also owns
+    # those; harbor1 was applied with both (`times`). Splitting the pier cargo out is a later re-split.
+    dict(component='Harbor', module='harbor', loop='for name, px, y0, y1, width in L.PIERS:', key="'pier-' + name", times=2),
     dict(component='Harbor', module='harbor', loop='for px, py in ((-330, 72), (-280, 96), (-180, 72), (-110, 96), (110, 96), (180, 72),',
          key="'palm-%s%d' % ('w' if px < 0 else 'e', abs(px))"),
 )
@@ -114,7 +116,7 @@ def donor_source(donor: Path, override: Path | None = None) -> Path:
 
 def loop_ranges(source: str, scopes) -> list[tuple[int, int, dict]]:
     """(first line, last line, scope) of each scope's loop body, found by the loop header's text in the module source,
-    or of each `call` scope's statement, found by the start of its text; each exactly once. Outermost first, so the
+    or of each `call` scope's statement, found by the start of its text; each exactly once (or `times`). Outermost first, so the
     last range that holds a line is the innermost."""
     tree = ast.parse(source)
     lines = source.splitlines()
@@ -128,7 +130,7 @@ def loop_ranges(source: str, scopes) -> list[tuple[int, int, dict]]:
                 found.append((node.body[0].lineno, node.end_lineno, scope))
             elif 'call' in scope and isinstance(node, ast.Expr) and header.startswith(' '.join(scope['call'].split())):
                 found.append((node.lineno, node.end_lineno, scope))
-    wrong = [s.get('loop') or s['call'] for s in scopes if sum(f[2] is s for f in found) != 1]
+    wrong = [s.get('loop') or s['call'] for s in scopes if sum(f[2] is s for f in found) != s.get('times', 1)]
     if wrong:
         raise MarketError(f'loop header(s) or call(s) not found exactly once in the donor module: {wrong}')
     return sorted(found, key=lambda f: f[0] - f[1])

@@ -203,7 +203,9 @@ remains in the Props tiles is loose furniture (the street and pier barrels and c
 
 `harbor1` is the first batch of the fused `Harbor` component (`procedural/harbor.py`):
 - the 3 piers, `harbor-pier-central`, `-west` and `-east`. Each is the deck, piles, braces, T-head (central and east),
-  bollards and its two lantern posts. The central pier spans four tiles.
+  bollards and its two lantern posts, plus the three cargo clusters (a crate, a barrel and, on the outer two, a rope)
+  that a second `for ... in L.PIERS` loop places on it. The central pier spans four tiles. The pier cargo is an open
+  re-split, like the six quay cargo assemblies of `props2`.
 - the 12 quay palms with their stone planters, `harbor-palm-<side><|x|>`: a hard part and its fronds' Soft part.
 
 The quay wall, promenade paving and water steps belong to no object. Batch 1's cranes, fish shed, net racks and
