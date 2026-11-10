@@ -253,3 +253,116 @@ def test_a_batch_is_authorized_by_one_check_before_any_write(game, monkeypatch):
                               runner=FakeSession(game), echo=lambda *_: None)
     assert report['imported'] == ['prop/a', 'prop/b', 'prop/c']
     assert len(calls) == 1 and len(calls[0][1]) == 3
+
+
+@pytest.mark.parametrize("fail_texture", [False, True])
+def test_mixed_dependency_fanout_uses_ready_kind_sessions(game, monkeypatch, fail_texture):
+    """DFS interleaves each material with its textures; accepted textures feed one later material session.
+    An interrupted texture session keeps its finished receipts, and the retry does not import them again."""
+    write(game / 'assets/materials/base/asset.toml', '''schema = 1
+id = "material/base"
+kind = "material"
+authority = "editor"
+owner = "region/w04-skatepark"
+[[outputs]]
+package = "/Game/Props/M_Base"
+''')
+    write(game / 'unreal/Content/Props/M_Base.uasset', b'base')
+    write(game / 'assets/materials/base/verified.json', json.dumps({
+        'schema': 1, 'kind': 'editor-saved', 'engine': '5.8.2-1',
+        'files': {'unreal/Content/Props/M_Base.uasset': sha(b'base')}}))
+    for name in ('a', 'b', 'c', 'shared'):
+        write(game / f'assets/textures/{name}/src/image.png', name)
+        write(game / f'assets/textures/{name}/asset.toml', f'''schema = 1
+id = "texture/{name}"
+kind = "texture"
+authority = "generated"
+owner = "region/w04-skatepark"
+[[sources]]
+path = "src/image.png"
+sha256 = "{sha(name.encode())}"
+[recipe]
+importer = "texture"
+version = 1
+[[outputs]]
+package = "/Game/Props/T_{name}"
+''')
+    for name in ('a', 'b', 'c'):
+        write(game / f'assets/materials/{name}/asset.toml', f'''schema = 1
+id = "material/{name}"
+kind = "material-instance"
+authority = "generated"
+owner = "region/w04-skatepark"
+input_dependencies = ["material/base", "texture/{name}", "texture/shared"]
+[recipe]
+importer = "material-instance"
+version = 2
+[recipe.settings]
+parent = "/Game/Props/M_Base"
+textures = {{Tex = "/Game/Props/T_{name}", Shared = "/Game/Props/T_shared"}}
+[[outputs]]
+package = "/Game/Props/MI_{name}"
+''')
+    prepare = run._prepare_batch
+    prepared_materials = []
+
+    def checked_prepare(game, asset, by_id, **kwargs):
+        if asset.kind == 'material-instance':
+            for dep in asset.input_dependencies:
+                receipt = records.load_verified(by_id[dep].verified)
+                if dep.startswith('texture/'):
+                    assert receipt['kind'] == 'imported'
+                    assert all((game / rel).read_bytes() == f'imported {dep}'.encode()
+                               for rel in receipt['files'])
+            prepared_materials.append(asset.id)
+        return prepare(game, asset, by_id, **kwargs)
+
+    monkeypatch.setattr(run, '_prepare_batch', checked_prepare)
+    ids = ['texture/a', 'texture/b', 'texture/c', 'texture/shared']
+    if fail_texture:
+        interrupted = FakeSession(game, fail={'texture/b'})
+        report = batch(game, ids, interrupted, size=10)
+        assert report['imported'] == ['texture/a', 'texture/shared']
+        assert report['interrupted'] and interrupted.calls == 1
+        assert prepared_materials == []
+    session = FakeSession(game)
+    report = batch(game, ids, session, size=10)
+    assert session.calls == 2 and session.headless_calls == [False, False]
+    assert not report['failed'] and report['interrupted'] is None
+    assert prepared_materials == ['material/a', 'material/b', 'material/c']
+    assert report['imported'][-3:] == prepared_materials
+    if fail_texture:
+        assert report['unchanged'] == ['texture/a', 'texture/shared']
+        assert report['imported'][:2] == ['texture/b', 'texture/c']
+    else:
+        assert report['imported'][:4] == ['texture/a', 'texture/shared', 'texture/b', 'texture/c']
+
+
+def test_unchanged_first_asset_advances_across_a_kind_dependency_chain(game):
+    """An accepted mesh -> texture -> mesh chain can drain its first kind without starting a session."""
+    first = batch(game, ['prop/a'], FakeSession(game))
+    assert first['imported'] == ['prop/a']
+    write(game / 'assets/textures/bridge/src/image.png', b'bridge')
+    write(game / 'assets/textures/bridge/asset.toml', f'''schema = 1
+id = "texture/bridge"
+kind = "texture"
+authority = "generated"
+owner = "region/w04-skatepark"
+input_dependencies = ["prop/a"]
+[[sources]]
+path = "src/image.png"
+sha256 = "{sha(b'bridge')}"
+[recipe]
+importer = "texture"
+version = 1
+[[outputs]]
+package = "/Game/Props/T_Bridge"
+''')
+    mesh = game / 'assets/props/c/asset.toml'
+    mesh.write_text(mesh.read_text().replace('[[sources]]', 'input_dependencies = ["texture/bridge"]\n[[sources]]'))
+    session = FakeSession(game)
+    report = batch(game, ['prop/a'], session)
+    assert report['unchanged'] == ['prop/a']
+    assert report['imported'] == ['texture/bridge', 'prop/c']
+    assert not report['failed'] and report['interrupted'] is None
+    assert session.headless_calls == [False, True]
