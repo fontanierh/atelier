@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_PropsRopeCoil3: the props rope coil 3, cut from the fused tile(s) Props_5_3 (144 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/brinecove/props-rope-coil-3"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/brinecove/props-rope-coil-3"
+references = ["adopted/brinecove/materials"]
+
+[[sources]]
+path = "src/SM_BC_PropsRopeCoil3.glb"
+sha256 = "1fd51cf877cf35e90fd720b007c31725b9f7be912fa632618d0a90fa34c2c8c7"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Brinecove/Materials/MI_BC_rope"]
+triangles = 144
+collision = "complex"
+full_precision_uvs = true
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_PropsRopeCoil3"

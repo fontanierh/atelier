@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/props-gull-5",
+  "dependencies": {
+    "prop/brinecove/props-gull-5": "030409b03b71c5cc1efc2ffdac07a02e946c00115bb0fc050f191283a9841949"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/9/PN/CKE7NWU41L9MSUKADTAK0P.uasset": "d955c02fe766465d765529dfba3a8898c43370d50e06f7d3195430cb809a02f7"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

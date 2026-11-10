@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_PropsGull13: the props gull 13, cut from the fused tile(s) Props_2_2 (22 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/brinecove/props-gull-13"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/brinecove/props-gull-13"
+references = ["adopted/brinecove/materials"]
+
+[[sources]]
+path = "src/SM_BC_PropsGull13.glb"
+sha256 = "95fb909f8d2a203f2ec2173c70d6c8e96c3d11f9abd41c06ad5ca8a3da9e432b"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Brinecove/Materials/MI_BC_sail"]
+triangles = 22
+collision = "complex"
+full_precision_uvs = true
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_PropsGull13"

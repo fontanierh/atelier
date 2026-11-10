@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/props-gull-6",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_PropsGull6.uasset": "a88c90e71821c6a0924fb4088328438021fa8947833e4f431b487630df8f752f"
+  },
+  "input_fingerprint": "37f635dea9b3e91e8e3ee0dc0972b4900170ca3e4d87e3b8e1fffce8355d8b52",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_PropsGull6": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

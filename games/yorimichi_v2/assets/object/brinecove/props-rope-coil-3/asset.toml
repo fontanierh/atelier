@@ -1,0 +1,12 @@
+# One saved object of region/w09-brinecove (tools/migrate/objects.py, from its objects.toml): the props rope coil 3, cut from its fused tile (144 triangles).
+# Its placement is this actor package; its model is prop/brinecove/props-rope-coil-3. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/brinecove/props-rope-coil-3"
+kind = "placement"
+authority = "editor"
+owner = "region/w09-brinecove"
+references = ["prop/brinecove/props-rope-coil-3"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/1/AJ/8FTL6FJVXRJW1FRWBX93FO"
