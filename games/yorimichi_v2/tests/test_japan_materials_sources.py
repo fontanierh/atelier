@@ -39,15 +39,26 @@ def loaded():
     return {name: records.load_asset(FAMILY / name / 'asset.toml') for name in RECORDS}
 
 
-def test_the_seven_records_hold_43_packages_and_no_source_or_recipe():
+def leaves():
+    return {name: records.load_asset(ROOT / 'assets' / 'material' / 'japan' / name / 'asset.toml')
+            for name in ('leaf-amber', 'leaf-crimson')}
+
+
+def test_the_seven_records_hold_41_packages_and_no_source_or_recipe():
     assets = loaded()
     assert len(assets) == 7
-    assert sum(len(a.outputs) for a in assets.values()) == 43
+    assert sum(len(a.outputs) for a in assets.values()) == 41
     assert all(not a.sources and a.recipe is None for a in assets.values())
 
 
+def test_the_two_used_leaves_are_one_material_instance_record_each_with_a_recipe_and_no_source():
+    for asset in leaves().values():
+        assert asset.kind == 'material-instance' and asset.authority == 'generated'
+        assert len(asset.outputs) == 1 and asset.recipe is not None and not asset.sources
+
+
 def test_the_packages_are_the_43_material_instances_and_each_has_a_verified_hash():
-    packages = [o.package.rsplit('/', 1)[1] for a in loaded().values() for o in a.outputs]
+    packages = [o.package.rsplit('/', 1)[1] for a in [*loaded().values(), *leaves().values()] for o in a.outputs]
     assert len(packages) == len(set(packages)) == 43
     assert sorted(packages) == sorted(ALL)
     assert all(p.startswith('MI_') for p in packages)

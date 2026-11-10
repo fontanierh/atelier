@@ -1,0 +1,25 @@
+# Prepared from the editor read of the saved parent (docs/inventory/exceptions.md, "Recipe for the two used leaves"):
+# MI_LeafAmber is an instance of M_Foliage whose Tex is the leaf-atlases texture T_leaf_amber. No donor builder made it.
+# Its one input is that texture's owner, so it pins no file of its own. The importer (tools/import/run.py) writes it
+# in place; nothing here is imported until someone runs that import.
+schema = 1
+id = "material/japan/leaf-amber"
+kind = "material-instance"
+authority = "generated"
+owner = "shared/japan/materials/leaf-amber"
+provenance = "recipe recorded from the saved parent M_Foliage and the texture owned by adopted/japan/textures/leaf-atlases; no donor builder"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+input_dependencies = ["adopted/japan/materials/base-materials", "adopted/japan/textures/leaf-atlases"]
+
+[recipe]
+importer = "material-instance"
+version = 1
+
+[recipe.settings]
+parent = "/Game/Japan/Materials/M_Foliage"
+textures = { Tex = "/Game/Japan/Textures/T_leaf_amber" }
+scalars = {}
+vectors = {}
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_LeafAmber"

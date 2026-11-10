@@ -1,5 +1,5 @@
 # Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
-# Ownership unit: Japan foliage materials (19 package(s))
+# Ownership unit: Japan foliage materials (17 package(s))
 schema = 1
 id = "adopted/japan/materials/foliage"
 kind = "adopted"
@@ -25,16 +25,10 @@ package = "/Game/Japan/Materials/MI_Flower"
 package = "/Game/Japan/Materials/MI_Grass"
 
 [[outputs]]
-package = "/Game/Japan/Materials/MI_LeafAmber"
-
-[[outputs]]
 package = "/Game/Japan/Materials/MI_LeafBroad"
 
 [[outputs]]
 package = "/Game/Japan/Materials/MI_LeafCedar"
-
-[[outputs]]
-package = "/Game/Japan/Materials/MI_LeafCrimson"
 
 [[outputs]]
 package = "/Game/Japan/Materials/MI_LeafCypress"

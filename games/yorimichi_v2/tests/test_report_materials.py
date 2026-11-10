@@ -50,6 +50,8 @@ def test_the_package_list_is_the_43_records_packages_in_order():
     family = ROOT / 'assets' / 'adopted' / 'japan' / 'materials'
     names = ['bark', 'buildings', 'foliage', 'ground', 'rock-concrete', 'sky-wind', 'water']
     recorded = [o.package for n in names for o in records.load_asset(family / n / 'asset.toml').outputs]
+    recorded += [o.package for n in ('leaf-amber', 'leaf-crimson')
+                 for o in records.load_asset(ROOT / 'assets' / 'material' / 'japan' / n / 'asset.toml').outputs]
     assert sorted(listed) == sorted(recorded)
 
 

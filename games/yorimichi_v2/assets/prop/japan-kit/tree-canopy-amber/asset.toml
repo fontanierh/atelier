@@ -6,7 +6,7 @@ id = "prop/japan-kit/tree-canopy-amber"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/japan-kit/tree-canopy-amber"
-references = ["adopted/japan/materials/bark", "adopted/japan/materials/foliage"]
+references = ["adopted/japan/materials/bark", "adopted/japan/materials/foliage", "material/japan/leaf-amber"]
 
 [[sources]]
 path = "src/Tree_Canopy_Amber.fbx"
