@@ -73,9 +73,7 @@
     "unreal/Content/BelmonteTrain/Source/SM_BT_FirstClass/LOD2/T_BT_FirstClassInterior.uasset": "ee166bc45aa783ef1c926b1b2c07e2147250244c9d99abb4e5745145806dda94",
     "unreal/Content/BelmonteTrain/Source/SM_BT_FirstClass/LOD2/T_BT_Ivory.uasset": "ffa2857c3629665416de16a31ea20fbbca4bee86b6c6df2c3be50bb3451f6923",
     "unreal/Content/BelmonteTrain/Source/SM_BT_FirstClass/LOD2/T_BT_Roof.uasset": "2d30cf1e7884f181de545ca3016fee5e273688c4623fde0e6b546512fdb5533c",
-    "unreal/Content/BelmonteTrain/Source/SM_BT_FirstClass/LOD2/T_BT_Underframe.uasset": "159660aee3ec1355b7766ffbd0f97f719c1d4c73f3d4e3c4c1c10dd817234a3e",
-    "unreal/Content/BelmonteTrain/Source/SM_BT_FirstClass/SM_BT_FirstClass_LOD1.uasset": "538ed4a6ce0f97a6bcab8d31c7ff3d53cf2365b9b14000e251230f5592b7dd8d",
-    "unreal/Content/BelmonteTrain/Source/SM_BT_FirstClass/SM_BT_FirstClass_LOD2.uasset": "3512880eab4f3a96a7043b299efce0738690cb6b8276985e01d9995b989acdba"
+    "unreal/Content/BelmonteTrain/Source/SM_BT_FirstClass/LOD2/T_BT_Underframe.uasset": "159660aee3ec1355b7766ffbd0f97f719c1d4c73f3d4e3c4c1c10dd817234a3e"
   },
   "kind": "editor-saved",
   "schema": 1

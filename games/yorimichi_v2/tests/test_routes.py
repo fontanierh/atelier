@@ -1,6 +1,7 @@
 """Transport route objects: the railway track, the ferry terminals and the gondola's static stations and pylons saved as
 objects (w20-railway, w17-ferry, w18-gondola objects.toml; objects.py plans them as `railways`, `ferries` and `gondolas`; the
 editor step saves them with UV2MigrationTravel). Each object lists the entries of its route's data file, each entry once."""
+import collections
 import importlib.util
 import json
 import sys
@@ -130,7 +131,19 @@ def test_the_committed_route_objects_hold_every_real_entry_once(region):
     names = real_names(region)
     held = route_names(committed(region))
     assert len(held) == len(set(held)), 'an entry is held by two objects'
-    assert sorted(held) == sorted(names)
+    assert sorted(whole_groups(held, region)) == sorted(names)
+
+
+def whole_groups(held, region):
+    """Railway group rows ("mesh#key@i", railway_fittings.py) folded back into their group: a group is held once, either
+    whole or as every one of its rows, never both."""
+    if region != RAILWAY:
+        return held
+    sizes = {f"{g['mesh'].rsplit('/', 1)[-1].split('.')[0]}#{g['key']}": len(g['instances'])
+             for g in real(DATA[region][2])['instances']}
+    rows = collections.Counter(name.rsplit('@', 1)[0] for name in held if '@' in name)
+    assert all(group in sizes and n == sizes[group] and group not in held for group, n in rows.items()), rows
+    return [name for name in held if '@' not in name] + sorted(rows)
 
 
 def test_the_railway_sleepers_follow_their_chunk_run():
@@ -157,7 +170,9 @@ def test_the_plan_carries_each_route_entry_with_its_unit(game):
     assert ferries[FERRY]['names'] == ['hidamari', 'brinecove']
     assert ferries[FERRY]['units'] == ['terminal-hidamari', 'terminal-brinecove']
     gondolas = {g['region']: g for g in plan['gondolas']}
-    assert len(gondolas[GONDOLA]['names']) == 52 and len(set(gondolas[GONDOLA]['units'])) == 9
+    # One unit per saved object: nine while the three pylon groups stand, sixteen once the pylons are objects of their own.
+    assert len(gondolas[GONDOLA]['names']) == 52
+    assert len(set(gondolas[GONDOLA]['units'])) == len(committed(GONDOLA)['objects'])
 
 
 def test_a_route_entry_the_file_does_not_hold_is_refused(game):

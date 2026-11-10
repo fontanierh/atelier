@@ -1,0 +1,12 @@
+{
+  "asset": "object/railway/tunnel-portal-5",
+  "dependencies": {
+    "adopted/belmontetrack/track-small": "e9eae30e7ee4b25c096f9d8cd64dfacc39fa5c8e416de7cfe94eb597abea5205"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/2/9O/GJEFF7M3CH2CB6ILB3NEP1.uasset": "c7338b827e2d30b4c9e5c2a9343b83e990629c21aee4a90605671e752efb2006"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,12 @@
+{
+  "asset": "object/gondola/pylon-l3-0",
+  "dependencies": {
+    "adopted/gondola/tower-l3-0": "c5ae8ce8dc8081acb82aea38f0a742cfddfefcc5828e535e8739c094ca9497e1"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/B/ET/6YYYQAXLG7LH0RCTK8PO7R.uasset": "d0c053c9536d6558ee78ca7107fd1aa760aac220688da0843c6e694012b5e3b4"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

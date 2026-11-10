@@ -227,9 +227,3 @@ package = "/Game/BelmonteTrain/Source/SM_BT_Restaurant/LOD2/T_BT_Roof"
 
 [[outputs]]
 package = "/Game/BelmonteTrain/Source/SM_BT_Restaurant/LOD2/T_BT_Underframe"
-
-[[outputs]]
-package = "/Game/BelmonteTrain/Source/SM_BT_Restaurant/SM_BT_Restaurant_LOD1"
-
-[[outputs]]
-package = "/Game/BelmonteTrain/Source/SM_BT_Restaurant/SM_BT_Restaurant_LOD2"

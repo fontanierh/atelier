@@ -1,0 +1,12 @@
+{
+  "asset": "object/railway/buffer-stop-1",
+  "dependencies": {
+    "adopted/belmontetrack/track-small": "e9eae30e7ee4b25c096f9d8cd64dfacc39fa5c8e416de7cfe94eb597abea5205"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/3/H9/VXCN594UBATN4HC6ACQ0WA.uasset": "ad24eff49957ebf944227acc32bcea0498ad0165dccc3959ec9ab5bdabd81b29"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

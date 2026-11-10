@@ -1,0 +1,12 @@
+# One saved object of region/w20-railway (tools/migrate/objects.py, from its objects.toml): a buffer stop at one end of the track, 1 of 2, saved on their own.
+# Its placement is this actor package; its model is adopted/belmontetrack/track-small. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/railway/buffer-stop-0"
+kind = "placement"
+authority = "editor"
+owner = "region/w20-railway"
+references = ["adopted/belmontetrack/track-small"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/C/6H/RGH6EISHB0IONHJDVQ9VTO"

@@ -15,6 +15,28 @@
         "SM_TK_Bank_04"
       ]
     },
+    "object/railway/buffer-stop-0": {
+      "groups": [],
+      "id": "object/railway/buffer-stop-0",
+      "model": "adopted/belmontetrack/track-small",
+      "models": [
+        "adopted/belmontetrack/track-small"
+      ],
+      "route": [
+        "SM_TK_BufferStop#@0"
+      ]
+    },
+    "object/railway/buffer-stop-1": {
+      "groups": [],
+      "id": "object/railway/buffer-stop-1",
+      "model": "adopted/belmontetrack/track-small",
+      "models": [
+        "adopted/belmontetrack/track-small"
+      ],
+      "route": [
+        "SM_TK_BufferStop#@1"
+      ]
+    },
     "object/railway/chunks-0-19": {
       "groups": [],
       "id": "object/railway/chunks-0-19",
@@ -267,18 +289,92 @@
         "SM_ST_Forecourt"
       ]
     },
-    "object/railway/track-fittings": {
+    "object/railway/stop-board-0": {
       "groups": [],
-      "id": "object/railway/track-fittings",
+      "id": "object/railway/stop-board-0",
       "model": "adopted/belmontetrack/track-small",
       "models": [
         "adopted/belmontetrack/track-small"
       ],
       "route": [
-        "SM_TK_BufferStop#",
-        "SM_TK_StopBoard#",
-        "SM_TK_Turnout#",
-        "SM_TK_Portal#"
+        "SM_TK_StopBoard#@0"
+      ]
+    },
+    "object/railway/stop-board-1": {
+      "groups": [],
+      "id": "object/railway/stop-board-1",
+      "model": "adopted/belmontetrack/track-small",
+      "models": [
+        "adopted/belmontetrack/track-small"
+      ],
+      "route": [
+        "SM_TK_StopBoard#@1"
+      ]
+    },
+    "object/railway/tunnel-portal-0": {
+      "groups": [],
+      "id": "object/railway/tunnel-portal-0",
+      "model": "adopted/belmontetrack/track-small",
+      "models": [
+        "adopted/belmontetrack/track-small"
+      ],
+      "route": [
+        "SM_TK_Portal#@0"
+      ]
+    },
+    "object/railway/tunnel-portal-1": {
+      "groups": [],
+      "id": "object/railway/tunnel-portal-1",
+      "model": "adopted/belmontetrack/track-small",
+      "models": [
+        "adopted/belmontetrack/track-small"
+      ],
+      "route": [
+        "SM_TK_Portal#@1"
+      ]
+    },
+    "object/railway/tunnel-portal-2": {
+      "groups": [],
+      "id": "object/railway/tunnel-portal-2",
+      "model": "adopted/belmontetrack/track-small",
+      "models": [
+        "adopted/belmontetrack/track-small"
+      ],
+      "route": [
+        "SM_TK_Portal#@2"
+      ]
+    },
+    "object/railway/tunnel-portal-3": {
+      "groups": [],
+      "id": "object/railway/tunnel-portal-3",
+      "model": "adopted/belmontetrack/track-small",
+      "models": [
+        "adopted/belmontetrack/track-small"
+      ],
+      "route": [
+        "SM_TK_Portal#@3"
+      ]
+    },
+    "object/railway/tunnel-portal-4": {
+      "groups": [],
+      "id": "object/railway/tunnel-portal-4",
+      "model": "adopted/belmontetrack/track-small",
+      "models": [
+        "adopted/belmontetrack/track-small"
+      ],
+      "route": [
+        "SM_TK_Portal#@4"
+      ]
+    },
+    "object/railway/tunnel-portal-5": {
+      "groups": [],
+      "id": "object/railway/tunnel-portal-5",
+      "model": "adopted/belmontetrack/track-small",
+      "models": [
+        "adopted/belmontetrack/track-small"
+      ],
+      "route": [
+        "SM_TK_Portal#@5"
       ]
     },
     "object/railway/tunnel-spiral": {
@@ -357,6 +453,28 @@
         "SM_TK_Tunnel_T2_01",
         "SM_TK_Tunnel_T2_02",
         "SM_TK_TunnelLamp#T2"
+      ]
+    },
+    "object/railway/turnout-0": {
+      "groups": [],
+      "id": "object/railway/turnout-0",
+      "model": "adopted/belmontetrack/track-small",
+      "models": [
+        "adopted/belmontetrack/track-small"
+      ],
+      "route": [
+        "SM_TK_Turnout#@0"
+      ]
+    },
+    "object/railway/turnout-1": {
+      "groups": [],
+      "id": "object/railway/turnout-1",
+      "model": "adopted/belmontetrack/track-small",
+      "models": [
+        "adopted/belmontetrack/track-small"
+      ],
+      "route": [
+        "SM_TK_Turnout#@1"
       ]
     },
     "object/railway/viaducts": {

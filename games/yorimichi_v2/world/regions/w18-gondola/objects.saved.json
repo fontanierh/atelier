@@ -1,62 +1,112 @@
 {
   "objects": {
-    "object/gondola/pylons-l1": {
+    "object/gondola/pylon-l1-0": {
       "groups": [],
-      "id": "object/gondola/pylons-l1",
-      "model": [
-        "adopted/gondola/tower-l1-0",
-        "adopted/gondola/tower-l1-1",
-        "adopted/gondola/tower-l1-2",
-        "adopted/gondola/tower-l1-3"
-      ],
+      "id": "object/gondola/pylon-l1-0",
+      "model": "adopted/gondola/tower-l1-0",
       "models": [
-        "adopted/gondola/tower-l1-0",
-        "adopted/gondola/tower-l1-1",
-        "adopted/gondola/tower-l1-2",
+        "adopted/gondola/tower-l1-0"
+      ],
+      "route": [
+        "GD_L1_0_Tower"
+      ]
+    },
+    "object/gondola/pylon-l1-1": {
+      "groups": [],
+      "id": "object/gondola/pylon-l1-1",
+      "model": "adopted/gondola/tower-l1-1",
+      "models": [
+        "adopted/gondola/tower-l1-1"
+      ],
+      "route": [
+        "GD_L1_1_Tower"
+      ]
+    },
+    "object/gondola/pylon-l1-2": {
+      "groups": [],
+      "id": "object/gondola/pylon-l1-2",
+      "model": "adopted/gondola/tower-l1-2",
+      "models": [
+        "adopted/gondola/tower-l1-2"
+      ],
+      "route": [
+        "GD_L1_2_Tower"
+      ]
+    },
+    "object/gondola/pylon-l1-3": {
+      "groups": [],
+      "id": "object/gondola/pylon-l1-3",
+      "model": "adopted/gondola/tower-l1-3",
+      "models": [
         "adopted/gondola/tower-l1-3"
       ],
       "route": [
-        "GD_L1_0_Tower",
-        "GD_L1_1_Tower",
-        "GD_L1_2_Tower",
         "GD_L1_3_Tower"
       ]
     },
-    "object/gondola/pylons-l2": {
+    "object/gondola/pylon-l2-0": {
       "groups": [],
-      "id": "object/gondola/pylons-l2",
-      "model": [
-        "adopted/gondola/tower-l2-0",
-        "adopted/gondola/tower-l2-1",
-        "adopted/gondola/tower-l2-2",
-        "adopted/gondola/tower-l2-3"
-      ],
+      "id": "object/gondola/pylon-l2-0",
+      "model": "adopted/gondola/tower-l2-0",
       "models": [
-        "adopted/gondola/tower-l2-0",
-        "adopted/gondola/tower-l2-1",
-        "adopted/gondola/tower-l2-2",
+        "adopted/gondola/tower-l2-0"
+      ],
+      "route": [
+        "GD_L2_0_Tower"
+      ]
+    },
+    "object/gondola/pylon-l2-1": {
+      "groups": [],
+      "id": "object/gondola/pylon-l2-1",
+      "model": "adopted/gondola/tower-l2-1",
+      "models": [
+        "adopted/gondola/tower-l2-1"
+      ],
+      "route": [
+        "GD_L2_1_Tower"
+      ]
+    },
+    "object/gondola/pylon-l2-2": {
+      "groups": [],
+      "id": "object/gondola/pylon-l2-2",
+      "model": "adopted/gondola/tower-l2-2",
+      "models": [
+        "adopted/gondola/tower-l2-2"
+      ],
+      "route": [
+        "GD_L2_2_Tower"
+      ]
+    },
+    "object/gondola/pylon-l2-3": {
+      "groups": [],
+      "id": "object/gondola/pylon-l2-3",
+      "model": "adopted/gondola/tower-l2-3",
+      "models": [
         "adopted/gondola/tower-l2-3"
       ],
       "route": [
-        "GD_L2_0_Tower",
-        "GD_L2_1_Tower",
-        "GD_L2_2_Tower",
         "GD_L2_3_Tower"
       ]
     },
-    "object/gondola/pylons-l3": {
+    "object/gondola/pylon-l3-0": {
       "groups": [],
-      "id": "object/gondola/pylons-l3",
-      "model": [
-        "adopted/gondola/tower-l3-0",
-        "adopted/gondola/tower-l3-1"
-      ],
+      "id": "object/gondola/pylon-l3-0",
+      "model": "adopted/gondola/tower-l3-0",
       "models": [
-        "adopted/gondola/tower-l3-0",
+        "adopted/gondola/tower-l3-0"
+      ],
+      "route": [
+        "GD_L3_0_Tower"
+      ]
+    },
+    "object/gondola/pylon-l3-1": {
+      "groups": [],
+      "id": "object/gondola/pylon-l3-1",
+      "model": "adopted/gondola/tower-l3-1",
+      "models": [
         "adopted/gondola/tower-l3-1"
       ],
       "route": [
-        "GD_L3_0_Tower",
         "GD_L3_1_Tower"
       ]
     },

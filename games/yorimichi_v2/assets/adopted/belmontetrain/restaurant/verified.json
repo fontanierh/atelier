@@ -75,9 +75,7 @@
     "unreal/Content/BelmonteTrain/Source/SM_BT_Restaurant/LOD2/T_BT_Ivory.uasset": "ce5cd9ae18ca155ba9d13b70613b25d39e52849c97cf0c532fcb2994912c22e5",
     "unreal/Content/BelmonteTrain/Source/SM_BT_Restaurant/LOD2/T_BT_RestaurantInterior.uasset": "a141b801d2dbe33d2b0cd80e29ca3ecff969101772afb6d8bdd17cbb18bcba8f",
     "unreal/Content/BelmonteTrain/Source/SM_BT_Restaurant/LOD2/T_BT_Roof.uasset": "4d3bf8b516f10179ce6beb619f0ada5bb44e115a1d7275f5c7a6df0f27d51687",
-    "unreal/Content/BelmonteTrain/Source/SM_BT_Restaurant/LOD2/T_BT_Underframe.uasset": "fd737bf7fd0027a8521c65a8bb7cda07a39b8275c49eb5f0246054fec5397c2c",
-    "unreal/Content/BelmonteTrain/Source/SM_BT_Restaurant/SM_BT_Restaurant_LOD1.uasset": "5bdfd8fc96edba922007adc0a11cee4ea4c4f834d3f3bffa0a48dd4eeb0dadf9",
-    "unreal/Content/BelmonteTrain/Source/SM_BT_Restaurant/SM_BT_Restaurant_LOD2.uasset": "31a9edf2c115dbc7956116e6e343ce1237c0c844858c295aedaea24d960a4aaf"
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Restaurant/LOD2/T_BT_Underframe.uasset": "fd737bf7fd0027a8521c65a8bb7cda07a39b8275c49eb5f0246054fec5397c2c"
   },
   "kind": "editor-saved",
   "schema": 1

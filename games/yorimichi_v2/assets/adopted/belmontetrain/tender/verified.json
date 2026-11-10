@@ -39,9 +39,7 @@
     "unreal/Content/BelmonteTrain/Source/SM_BT_Tender/LOD2/M_BT_Parquet.uasset": "03ded6c609d9b3f70b5f2d9e085b2bd945841635a2a8a7e2f4e02fb5f683b24a",
     "unreal/Content/BelmonteTrain/Source/SM_BT_Tender/LOD2/M_BT_Undercarriage.uasset": "6fc33366d409bc2cb0851364ad699c3a8ca41be5c594514f2fec16577cfa2f5c",
     "unreal/Content/BelmonteTrain/Source/SM_BT_Tender/LOD2/T_BT_Underframe.uasset": "41f2b1e254dbb70a53e7c097b5fc63d6617bd155d9c3427cf6d65bd4be6a65ef",
-    "unreal/Content/BelmonteTrain/Source/SM_BT_Tender/LOD2/T_BT_Walnut.uasset": "306ddba7f0c6426b93542743755c1b0a2e38a2be96f8bc876284f34e5ccfdca3",
-    "unreal/Content/BelmonteTrain/Source/SM_BT_Tender/SM_BT_Tender_LOD1.uasset": "03faa309c2eabadb0bacc788050cd350beec11c462d56906c4340e2704990068",
-    "unreal/Content/BelmonteTrain/Source/SM_BT_Tender/SM_BT_Tender_LOD2.uasset": "b509b013ac9687b121ad9e92c3b312cdd6805287984cd19b3ef4b97df3043457"
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Tender/LOD2/T_BT_Walnut.uasset": "306ddba7f0c6426b93542743755c1b0a2e38a2be96f8bc876284f34e5ccfdca3"
   },
   "kind": "editor-saved",
   "schema": 1
