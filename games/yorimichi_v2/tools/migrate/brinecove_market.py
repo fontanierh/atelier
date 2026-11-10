@@ -90,11 +90,27 @@ SCOPES = (
          key="'barrel-pier-%s-%s' % (_, 'shore' if yy == y0 - 24 else 'sea')"),
     dict(component='Props', module='props', call='crate(b, px - width * 0.25, yy - 3, 5.25, 1.0, 20)',
          key="'crate-pier-%s-%s' % (_, 'shore' if yy == y0 - 24 else 'sea')"),
+    # The pieces of each quay cargo cluster (props2's coarse props-cargo-*, re-split by props5): its two crates, two
+    # barrels and rope coil. Inside the cluster's loop scope, so the cluster stays their containing object.
+    dict(component='Props', module='props', call='crate(b, cx + i * 1.25, cy, 4.75,',
+         key="'cargo-%s%d-crate%d' % ('w' if cx < 0 else 'e', abs(cx), i + 1)"),
+    dict(component='Props', module='props', call='barrel(b, cx - 1.8 - i * 1.1, cy + 1.4, 4.75,',
+         key="'cargo-%s%d-barrel%d' % ('w' if cx < 0 else 'e', abs(cx), i + 1)"),
+    dict(component='Props', module='props', call='b.ring((cx, cy + 3.0, 4.82),',
+         key="'cargo-%s%d-rope' % ('w' if cx < 0 else 'e', abs(cx))"),
     # Harbour structures (procedural/harbor.py): each pier (deck, piles, braces, T-head, bollards and its two lanterns) and
     # each quay palm with its stone planter is its loop body. The quay wall, paving and steps belong to no object.
     # The same header opens a second loop, the cargo clusters on each pier (crate, barrel and rope), so a pier also owns
     # those; harbor1 was applied with both (`times`). Splitting the pier cargo out is a later re-split.
     dict(component='Harbor', module='harbor', loop='for name, px, y0, y1, width in L.PIERS:', key="'pier-' + name", times=2),
+    # The cargo on each pier (harbor1's coarse piers, re-split by props5): at three points along the pier a crate, a barrel
+    # and, past the middle, a rope coil; named by the pier and the point (22, 52, 78 hundredths of its length).
+    dict(component='Harbor', module='harbor', call='crate(b, px + off, py, 5.3, 0.9,',
+         key="'pier-%s-crate%d' % (name, round(t * 100))"),
+    dict(component='Harbor', module='harbor', call='barrel(b, px + off + 1.5, py + 0.9, 5.3, 0.85)',
+         key="'pier-%s-barrel%d' % (name, round(t * 100))"),
+    dict(component='Harbor', module='harbor', call='b.ring((px + off - 1.2, py - 1.0, 5.32),',
+         key="'pier-%s-rope%d' % (name, round(t * 100))"),
     dict(component='Harbor', module='harbor', loop='for px, py in ((-330, 72), (-280, 96), (-180, 72), (-110, 96), (110, 96), (180, 72),',
          key="'palm-%s%d' % ('w' if px < 0 else 'e', abs(px))"),
 )
@@ -143,7 +159,8 @@ def _forget():
 
 def replay(src: Path, component: str, scopes=SCOPES) -> dict:
     """Run the donor constructor of `component` at its recorded RNG position and return
-    {'verts', 'faces', 'mats', 'owner': [object name or None per face]} (the Builder's own lists)."""
+    {'verts', 'faces', 'mats', 'owner': [scope keys or None per face]} (the Builder's own lists). A face's keys are every
+    scope it was made in, outermost first: the last is its owner, the others the coarser objects that contain it."""
     scopes = [s for s in scopes if s['component'] == component]
     if not scopes:
         raise MarketError(f'no object scopes for {component}')
@@ -168,16 +185,16 @@ def replay(src: Path, component: str, scopes=SCOPES) -> dict:
         def face(self, points, mat, uvs=None, normals=None):
             before = len(self.faces)
             original(self, points, mat, uvs, normals)
-            name = None
+            chain = []
             frame = sys._getframe(1)
             while frame is not None:
                 if frame.f_code.co_filename == code:
                     for first, last, scope in ranges:
                         if first <= frame.f_lineno <= last:
-                            name = eval(scope['key'], {}, dict(frame.f_locals))     # noqa: S307  (constant scope table)
+                            chain.append(eval(scope['key'], {}, dict(frame.f_locals)))   # noqa: S307  (constant scope table)
                     break
                 frame = frame.f_back
-            owner.extend([name] * (len(self.faces) - before))
+            owner.extend([tuple(chain) or None] * (len(self.faces) - before))
 
         geom.Builder.face = face
         try:
@@ -340,6 +357,15 @@ BATCHES['props4'] = tuple(f'props-barrel-quay-{_SIDE(x)}-{y}' for x in (-320, -2
     tuple(f'props-{kind}-upper-{_SIDE(x)}' for x in (-250, -190, 70, 130, 190, 250) for kind in ('barrel', 'crate')) + \
     tuple(f'props-{kind}-pier-{pier}-{end}' for pier in ('central', 'west', 'east') for end in ('shore', 'sea')
           for kind in ('barrel', 'crate'))
+# The re-split of two accepted coarse objects into their pieces: each quay cargo cluster of props2 into its two crates,
+# two barrels and rope coil, and the cargo on each harbor1 pier into its crates, barrels and rope coils. The clusters
+# are left empty and retire; each pier keeps its deck, piles and lanterns (a carve of its record). See `recut`.
+_CARGO = ('props-cargo-w250', 'props-cargo-w170', 'props-cargo-e120', 'props-cargo-e270', 'props-cargo-w60', 'props-cargo-e60')
+_PIERS = ('harbor-pier-central', 'harbor-pier-west', 'harbor-pier-east')
+BATCHES['props5'] = tuple(f'{c}-{piece}' for c in _CARGO for piece in ('crate1', 'crate2', 'barrel1', 'barrel2', 'rope')) + \
+    tuple(f'{p}-{kind}{t}' for p in _PIERS for t in (22, 52, 78) for kind in ('crate', 'barrel')) + \
+    tuple(f'{p}-rope{t}' for p in _PIERS for t in (52, 78))
+REPLACES = {'props5': frozenset(_CARGO + _PIERS)}
 
 COMPONENT_OF = {'market-': 'Market', 'town-lower-': 'TownLower', 'town-upper-': 'TownUpper', 'props-': 'Props', 'harbor-pier-': 'Harbor', 'harbor-palm-': 'Harbor'}
 ALL_OBJECTS = frozenset(o for names in BATCHES.values() for o in names)
@@ -384,20 +410,23 @@ def tile_stems(glb_dir: Path, component: str) -> list[str]:
 
 
 def generated_owners(glb_dir: Path, src: Path, component: str) -> dict:
-    """{'models', 'tris', 'owner'}: per donor tile of the component, its model, triangles and the generating object name
-    ('market-stall-03', or None) of every triangle ordinal. Raises unless every donor triangle is matched exactly once."""
+    """{'models', 'tris', 'owner', 'chain'}: per donor tile of the component, its model, triangles and the generating
+    object name ('market-stall-03', or None) of every triangle ordinal, and the chain of object names that contain it
+    (outermost first, the owner last). Raises unless every donor triangle is matched exactly once."""
     built = replay(src, component)
     named = dict(built)
-    named['owner'] = [None if o is None else object_name(component, o) for o in built['owner']]
+    named['owner'] = [None if o is None else tuple(object_name(component, k) for k in o) for o in built['owner']]
     index = face_index(named)
-    out = {'models': {}, 'tris': {}, 'owner': {}}
+    out = {'models': {}, 'tris': {}, 'owner': {}, 'chain': {}}
     for stem in tile_stems(glb_dir, component):
         model = split.read_glb(Path(glb_dir) / f'SM_BC_{stem}.glb')
         tris = list(split.triangles(model))
         try:
-            out['owner'][stem] = owners_of(tris, index)
+            chains = owners_of(tris, index)
         except MarketError as error:
             raise MarketError(f'{stem}: {error}') from None
+        out['chain'][stem] = chains
+        out['owner'][stem] = [c[-1] if c else None for c in chains]
         out['models'][stem], out['tris'][stem] = model, tris
     return out
 
@@ -457,11 +486,14 @@ def prior_keys(game: Path, region: Path, own: str, components: set[str]) -> dict
     return keys
 
 
-def compute(glb_dir: Path, src: Path, names: list[str], priors: set[str], keys: dict[str, set] | None = None) -> dict:
+def compute(glb_dir: Path, src: Path, names: list[str], priors: set[str], keys: dict[str, set] | None = None,
+            replaces: frozenset = frozenset()) -> dict:
     """The split in `split.compute`'s shape: owned[tile] = {object: [ordinals], '': [remainder ordinals]}.
     Triangles of objects in `priors` are left out of every list (an earlier batch took them); `prior_count[tile]`
     counts them, so remainder + parts + prior = the donor tile. A prior that is neither a radius cut nor generated here
-    is found by its triangles in `keys` (prior_keys); a prior found by none of the three is an error."""
+    is found by its triangles in `keys` (prior_keys); a prior found by none of the three is an error. A generated prior
+    owns every triangle its scope contains, inner objects included. A prior in `replaces` (an earlier coarse object this
+    batch splits) keeps only the triangles none of `names` owns; the tile remainders are unchanged."""
     keys = keys or {}
     out = {'models': {}, 'tris': {}, 'owned': {}, 'prior': {}, 'problems': []}
     radius = {n: split.OBJECTS[n] for n in priors if n in split.OBJECTS}
@@ -470,6 +502,9 @@ def compute(glb_dir: Path, src: Path, names: list[str], priors: set[str], keys: 
         gen = generated_owners(glb_dir, src, component)
         for stem, owners in gen['owner'].items():
             tris = gen['tris'][stem]
+            chains = gen.get('chain', {}).get(stem) or [None if o is None else (o,) for o in owners]
+            # the deepest object of this batch that contains the triangle, or ''
+            mine = [next((n for n in reversed(c) if n in names), '') if c else '' for c in chains]
             taken = set()
             tri_keys = None
             for obj in priors:
@@ -480,18 +515,19 @@ def compute(glb_dir: Path, src: Path, names: list[str], priors: set[str], keys: 
                         tri_keys = [_tri_key(c) for _, c in tris]
                     taken |= {i for i, k in enumerate(tri_keys) if k in keys[obj]}
                 elif any(obj.startswith(prefix) for prefix in COMPONENT_OF):
-                    taken |= {i for i, o in enumerate(owners) if o == obj}
+                    taken |= {i for i, c in enumerate(chains) if c and obj in c
+                              and not (obj in replaces and mine[i])}
                 else:
                     out['problems'].append(f'{stem}: no way to find the earlier part {obj} (not a radius cut, not '
                                            'generated here, no triangles given)')
             owned = {n: [] for n in names}
             owned[''] = []
-            for i, o in enumerate(owners):
+            for i, o in enumerate(mine):
                 if i in taken:
-                    if o in names:
+                    if o:
                         out['problems'].append(f'{stem}: triangle {i} of {o} is already taken by an earlier batch')
                     continue
-                owned[o if o in names else ''].append(i)
+                owned[o].append(i)
             if not any(owned[n] for n in names):
                 continue
             parts = [[tris[t] for t in m] for m in owned.values()]
@@ -524,7 +560,7 @@ def build(game: Path, donor: Path, src: Path, stage: Path, batch: str, names: li
     own = f'split-{batch}.json'
     glb_dir = donor / 'brinecove' / 'glb'
     done = compute(glb_dir, src, names, prior_objects(region, own),
-                   prior_keys(game, region, own, {component_of(n) for n in names}))
+                   prior_keys(game, region, own, {component_of(n) for n in names}), REPLACES.get(batch, frozenset()))
     if done['problems']:
         raise apply_.SplitError('the partition does not hold: ' + '; '.join(done['problems'][:3]))
     stage.mkdir(parents=True, exist_ok=True)
@@ -591,7 +627,9 @@ def build(game: Path, donor: Path, src: Path, stage: Path, batch: str, names: li
         else:
             remainders[stem] = None
     check_packages(game, parts)
-    return {'tiles': tiles, 'parts': parts, 'remainders': remainders, 'stage': stage, 'prior': done['prior']}
+    plan = {'tiles': tiles, 'parts': parts, 'remainders': remainders, 'stage': stage, 'prior': done['prior']}
+    plan['replaced'] = recuts(game, plan, batch)
+    return plan
 
 
 def later_tiles(game: Path, batch: str) -> set[str]:
@@ -619,45 +657,63 @@ def recarved_later(game: Path, batch: str, problem: str) -> bool:
                 for r in records) or any(problem == f'{s}: remainder plus parts is not the tile' for s in stems))
 
 
+def split_later(exp: dict, replaced: dict, problem: str) -> bool:
+    """@cc [owner:fontanierh,label:correctness] brinecove-split-later
+    A part of this batch that a later batch split again (`replaced`) is that batch's to check: a retired one has no record,
+    group or runtime entry by design, and a carved one's record counts the carve's triangles. Only those exact problems
+    are dropped; the donor proof (check) still partitions the tiles with the later pieces."""
+    for rid, cut in replaced.items():
+        if rid not in exp['parts']:
+            continue
+        if cut['after'] is None:
+            expected = (f'{rid}: no record', f'{cut["mesh"]} is not a group of exactly one object (None)',
+                        f'{cut["mesh"]} appears 0 times in the runtime file')
+        else:
+            expected = (f'{rid}: record package or triangle count differs from the expectation',)
+        if problem in expected:
+            return True
+    return False
+
+
 def check(game: Path, donor: Path | None, batch: str, retired: bool = False, groups: bool = False) -> list[str]:
     """apply's repository checks for this batch, plus the vertex-level proof when the donor is given: donor tile =
     this batch's parts + its remainder + the earlier batches' parts of the same tile.
     `groups`: the groups stage is done (emptied tiles have no runtime group); `retired`: the records stage is done too."""
     apply_ = set_batch(batch)
+    region = game / 'world' / 'regions' / apply_.REGION
+    replaced = replaced_entries(region)
+    exp = json.loads((game / apply_.EXPECTED).read_text())
     problems = apply_.check(game, None)            # apply's own `retired` mode also tests the ships' actor: not used
-    problems = [p for p in problems if not recarved_later(game, batch, p)]
+    problems = [p for p in problems if not recarved_later(game, batch, p) and not split_later(exp, replaced, p)]
+    problems += recut_problems(game, exp)
     if retired or groups:
-        exp = json.loads((game / apply_.EXPECTED).read_text())
-        gone = [s for s, t in exp['tiles'].items() if t['remainder'] is None]
-        problems = [p for p in problems if not any(p.startswith(f'SM_BC_{s} appears 0 times') for s in gone)]
+        gone = {f'SM_BC_{s}': t['record'] for s, t in exp['tiles'].items() if t['remainder'] is None}
+        gone.update({c['mesh']: rid for rid, c in exp.get('replaced', {}).items() if c['after'] is None})
+        problems = [p for p in problems if not any(p.startswith(f'{m} appears 0 times') for m in gone)]
         data = json.loads((game / 'unreal' / 'Content' / apply_.RUNTIME).read_text())
         names = apply_.group_names(data)
-        for s in gone:
-            if retired and (game / 'assets' / exp['tiles'][s]['record'] / 'asset.toml').exists():
-                problems.append(f'{exp["tiles"][s]["record"]}: should be retired (empty remainder)')
-            if f'SM_BC_{s}' in names:
-                problems.append(f'retired tile SM_BC_{s} is still in the runtime file')
+        for m, rid in gone.items():
+            if retired and (game / 'assets' / rid / 'asset.toml').exists():
+                problems.append(f'{rid}: should be retired (empty remainder)')
+            if m in names:
+                problems.append(f'retired mesh {m} is still in the runtime file')
     if donor is None:
         return problems
     records = apply_.records
-    exp = json.loads((game / apply_.EXPECTED).read_text())
-    region = game / 'world' / 'regions' / apply_.REGION
     glb_dir = donor / 'brinecove' / 'glb'
     sources, pieces = [], []
     for stem in exp['tiles']:
         sources += list(split.triangles(split.read_glb(glb_dir / f'SM_BC_{stem}.glb')))
-    files = [game / 'assets' / rid / 'src' / f'{p["mesh"]}.glb' for rid, p in exp['parts'].items()]
-    for f in files:
-        if not f.is_file() or records.is_lfs_pointer(f):
-            return problems + [f'{f.name}: not hydrated, the donor proof is skipped']
-        pieces.append(list(split.triangles(split.read_glb(f))))
-    for other in prior_files(region, f'split-{batch}.json'):          # earlier batches' parts cut from the same tiles
-        for rid, p in json.loads(other.read_text())['parts'].items():
-            if set(p['tiles']) & set(exp['tiles']):
-                try:
-                    pieces.append(drawn_triangles(game, rid, p))   # a part carved again draws its carve remainder
-                except (OSError, ValueError, apply_.carve.CarveError):
-                    return problems + [f'{rid}: not hydrated, the donor proof is skipped']
+    gone = {rid for rid, c in replaced.items() if c['after'] is None}   # split again and retired: their pieces stand in
+    drawn = [(rid, p) for rid, p in exp['parts'].items() if rid not in gone]
+    for other in prior_files(region, f'split-{batch}.json'):          # other batches' parts cut from the same tiles
+        drawn += [(rid, p) for rid, p in json.loads(other.read_text())['parts'].items()
+                  if rid not in gone and set(p['tiles']) & set(exp['tiles'])]
+    for rid, p in drawn:
+        try:
+            pieces.append(drawn_triangles(game, rid, p))   # a part carved again draws its carve remainder
+        except (OSError, ValueError, apply_.carve.CarveError):
+            return problems + [f'{rid}: not hydrated, the donor proof is skipped']
     for s, t in exp['tiles'].items():                                   # the remainders are derived, never read from src
         if t['remainder']:
             asset = records.load_asset(game / 'assets' / t['record'] / 'asset.toml')
@@ -741,6 +797,16 @@ def emptied(plan: dict) -> list[str]:
     return sorted(stem for stem, rem in plan['remainders'].items() if rem is None)
 
 
+def retiring(plan: dict) -> dict:
+    """{mesh: {'record', 'package', 'owner'}} of everything the retire stages remove: the emptied tiles, and the coarse
+    records a re-split left with nothing (plan['replaced'])."""
+    out = {f'SM_BC_{s}': {k: plan['tiles'][s][k] for k in ('record', 'package', 'owner')} for s in emptied(plan)}
+    for rid, cut in plan.get('replaced', {}).items():
+        if cut['after'] is None:
+            out[cut['mesh']] = {'record': rid, 'package': cut['package'], 'owner': cut['owner']}
+    return dict(sorted(out.items()))
+
+
 def affected_placements(game: Path, plan: dict) -> list[str]:
     """Saved placements that must be deleted with their records and saved again by `migrate/objects.py` (an object cannot
     change its groups after it was saved). @cc [owner:fontanierh,label:correctness] brinecove-placements-survive-groups
@@ -748,13 +814,13 @@ def affected_placements(game: Path, plan: dict) -> list[str]:
     records that reference an emptied tile's record. The groups stage removes the groups from objects.toml but never from a
     record, so after it the second way is the only one that still finds the placements."""
     apply_ = _apply()
-    stems = emptied(plan)
-    if not stems:
+    gone = retiring(plan)
+    if not gone:
         return []
     listed = apply_.tomllib.loads((game / 'world' / 'regions' / apply_.REGION / 'objects.toml').read_text()).get('objects', [])
-    meshes = {f'SM_BC_{s}' for s in stems}
+    meshes = set(gone)
     ids = {i['id'] for i in listed if meshes & ({i['group']} if 'group' in i else set(i.get('groups', [])))}
-    tile_records = {plan['tiles'][s]['record'] for s in stems}
+    tile_records = {g['record'] for g in gone.values()}
     for path in apply_.records.record_paths(game):
         asset = apply_.records.load_asset(path)
         if asset.id.startswith('object/') and tile_records & set(asset.references + asset.input_dependencies):
@@ -773,7 +839,7 @@ def groups_retired(game: Path, plan: dict) -> bool:
     or the runtime file (the tile records may still exist)."""
     apply_ = _apply()
     region = game / 'world' / 'regions' / apply_.REGION
-    meshes = {f'SM_BC_{s}': plan['tiles'][s]['record'] for s in emptied(plan)}
+    meshes = {m: g['record'] for m, g in retiring(plan).items()}
     text = (region / 'objects.toml').read_text()
     saved = json.loads((region / 'objects.saved.json').read_text()) if (region / 'objects.saved.json').is_file() else None
     names = apply_.group_names(json.loads((game / 'unreal' / 'Content' / apply_.RUNTIME).read_text()))
@@ -810,15 +876,14 @@ def retire_touched(game: Path, plan: dict, stage: str = 'groups') -> dict:
     region = f'region/{apply_.REGION}'
     paths, scopes = set(), {region}
     add = lambda rel: paths.add(f'{apply_.GAME_REL}/{rel}')       # noqa: E731
-    if not emptied(plan):
+    if not retiring(plan):
         return {'paths': [], 'scopes': scopes}
     if stage == 'groups':
         for rel in (f'world/regions/{apply_.REGION}/objects.toml', f'world/regions/{apply_.REGION}/objects.saved.json',
                     f'unreal/Content/{apply_.RUNTIME}', apply_.LOCK):
             add(rel)
         return {'paths': sorted(paths), 'scopes': scopes}
-    for stem in emptied(plan):
-        tile = plan['tiles'][stem]
+    for tile in retiring(plan).values():
         scopes.add((f'asset/{tile["record"]}', tile['owner']))
         folder = game / 'assets' / tile['record']
         for path in sorted(folder.rglob('*')) if folder.is_dir() else []:
@@ -833,14 +898,13 @@ def retire_compute(game: Path, plan: dict, stage: str = 'groups') -> dict:
     """{'writes', 'deletes'} of a retire stage (see retire_touched)."""
     apply_ = _apply()
     records = apply_.records
-    stems = emptied(plan)
+    gone = retiring(plan)
     writes, deletes = {}, []
-    if not stems:
+    if not gone:
         return {'writes': writes, 'deletes': deletes}
     region = game / 'world' / 'regions' / apply_.REGION
     if stage == 'records':
-        for stem in stems:
-            tile = plan['tiles'][stem]
+        for tile in gone.values():
             others = [a.id for a in (records.load_asset(q) for q in records.record_paths(game))
                       if tile['record'] in a.references + a.input_dependencies]
             if others:
@@ -851,15 +915,16 @@ def retire_compute(game: Path, plan: dict, stage: str = 'groups') -> dict:
     runtime = apply_.runtime_input(game)
     text = (region / 'objects.toml').read_text()
     saved = json.loads((region / 'objects.saved.json').read_text()) if (region / 'objects.saved.json').is_file() else None
-    for stem in stems:
-        record = plan['tiles'][stem]['record']
-        text = drop_group(text, f'SM_BC_{stem}', record)
+    for mesh, tile in gone.items():
+        text = drop_group(text, mesh, tile['record'])
         if saved is not None:
-            saved = drop_saved_group(saved, f'SM_BC_{stem}', record)
+            saved = drop_saved_group(saved, mesh, tile['record'])
     new = {f'world/regions/{apply_.REGION}/objects.toml': text.encode()}
     if saved is not None:
         new[f'world/regions/{apply_.REGION}/objects.saved.json'] = (json.dumps(saved, indent=2, sort_keys=True) + '\n').encode()
-    new_bytes = json.dumps(apply_.edit_runtime(runtime, plan, retire=True), separators=(',', ':')).encode()
+    data = apply_.edit_runtime(runtime, plan, retire=True)
+    data = {**data, 'groups': [g for g in data['groups'] if apply_.group_names({'groups': [g]})[0] not in gone]}
+    new_bytes = json.dumps(data, separators=(',', ':')).encode()
     new[f'unreal/Content/{apply_.RUNTIME}'] = new_bytes
     new[apply_.LOCK] = apply_.lock_text(game, new_bytes).encode()
     writes = {k: v for k, v in new.items() if not (game / k).is_file() or (game / k).read_bytes() != v}
@@ -874,9 +939,9 @@ def retire(game: Path, plan: dict, claim: str | None, batch: str, stage: str = '
     apply_ = _apply()
     # records: the groups stage is done, the tiles not yet. A groups rerun (its runtime part already done) checks the same.
     runtime, rerun = game / 'unreal' / 'Content' / apply_.RUNTIME, False
-    if stage == 'groups' and runtime.is_file() and emptied(plan):
+    if stage == 'groups' and runtime.is_file() and retiring(plan):
         names = apply_.group_names(json.loads(runtime.read_text()))
-        rerun = not any(f'SM_BC_{s}' in names for s in emptied(plan))
+        rerun = not any(m in names for m in retiring(plan))
     problems = check(game, donor, batch, groups=(stage == 'records' or rerun))
     if problems:
         raise apply_.SplitError('refusing to retire before the import and check pass: ' + '; '.join(problems[:3]))
@@ -899,7 +964,7 @@ def retire_placements(game: Path, plans: list, claim: str | None, donor: Path | 
     emptied tile records still exist). Batches with nothing emptied are skipped. Idempotent: a placement already deleted
     is no longer found, so a rerun deletes nothing (keep the list the first run printed for the re-save)."""
     apply_ = _apply()
-    active = [(batch, plan) for batch, plan in plans if emptied(plan)]
+    active = [(batch, plan) for batch, plan in plans if retiring(plan)]
     if not active:
         return {'written': [], 'deleted': []}
     for batch, plan in active:
@@ -929,6 +994,210 @@ def placements_compute(game: Path, info: dict) -> dict:
     return {'writes': {}, 'deletes': deletes}
 
 
+# --- coarse objects split again: re-cut or retire ----------------------------------------------------------------------
+# A batch in REPLACES splits accepted coarse objects of earlier batches into their pieces (props5: the quay cargo clusters
+# and the cargo on the piers). Each coarse record loses exactly its pieces' triangles. One left with nothing retires like
+# an emptied tile (groups, placements, records). One that keeps the rest is carved like the shipyard yard: its pinned
+# original stays the first source, the selection is the second, [derive] names both, and apply writes it with the
+# pieces so the import takes both at once. The batch's expectation records each in `replaced`.
+
+def replaced_parts(region: Path, batch: str) -> dict:
+    """{object: (record, part)} of the coarse earlier parts this batch splits, from the earlier batches' expectations."""
+    want = REPLACES.get(batch, frozenset())
+    found: dict = {}
+    for path in prior_files(region, f'split-{batch}.json'):
+        for rid, part in json.loads(path.read_text())['parts'].items():
+            if part['object'] in want:
+                if part['object'] in found:
+                    raise MarketError(f'{part["object"]} has more than one record (a Soft part): its re-cut is not supported')
+                found[part['object']] = (rid, part)
+    missing = sorted(want - set(found))
+    if missing:
+        raise MarketError(f'{batch}: no earlier batch cut {", ".join(missing[:3])}')
+    return found
+
+
+def replaced_entries(region: Path) -> dict:
+    """{record: entry} of every coarse record a batch split again (the `replaced` sections of the expectations)."""
+    out = {}
+    for path in sorted(Path(region).glob('split-*.json')):
+        out.update(json.loads(path.read_text()).get('replaced', {}))
+    return out
+
+
+def recut_of(game: Path, rid: str, part: dict, pieces: list) -> dict:
+    """@cc [owner:fontanierh,label:correctness] brinecove-recut-exact-pieces
+    What the coarse record keeps once this batch's `pieces` are cut from it. Every piece triangle MUST match exactly one
+    triangle of the record's pinned original (welded corners) and no two the same one, so the record loses exactly its
+    pieces and nothing is drawn twice or dropped. `after` is None when nothing is left (the record retires)."""
+    apply_ = _apply()
+    asset = apply_.records.load_asset(game / 'assets' / rid / 'asset.toml')
+    original = asset.folder / asset.sources[0].path
+    if asset.sources[0].sha256 != part['sha256'] or not original.is_file() or apply_.records.is_lfs_pointer(original):
+        raise MarketError(f'{rid}: its first source is not the hydrated part its batch cut')
+    model = split.read_glb(original)
+    tris = list(split.triangles(model))
+    index: dict = defaultdict(list)
+    for n, (_, corners) in enumerate(tris):
+        index[_tri_key(corners)].append(n)
+    removed = []
+    for p in pieces:
+        for _, corners in split.triangles(split.read_glb(p['file'])):
+            hits = index.get(_tri_key(corners), [])
+            if len(hits) != 1:
+                raise MarketError(f'{p["record"]}: a triangle matches {len(hits)} triangles of {rid}, expected one')
+            removed.append(hits[0])
+    if not removed or len(set(removed)) != len(removed):
+        raise MarketError(f'{rid}: the pieces do not cut a distinct set of its triangles')
+    gone = set(removed)
+    kept = [n for n in range(len(tris)) if n not in gone]
+    out = {'record': rid, 'object': part['object'], 'mesh': part['mesh'], 'package': part['package'],
+           'owner': asset.owner, 'before': len(tris), 'removed': apply_.carve.ranges(sorted(gone)),
+           'pieces': sorted(p['record'] for p in pieces), 'after': None}
+    if kept:
+        data, used = apply_.recut_part(model, sorted(gone), part['mesh'])
+        slots = dict(zip(part['materials'], asset.recipe['settings']['slot_materials']))
+        selection = apply_.carve.selection_text(len(tris), kept).encode()
+        lo, hi = split.bounds(tris, kept)
+        out['after'] = {'sha256': apply_.carve.sha256(data), 'triangles': len(kept), 'materials': used,
+                        'slots': [slots[m] for m in used], 'selection_sha256': apply_.carve.sha256(selection),
+                        'min': [round(v, 4) for v in lo], 'max': [round(v, 4) for v in hi]}
+        out['selection'] = selection
+    return out
+
+
+def recuts(game: Path, plan: dict, batch: str) -> dict:
+    """{record: recut_of} of every coarse part this batch splits. A record already retired by this batch's records stage
+    is taken from the applied expectation."""
+    if batch not in REPLACES:
+        return {}
+    apply_ = set_batch(batch)
+    region = game / 'world' / 'regions' / apply_.REGION
+    applied = json.loads((game / apply_.EXPECTED).read_text()).get('replaced', {}) if (game / apply_.EXPECTED).is_file() else {}
+    out = {}
+    for obj, (rid, part) in sorted(replaced_parts(region, batch).items()):
+        if not (game / 'assets' / rid / 'asset.toml').is_file() and rid in applied and applied[rid]['after'] is None:
+            out[rid] = applied[rid]
+            continue
+        pieces = [p for p in plan['parts'].values() if p['object'].startswith(obj + '-')]
+        if not pieces:
+            raise MarketError(f'{batch}: no piece of {obj} in the batch')
+        out[rid] = recut_of(game, rid, part, pieces)
+    return out
+
+
+def recut_asset_text(base: str, cut: dict) -> str:
+    """The coarse record's asset.toml carved (as brinecove_mastslip.yard_asset_text): the original stays the first pinned
+    source, the selection is the second, [derive] names both, and the recipe has the derived mesh's slots and triangles."""
+    carve = _apply().carve
+    name = cut['mesh'] + '.glb'
+    sel = carve.selection_name(name)
+    after = cut['after']
+    text = re.sub(r'(?m)^\n\[\[sources\]\]\npath = "src/' + re.escape(sel) + r'"\nsha256 = "[0-9a-f]{64}"\n', '', base)
+    text = re.sub(r'(?ms)^\[derive\]\n.*?\n\n(?=\[recipe\]\n)', '', text)                 # a rerun: carve once
+    m = re.search(r'(?m)^\[\[sources\]\]\npath = "src/' + re.escape(name) + r'"\nsha256 = "[0-9a-f]{64}"\n', text)
+    if m is None:
+        raise MarketError(f'{cut["record"]}: its asset.toml does not pin src/{name} as its first source')
+    text = text[:m.end()] + f'\n[[sources]]\npath = "src/{sel}"\nsha256 = "{after["selection_sha256"]}"\n' + text[m.end():]
+    text = re.sub(r'(?m)^triangles = \d+$', f'triangles = {after["triangles"]}', text, count=1)
+    text = re.sub(r'(?m)^slot_materials = \[.*\]$', 'slot_materials = ' + json.dumps(after['slots']), text, count=1)
+    text = re.sub(r'\((\d+) triangles\)\.$', f'({after["triangles"]} triangles, its cargo split off by the re-split).',
+                  text.split('\n', 1)[0], count=1) + '\n' + text.split('\n', 1)[1]
+    return carve.with_derive(text, f'src/{name}', f'src/{sel}')
+
+
+def replaced_section(cuts: dict) -> dict:
+    return {rid: {k: v for k, v in c.items() if k not in ('selection', 'owner', 'package')} for rid, c in sorted(cuts.items())}
+
+
+def apply_ops(game: Path, plan: dict, batch: str) -> tuple[dict, dict]:
+    """(ops, touched) of apply: apply's own compute, plus for each coarse record this batch splits, the carve of one that
+    keeps triangles (selection and asset.toml, its package imported again) and the `replaced` section of the expectation."""
+    apply_ = set_batch(batch)
+    ops = apply_.compute(game, plan)
+    cuts = plan.get('replaced', {})
+    if not cuts:
+        return ops, apply_.touched(game, plan, False, ops)
+    writes = dict(ops['writes'])
+    extra, scopes = set(), set()
+
+    def put(rel: str, data: bytes):
+        if not (game / rel).is_file() or (game / rel).read_bytes() != data:
+            writes[rel] = data
+
+    for rid, cut in cuts.items():
+        if cut['after'] is None:
+            continue
+        sel = apply_.carve.selection_name(cut['mesh'] + '.glb')
+        put(f'assets/{rid}/src/{sel}', cut['selection'])
+        put(f'assets/{rid}/asset.toml', recut_asset_text((game / 'assets' / rid / 'asset.toml').read_text(), cut).encode())
+        if any(k.startswith(f'assets/{rid}/') for k in writes):
+            scopes.add((f'asset/{rid}', cut['owner']))
+            extra |= {f'{apply_.GAME_REL}/{rel}' for rel in apply_.record_set(game, rid, cut['package'], sel)}
+    exp = json.loads(writes[apply_.EXPECTED].decode()) if apply_.EXPECTED in writes else json.loads(
+        (game / apply_.EXPECTED).read_text())
+    exp['replaced'] = replaced_section(cuts)
+    put(apply_.EXPECTED, (json.dumps(exp, indent=2, sort_keys=True) + '\n').encode())
+    ops = {'writes': writes, 'deletes': ops['deletes']}
+    info = apply_.touched(game, plan, False, ops)
+    return ops, {'paths': sorted(set(info['paths']) | extra), 'scopes': set(info['scopes']) | scopes}
+
+
+def apply_step(game: Path, plan: dict, batch: str, claim: str | None, echo=print) -> dict:
+    """apply_.run_step with the re-cuts of apply_ops: recover an interrupted run, compute, authorize the whole set, write."""
+    apply_ = set_batch(batch)
+    recovered = apply_.Journal(game).recover(claim)
+    if recovered:
+        echo(f'restored {len(recovered)} file(s) from an interrupted run')
+    ops, info = apply_ops(game, plan, batch)
+    if not ops['writes'] and not ops['deletes']:
+        return {'written': [], 'deleted': []}
+    try:
+        apply_.authority.authorize(info['paths'], claim, 'Brine Cove split apply', scopes=info['scopes'])
+    except apply_.authority.Unauthorized as error:
+        raise apply_.SplitError(str(error)) from None
+    return apply_.execute(game, ops, scopes=info['scopes'])
+
+
+def recut_problems(game: Path, exp: dict) -> list[str]:
+    """@cc [owner:fontanierh,label:correctness] brinecove-recut-through-carve
+    Each carved coarse record is checked through its carve only: [derive] names its pinned original and selection, the
+    derived mesh is the expected bytes with the expected triangles, and holds no triangle of its pieces."""
+    apply_ = _apply()
+    carve, records = apply_.carve, apply_.records
+    problems = []
+    for rid, cut in exp.get('replaced', {}).items():
+        if cut['after'] is None:
+            continue
+        folder = game / 'assets' / rid
+        asset = records.load_asset(folder / 'asset.toml')
+        name = cut['mesh'] + '.glb'
+        if asset.derive is None or asset.derive.get('original') != f'src/{name}' or \
+                asset.derive.get('selection') != f'src/{carve.selection_name(name)}':
+            problems.append(f'{rid}: no [derive] carve of its original and selection')
+            continue
+        if asset.recipe['settings']['triangles'] != cut['after']['triangles']:
+            problems.append(f'{rid}: record triangle count is not the re-cut one')
+        try:
+            data = carve.derive(folder, asset.derive)
+        except (OSError, ValueError, carve.CarveError) as error:
+            problems.append(f'{rid}: cannot derive the re-cut (not hydrated?): {error}')
+            continue
+        if carve.sha256(data) != cut['after']['sha256']:
+            problems.append(f'{rid}: derived re-cut differs from the expectation')
+            continue
+        keys = {_tri_key(c) for _, c in split.triangles(carve.parse_glb(data, name))}
+        for piece in cut['pieces']:
+            p = exp['parts'].get(piece)
+            f = folder.parent / piece.rsplit('/', 1)[1] / 'src' / f'{p["mesh"]}.glb' if p else None
+            if f is None or not f.is_file() or records.is_lfs_pointer(f):
+                continue
+            if any(_tri_key(c) in keys for _, c in split.triangles(split.read_glb(f))):
+                problems.append(f'{rid}: the derived re-cut still holds triangles of {piece}')
+        problems += apply_.import_problems(game, asset)
+    return problems
+
+
 def batch_names(arg: str) -> list[str]:
     """`all` (every market, town and props batch in apply order) or a comma list of batch names, each once."""
     names = list(BATCHES) if arg == 'all' else list(dict.fromkeys(b.strip() for b in arg.split(',') if b.strip()))
@@ -943,8 +1212,7 @@ def touched_all(game: Path, plans: list) -> dict:
     apply_ = _apply()
     out = {'apply': set(), 'scopes': set(), 'retire_groups': set(), 'retire_records': set()}
     for batch, plan in plans:
-        set_batch(batch)
-        info = apply_.touched(game, plan)
+        info = apply_ops(game, plan, batch)[1]
         out['apply'] |= set(info['paths'])
         out['scopes'] |= set(info['scopes'])
         for stage, key in (('groups', 'retire_groups'), ('records', 'retire_records')):
@@ -1054,7 +1322,7 @@ def main(argv=None) -> int:
             else:
                 done = {'written': [], 'deleted': []}
                 for batch, plan in plans:
-                    if not emptied(plan):
+                    if not retiring(plan):
                         print(f'{batch}: no emptied tile, nothing to retire')
                         continue
                     if args.retire_stage == 'groups' and groups_retired(game, plan):
@@ -1073,7 +1341,7 @@ def main(argv=None) -> int:
                 raise MarketError(f'{batch}: later batches cut {", ".join(recut[:3])} again; a rerun would undo their '
                                   'remainders, so it is not applied again')
             print(apply_.report(plan))
-            done = apply_.run_step(game, plan, args.claim)
+            done = apply_step(game, plan, batch, args.claim)
             print(f'apply: wrote {len(done["written"])}')
     except (MarketError, apply_.SplitError, apply_.recover.RecoverError, apply_.records.RecordError, ValueError) as error:
         print(f'market split failed: {error}', file=sys.stderr)
