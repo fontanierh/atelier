@@ -364,6 +364,7 @@ def test_upcoming_render_settings_are_compared(setting):
 
 @pytest.mark.parametrize(('prop', 'before', 'after'), [
     ('scene_texture_id', 'PPI_SceneColor', 'PPI_WorldNormal'),
+    ('filtered', True, False),   # SceneTexture bilinear vs point sampling (the Painterly builder's scene reads)
     ('collection', Asset('/Game/Wind'), Asset('/Game/OtherWind')),
     ('material_function', Asset('/Game/Atmosphere'), Asset('/Game/OtherAtmosphere')),
     ('use_custom_primitive_data', False, True),
