@@ -203,7 +203,9 @@ remains in the Props tiles is loose furniture (the street and pier barrels and c
 
 `harbor1` is the first batch of the fused `Harbor` component (`procedural/harbor.py`):
 - the 3 piers, `harbor-pier-central`, `-west` and `-east`. Each is the deck, piles, braces, T-head (central and east),
-  bollards and its two lantern posts. The central pier spans four tiles.
+  bollards and its two lantern posts, plus the three cargo clusters (a crate, a barrel and, on the outer two, a rope)
+  that a second `for ... in L.PIERS` loop places on it. The central pier spans four tiles. The pier cargo is an open
+  re-split, like the six quay cargo assemblies of `props2`.
 - the 12 quay palms with their stone planters, `harbor-palm-<side><|x|>`: a hard part and its fronds' Soft part.
 
 The quay wall, promenade paving and water steps belong to no object. Batch 1's cranes, fish shed, net racks and
@@ -220,4 +222,23 @@ Without this, `Harbor_5_3` kept the slip's 188 triangles, and the first harbor1 
 
 The emptied tiles are retired with the three stages above (`--batch harbor1`). The `harbor-*` placements that drew
 them are saved again; `harbor-3-2` contained only an emptied tile, so its placement is retired.
+
+## Loose barrels and crates (`props4`)
+
+`props4` makes the 45 loose barrels and crates of `procedural/props.py` individual objects, one per `barrel(...)` or
+`crate(...)` call. Calls inside a loop are scoped by a `call` entry: the statement that starts with that text. Its key is
+read from the loop's variables.
+- along the quay: 14 barrels and 7 crates, `props-barrel-quay-<side><|x|>-<y>` and `props-crate-quay-<side><|x|>`;
+- on the upper terrace: 6 barrels and 6 crates, `props-{barrel,crate}-upper-<side><|x|>`;
+- at both ends of each pier: a barrel and a crate, `props-{barrel,crate}-pier-<pier>-{shore,sea}`.
+
+| Tiles touched | Triangles taken | Tiles remade | Tiles emptied | Records |
+|---|---|---|---|---|
+| 10 | 4,012 (128 per barrel, 36 per crate) | `Props_3_2`, `3_3`, `4_2`, `4_3` | 6 (`Props_2_4`, `3_4`, `3_5`, `4_4`, `4_5`, `5_4`) | 49 |
+
+The emptied tiles are retired with the three stages above (`--batch props4`). Where scopes nest, the innermost owns a
+face. What remains in the Props tiles is the gulls and the rope coils by the fish shed.
+
+Still open, as a re-split of accepted objects: the six quay cargo assemblies of `props2`, and the pier cargo inside the
+three `harbor1` piers. They are still coarse objects (crates, barrels and a rope coil fused together).
 

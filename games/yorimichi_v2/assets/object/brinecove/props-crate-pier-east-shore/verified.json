@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/props-crate-pier-east-shore",
+  "dependencies": {
+    "prop/brinecove/props-crate-pier-east-shore": "d486f1822c3bf4f73a279ec339da395cf406dcb055857a9d40e9a3d6e524dfc3"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/B/GZ/LXBIZV8KOL1LUAG6I41KQ8.uasset": "79c4a03c5b120286e401aa44aaca21932b42f80c38070abe40415426142c21cb"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/props-barrel-pier-central-shore",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_PropsBarrelPierCentralShore.uasset": "8ad70c75f3ee73d455b7cdef7c4706cd315b139bbcc8ace9d6afe721a7bf4ca7"
+  },
+  "input_fingerprint": "9221aa0be845e092283e8ce40d6fd0c35a6d82d2ae206fd5ff368a45c93a3b59",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_PropsBarrelPierCentralShore": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

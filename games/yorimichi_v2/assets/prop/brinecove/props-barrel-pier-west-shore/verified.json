@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/props-barrel-pier-west-shore",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_PropsBarrelPierWestShore.uasset": "d03f40cc113196d1f61d7698be76c0f13f667f27f4f21d245a3c6bd8df2946ef"
+  },
+  "input_fingerprint": "725360c9afbccedbaa41decc0a5b04f621bd5b91f9f5a88832589d786478035b",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_PropsBarrelPierWestShore": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

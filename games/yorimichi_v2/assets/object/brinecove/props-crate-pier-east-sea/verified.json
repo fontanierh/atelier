@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/props-crate-pier-east-sea",
+  "dependencies": {
+    "prop/brinecove/props-crate-pier-east-sea": "a8a627bed378ba8758bbea7b1887b66d7522abdf976c5f7dfaf452ca7654a571"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/B/7I/B9SPY2HQMRJ778XZV5OQ7J.uasset": "299bfab011383eac585be06533880bebdadd7a57f418e7bbc49848b415b0f472"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

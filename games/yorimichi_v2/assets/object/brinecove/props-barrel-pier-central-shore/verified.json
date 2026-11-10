@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/props-barrel-pier-central-shore",
+  "dependencies": {
+    "prop/brinecove/props-barrel-pier-central-shore": "0765c1e9215b9028905c6b3c487a34c80891ed5cc5d6f080a8962c30627c6aeb"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/B/J2/MXP9ZM08ADCO7LQOQW2260.uasset": "5b28d64d06aae38b2c49f8329574eb0a3f487a0c7e5e7b8776ba81bec7da5675"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

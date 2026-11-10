@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/props-barrel-pier-east-shore",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_PropsBarrelPierEastShore.uasset": "ac7ebd22320dd76287d1ca035ad71dffd78816f5957bbce4fb6a955a4e4f32e4"
+  },
+  "input_fingerprint": "fe2160248d6a2fd754a32b55adaf73a4e735059789ca7702d8bbbadc8de997cf",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_PropsBarrelPierEastShore": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

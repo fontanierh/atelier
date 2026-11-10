@@ -2298,6 +2298,276 @@ group = "SM_BC_HarborPierWest"
 model = "prop/brinecove/harbor-pier-west"
 about = "the harbor pier west, cut from its fused tile (2868 triangles)"
 
+[[objects]]
+id = "object/brinecove/props-barrel-pier-central-sea"
+group = "SM_BC_PropsBarrelPierCentralSea"
+model = "prop/brinecove/props-barrel-pier-central-sea"
+about = "the props barrel pier central sea, cut from its fused tile (128 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-barrel-pier-central-shore"
+group = "SM_BC_PropsBarrelPierCentralShore"
+model = "prop/brinecove/props-barrel-pier-central-shore"
+about = "the props barrel pier central shore, cut from its fused tile (128 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-barrel-pier-east-sea"
+group = "SM_BC_PropsBarrelPierEastSea"
+model = "prop/brinecove/props-barrel-pier-east-sea"
+about = "the props barrel pier east sea, cut from its fused tile (128 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-barrel-pier-east-shore"
+group = "SM_BC_PropsBarrelPierEastShore"
+model = "prop/brinecove/props-barrel-pier-east-shore"
+about = "the props barrel pier east shore, cut from its fused tile (128 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-barrel-pier-west-sea"
+group = "SM_BC_PropsBarrelPierWestSea"
+model = "prop/brinecove/props-barrel-pier-west-sea"
+about = "the props barrel pier west sea, cut from its fused tile (128 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-barrel-pier-west-shore"
+group = "SM_BC_PropsBarrelPierWestShore"
+model = "prop/brinecove/props-barrel-pier-west-shore"
+about = "the props barrel pier west shore, cut from its fused tile (128 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-barrel-quay-e150-146"
+group = "SM_BC_PropsBarrelQuayE150146"
+model = "prop/brinecove/props-barrel-quay-e150-146"
+about = "the props barrel quay e150 146, cut from its fused tile (128 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-barrel-quay-e150-184"
+group = "SM_BC_PropsBarrelQuayE150184"
+model = "prop/brinecove/props-barrel-quay-e150-184"
+about = "the props barrel quay e150 184, cut from its fused tile (128 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-barrel-quay-e205-146"
+group = "SM_BC_PropsBarrelQuayE205146"
+model = "prop/brinecove/props-barrel-quay-e205-146"
+about = "the props barrel quay e205 146, cut from its fused tile (128 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-barrel-quay-e205-184"
+group = "SM_BC_PropsBarrelQuayE205184"
+model = "prop/brinecove/props-barrel-quay-e205-184"
+about = "the props barrel quay e205 184, cut from its fused tile (128 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-barrel-quay-e270-146"
+group = "SM_BC_PropsBarrelQuayE270146"
+model = "prop/brinecove/props-barrel-quay-e270-146"
+about = "the props barrel quay e270 146, cut from its fused tile (128 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-barrel-quay-e270-184"
+group = "SM_BC_PropsBarrelQuayE270184"
+model = "prop/brinecove/props-barrel-quay-e270-184"
+about = "the props barrel quay e270 184, cut from its fused tile (128 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-barrel-quay-e320-146"
+group = "SM_BC_PropsBarrelQuayE320146"
+model = "prop/brinecove/props-barrel-quay-e320-146"
+about = "the props barrel quay e320 146, cut from its fused tile (128 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-barrel-quay-e320-184"
+group = "SM_BC_PropsBarrelQuayE320184"
+model = "prop/brinecove/props-barrel-quay-e320-184"
+about = "the props barrel quay e320 184, cut from its fused tile (128 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-barrel-quay-w210-146"
+group = "SM_BC_PropsBarrelQuayW210146"
+model = "prop/brinecove/props-barrel-quay-w210-146"
+about = "the props barrel quay w210 146, cut from its fused tile (128 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-barrel-quay-w210-184"
+group = "SM_BC_PropsBarrelQuayW210184"
+model = "prop/brinecove/props-barrel-quay-w210-184"
+about = "the props barrel quay w210 184, cut from its fused tile (128 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-barrel-quay-w270-146"
+group = "SM_BC_PropsBarrelQuayW270146"
+model = "prop/brinecove/props-barrel-quay-w270-146"
+about = "the props barrel quay w270 146, cut from its fused tile (128 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-barrel-quay-w270-184"
+group = "SM_BC_PropsBarrelQuayW270184"
+model = "prop/brinecove/props-barrel-quay-w270-184"
+about = "the props barrel quay w270 184, cut from its fused tile (128 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-barrel-quay-w320-146"
+group = "SM_BC_PropsBarrelQuayW320146"
+model = "prop/brinecove/props-barrel-quay-w320-146"
+about = "the props barrel quay w320 146, cut from its fused tile (128 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-barrel-quay-w320-184"
+group = "SM_BC_PropsBarrelQuayW320184"
+model = "prop/brinecove/props-barrel-quay-w320-184"
+about = "the props barrel quay w320 184, cut from its fused tile (128 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-barrel-upper-e130"
+group = "SM_BC_PropsBarrelUpperE130"
+model = "prop/brinecove/props-barrel-upper-e130"
+about = "the props barrel upper e130, cut from its fused tile (128 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-barrel-upper-e190"
+group = "SM_BC_PropsBarrelUpperE190"
+model = "prop/brinecove/props-barrel-upper-e190"
+about = "the props barrel upper e190, cut from its fused tile (128 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-barrel-upper-e250"
+group = "SM_BC_PropsBarrelUpperE250"
+model = "prop/brinecove/props-barrel-upper-e250"
+about = "the props barrel upper e250, cut from its fused tile (128 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-barrel-upper-e70"
+group = "SM_BC_PropsBarrelUpperE70"
+model = "prop/brinecove/props-barrel-upper-e70"
+about = "the props barrel upper e70, cut from its fused tile (128 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-barrel-upper-w190"
+group = "SM_BC_PropsBarrelUpperW190"
+model = "prop/brinecove/props-barrel-upper-w190"
+about = "the props barrel upper w190, cut from its fused tile (128 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-barrel-upper-w250"
+group = "SM_BC_PropsBarrelUpperW250"
+model = "prop/brinecove/props-barrel-upper-w250"
+about = "the props barrel upper w250, cut from its fused tile (128 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-crate-pier-central-sea"
+group = "SM_BC_PropsCratePierCentralSea"
+model = "prop/brinecove/props-crate-pier-central-sea"
+about = "the props crate pier central sea, cut from its fused tile (36 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-crate-pier-central-shore"
+group = "SM_BC_PropsCratePierCentralShore"
+model = "prop/brinecove/props-crate-pier-central-shore"
+about = "the props crate pier central shore, cut from its fused tile (36 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-crate-pier-east-sea"
+group = "SM_BC_PropsCratePierEastSea"
+model = "prop/brinecove/props-crate-pier-east-sea"
+about = "the props crate pier east sea, cut from its fused tile (36 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-crate-pier-east-shore"
+group = "SM_BC_PropsCratePierEastShore"
+model = "prop/brinecove/props-crate-pier-east-shore"
+about = "the props crate pier east shore, cut from its fused tile (36 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-crate-pier-west-sea"
+group = "SM_BC_PropsCratePierWestSea"
+model = "prop/brinecove/props-crate-pier-west-sea"
+about = "the props crate pier west sea, cut from its fused tile (36 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-crate-pier-west-shore"
+group = "SM_BC_PropsCratePierWestShore"
+model = "prop/brinecove/props-crate-pier-west-shore"
+about = "the props crate pier west shore, cut from its fused tile (36 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-crate-quay-e150"
+group = "SM_BC_PropsCrateQuayE150"
+model = "prop/brinecove/props-crate-quay-e150"
+about = "the props crate quay e150, cut from its fused tile (36 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-crate-quay-e205"
+group = "SM_BC_PropsCrateQuayE205"
+model = "prop/brinecove/props-crate-quay-e205"
+about = "the props crate quay e205, cut from its fused tile (36 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-crate-quay-e270"
+group = "SM_BC_PropsCrateQuayE270"
+model = "prop/brinecove/props-crate-quay-e270"
+about = "the props crate quay e270, cut from its fused tile (36 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-crate-quay-e320"
+group = "SM_BC_PropsCrateQuayE320"
+model = "prop/brinecove/props-crate-quay-e320"
+about = "the props crate quay e320, cut from its fused tile (36 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-crate-quay-w210"
+group = "SM_BC_PropsCrateQuayW210"
+model = "prop/brinecove/props-crate-quay-w210"
+about = "the props crate quay w210, cut from its fused tile (36 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-crate-quay-w270"
+group = "SM_BC_PropsCrateQuayW270"
+model = "prop/brinecove/props-crate-quay-w270"
+about = "the props crate quay w270, cut from its fused tile (36 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-crate-quay-w320"
+group = "SM_BC_PropsCrateQuayW320"
+model = "prop/brinecove/props-crate-quay-w320"
+about = "the props crate quay w320, cut from its fused tile (36 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-crate-upper-e130"
+group = "SM_BC_PropsCrateUpperE130"
+model = "prop/brinecove/props-crate-upper-e130"
+about = "the props crate upper e130, cut from its fused tile (36 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-crate-upper-e190"
+group = "SM_BC_PropsCrateUpperE190"
+model = "prop/brinecove/props-crate-upper-e190"
+about = "the props crate upper e190, cut from its fused tile (36 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-crate-upper-e250"
+group = "SM_BC_PropsCrateUpperE250"
+model = "prop/brinecove/props-crate-upper-e250"
+about = "the props crate upper e250, cut from its fused tile (36 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-crate-upper-e70"
+group = "SM_BC_PropsCrateUpperE70"
+model = "prop/brinecove/props-crate-upper-e70"
+about = "the props crate upper e70, cut from its fused tile (36 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-crate-upper-w190"
+group = "SM_BC_PropsCrateUpperW190"
+model = "prop/brinecove/props-crate-upper-w190"
+about = "the props crate upper w190, cut from its fused tile (36 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-crate-upper-w250"
+group = "SM_BC_PropsCrateUpperW250"
+model = "prop/brinecove/props-crate-upper-w250"
+about = "the props crate upper w250, cut from its fused tile (36 triangles)"
+
 # --- Generated by tools/migrate/towns.py: every other runtime group of the region (rerun to regenerate) ---
 
 [[objects]]
@@ -3045,12 +3315,6 @@ model = "prop/brinecove/props-2-3"
 about = "Brine Cove props-2-3 (1 group)"
 
 [[objects]]
-id = "object/brinecove/props-2-4"
-groups = ["SM_BC_Props_2_4"]
-model = "prop/brinecove/props-2-4"
-about = "Brine Cove props-2-4 (2 groups)"
-
-[[objects]]
 id = "object/brinecove/props-3-2"
 group = "SM_BC_Props_3_2"
 model = "prop/brinecove/props-3-2"
@@ -3061,18 +3325,6 @@ id = "object/brinecove/props-3-3"
 group = "SM_BC_Props_3_3"
 model = "prop/brinecove/props-3-3"
 about = "Brine Cove props-3-3 (1 group)"
-
-[[objects]]
-id = "object/brinecove/props-3-4"
-groups = ["SM_BC_Props_3_4"]
-model = "prop/brinecove/props-3-4"
-about = "Brine Cove props-3-4 (2 groups)"
-
-[[objects]]
-id = "object/brinecove/props-3-5"
-group = "SM_BC_Props_3_5"
-model = "prop/brinecove/props-3-5"
-about = "Brine Cove props-3-5 (1 group)"
 
 [[objects]]
 id = "object/brinecove/props-4-2"
@@ -3087,28 +3339,10 @@ model = "prop/brinecove/props-4-3"
 about = "Brine Cove props-4-3 (1 group)"
 
 [[objects]]
-id = "object/brinecove/props-4-4"
-groups = ["SM_BC_Props_4_4"]
-model = "prop/brinecove/props-4-4"
-about = "Brine Cove props-4-4 (2 groups)"
-
-[[objects]]
-id = "object/brinecove/props-4-5"
-group = "SM_BC_Props_4_5"
-model = "prop/brinecove/props-4-5"
-about = "Brine Cove props-4-5 (1 group)"
-
-[[objects]]
 id = "object/brinecove/props-5-3"
 group = "SM_BC_Props_5_3"
 model = "prop/brinecove/props-5-3"
 about = "Brine Cove props-5-3 (1 group)"
-
-[[objects]]
-id = "object/brinecove/props-5-4"
-groups = ["SM_BC_Props_5_4"]
-model = "prop/brinecove/props-5-4"
-about = "Brine Cove props-5-4 (2 groups)"
 
 [[objects]]
 id = "object/brinecove/rocks-0-1"

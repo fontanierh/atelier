@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/props-crate-quay-e320",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_PropsCrateQuayE320.uasset": "3c011c52065a5a348f77c14172a75d3201f3b1116bf5e665921c4ff01f2d2317"
+  },
+  "input_fingerprint": "1a898747c8e252d2d3c7f602d95b393e3109062ae3df473980df414e4a33b777",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_PropsCrateQuayE320": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}
