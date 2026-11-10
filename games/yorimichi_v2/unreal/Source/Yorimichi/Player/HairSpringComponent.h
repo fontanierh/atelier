@@ -20,6 +20,8 @@ private:
     FVector PreviousVelocity = FVector::ZeroVector;
     FVector2D Flex = FVector2D::ZeroVector;
     FVector2D FlexVelocity = FVector2D::ZeroVector;
+    FVector2D AppliedMorphWeights = FVector2D(MAX_flt, MAX_flt);
+    TWeakObjectPtr<UObject> AppliedMeshAsset;
     float ContactFade = 1.f;
     bool bInitialized = false;
 };

@@ -176,6 +176,7 @@ private:
     void LoadRiderClips();
     void ApplyCurrentBreedAndTack();
     void ApplyCurrentMaterials();
+    void SetHorseMeshesActive(bool bActive);
     void Play(EHorseRole NewRole);
     EHorseRole SelectRole() const;
     float ClipLength(EHorseRole Of) const;

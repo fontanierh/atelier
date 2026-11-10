@@ -163,6 +163,10 @@ private:
     FString Event;
     TArray<FVector> PreviousStrike;
     FRandomStream Rand;
+    bool bDistanceSleeping = false;
+    float LastHitFlash = -1.f;
+    bool ShouldSleepByDistance() const;
+    void SetDistanceSleeping(bool bSleep);
     friend struct JapanEnemyQA::FJapanEnemyProbe;
     friend class UJapanEncounters;
     friend class FJapanEncounterReplacementTest;

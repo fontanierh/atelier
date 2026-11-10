@@ -75,4 +75,7 @@ private:
     double TrailTime[4] = {0., 0., 0., 0.};
     int32 TrailFilled = 0;
     FVector LastAt = FVector::ZeroVector;
+    TWeakObjectPtr<UObject> LastValuesInstance;
+    FLinearColor LastParams[11];
+    bool bParamWritten[11] = {};
 };

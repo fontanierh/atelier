@@ -20,6 +20,7 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
+#include "Engine/OverlapResult.h"
 #include "Engine/SkeletalMesh.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
@@ -939,21 +940,34 @@ bool UAdventureMoveSet::IsUnawareTarget(AActor* Actor) const
 
 AActor* UAdventureMoveSet::FindTarget(float Range, float Cone) const
 {
-    if (!Character) return nullptr;
+    UWorld* World = Character ? Character->GetWorld() : nullptr;
+    if (!World) return nullptr;
     const FVector Here = Character->GetActorLocation(), Forward = Character->GetActorForwardVector();
+    FCollisionObjectQueryParams Objects;
+    Objects.AddObjectTypesToQuery(ECC_Pawn);
+    Objects.AddObjectTypesToQuery(ECC_WorldDynamic);
+    FCollisionQueryParams QueryParams(SCENE_QUERY_STAT(AdventureLockOn), false, Character);
+    TArray<FOverlapResult> Overlaps;
+    World->OverlapMultiByObjectType(Overlaps, Here, FQuat::Identity, Objects,
+        FCollisionShape::MakeCapsule(Range + 100.f, Range + 400.f), QueryParams);
     AActor* Best = nullptr; float BestScore = TNumericLimits<float>::Max();
-    for (TActorIterator<AActor> It(Character->GetWorld()); It; ++It)
+    TSet<AActor*> Seen;
+    auto Consider = [&](AActor* Candidate)
     {
-        if (!It->IsA<AFoxHunter>() && !It->IsA<ASwordDummy>() && !It->IsA<AWandererCharacter>()) continue;
-        if (!IsTargetable(*It)) continue;
-        const FVector To = (It->GetActorLocation() - Here) * FVector(1, 1, 0);
+        if (!Candidate || Seen.Contains(Candidate)) return;
+        Seen.Add(Candidate);
+        if (!Candidate->IsA<AFoxHunter>() && !Candidate->IsA<ASwordDummy>() && !Candidate->IsA<AWandererCharacter>()) return;
+        if (!IsTargetable(Candidate)) return;
+        const FVector To = (Candidate->GetActorLocation() - Here) * FVector(1, 1, 0);
         const float Distance = float(To.Size());
-        if (Distance > Range) continue;
+        if (Distance > Range) return;
         const float Angle = FMath::RadiansToDegrees(FMath::Acos(FMath::Clamp(float(To.GetSafeNormal() | Forward), -1.f, 1.f)));
-        if (Angle > Cone && Distance > 200.f) continue;
+        if (Angle > Cone && Distance > 200.f) return;
         const float Score = Distance * (1.f + Angle / 90.f);
-        if (Score < BestScore) { BestScore = Score; Best = *It; }
-    }
+        if (Score < BestScore) { BestScore = Score; Best = Candidate; }
+    };
+    for (const FOverlapResult& Overlap : Overlaps) Consider(Overlap.GetActor());
+    if (ASwordDummy* Dummy = Character->GetSwordDummy()) Consider(Dummy);
     return Best;
 }
 

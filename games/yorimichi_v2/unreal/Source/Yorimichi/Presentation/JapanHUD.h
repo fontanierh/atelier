@@ -18,4 +18,10 @@ private:
     float DisplayedFrameRate = 0.f;
     double NextControllerCheck = 0.;
     int32 ControllerStyle = 0;
+    TWeakObjectPtr<UObject> CachedActorWorld;
+    double NextActorCacheRefresh = 0.;
+    TArray<TWeakObjectPtr<AActor>> CachedTrainers;
+    TArray<TWeakObjectPtr<AActor>> CachedFoxHunters;
+    TWeakObjectPtr<AActor> CachedRacingService;
+    TWeakObjectPtr<AActor> CachedTrainService;
 };

@@ -40,6 +40,7 @@
 #include "GameFramework/RootMotionSource.h"
 #include "HAL/IConsoleManager.h"
 #include "Materials/MaterialInstanceDynamic.h"
+#include "Misc/PackageName.h"
 #include "Engine/OverlapResult.h"
 #include "PhysicsEngine/BodyInstance.h"
 
@@ -77,8 +78,15 @@ bool USkateComponent::PrepareRideClips()
     if (!T.bClipsTried)
     {
         // Load every transition clip now (while walking), not at the first mount, and the board's dissolve.
-        T.bClipsTried = true; T.bClips = true;
+        T.bClipsTried = true;
         LoadBoardFade();
+        if (!FPackageName::DoesPackageExist(TEXT("/Game/SkateRide/Clips/B1/BR_STAND_0_CYC")) &&
+            !FPackageName::DoesPackageExist(TEXT("/Game/SkateRide/Clips/B0/W_RECOVERY_ONFRONT_N_0_N")))
+        {
+            T.bClips = false;
+            return false;
+        }
+        T.bClips = true;
         for (int32 I = 0; I < 4; ++I)
         {
             T.Cycle[I] = Animator.Clip(CycleNames[I]);
@@ -173,9 +181,9 @@ void USkateComponent::TickTransition(float Dt)
     FRideTransition& T = Transit();
     // Off the board last frame: the stick is in for the next move.
     if (T.bReleasePending) ReleaseDrive();
-    // The transition clips load on foot once the session is preloaded (PreloadSimulation, 2 s after play), not at the
-    // first mount.
-    if (bSimulationPreloaded && Mode == ESkateMode::Off && !T.bClipsTried)
+    // The transition clips load on foot after PreloadSimulation (2.35 s), staggered to 2.90 s so both never land on the
+    // same frame.
+    if (bSimulationPreloaded && Mode == ESkateMode::Off && !T.bClipsTried && GetWorld()->GetTimeSeconds() > 2.90)
     {
         T.ClipsRetry -= Dt;
         if (T.ClipsRetry <= 0.f) { T.ClipsRetry = 5.f; PrepareRideClips(); }

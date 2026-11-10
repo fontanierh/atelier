@@ -22,6 +22,11 @@ struct FGondolaPose
     int32 Stop=INDEX_NONE;
     float Door=0.f;
 };
+struct FGondolaSector
+{
+    FBox Bounds{ForceInit};
+    int32 Start=0, End=0;
+};
 struct YORIMICHI_API FGondolaLine
 {
     FString Id;
@@ -32,6 +37,8 @@ struct YORIMICHI_API FGondolaLine
     TArray<FGondolaInterval> Intervals;
     TArray<FGondolaStop> Stops;
     TArray<FGondolaEvent> Events;
+    FBox Bounds{ForceInit};
+    TArray<FGondolaSector> Sectors;
     bool Parse(const TSharedPtr<FJsonObject>& Data);
     FVector Point(double Distance) const;
     FGondolaPose State(double Time, const FVector& Pivot) const;
@@ -98,6 +105,7 @@ private:
         FGondolaPose Pose;
         double LastTime=0.;
         bool bPrimed=false;
+        bool bSleeping=false;
         TArray<uint8> SeatTaken;
     };
     struct FRiderSeat

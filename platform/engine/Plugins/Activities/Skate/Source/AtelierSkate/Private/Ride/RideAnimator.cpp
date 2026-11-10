@@ -6,12 +6,22 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/SkeletalMesh.h"
 #include "GameFramework/Actor.h"
+#include "Misc/PackageName.h"
 
 namespace
 {
     const TCHAR* RigPath = TEXT("/Game/SkateRide/SK_SkateRider.SK_SkateRider");
     const TCHAR* MirrorPath = TEXT("/Game/SkateRide/MDT_SkateRider.MDT_SkateRider");
     const TCHAR* ClipFolders[] = {TEXT("/Game/SkateRide/Clips/B0/"), TEXT("/Game/SkateRide/Clips/B1/")};
+
+    bool PreferOffBoardBank(const FStringView ClipName)
+    {
+        return ClipName.StartsWith(TEXT("BR_")) || ClipName.StartsWith(TEXT("JBR_")) || ClipName.StartsWith(TEXT("JNB_")) ||
+            ClipName.StartsWith(TEXT("NB_")) || ClipName.StartsWith(TEXT("RUNOUT_")) || ClipName.StartsWith(TEXT("HIPPYOUT_")) ||
+            ClipName.StartsWith(TEXT("JUMPOUT_")) || ClipName.StartsWith(TEXT("MVOBJ_")) || ClipName.StartsWith(TEXT("TKDWN_OFFB_")) ||
+            ClipName.StartsWith(TEXT("G_BODYTWEAK_")) || ClipName.StartsWith(TEXT("OFB_RETRIEVE_")) || ClipName.StartsWith(TEXT("OFB_THROW_")) ||
+            (ClipName.StartsWith(TEXT("DROPIN_")) && !ClipName.StartsWith(TEXT("DROPIN_RIDE_")));
+    }
 }
 
 FRideAnimator::FRideAnimator() = default;
@@ -25,9 +35,13 @@ UAnimSequence* FRideAnimator::Load(const TCHAR* Name)
     const FName Key(Name);
     if (const TStrongObjectPtr<UAnimSequence>* Found = Library.Find(Key)) return Found->Get();
     UAnimSequence* Sequence = nullptr;
-    for (const TCHAR* Folder : ClipFolders)
+    const int32 FirstBank = PreferOffBoardBank(FStringView(Name)) ? 1 : 0;
+    for (int32 Attempt = 0; Attempt < 2; ++Attempt)
     {
-        const FString Path = FString::Printf(TEXT("%s%s.%s"), Folder, Name, Name);
+        const TCHAR* Folder = ClipFolders[(FirstBank + Attempt) & 1];
+        const FString Package = FString::Printf(TEXT("%s%s"), Folder, Name);
+        if (!FPackageName::DoesPackageExist(Package)) continue;
+        const FString Path = FString::Printf(TEXT("%s.%s"), *Package, Name);
         Sequence = LoadObject<UAnimSequence>(nullptr, *Path, nullptr, LOAD_NoWarn | LOAD_Quiet);
         if (Sequence) break;
     }

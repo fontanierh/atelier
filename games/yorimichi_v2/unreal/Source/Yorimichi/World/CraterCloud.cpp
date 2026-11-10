@@ -2,6 +2,7 @@
 
 #include "AtelierData.h"
 #include "Components/LightComponent.h"
+#include "Engine/CollisionProfile.h"
 #include "Engine/DirectionalLight.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
@@ -112,23 +113,33 @@ ACraterCloud* ACraterCloud::Spawn(UWorld* World, const FString& Path)
 
         UProceduralMeshComponent* Shell = NewObject<UProceduralMeshComponent>(Cloud, *FString::Printf(TEXT("Shell_%s"), *Layer->GetStringField(TEXT("name"))));
         Shell->SetupAttachment(Cloud->GetRootComponent());
-        Shell->bUseAsyncCooking = false;
+        Shell->PrimaryComponentTick.bCanEverTick = false;
+        Shell->PrimaryComponentTick.bStartWithTickEnabled = false;
+        Shell->bUseAsyncCooking = true;
+        Shell->SetCollisionProfileName(UCollisionProfile::NoCollision_ProfileName);
         Shell->SetCollisionEnabled(ECollisionEnabled::NoCollision);
         Shell->SetCollisionResponseToAllChannels(ECR_Ignore);
         Shell->SetGenerateOverlapEvents(false);
         Shell->SetCanEverAffectNavigation(false);
         Shell->SetCastShadow(false);
+        Shell->bCastDynamicShadow = false;
+        Shell->bCastStaticShadow = false;
+        Shell->bCastVolumetricTranslucentShadow = false;
+        Shell->bCastContactShadow = false;
+        Shell->bAffectDynamicIndirectLighting = false;
         Shell->bAffectDistanceFieldLighting = false;
         Shell->bVisibleInReflectionCaptures = false;
         Shell->bVisibleInRealTimeSkyCaptures = false;
         Shell->bVisibleInRayTracing = false;
         Shell->bReceivesDecals = false;
+        Shell->SetCullDistance(250000.f);
         // The veil samples the scene behind it, so it goes first; the plain shells then lay their white over it.
         Shell->TranslucencySortPriority = bVeil ? -1 : Index;
         Shell->CreateMeshSection_LinearColor(0, Vertices, Tris, Normals, TArray<FVector2D>(), TArray<FLinearColor>(),
                                              TArray<FProcMeshTangent>(), false);
         Shell->SetMaterial(0, Look);
         Shell->RegisterComponent();
+        Shell->SetComponentTickEnabled(false);
         Cloud->Shells.Add(Shell); Cloud->Looks.Add(Look);
         Cloud->Triangles += Tris.Num() / 3;
     }

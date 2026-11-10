@@ -37,6 +37,17 @@ def _request_fields(prompt, size, *, quality=QUALITY, model=MODEL, output_format
         raise ValueError('frame_count and frame_duration_ms require output_format="gif"')
     if frame_count is not None and not (_is_int(frame_count) and 2 <= frame_count <= 16):
         raise ValueError('frame_count must be an integer from 2 to 16')
+    if model == MODEL and output_format == 'gif' and isinstance(size, str):
+        dimensions = size.split('x')
+        if len(dimensions) == 2 and all(part.isascii() and part.isdecimal() for part in dimensions):
+            width, height = map(int, dimensions)
+            frames = frame_count if frame_count is not None else 9
+            columns = 1
+            while columns * columns < frames:
+                columns += 1
+            rows = (frames + columns - 1) // columns
+            if max(width * columns, height * rows) > 3840:
+                raise ValueError('GIF frame grid exceeds the 3840 pixel edge limit; reduce size or frame_count')
     if frame_duration_ms is not None and not (_is_int(frame_duration_ms) and 20 <= frame_duration_ms <= 655350):
         raise ValueError('frame_duration_ms must be an integer from 20 to 655350')
     if complexity is not None and complexity not in _COMPLEXITIES:
