@@ -460,6 +460,10 @@ def run_child(pid, started, report, duration=None, limit_gib=10., controller=Non
                           cleanup_complete=False, time=time.time(), observed_monotonic=time.monotonic(),
                           footprint_bytes=sum(p['footprint_bytes'] for p in samples),
                           peak_bytes=peak, limit_bytes=limit, processes=samples)
+            if isinstance(error, OSError):
+                failed['error_errno'] = error.errno
+                if type(error.filename) is int:
+                    failed['error_pid'] = error.filename
             if controller is not None:
                 failed['controller'] = list(controller)
             if service_control is not None:

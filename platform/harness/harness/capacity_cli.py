@@ -3,11 +3,13 @@
 
 def configure(sub):
     p = sub.add_parser('capacity', help='inspect capacity or run the supervised admission broker')
-    p.add_argument('action', choices=['plan', 'history', 'observe-cpu', 'shadow', 'probe', 'serve', 'status', 'reconcile', 'abandon-interrupted', 'abandon-completed', 'abandon-unwitnessed',
+    p.add_argument('action', choices=['plan', 'history', 'observe-cpu', 'shadow', 'probe', 'serve', 'status', 'reconcile', 'abandon-interrupted', 'abandon-completed', 'abandon-unwitnessed', 'abandon-failed',
                                     'supervise', 'prepare-cutover', 'activate-cutover', 'migrate-volume-seal', 'promote-prior-boot'])
     p.add_argument('path', help='snapshot, guard directory, experiment database, broker config, or status socket')
     p.add_argument('--state', help='explicit absolute simulation database path (shadow only)')
-    p.add_argument('--request-id', help='request whose preserved terminal receipt is attested (reconcile only)')
+    p.add_argument('--request-id', help='exact request for preserved reconciliation or explicit failed-job recovery')
+    p.add_argument('--administrator', help='independent owner performing explicit failed-job recovery')
+    p.add_argument('--operator-reference', help='owner instruction authorizing explicit failed-job recovery')
     p.add_argument('--preserved-terminal', help='preserved original aggregate terminal JSON (reconcile only; requires --request-id)')
     p.add_argument('--administrative-evidence', help='reviewed fenced administrative recovery JSON')
     p.add_argument('--json', action='store_true')
@@ -17,16 +19,28 @@ def configure(sub):
 
 
 def main(args):
-    if args.action in ('abandon-interrupted', 'abandon-completed', 'abandon-unwitnessed'):
+    if args.action == 'abandon-failed' and not args.administrative_evidence:
+        if not all((args.request_id, args.administrator, args.operator_reference)) or any(v is not None for v in
+                (args.state, args.preserved_terminal, args.output, args.seconds, args.interval)):
+            raise SystemExit('abandon-failed requires --request-id, --administrator and --operator-reference')
+        import json
+        from atelier.harness.capacity_client import failed_recovery_evidence, abandon_failed
+        evidence = failed_recovery_evidence(args.path, args.request_id, administrator=args.administrator,
+                                            operator_reference=args.operator_reference)
+        print(json.dumps(abandon_failed(args.path, evidence), indent=2))
+        return 0
+    if args.administrator is not None or args.operator_reference is not None:
+        raise SystemExit('--administrator and --operator-reference are only for failed-job recovery by request ID')
+    if args.action in ('abandon-interrupted', 'abandon-completed', 'abandon-unwitnessed', 'abandon-failed'):
         if not args.administrative_evidence or any(v is not None for v in
                 (args.state, args.request_id, args.preserved_terminal, args.output, args.seconds, args.interval)):
             raise SystemExit(f'{args.action} requires only --administrative-evidence and the installed socket')
         import json
         from atelier.harness import capacity_protocol as wire
-        from atelier.harness.capacity_client import abandon_interrupted, abandon_completed, abandon_unwitnessed
+        from atelier.harness.capacity_client import abandon_interrupted, abandon_completed, abandon_unwitnessed, abandon_failed
         evidence = wire.decode(wire.private_file(args.administrative_evidence, limit=wire.MAX_FRAME))
         action = {'abandon-interrupted': abandon_interrupted, 'abandon-completed': abandon_completed,
-                  'abandon-unwitnessed': abandon_unwitnessed}[args.action]
+                  'abandon-unwitnessed': abandon_unwitnessed, 'abandon-failed': abandon_failed}[args.action]
         print(json.dumps(action(args.path, evidence), indent=2))
         return 0
     if args.administrative_evidence is not None:

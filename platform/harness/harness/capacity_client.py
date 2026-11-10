@@ -171,6 +171,17 @@ def abandon_unwitnessed(socket_path, evidence, *, timeout=5.):
     return _rpc(socket_path, {'action': 'abandon-unwitnessed', 'unwitnessed_compile': evidence}, timeout)[0]
 
 
+def failed_recovery_evidence(socket_path, request_id, *, administrator, operator_reference, timeout=5.):
+    """Read exact current fences for an explicitly selected failed job; no release or admission."""
+    return _rpc(socket_path, dict(action='failed-recovery-evidence', id=request_id,
+        administrator=administrator, operator_reference=operator_reference), timeout)[0]['evidence']
+
+
+def abandon_failed(socket_path, evidence, *, timeout=5.):
+    """Explicit failed-job recovery; missing history and failed outputs stay failed."""
+    return _rpc(socket_path, {'action': 'abandon-failed', 'failed_job': evidence}, timeout)[0]
+
+
 class AdmissionSession:
     """@cc [owner:fontanierh,label:safety] guard-facing-broker-admission
     Offers MUST be uncharged. Only the server's committed gate MAY release useful work; the
