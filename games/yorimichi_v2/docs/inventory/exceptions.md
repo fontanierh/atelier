@@ -1277,3 +1277,34 @@ needs that reader first.
 | `T_Arcade_timber` | `japan/textures/plaza-harbor` | planned | Japan/Textures | no reader in this tree |
 | `T_Harbor_paving` | `japan/textures/plaza-harbor` | planned | Japan/Textures | no reader in this tree |
 | `T_Harbor_timber` | `japan/textures/plaza-harbor` | planned | Japan/Textures | no reader in this tree |
+
+### Bike residual packages (1 record, 2 packages)
+
+Donor evidence: `unreal/Scripts/import_bike.py:36-46` imports each bike part from `build/yorimichi/bike/assets/<part>.fbx`,
+with its entry in `build/yorimichi/bike/manifest.json` (`parts`, triangles 26060 for each wheel) and the wheel rule that
+requires CPU access and no full-precision UVs. The FBX files are the donor's Blender bike build output: they are
+git-ignored under `build/`, and their generator is `assets/vehicles/bike/build.py` on `Bike.blend`. `M_Bike` is the
+parent, owned by `adopted/japan/materials/base-materials`.
+
+Byte evidence: `BK_WheelFront` and `BK_WheelRear` are 550 KB each and reference only `/Game/Japan/Materials/M_Bike`.
+
+Donor FBX pins (sha256, `build/yorimichi/bike/assets/`): `BK_WheelFront.fbx` `b9d91c3ff4143f67…`, `BK_WheelRear.fbx`
+`5a62e75f11e02be6…`.
+
+Status: **need-read** (`adopted/japan/assets/bike`). The importer can take an FBX (`import_asset.py`, `_fbx_static_mesh`),
+and the static-mesh recipe can state the wheel settings (`allow_cpu_access`, `full_precision_uvs`, which the recipe
+already has for `prop/megapark/seam-collision`). Two things still stop a record. First, the FBX is a git-ignored
+build output, so its bytes would be committed as a pinned source only after its generator and inputs (`Bike.blend`) are
+recorded, as the generated-art rule requires. Second, the wheel's material slot and `M_Bike` need a native read.
+
+Native reads still needed (read-only; editor and clean hydrate): the wheels' saved settings and the `M_Bike` slot, by a
+static-mesh reader that this tree does not have. No command is given because the reader is missing.
+
+Blockers: the FBX generator inputs are not yet recorded; no static-mesh reader in this tree.
+
+- `adopted/japan/assets/bike`: generated wheel static meshes (Blender bike build). Evidence: import_bike.py:40 (manifest parts); build/yorimichi/bike/Bike.blend and manifest.json. Status: **need-read**. the importer needs the bike manifest sha256 and the M_Bike parent (owned by adopted/japan/materials/base-materials)
+
+| Package | Record | Status | Inputs (owner records) | Native read still needed |
+|---|---|---|---|---|
+| `BK_WheelFront` | `japan/assets/bike` | need-read | Japan/Materials/M_Bike, Japan/Materials/M_Bike | no reader in this tree |
+| `BK_WheelRear` | `japan/assets/bike` | need-read | Japan/Materials/M_Bike, Japan/Materials/M_Bike | no reader in this tree |
