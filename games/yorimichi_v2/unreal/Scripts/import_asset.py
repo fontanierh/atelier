@@ -337,6 +337,8 @@ def _material_instances(plan, settings):
         if not isinstance(instance, U.MaterialInstanceConstant):
             raise RuntimeError(f'{package} is not a material instance')
         instance.set_editor_property('parent', parent)   # the editable parent property, as the saved records hold it
+        # Every earlier override goes first, so a value the record no longer states falls back to the parent.
+        MEL.clear_all_material_instance_parameters(instance)
         for name, texture_path in sorted(settings.get('textures', {}).items()):
             texture = EAL.load_asset(texture_path)
             if texture is None:
@@ -363,9 +365,27 @@ def _material_instances(plan, settings):
             want = list(map(float, value))
             if max(abs(a - b) for a, b in zip([got.r, got.g, got.b, got.a], want)) > 1e-4:
                 raise RuntimeError(f'{package} {name} reads {got} instead of {value}')
+        stray = _undeclared_overrides(instance, settings)
+        if stray:
+            raise RuntimeError(f'{package} keeps overrides its record does not state: {", ".join(stray)}')
         if not EAL.save_asset(package, only_if_is_dirty=False):
             raise RuntimeError(f'could not save {package}')
         U.log(f'V2 import wrote {package} from parent {parent_path}')
+
+
+def _override_names(instance):
+    """The names of the scalar, vector and texture parameters the instance itself saves, by kind."""
+    def names(prop):
+        return {str(p.get_editor_property('parameter_info').get_editor_property('name'))
+                for p in instance.get_editor_property(prop)}
+    return {'scalars': names('scalar_parameter_values'), 'vectors': names('vector_parameter_values'),
+            'textures': names('texture_parameter_values')}
+
+
+def _undeclared_overrides(instance, settings):
+    """Sorted `kind:name` of every saved override the record's settings do not state."""
+    return sorted(f'{kind}:{name}' for kind, have in _override_names(instance).items()
+                  for name in have - set(settings.get(kind, {})))
 
 
 def main():

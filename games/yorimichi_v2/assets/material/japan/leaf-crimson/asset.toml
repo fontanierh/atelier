@@ -13,7 +13,7 @@ input_dependencies = ["adopted/japan/materials/base-materials", "adopted/japan/t
 
 [recipe]
 importer = "material-instance"
-version = 1
+version = 2
 
 [recipe.settings]
 parent = "/Game/Japan/Materials/M_Foliage"

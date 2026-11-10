@@ -177,8 +177,8 @@ def material_settings(recipe: dict, where: Path, inputs: list[str]) -> dict:
     `vectors` ({parameter: [r, g, b, a]}). The instance is written as exactly these values: none is an override that
     the record does not state. Every package it reads must be an output of one of its input_dependencies."""
     _known(recipe, MATERIAL_RECIPE_KEYS, where, '[recipe]')
-    if recipe.get('importer') != 'material-instance' or recipe.get('version') != 1:
-        raise RecordError(f'{where}: a material-instance recipe is importer "material-instance" version 1')
+    if recipe.get('importer') != 'material-instance' or recipe.get('version') != 2:
+        raise RecordError(f'{where}: a material-instance recipe is importer "material-instance" version 2')
     settings = recipe.get('settings')
     if not isinstance(settings, dict):
         raise RecordError(f'{where}: a material-instance needs [recipe.settings]')

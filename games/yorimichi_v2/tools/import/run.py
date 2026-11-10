@@ -44,7 +44,7 @@ BUILD = REPO / 'build' / 'yorimichi_v2'   # where a carved record's derived rema
 IMPORTERS = {   # asset kind -> importer name and version understood by unreal/Scripts/import_asset.py
     'static-mesh': ('static-mesh', 1),
     'texture': ('texture', 1),
-    'material-instance': ('material-instance', 1),
+    'material-instance': ('material-instance', 2),   # 2: earlier overrides are cleared, strays refused
 }
 BOOTSTRAP_WRITER = authority.BOOTSTRAP_WRITER
 LOD_RESULT = 'lod-result.json'   # written beside the plan by unreal/Scripts/import_asset.py

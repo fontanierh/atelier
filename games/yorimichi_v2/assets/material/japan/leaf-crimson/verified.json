@@ -6,10 +6,10 @@
   },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Materials/MI_LeafCrimson.uasset": "ea56105a241bc8ab939c7a2228d9016660e8768703563a3da041c11ede624a6b"
+    "unreal/Content/Japan/Materials/MI_LeafCrimson.uasset": "7e9305184a6ce6e5af1015423764f5aed310aadf67cb9296240acf6470db74c3"
   },
-  "input_fingerprint": "04043a570012ed42006ad6e1686baa15cf5db9d768b5552db9807a3dde15b5fc",
+  "input_fingerprint": "ec6390db2745af0ac8289721791c94f02a3033abd647a579fce20122239c9f12",
   "kind": "imported",
   "schema": 1,
-  "tool": "material-instance@1"
+  "tool": "material-instance@2"
 }

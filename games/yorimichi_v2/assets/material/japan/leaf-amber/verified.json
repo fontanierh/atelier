@@ -6,10 +6,10 @@
   },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Materials/MI_LeafAmber.uasset": "308ed10a25ebbf2b6c2aae76d740a34502d569ebc1e751d14db365008bd4b730"
+    "unreal/Content/Japan/Materials/MI_LeafAmber.uasset": "da564eed105a2cfeb2fede33433a06299bd78205824bb95ce3390a798ea457a6"
   },
-  "input_fingerprint": "559fd1d067a3b5e872b45c4358ba22cdf2ad5e19fc52441a3c023db65f463a32",
+  "input_fingerprint": "c3354d72bb32a54b66da96baa7ece401abe7e50451a38a037caa98c48cf3344e",
   "kind": "imported",
   "schema": 1,
-  "tool": "material-instance@1"
+  "tool": "material-instance@2"
 }

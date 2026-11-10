@@ -4,6 +4,7 @@ import hashlib
 import importlib.util
 import json
 import sys
+import types
 from pathlib import Path
 
 import pytest
@@ -40,7 +41,7 @@ def material_toml(*, id='material/fake/leaf-amber', kind='material-instance', au
     deps_line = f'input_dependencies = {deps}\n' if deps is not None else ''
     return (f'schema = 1\nid = "{id}"\nkind = "{kind}"\nauthority = "{authority}"\nowner = "shared/fake/leaf-amber"\n'
             f'{deps_line}{sources}'
-            f'[recipe]\nimporter = "{importer}"\nversion = 1\n[recipe.settings]\n{settings}'
+            f'[recipe]\nimporter = "{importer}"\nversion = 2\n[recipe.settings]\n{settings}'
             f'[[outputs]]\npackage = "/Game/Japan/Materials/MI_LeafAmber"\n')
 
 
@@ -61,7 +62,7 @@ def test_each_used_leaf_is_a_generated_material_instance_with_its_recipe(name, p
     assert asset.sources == []
     assert [o.package for o in asset.outputs] == [f'/Game/Japan/Materials/{package}']
     assert asset.recipe == {
-        'importer': 'material-instance', 'version': 1,
+        'importer': 'material-instance', 'version': 2,
         'settings': {'parent': '/Game/Japan/Materials/M_Foliage',
                      'textures': {'Tex': f'/Game/Japan/Textures/T_leaf_{name}'},
                      'scalars': {}, 'vectors': {}}}
@@ -156,7 +157,7 @@ def test_a_package_read_but_not_owned_by_an_input_is_reported(tmp_path):
 # --- the importer --------------------------------------------------------------------------------------------------
 
 def test_the_runner_knows_the_material_instance_importer():
-    assert run.IMPORTERS['material-instance'] == ('material-instance', 1)
+    assert run.IMPORTERS['material-instance'] == ('material-instance', 2)
 
 
 class FakeMaterialEditor:
@@ -206,7 +207,7 @@ def test_an_import_writes_only_the_instance_and_records_the_inputs_it_read(game)
     assert editor.calls == [{'parent': '/Game/Japan/Materials/M_Foliage',
                              'textures': {'Tex': '/Game/Japan/Textures/T_leaf_amber'}, 'scalars': {}, 'vectors': {}}]
     record = records.load_verified(game / 'assets/material/fake/leaf-amber/verified.json')
-    assert record['kind'] == 'imported' and record['tool'] == 'material-instance@1'
+    assert record['kind'] == 'imported' and record['tool'] == 'material-instance@2'
     assert list(record['files']) == ['unreal/Content/Japan/Materials/MI_LeafAmber.uasset']
     assert set(record['dependencies']) == {'adopted/fake/materials/base', 'adopted/fake/textures/leaf'}
 
@@ -233,3 +234,48 @@ def test_an_input_the_record_does_not_declare_stops_the_plan_before_any_editor(g
     write(game / 'assets/material/fake/leaf-amber/asset.toml', material_toml(deps='["adopted/fake/materials/base"]'))
     with pytest.raises(run.ImportError_, match='T_leaf_amber'):
         run.plan(game, ['material/fake/leaf-amber'])
+
+
+# --- the in-editor override check ----------------------------------------------------------------------------------
+
+def _import_asset_with_fake_unreal(monkeypatch):
+    """import_asset.py with a stand-in `unreal` module: only its pure override helpers are exercised."""
+    import types
+    fake = types.ModuleType('unreal')
+    fake.EditorAssetLibrary = object()
+    fake.AssetToolsHelpers = types.SimpleNamespace(get_asset_tools=lambda: None)
+    fake.V2SaveGuard = types.SimpleNamespace(is_active=lambda: False)   # the script's main() refuses at once
+    monkeypatch.setitem(sys.modules, 'unreal', fake)
+    scripts = ROOT / 'unreal' / 'Scripts'
+    monkeypatch.syspath_prepend(str(scripts))
+    spec = importlib.util.spec_from_file_location('v2_import_asset_overrides', scripts / 'import_asset.py')
+    module = importlib.util.module_from_spec(spec)
+    with pytest.raises(RuntimeError, match='save guard is not active'):
+        spec.loader.exec_module(module)   # the helpers are defined before the script's trailing main() refuses
+    return module
+
+
+class FakeParam:
+    def __init__(self, name):
+        self.info = types.SimpleNamespace(get_editor_property=lambda key: name)
+
+    def get_editor_property(self, key):
+        return self.info
+
+
+class FakeInstance:
+    def __init__(self, scalars=(), vectors=(), textures=()):
+        self.props = {'scalar_parameter_values': [FakeParam(n) for n in scalars],
+                      'vector_parameter_values': [FakeParam(n) for n in vectors],
+                      'texture_parameter_values': [FakeParam(n) for n in textures]}
+
+    def get_editor_property(self, key):
+        return self.props[key]
+
+
+def test_an_override_the_record_no_longer_states_is_refused(monkeypatch):
+    module = _import_asset_with_fake_unreal(monkeypatch)
+    settings = {'parent': '/Game/Japan/Materials/M_Foliage', 'textures': {'Tex': '/Game/Japan/Textures/T_leaf_amber'},
+                'scalars': {}, 'vectors': {}}
+    assert module._undeclared_overrides(FakeInstance(textures=['Tex']), settings) == []
+    assert module._undeclared_overrides(FakeInstance(vectors=['Tint'], textures=['Tex']), settings) == ['vectors:Tint']
