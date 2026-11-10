@@ -1,5 +1,6 @@
-# Donor generator (tools/migrate/brinecove_market.py pier_model): one harbour pier from its L.PIERS row, the
-# body of procedural/harbor.py's first pier loop with the shared Builder and kit helpers (no other harbour model).
+# Donor generator (tools/migrate/brinecove_market.py pier_model): one harbour pier from its L.PIERS row and its
+# recorded crate yaws (pier_cargo.json, from the donor replay), the bodies of procedural/harbor.py's two pier loops
+# with the shared Builder and kit helpers (no other harbour model); without the cargo it is the props5 carve.
 # It owns no package. Its sources are copied into src/ and pinned by sha256; the pier records reference it.
 schema = 1
 id = "generator/brinecove/piers"
@@ -24,3 +25,7 @@ sha256 = "35117af22cada2a002862a2364dae189b6399ecdb0ec074edf0b81e7a921c45b"
 [[sources]]
 path = "src/kit.py"
 sha256 = "e882a6573c37b74cb5f2aaf4a263b3e51dfe07928c9c2f4b677f6c458c43dcdc"
+
+[[sources]]
+path = "src/pier_cargo.json"
+sha256 = "d666d204e789f2ffb8ff2f29201bf6078aae0eef902f9451d0da94ce57dc395e"

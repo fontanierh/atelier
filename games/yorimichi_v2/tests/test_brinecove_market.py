@@ -815,18 +815,25 @@ def test_a_rerun_of_a_carved_record_binds_its_slots_by_name():
 
 @pytest.mark.skipif(not DONOR or not Path(DONOR).is_dir(), reason='needs the donor export (YV2_DONOR_BUILD)')
 def test_donor_each_pier_has_an_independent_generator_that_reproduces_it():
-    """pier_model builds one pier from its L.PIERS row alone: exactly the faces harbor() makes in that pier's scope and
-    not in a cargo piece (same corners, same materials), and every triangle of the carved pier record."""
+    """pier_model builds one pier from its L.PIERS row and its recorded crate yaws alone: exactly the faces harbor() makes
+    in that pier's scopes, cargo included (same corners, same materials); without the yaws, exactly those faces outside
+    the cargo pieces (the carve). The recorded yaws are the replay's, and both models match the pier records."""
     donor = Path(DONOR)
     src = market.donor_source(donor)
     built = market.replay(src, 'Harbor')
+    cargo = market.pier_cargo(src)
+    assert sorted(cargo) == ['central', 'east', 'west'] and all(len(v) == 3 for v in cargo.values())
+
+    def faces(model, keep=lambda c: True):
+        return sorted((tuple(tuple(model['verts'][i]) for i in f), m)
+                      for f, m, c in zip(model['faces'], model['mats'], model.get('owner', [None] * len(model['faces'])))
+                      if keep(c))
     for name in ('central', 'west', 'east'):
         own = 'pier-' + name
-        want = sorted((tuple(tuple(built['verts'][i]) for i in f), m) for f, m, c in
-                      zip(built['faces'], built['mats'], built['owner']) if c and c[-1] == own)
-        alone = market.pier_model(src, name)
-        got = sorted((tuple(tuple(alone['verts'][i]) for i in f), m) for f, m in zip(alone['faces'], alone['mats']))
-        assert got == want and got
+        whole = faces(built, lambda c: bool(c) and c[0] == own)
+        carved = faces(built, lambda c: bool(c) and c[-1] == own)
+        assert faces(market.pier_model(src, name, cargo[name])) == whole and len(whole) > len(carved)
+        assert faces(market.pier_model(src, name)) == carved and carved
         game = Path(market.__file__).resolve().parents[2]
         if (game / f'assets/prop/brinecove/harbor-pier-{name}/asset.toml').is_file():
             assert market.pier_problems(game, src, name) == []

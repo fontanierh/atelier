@@ -158,10 +158,12 @@ def _forget():
         del sys.modules[name]
 
 
-def replay(src: Path, component: str, scopes=SCOPES) -> dict:
+def replay(src: Path, component: str, scopes=SCOPES, record: tuple = ()) -> dict:
     """Run the donor constructor of `component` at its recorded RNG position and return
     {'verts', 'faces', 'mats', 'owner': [scope keys or None per face]} (the Builder's own lists). A face's keys are every
-    scope it was made in, outermost first: the last is its owner, the others the coarser objects that contain it."""
+    scope it was made in, outermost first: the last is its owner, the others the coarser objects that contain it.
+    `record` names module-level helpers of the constructor's module (e.g. 'crate') whose calls are also returned, in
+    order, as 'calls': [(name, arguments after the builder)]."""
     scopes = [s for s in scopes if s['component'] == component]
     if not scopes:
         raise MarketError(f'no object scopes for {component}')
@@ -198,13 +200,21 @@ def replay(src: Path, component: str, scopes=SCOPES) -> dict:
             owner.extend([tuple(chain) or None] * (len(self.faces) - before))
 
         geom.Builder.face = face
+        calls, saved = [], {name: getattr(mod, name) for name in record}
+        for name, helper in saved.items():
+            def logged(b, *args, _name=name, _helper=helper):
+                calls.append((_name, args))
+                return _helper(b, *args)
+            setattr(mod, name, logged)
         try:
             builder = getattr(mod, module)()
         finally:
             geom.Builder.face = original
+            for name, helper in saved.items():
+                setattr(mod, name, helper)
         if len(owner) != len(builder.faces):
             raise MarketError('face ownership lost count; the builder changed faces outside Builder.face')
-        return {'verts': builder.verts, 'faces': builder.faces, 'mats': builder.mats, 'owner': owner}
+        return {'verts': builder.verts, 'faces': builder.faces, 'mats': builder.mats, 'owner': owner, 'calls': calls}
     finally:
         for path in added:
             sys.path.remove(path)
@@ -214,19 +224,25 @@ def replay(src: Path, component: str, scopes=SCOPES) -> dict:
 
 # --- an independent generator: one harbour pier ----------------------------------------------------------------------------
 # props5 carves the cargo off the three piers, a change to those models' geometry, so each pier first gets a generator
-# of its own (games/CONTRACTS independent-generator-before-model-edit). `harbor()` builds the whole harbour; its first
-# `for name, px, y0, y1, width in L.PIERS:` loop body is the pier and nothing else (the cargo is the second such loop),
-# and it uses no RNG. pier_model is that body for one row, with the donor's shared Builder and kit helpers.
+# of its own (games/CONTRACTS independent-generator-before-model-edit). `harbor()` builds the whole harbour; the accepted
+# pier is the body of both of its `for name, px, y0, y1, width in L.PIERS:` loops for that row: the first is the pier
+# (no RNG), the second its cargo, whose crate yaws come from the shared harbour RNG. pier_model rebuilds one pier from its
+# row and those yaws, recorded once from the donor replay at its RNG position (pier_cargo, kept in the generator record);
+# without the yaws it builds the pier with its cargo removed, which is the carve props5 applies.
 
 PIER_SOURCES = ('world/regions/brinecove/procedural/harbor.py', 'world/regions/brinecove/layout.py',
                 'world/regions/brinecove/geom.py', 'world/regions/brinecove/kit.py')
+PIER_CARGO = ((0.22, -4.2), (0.52, 3.4), (0.78, -2.6))     # harbor.py's cargo loop: (t along the pier, x offset)
+PIER_CARGO_FILE = 'pier_cargo.json'                          # the recorded crate yaws, in the generator record's src/
 
 
-def pier_model(src: Path, name: str) -> dict:
+def pier_model(src: Path, name: str, yaws: list | None = None) -> dict:
     """@cc [owner:fontanierh,label:architecture] brinecove-pier-generator
     One pier's geometry from its explicit `L.PIERS` row, built without any other harbour model: {'verts', 'faces',
-    'mats'} (the Builder's own lists). Shared helpers stay the donor's (Builder, bollard, lantern_post); the loop body
-    is `procedural/harbor.py`'s first pier loop, and pier_problems proves it reproduces the accepted pier."""
+    'mats'} (the Builder's own lists). Shared helpers stay the donor's (Builder, bollard, lantern_post, crate, barrel).
+    With `yaws` (the pier's three recorded crate yaws, pier_cargo) it is the accepted pier: the bodies of both of
+    `procedural/harbor.py`'s pier loops for this row. Without them it is that pier with its cargo removed, the carve.
+    pier_problems proves both against the records."""
     old_flag, sys.dont_write_bytecode = sys.dont_write_bytecode, True
     added = [str(src / 'world'), str(src / 'world' / 'regions')]
     sys.path[:0] = added
@@ -263,12 +279,52 @@ def pier_model(src: Path, name: str) -> dict:
                     kit.bollard(b, px + side * (width / 2 - 1.2), yy, 5.3)
         kit.lantern_post(b, px - width / 2 + 1.4, y1 + 3, 5.3, 3.0)
         kit.lantern_post(b, px + width / 2 - 1.4, y0 - 16, 5.3, 3.0)
+        if yaws is not None:
+            if len(yaws) != len(PIER_CARGO):
+                raise MarketError(f'pier {name}: {len(yaws)} crate yaws, the cargo loop places {len(PIER_CARGO)}')
+            for (t, off), yaw in zip(PIER_CARGO, yaws):
+                py = y0 + (y1 - y0) * t
+                kit.crate(b, px + off, py, 5.3, 0.9, yaw)
+                kit.barrel(b, px + off + 1.5, py + 0.9, 5.3, 0.85)
+                if t > 0.5:
+                    b.ring((px + off - 1.2, py - 1.0, 5.32), 0.55, 0.07, 'rope', sides=10)
         return {'verts': b.verts, 'faces': b.faces, 'mats': b.mats}
     finally:
         for path in added:
             sys.path.remove(path)
         _forget()
         sys.dont_write_bytecode = old_flag
+
+
+def pier_rows(src: Path) -> list:
+    """The donor's `L.PIERS` rows (name, x, y0, y1, width)."""
+    added = [str(src / 'world'), str(src / 'world' / 'regions')]
+    sys.path[:0] = added
+    _forget()
+    try:
+        import importlib
+        return [tuple(r) for r in importlib.import_module('brinecove.layout').PIERS]
+    finally:
+        for path in added:
+            sys.path.remove(path)
+        _forget()
+
+
+def pier_cargo(src: Path) -> dict:
+    """{pier: [three crate yaws]}: the yaw harbor() gives each crate of each pier's cargo, read from the donor replay at
+    its recorded RNG position (the only RNG input of a pier). Each crate is found by its exact place and size."""
+    calls = [args for name, args in replay(src, 'Harbor', record=('crate',))['calls'] if name == 'crate']
+    out = {}
+    for name, px, y0, y1, _ in pier_rows(src):
+        yaws = []
+        for t, off in PIER_CARGO:
+            at = (px + off, y0 + (y1 - y0) * t, 5.3, 0.9)
+            found = [args[4] for args in calls if tuple(args[:4]) == at]
+            if len(found) != 1:
+                raise MarketError(f'pier {name}: {len(found)} crate calls at {at}, expected one')
+            yaws.append(found[0])
+        out[name] = yaws
+    return out
 
 
 PIER_GENERATOR = 'generator/brinecove/piers'
@@ -279,13 +335,16 @@ def pier_generator_files(src: Path) -> dict:
     pinned by sha256 (the form of generator/bike/wheels). Editor-owned, no outputs; the carved piers reference it."""
     import hashlib
     files = {f'assets/{PIER_GENERATOR}/src/{Path(rel).name}': (src / rel).read_bytes() for rel in PIER_SOURCES}
-    lines = ['# Donor generator (tools/migrate/brinecove_market.py pier_model): one harbour pier from its L.PIERS row, the',
-             '# body of procedural/harbor.py\'s first pier loop with the shared Builder and kit helpers (no other harbour model).',
+    files[f'assets/{PIER_GENERATOR}/src/{PIER_CARGO_FILE}'] = (json.dumps(pier_cargo(src), indent=1, sort_keys=True)
+                                                               + '\n').encode()
+    lines = ['# Donor generator (tools/migrate/brinecove_market.py pier_model): one harbour pier from its L.PIERS row and its',
+             '# recorded crate yaws (pier_cargo.json, from the donor replay), the bodies of procedural/harbor.py\'s two pier loops',
+             '# with the shared Builder and kit helpers (no other harbour model); without the cargo it is the props5 carve.',
              '# It owns no package. Its sources are copied into src/ and pinned by sha256; the pier records reference it.',
              'schema = 1', f'id = "{PIER_GENERATOR}"', 'kind = "generator"', 'authority = "editor"',
              'owner = "shared/brinecove/piers"', 'license = "owner-published (docs/DECISIONS.md D05 group 1)"',
              'provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"']
-    for rel in PIER_SOURCES:
+    for rel in (*PIER_SOURCES, PIER_CARGO_FILE):
         name = Path(rel).name
         lines += ['', '[[sources]]', f'path = "src/{name}"',
                   f'sha256 = "{hashlib.sha256(files[f"assets/{PIER_GENERATOR}/src/{name}"]).hexdigest()}"']
@@ -294,23 +353,35 @@ def pier_generator_files(src: Path) -> dict:
 
 
 def pier_problems(game: Path, src: Path, name: str) -> list[str]:
-    """The pier generator against the accepted record: every triangle the pier record draws now (its carve remainder)
-    is generated by pier_model exactly once, and pier_model generates nothing else."""
+    """The pier generator against the accepted record, both ways round:
+    - with the recorded crate yaws (the generator record's pier_cargo.json), it is the accepted pier: every triangle of
+      the record's pinned original (its first source, the model before the carve) is generated exactly once, and it
+      generates nothing else;
+    - without them it is the carve: the same for every triangle the record draws now."""
     rid = f'prop/brinecove/harbor-pier-{name}'
-    built = pier_model(src, name)
-    built['owner'] = [rid] * len(built['faces'])
-    index = face_index(built)
     apply_ = _apply()
     asset = apply_.records.load_asset(game / 'assets' / rid / 'asset.toml')
+    problems = []
     try:
-        tris = drawn_triangles(game, rid, {'mesh': asset.outputs[0].package.rsplit('/', 1)[1]})
-        owners_of(tris, index)
-    except (OSError, ValueError, MarketError, apply_.carve.CarveError) as error:
-        return [f'{rid}: the pier generator does not reproduce the record: {error}']
-    made = sum(len(f) - 2 for f in built['faces'])         # each n-gon face is n - 2 triangles
-    if made != len(tris):
-        return [f'{rid}: the pier generator makes {made} triangles, the record draws {len(tris)}']
-    return []
+        yaws = json.loads((game / 'assets' / PIER_GENERATOR / 'src' / PIER_CARGO_FILE).read_text())[name]
+        cases = (('accepted pier', pier_model(src, name, yaws),
+                  lambda: list(split.triangles(split.read_glb(game / 'assets' / rid / asset.sources[0].path)))),
+                 ('carved pier', pier_model(src, name),
+                  lambda: drawn_triangles(game, rid, {'mesh': asset.outputs[0].package.rsplit('/', 1)[1]})))
+    except (OSError, KeyError, ValueError, MarketError) as error:
+        return [f'{rid}: the pier generator cannot be run: {error}']
+    for label, built, read in cases:
+        built['owner'] = [rid] * len(built['faces'])
+        try:
+            tris = read()
+            owners_of(tris, face_index(built))
+        except (OSError, ValueError, MarketError, apply_.carve.CarveError) as error:
+            problems.append(f'{rid}: the pier generator does not reproduce the {label}: {error}')
+            continue
+        made = sum(len(f) - 2 for f in built['faces'])     # each n-gon face is n - 2 triangles
+        if made != len(tris):
+            problems.append(f'{rid}: the pier generator makes {made} triangles for the {label}, the record has {len(tris)}')
+    return problems
 
 
 # --- matching generated faces to donor triangles -------------------------------------------------------------------------
