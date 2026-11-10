@@ -78,8 +78,8 @@ Saved, prepared and packaged totals are kept separate:
   [exceptions](inventory/exceptions.md#current-source-classification). Brine Cove `props1` (13 harbour objects, claim
   `BCPROPS1`, [PR #813](https://github.com/fontanierh/atelier/pull/813)) is merged too. Package `c89f535441be` predates
   both.
-- **Remaining source/detail work:** the standalone Mega Park map's reference check, the bike wheels (`Bike.blend`, their
-  generator, is not recorded) and the `MPC_SeeThrough` and `RuntimeData` routes: 4 records / 5 packages in
+- **Remaining source/detail work:** the standalone Mega Park map's reference check and the `MPC_SeeThrough` and
+  `RuntimeData` routes: 3 records / 3 packages in
   [exceptions](inventory/exceptions.md#current-source-classification).
 
 Remaining construction work:
@@ -97,7 +97,8 @@ Remaining construction work:
     Forecast **19:30**, low confidence, for these steps in order:
     - the Mega Park standalone map's reference check (a native read);
     - `MPC_SeeThrough` and `RuntimeData` routes;
-    - the bike wheels. Their `Bike.blend` generator is unrecorded, so this step carries the most risk.
+    - the bike wheels are done (claim `BCBIKE`): `prop/bike/wheel-front` and `wheel-rear` are imported from the pinned
+      generator `generator/bike/wheels` (`build.py` `wheel()`; `Bike.blend` is a review-scene output, not a source).
   - Useful-object splitting stays at **23:00**, low confidence. Brine Cove `props2` (quay cargo and fish baskets) is in
     progress; the remaining residual fused scenery and patches are unsized.
 
