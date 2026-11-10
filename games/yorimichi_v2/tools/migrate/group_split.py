@@ -239,10 +239,8 @@ def prepare(split: Split, game: Path, taken: list[dict], claim: str, render: Cal
 
 
 def retire(split: Split, game: Path, taken: list[dict], claim: str, *, lockable=None, echo=print) -> str:
-    """Step 3.
-
-    @cc [owner:fontanierh,label:safety] group-split-retire-after-receipts
-    A group's records, actor packages and saved key are deleted only once every replacement has an accepted receipt
+    """@cc [owner:fontanierh,label:safety] group-split-retire-after-receipts
+    Step 3. A group's records, actor packages and saved key are deleted only once every replacement has an accepted receipt
     (receipt_ok: saved definition, record and verified hash of each actor package); any other state refuses and changes
     nothing, so the members are never left undrawn. A rerun after it is a no-op."""
     apply.Journal(game).recover(claim)
