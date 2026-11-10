@@ -497,7 +497,8 @@ def instance_records(game: Path, donor: Path, texture_owner: dict) -> list:
         for adopted, packages in sorted(groups.items()):
             rows = [{'package': pkg, 'parent': expected[pkg]['parent'],
                      'textures': {k: v for k, v in expected[pkg]['textures'].items() if v},
-                     'scalars': expected[pkg]['scalars'], 'vectors': expected[pkg]['vectors']} for pkg in packages]
+                     'scalars': expected[pkg]['scalars'], 'vectors': expected[pkg]['vectors'],
+                     'base': expected[pkg].get('base', {})} for pkg in packages]
             reads = {row['parent'] for row in rows} | {v for row in rows for v in row['textures'].values()}
             inputs = set()
             for package in reads:
@@ -534,8 +535,8 @@ def instance_record_text(rec: NewRecord) -> str:
              '', '[recipe]', 'importer = "material-instance"', 'version = 2', '', '[recipe.settings]']
     for row in rec.instances:
         lines += ['', '[[recipe.settings.instances]]', f'package = "{row["package"]}"', f'parent = "{row["parent"]}"']
-        for key in ('textures', 'scalars', 'vectors'):
-            if row[key]:
+        for key in ('textures', 'scalars', 'vectors', 'base'):
+            if row.get(key):
                 lines.append(f'{key} = {recover._toml(row[key])}')
     lines += ['']
     for package in rec.outputs:

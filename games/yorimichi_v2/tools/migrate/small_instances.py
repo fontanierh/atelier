@@ -135,9 +135,65 @@ def expected_fx(donor: Path) -> dict:
             for name, (parent, tex) in FX_PARENTS.items()}
 
 
+# The Japan instances (shared_materials.py:251-279 build_materials, through material_assets.py:70-80 instance(): Tex
+# and Tint only, the base-property overrides reset). Name -> (parent, Tex texture or None, Tint rgb or None).
+JP_M, JP_T = '/Game/Japan/Materials/', '/Game/Japan/Textures/'
+JAPAN_ROWS = {
+    **{f'Leaf{k}': ('M_Foliage', f'T_leaf_{t}', None) for k, t in (
+        ('Broad', 'broad'), ('Cedar', 'cedar'), ('Pine', 'pine'), ('Ochre', 'ochre'), ('Maple', 'maple'),
+        ('Small', 'small'), ('OchreSmall', 'ochre_small'))},                                              # :256-262
+    'LeafGinkgo': ('M_Foliage', 'T_leaf_ginkgo', (1., .72, .42)),                                       # :261
+    'Litter': ('M_Foliage', 'T_litter', None), 'Flower': ('M_Foliage', 'T_flower', None),                 # :262-263
+    'Grass': ('M_Grass', 'T_grass', None),                                                               # :258
+    'RoofTile': ('M_Painted', 'T_rooftile', (.40, .42, .48)),                                            # :264
+    'Bark': ('M_Painted', 'T_bark', None), 'Concrete': ('M_Painted', 'T_concrete', None),                 # :267
+    'BarkOlive': ('M_Painted', 'T_bark_olive', None), 'BarkTuscan': ('M_Painted', 'T_bark_olive', (.65, .55, .4)),
+    'Ground': ('M_Painted', 'T_ground', None), 'Road': ('M_Painted', 'T_road', (.34, .33, .33)),          # :272
+    'Water': ('M_Painted', 'T_water', None),
+    'Sky': ('M_Sky', None, (1.35, 1.35, 1.35)),                                                          # :273
+    **{k: ('M_Painted', 'T_white', c) for k, c in (                                                       # :274-278
+        ('Paint', (.85, .85, .82)), ('Stone', (.50, .50, .47)), ('Vermilion', (.62, .12, .06)),
+        ('Plaster', (.80, .74, .62)), ('Tile', (.16, .17, .20)), ('Wood', (.18, .11, .07)),
+        ('Feather', (.92, .92, .90)), ('FeatherDark', (.10, .10, .12)), ('Metal', (.08, .08, .09)),
+        ('Rock', (.30, .27, .24)), ('Lattice', (.14, .10, .08)), ('Moss', (.30, .38, .16)))},
+    'Sand': ('M_Painted', 'T_white', (.24, .185, .10)),                                                  # import_southwest.py:25-31
+    **{f'Leaf{k}': ('M_Foliage', f'T_Leaf{k}', None) for k in ('Cypress', 'Oak', 'Olive', 'StonePine')},  # import_forest.py:24-38
+    'FarForest': ('M_ForestGround', None, None),                                                         # import_island_world.py:54
+    'Coast': ('M_ForestGround', None, None),                                                             # forest_ground.py:115-121
+    'CoastRock': ('M_CoastRock', None, None),                                                            # forest_ground.py:124-134
+    'NorthRockCaps': ('M_NorthMountains', None, None),                                                   # mountain_material.py:234-245
+}
+JAPAN_SCALARS = {'Coast': {'NearGround': 1.}, 'NorthRockCaps': {'Caps': 1.}}   # forest_ground.py:118, mountain_material.py:242
+JAPAN_VECTORS = {'Paint': {'CutScale': [1., .25, 1., 1.]}}                   # see_through.py:76 SCALES, :529-532 cut_scale
+# Base-property overrides: the bark instances blend their LODs (foliage_material.py:20-27, shared_materials.py:270-271);
+# the M_Painted instances that may stand before the camera are masked at clip 0.5 (see_through.py:56 PAINTED, :437-446).
+JAPAN_LOD_BLEND = ('Bark', 'BarkOlive', 'BarkTuscan')
+JAPAN_MASKED = ('Bark', 'RoofTile', 'Tile', 'Plaster', 'Wood', 'Lattice', 'Vermilion', 'Paint', 'Metal', 'Stone', 'Concrete')
+
+
+def expected_japan(donor: Path) -> dict:
+    """The 41 Japan instances the donor scripts write (JAPAN_ROWS and the tables after it); the two used leaves
+    (MI_LeafAmber, MI_LeafCrimson) have their own records and no generator, so they are not named."""
+    out = {}
+    for name, (parent, tex, tint) in JAPAN_ROWS.items():
+        base = {}
+        if name in JAPAN_MASKED:
+            base.update(blend_mode='BLEND_MASKED', opacity_mask_clip_value=.5)
+        if name in JAPAN_LOD_BLEND:
+            base['dithered_lod_transition'] = True
+        vectors = dict(JAPAN_VECTORS.get(name, {}))
+        if tint is not None:
+            vectors['Tint'] = [*tint, 1.]
+        out[f'{JP_M}MI_{name}'] = {'parent': JP_M + parent, 'textures': {'Tex': JP_T + tex} if tex else {},
+                                   'scalars': dict(JAPAN_SCALARS.get(name, {})), 'vectors': vectors, 'base': base,
+                                   'natural': False, 'seam': False}
+    return out
+
+
 EXPECTED = {'megapark': expected_megapark, 'belmonte': expected_belmonte, 'treehouse': expected_treehouse,
-            'hidamari': expected_hidamari, 'fx': expected_fx}
-READ_FILE = {'megapark': 'megapark', 'belmonte': 'belmonte', 'treehouse': 'treehouse', 'hidamari': 'hidamari', 'fx': 'fx'}
+            'hidamari': expected_hidamari, 'fx': expected_fx, 'japan': expected_japan}
+READ_FILE = {'megapark': 'megapark', 'belmonte': 'belmonte', 'treehouse': 'treehouse', 'hidamari': 'hidamari', 'fx': 'fx',
+             'japan': 'japan'}
 
 
 def _package(path: str) -> str:
@@ -192,6 +248,12 @@ def agreement(family: str, donor: Path) -> dict:
                 held.append(f'texture {name} reads {got}, not {package_path}')
         if family == 'belmonte' and want['textures'] and any(v is None for v in want['textures'].values()):
             held.append('a textured Belmonte row: its texture is not yet mapped to a package')
+        if 'base' in want and row.get('base') != want['base']:
+            # the read reports every set override; a value is compared to 1e-4 (a clip value reads back as a float32)
+            got = row.get('base')
+            if not (isinstance(got, dict) and set(got) == set(want['base']) and all(
+                    got[k] == v if isinstance(v, (bool, str)) else _close(got[k], v, 1e-4) for k, v in want['base'].items())):
+                held.append(f'base overrides read {got}, not {want["base"]}')
         if family == 'megapark' and want['natural']:
             held.append('a two-sided base-property override (recipe v2 cannot state it)')
         out[package] = {'agree': not held, 'held': held}
