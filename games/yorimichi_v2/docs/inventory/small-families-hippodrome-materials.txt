@@ -1,0 +1,5 @@
+/Game/Hippodrome/Materials/M_HD_Dirt
+/Game/Hippodrome/Materials/M_HD_Grass
+/Game/Hippodrome/Materials/M_HD_Rail
+/Game/Hippodrome/Materials/M_HD_Stone
+/Game/Hippodrome/Materials/M_HD_Structure

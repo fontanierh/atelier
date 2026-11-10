@@ -945,3 +945,80 @@ The counts above were read from canonical `asset.toml` files in the immutable Gi
 inside another asset's source folder. A loose filesystem glob can include stale/untracked records and donor copies.
 `verified.json` and `objects.saved.json` distinguish imported packages from saved placements. Keep changes to this
 page and the main inventory in the same content PR; do not mark a family complete from a plan or provisional receipt.
+
+## Small families: source closure plan (planned, not imported)
+
+The ten smaller families of "Source closure still to classify" (90 packages in 25 adopted records) are classified by
+`tools/migrate/small_families.py`. Its plan mode reads the committed records, the hydrated bytes (each file matches its
+`verified.json` sha256) and the donor. Nothing is imported, claimed or written. Counts are pinned by
+`tests/test_small_families.py`.
+
+### Hippodrome (3 records, 23 packages)
+
+Plan: `games/yorimichi_v2/tools/migrate/small_families.py` (plan mode only; `--claim` is refused). Donor checkout read
+only (`~/dev/atelier-yv2-donor`, commit `7eec0f98dd`). Evidence and verdicts for the three records:
+
+- `adopted/hippodrome/loose_files` (4 static meshes): the donor writes these GLBs in `world/regions/hippodrome/build.py`
+  and imports them in `unreal/Scripts/import_hippodrome.py:161-177`. The four GLBs are in the donor
+  (`build/yorimichi/hippodrome/region/glb/`) with the same bytes as the exports. The static-mesh importer fits: its
+  precedent is `prop/hippodrome/lane`, whose committed `src/SM_HD_Lane.glb` (sha256 `1b1558f9…`) equals the donor region
+  GLB. Pins (sha256 of the donor GLB, triangles from `build/yorimichi/hippodrome/import-report.json`):
+
+  | Package | GLB sha256 | Triangles | GLB material |
+  |---|---|---:|---|
+  | `SM_HD_FinishPost` | `123ab4602df5111d…` | 5006 | `HD_FinishPost` |
+  | `SM_HD_Grandstand` | `92add5b3492eb839…` | 24940 | `HD_Grandstand` |
+  | `SM_HD_JudgesTower` | `ebfe7c40abbd75f5…` | 11779 | `HD_JudgesTower` |
+  | `SM_HD_ToteBoard` | `8086362ef6c65c64…` | 11859 | `HD_ToteBoard` |
+
+  The loose packages' bytes name `M_HD_Structure` as their master, so that is the slot material of the recipe. Status:
+  **planned**. The four `prop/hippodrome/<part>` records would need the GLBs copied into `src/` (not done here) and a
+  claimed native import. The object records `object/hippodrome/{finish-post,grandstand,judges-tower,tote-board}` still
+  reference this record, so nothing changes until that import is accepted.
+- `adopted/hippodrome/materials` (5 material masters): `import_hippodrome.py:32-33` (SURFACES: grass, dirt, stone, rail)
+  and `:60-61` (`M_HD_Structure`). `T_Dirt` and `T_Grass` are owned by `texture/hippodrome/*`. Status: **blocked**: kind
+  `material` has no importer, so the graph and parameters need a native read before anything can be recorded.
+- `adopted/hippodrome/meshes` (14 packages): the Interchange sub-objects of the same four GLBs (`import_hippodrome.py:102-103`
+  puts each GLB in `Meshes/<name>`), with the embedded `Color_<uuid>` textures. The loose meshes reference them (18 files
+  under `unreal/Content` name `Hippodrome/Meshes/`). Status: **blocked** until a loose re-import is accepted and a
+  referencer check shows nothing else uses them.
+
+Native reads still needed (read-only; each needs an editor and a clean hydrate). The list file is
+`docs/inventory/small-families-hippodrome-materials.txt`; the command is the Japan form with `V2_REPORT_PACKAGES` set to
+that list, `V2_REPORT_OUT` under `build/yorimichi_v2/reports/`, and `editor.run` as the step.
+
+`report_materials.py` reads material instances; it may not read the masters (`M_HD_*`), so those rows need a master
+reader first. No static-mesh reader exists in this tree for the loose meshes or the `Meshes/` sub-objects.
+
+Blockers: the static mesh import (not run, claim needed); master materials have no importer; the `Meshes/` sub-objects
+need a referencer proof before any retirement.
+
+- `adopted/hippodrome/loose_files`: generated static mesh (GLB, region/glb). Evidence: donor world/regions/hippodrome/build.py via unreal/Scripts/import_hippodrome.py:161-177. Status: **planned**. static-mesh recipe needs the GLB copied to src/ and a native import; object records still reference this record
+- `adopted/hippodrome/materials`: generator master materials M_HD_Structure and M_HD_<surface>. Evidence: import_hippodrome.py:32-33 (SURFACES), :60-61 (M_HD_Structure). Status: **blocked**. no importer for material masters (kind material has no recipe); parameters need a native read
+- `adopted/hippodrome/meshes`: Interchange sub-objects of the loose GLB imports. Evidence: import_hippodrome.py:102-103 (Meshes/<name> folder per GLB). Status: **blocked**. referenced by the four loose meshes (18 files under unreal/Content name Hippodrome/Meshes/); retire only after a loose re-import
+
+| Package | Record | Status | Inputs (owner records) | Native read still needed |
+|---|---|---|---|---|
+| `SM_HD_FinishPost` | `hippodrome/loose_files` | planned | Hippodrome/Meshes/SM_HD_FinishPost/HD_FinishPost, Hippodrome/Meshes/SM_HD_FinishPost/HD_FinishPost | no static-mesh reader in this tree |
+| `SM_HD_Grandstand` | `hippodrome/loose_files` | planned | Hippodrome/Meshes/SM_HD_Grandstand/HD_Grandstand, Hippodrome/Meshes/SM_HD_Grandstand/HD_Grandstand | no static-mesh reader in this tree |
+| `SM_HD_JudgesTower` | `hippodrome/loose_files` | planned | Hippodrome/Meshes/SM_HD_JudgesTower/HD_JudgesTower, Hippodrome/Meshes/SM_HD_JudgesTower/HD_JudgesTower | no static-mesh reader in this tree |
+| `SM_HD_ToteBoard` | `hippodrome/loose_files` | planned | Hippodrome/Meshes/SM_HD_ToteBoard/HD_ToteBoard, Hippodrome/Meshes/SM_HD_ToteBoard/HD_ToteBoard | no static-mesh reader in this tree |
+| `M_HD_Dirt` | `hippodrome/materials` | blocked | Hippodrome/Textures/T_Dirt | `report_materials` (material list) |
+| `M_HD_Grass` | `hippodrome/materials` | blocked | Hippodrome/Textures/T_Grass | `report_materials` (material list) |
+| `M_HD_Rail` | `hippodrome/materials` | blocked | - | `report_materials` (material list) |
+| `M_HD_Stone` | `hippodrome/materials` | blocked | - | `report_materials` (material list) |
+| `M_HD_Structure` | `hippodrome/materials` | blocked | - | `report_materials` (material list) |
+| `Color_c3f66034-a443-44e1-ac12-bc4a9a617bb9` | `hippodrome/meshes` | blocked | Hippodrome/Meshes/SM_HD_FinishPost | no static-mesh reader in this tree |
+| `HD_FinishPost` | `hippodrome/meshes` | blocked | Hippodrome/Materials/M_HD_Structure, Hippodrome/Materials/M_HD_Structure, Hippodrome/Meshes/SM_HD_FinishPost ... | no static-mesh reader in this tree |
+| `Color_d791cab5-3476-4925-85c1-f4131c7af4b8` | `hippodrome/meshes` | blocked | Hippodrome/Meshes/SM_HD_Grandstand | no static-mesh reader in this tree |
+| `HD_Grandstand` | `hippodrome/meshes` | blocked | Hippodrome/Materials/M_HD_Structure, Hippodrome/Materials/M_HD_Structure, Hippodrome/Meshes/SM_HD_Grandstand ... | no static-mesh reader in this tree |
+| `HD_Grass` | `hippodrome/meshes` | blocked | Hippodrome/Meshes/SM_HD_Ground | no static-mesh reader in this tree |
+| `Color_13d66ee9-7f6a-447a-a77d-ada02b839472` | `hippodrome/meshes` | blocked | Hippodrome/Meshes/SM_HD_JudgesTower | no static-mesh reader in this tree |
+| `HD_JudgesTower` | `hippodrome/meshes` | blocked | Hippodrome/Materials/M_HD_Structure, Hippodrome/Materials/M_HD_Structure, Hippodrome/Meshes/SM_HD_JudgesTower ... | no static-mesh reader in this tree |
+| `HD_Dirt` | `hippodrome/meshes` | blocked | Hippodrome/Meshes/SM_HD_Track | no static-mesh reader in this tree |
+| `HD_Stone` | `hippodrome/meshes` | blocked | Hippodrome/Meshes/SM_HD_Skirt | no static-mesh reader in this tree |
+| `HD_Rail` | `hippodrome/meshes` | blocked | Hippodrome/Meshes/SM_HD_Rails | no static-mesh reader in this tree |
+| `HD_Stone` | `hippodrome/meshes` | blocked | Hippodrome/Meshes/SM_HD_Skirt | no static-mesh reader in this tree |
+| `Color_72c00844-b377-41e6-8796-37d3e46331b9` | `hippodrome/meshes` | blocked | Hippodrome/Meshes/SM_HD_ToteBoard | no static-mesh reader in this tree |
+| `HD_ToteBoard` | `hippodrome/meshes` | blocked | Hippodrome/Materials/M_HD_Structure, Hippodrome/Materials/M_HD_Structure, Hippodrome/Meshes/SM_HD_ToteBoard ... | no static-mesh reader in this tree |
+| `HD_Dirt` | `hippodrome/meshes` | blocked | Hippodrome/Meshes/SM_HD_Track | no static-mesh reader in this tree |
