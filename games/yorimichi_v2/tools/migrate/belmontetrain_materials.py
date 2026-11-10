@@ -635,7 +635,7 @@ def _enum(value):
 
 
 def _path(value):
-    """A read object path without its ".Name" suffix (/Game/X/M_A.M_A -> /Game/X/M_A)."""
+    """A read object path without its ".Name" suffix: "<package>.<name>" -> "<package>"."""
     return value.split('.')[0] if value else None
 
 

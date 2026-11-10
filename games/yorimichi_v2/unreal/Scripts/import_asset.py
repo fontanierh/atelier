@@ -370,12 +370,35 @@ def _switch_value(MEL, instance, name):
     return bool(got[0] if isinstance(got, tuple) else got)
 
 
+def stale_switches(stated, own, inherited):
+    """Sorted names of the static switches the row does not state whose value differs from the parent's. `own` and
+    `inherited` map each switch name to the instance's and the parent's value. Such a switch is an earlier override the
+    record no longer asks for: UE 5.8's clear does not reach static switches, so the import refuses it instead."""
+    return sorted(n for n, v in own.items() if n not in stated and n in inherited and v != inherited[n])
+
+
+def _parent_switch_values(MEL, parent, names):
+    """The parent's value of each switch: an instance parent reads like the instance, a base material its default."""
+    out = {}
+    for name in names:
+        try:
+            if isinstance(parent, U.MaterialInstance):
+                out[name] = _switch_value(MEL, parent, name)
+            else:
+                got = MEL.get_material_default_static_switch_parameter_value(parent, name)
+                out[name] = bool(got[0] if isinstance(got, tuple) else got)
+        except Exception:
+            pass   # a switch the parent cannot report is left out, and no refusal rests on it
+    return out
+
+
 def _material_instances(plan, settings):
     """Write each planned material instance in place: its parent and the parameter values the record states, nothing
     else. A new package is created; an existing one keeps its object path, so references to it survive, and its donor
     import data is scrubbed first. The values are read back before the save, because UE 5.8's setters report False
     (tint_material.py), so the read is the proof. Parameter names come from the record (BaseColorTexture, BaseColorFactor,
-    RoughnessFactor, ...), and the donor's static switches are not written here (the record form has none)."""
+    RoughnessFactor, ...). Static switches are written where the row states them; one it does not state must read the
+    parent's value, or the import is refused."""
     MEL = U.MaterialEditingLibrary
     for row in import_settings.material_instances(settings, plan['packages']):
         package, parent_path = row['package'], row['parent']
@@ -394,9 +417,9 @@ def _material_instances(plan, settings):
             raise RuntimeError(f'{package} is not a material instance')
         instance.set_editor_property('parent', parent)   # the editable parent property, as the saved records hold it
         # Every earlier override goes first, so a value the row no longer states falls back to the parent. This clears the
-        # scalar, vector and texture overrides only. Static switches are not cleared: a switch the row does not state keeps
-        # any earlier override (the editor's clear does not reach the static set, so none is removed here). Every switch the
-        # row states is written below, and the read-back covers those; the leaf and train read reports every switch.
+        # scalar, vector and texture overrides only: a read-only editor probe (2026-11-10) showed UE 5.8's clear leaves
+        # static switches as they were. So every switch the row states is written below, and a switch it does not state
+        # must read the parent's value, or the import is refused before the save (stale_switches).
         MEL.clear_all_material_instance_parameters(instance)
         for name, texture_path in sorted(row['textures'].items()):
             texture = EAL.load_asset(texture_path)
@@ -429,6 +452,11 @@ def _material_instances(plan, settings):
         for name, value in sorted(row['switches'].items()):
             if _switch_value(MEL, instance, name) != bool(value):
                 raise RuntimeError(f'{package} {name} reads {_switch_value(MEL, instance, name)} instead of {value}')
+        names = {str(n) for n in MEL.get_static_switch_parameter_names(instance)}
+        own = {name: _switch_value(MEL, instance, name) for name in names}
+        stale = stale_switches(row['switches'], own, _parent_switch_values(MEL, parent, names))
+        if stale:
+            raise RuntimeError(f'{package} keeps static switch overrides its record does not state: {", ".join(stale)}')
         stray = _undeclared_overrides(instance, row)
         if stray:
             raise RuntimeError(f'{package} keeps overrides its record does not state: {", ".join(stray)}')

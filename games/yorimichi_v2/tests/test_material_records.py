@@ -279,3 +279,15 @@ def test_an_override_the_record_no_longer_states_is_refused(monkeypatch):
                 'scalars': {}, 'vectors': {}}
     assert module._undeclared_overrides(FakeInstance(textures=['Tex']), settings) == []
     assert module._undeclared_overrides(FakeInstance(vectors=['Tint'], textures=['Tex']), settings) == ['vectors:Tint']
+
+
+def test_a_switch_the_record_no_longer_states_must_read_the_parent_value(monkeypatch):
+    module = _import_asset_with_fake_unreal(monkeypatch)
+    parent = {'bHasNormalTexture': True, 'bHasBaseColorTexture': True}
+    # The record dropped bHasNormalTexture = false, but the instance still holds that earlier override.
+    assert module.stale_switches({}, {'bHasNormalTexture': False, 'bHasBaseColorTexture': True}, parent) == ['bHasNormalTexture']
+    # A stated switch may differ from the parent; an unstated one that matches the parent is not stale.
+    assert module.stale_switches({'bHasNormalTexture': False}, {'bHasNormalTexture': False, 'bHasBaseColorTexture': True},
+                                 parent) == []
+    # A switch the parent cannot report is never the reason for a refusal.
+    assert module.stale_switches({}, {'bHasIridescence': False}, parent) == []
