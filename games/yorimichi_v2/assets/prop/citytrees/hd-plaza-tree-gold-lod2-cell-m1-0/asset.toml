@@ -1,0 +1,24 @@
+# Recovered from the donor (tools/migrate/plant_sources.py): HD_PlazaTreeGold_LOD2_cell_-1_0: the HD_PlazaTreeGold LOD level as a standalone mesh (donor FBX).
+# The donor files are committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/citytrees/hd-plaza-tree-gold-lod2-cell-m1-0"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/experiments/citytrees"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/HD_PlazaTreeGold_LOD2_cell_-1_0.fbx"
+sha256 = "a895748bd5704df7ad8819d985f87ab605127b565f5bc83621dcd25886051c2b"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_Arcade"]
+triangles = 3666
+
+[[outputs]]
+package = "/Game/Experiments/CityTrees/v4/lods/HD_PlazaTreeGold_LOD2_cell_-1_0"

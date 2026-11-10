@@ -1,0 +1,3865 @@
+{
+ "/Game/Brinecove/Meshes/SM_BC_Plant_Bloom0": {
+  "collision": {
+   "boxes": 0,
+   "convex": 1,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_DEFAULT"
+  },
+  "family": "plants",
+  "lods": [
+   {
+    "screen": 1.0,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6
+    ],
+    "triangles": 736
+   },
+   {
+    "screen": 0.3,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6
+    ],
+    "triangles": 332
+   },
+   {
+    "screen": 0.12,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6
+    ],
+    "triangles": 148
+   },
+   {
+    "screen": 0.04,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6
+    ],
+    "triangles": 64
+   }
+  ],
+  "slots": [
+   {
+    "imported": "BC_blossom",
+    "material": "/Game/Brinecove/Materials/MI_BC_blossom",
+    "name": "BC_blossom"
+   },
+   {
+    "imported": "BC_blossom_pale",
+    "material": "/Game/Brinecove/Materials/MI_BC_blossom_pale",
+    "name": "BC_blossom_pale"
+   },
+   {
+    "imported": "BC_leaf_deep",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_deep",
+    "name": "BC_leaf_deep"
+   },
+   {
+    "imported": "BC_leaf_light",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_light",
+    "name": "BC_leaf_light"
+   },
+   {
+    "imported": "BC_leaf_mid",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_mid",
+    "name": "BC_leaf_mid"
+   },
+   {
+    "imported": "BC_leaf_sun",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_sun",
+    "name": "BC_leaf_sun"
+   },
+   {
+    "imported": "BC_leaf_warm",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_warm",
+    "name": "BC_leaf_warm"
+   }
+  ]
+ },
+ "/Game/Brinecove/Meshes/SM_BC_Plant_Bloom1": {
+  "collision": {
+   "boxes": 0,
+   "convex": 1,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_DEFAULT"
+  },
+  "family": "plants",
+  "lods": [
+   {
+    "screen": 1.0,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6
+    ],
+    "triangles": 736
+   },
+   {
+    "screen": 0.3,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "triangles": 332
+   },
+   {
+    "screen": 0.12,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "triangles": 148
+   },
+   {
+    "screen": 0.04,
+    "sections": [
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "triangles": 64
+   }
+  ],
+  "slots": [
+   {
+    "imported": "BC_blossom",
+    "material": "/Game/Brinecove/Materials/MI_BC_blossom",
+    "name": "BC_blossom"
+   },
+   {
+    "imported": "BC_blossom_pale",
+    "material": "/Game/Brinecove/Materials/MI_BC_blossom_pale",
+    "name": "BC_blossom_pale"
+   },
+   {
+    "imported": "BC_leaf_deep",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_deep",
+    "name": "BC_leaf_deep"
+   },
+   {
+    "imported": "BC_leaf_light",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_light",
+    "name": "BC_leaf_light"
+   },
+   {
+    "imported": "BC_leaf_mid",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_mid",
+    "name": "BC_leaf_mid"
+   },
+   {
+    "imported": "BC_leaf_sun",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_sun",
+    "name": "BC_leaf_sun"
+   },
+   {
+    "imported": "BC_leaf_warm",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_warm",
+    "name": "BC_leaf_warm"
+   }
+  ]
+ },
+ "/Game/Brinecove/Meshes/SM_BC_Plant_Broad0": {
+  "collision": {
+   "boxes": 0,
+   "convex": 1,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_DEFAULT"
+  },
+  "family": "plants",
+  "lods": [
+   {
+    "screen": 1.0,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "triangles": 1242
+   },
+   {
+    "screen": 0.3,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "triangles": 559
+   },
+   {
+    "screen": 0.12,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "triangles": 249
+   },
+   {
+    "screen": 0.04,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "triangles": 100
+   }
+  ],
+  "slots": [
+   {
+    "imported": "BC_leaf_deep",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_deep",
+    "name": "BC_leaf_deep"
+   },
+   {
+    "imported": "BC_leaf_light",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_light",
+    "name": "BC_leaf_light"
+   },
+   {
+    "imported": "BC_leaf_mid",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_mid",
+    "name": "BC_leaf_mid"
+   },
+   {
+    "imported": "BC_leaf_sun",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_sun",
+    "name": "BC_leaf_sun"
+   },
+   {
+    "imported": "BC_leaf_warm",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_warm",
+    "name": "BC_leaf_warm"
+   },
+   {
+    "imported": "BC_wood_dark",
+    "material": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+    "name": "BC_wood_dark"
+   }
+  ]
+ },
+ "/Game/Brinecove/Meshes/SM_BC_Plant_Broad1": {
+  "collision": {
+   "boxes": 0,
+   "convex": 1,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_DEFAULT"
+  },
+  "family": "plants",
+  "lods": [
+   {
+    "screen": 1.0,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "triangles": 1146
+   },
+   {
+    "screen": 0.3,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "triangles": 516
+   },
+   {
+    "screen": 0.12,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "triangles": 230
+   },
+   {
+    "screen": 0.04,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "triangles": 92
+   }
+  ],
+  "slots": [
+   {
+    "imported": "BC_leaf_deep",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_deep",
+    "name": "BC_leaf_deep"
+   },
+   {
+    "imported": "BC_leaf_light",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_light",
+    "name": "BC_leaf_light"
+   },
+   {
+    "imported": "BC_leaf_mid",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_mid",
+    "name": "BC_leaf_mid"
+   },
+   {
+    "imported": "BC_leaf_sun",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_sun",
+    "name": "BC_leaf_sun"
+   },
+   {
+    "imported": "BC_leaf_warm",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_warm",
+    "name": "BC_leaf_warm"
+   },
+   {
+    "imported": "BC_wood_dark",
+    "material": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+    "name": "BC_wood_dark"
+   }
+  ]
+ },
+ "/Game/Brinecove/Meshes/SM_BC_Plant_Broad2": {
+  "collision": {
+   "boxes": 0,
+   "convex": 1,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_DEFAULT"
+  },
+  "family": "plants",
+  "lods": [
+   {
+    "screen": 1.0,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "triangles": 1288
+   },
+   {
+    "screen": 0.3,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "triangles": 580
+   },
+   {
+    "screen": 0.12,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "triangles": 258
+   },
+   {
+    "screen": 0.04,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "triangles": 104
+   }
+  ],
+  "slots": [
+   {
+    "imported": "BC_leaf_deep",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_deep",
+    "name": "BC_leaf_deep"
+   },
+   {
+    "imported": "BC_leaf_light",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_light",
+    "name": "BC_leaf_light"
+   },
+   {
+    "imported": "BC_leaf_mid",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_mid",
+    "name": "BC_leaf_mid"
+   },
+   {
+    "imported": "BC_leaf_sun",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_sun",
+    "name": "BC_leaf_sun"
+   },
+   {
+    "imported": "BC_leaf_warm",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_warm",
+    "name": "BC_leaf_warm"
+   },
+   {
+    "imported": "BC_wood_dark",
+    "material": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+    "name": "BC_wood_dark"
+   }
+  ]
+ },
+ "/Game/Brinecove/Meshes/SM_BC_Plant_Broad3": {
+  "collision": {
+   "boxes": 0,
+   "convex": 1,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_DEFAULT"
+  },
+  "family": "plants",
+  "lods": [
+   {
+    "screen": 1.0,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "triangles": 1216
+   },
+   {
+    "screen": 0.3,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "triangles": 548
+   },
+   {
+    "screen": 0.12,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "triangles": 244
+   },
+   {
+    "screen": 0.04,
+    "sections": [
+     0,
+     2,
+     3,
+     4,
+     5
+    ],
+    "triangles": 98
+   }
+  ],
+  "slots": [
+   {
+    "imported": "BC_leaf_deep",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_deep",
+    "name": "BC_leaf_deep"
+   },
+   {
+    "imported": "BC_leaf_gold",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_gold",
+    "name": "BC_leaf_gold"
+   },
+   {
+    "imported": "BC_leaf_mid",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_mid",
+    "name": "BC_leaf_mid"
+   },
+   {
+    "imported": "BC_leaf_sun",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_sun",
+    "name": "BC_leaf_sun"
+   },
+   {
+    "imported": "BC_leaf_warm",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_warm",
+    "name": "BC_leaf_warm"
+   },
+   {
+    "imported": "BC_wood_dark",
+    "material": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+    "name": "BC_wood_dark"
+   }
+  ]
+ },
+ "/Game/Brinecove/Meshes/SM_BC_Plant_Broad4": {
+  "collision": {
+   "boxes": 0,
+   "convex": 1,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_DEFAULT"
+  },
+  "family": "plants",
+  "lods": [
+   {
+    "screen": 1.0,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "triangles": 1244
+   },
+   {
+    "screen": 0.3,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "triangles": 560
+   },
+   {
+    "screen": 0.12,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "triangles": 249
+   },
+   {
+    "screen": 0.04,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "triangles": 100
+   }
+  ],
+  "slots": [
+   {
+    "imported": "BC_leaf_deep",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_deep",
+    "name": "BC_leaf_deep"
+   },
+   {
+    "imported": "BC_leaf_gold",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_gold",
+    "name": "BC_leaf_gold"
+   },
+   {
+    "imported": "BC_leaf_mid",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_mid",
+    "name": "BC_leaf_mid"
+   },
+   {
+    "imported": "BC_leaf_sun",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_sun",
+    "name": "BC_leaf_sun"
+   },
+   {
+    "imported": "BC_leaf_warm",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_warm",
+    "name": "BC_leaf_warm"
+   },
+   {
+    "imported": "BC_wood_dark",
+    "material": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+    "name": "BC_wood_dark"
+   }
+  ]
+ },
+ "/Game/Brinecove/Meshes/SM_BC_Plant_Broad5": {
+  "collision": {
+   "boxes": 0,
+   "convex": 1,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_DEFAULT"
+  },
+  "family": "plants",
+  "lods": [
+   {
+    "screen": 1.0,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "triangles": 1122
+   },
+   {
+    "screen": 0.3,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "triangles": 505
+   },
+   {
+    "screen": 0.12,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "triangles": 225
+   },
+   {
+    "screen": 0.04,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "triangles": 90
+   }
+  ],
+  "slots": [
+   {
+    "imported": "BC_leaf_deep",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_deep",
+    "name": "BC_leaf_deep"
+   },
+   {
+    "imported": "BC_leaf_gold",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_gold",
+    "name": "BC_leaf_gold"
+   },
+   {
+    "imported": "BC_leaf_mid",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_mid",
+    "name": "BC_leaf_mid"
+   },
+   {
+    "imported": "BC_leaf_rust",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_rust",
+    "name": "BC_leaf_rust"
+   },
+   {
+    "imported": "BC_leaf_warm",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_warm",
+    "name": "BC_leaf_warm"
+   },
+   {
+    "imported": "BC_wood_dark",
+    "material": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+    "name": "BC_wood_dark"
+   }
+  ]
+ },
+ "/Game/Brinecove/Meshes/SM_BC_Plant_Broad6": {
+  "collision": {
+   "boxes": 0,
+   "convex": 1,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_DEFAULT"
+  },
+  "family": "plants",
+  "lods": [
+   {
+    "screen": 1.0,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "triangles": 1222
+   },
+   {
+    "screen": 0.3,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "triangles": 550
+   },
+   {
+    "screen": 0.12,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "triangles": 245
+   },
+   {
+    "screen": 0.04,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "triangles": 98
+   }
+  ],
+  "slots": [
+   {
+    "imported": "BC_leaf_deep",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_deep",
+    "name": "BC_leaf_deep"
+   },
+   {
+    "imported": "BC_leaf_gold",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_gold",
+    "name": "BC_leaf_gold"
+   },
+   {
+    "imported": "BC_leaf_mid",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_mid",
+    "name": "BC_leaf_mid"
+   },
+   {
+    "imported": "BC_leaf_sun",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_sun",
+    "name": "BC_leaf_sun"
+   },
+   {
+    "imported": "BC_leaf_warm",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_warm",
+    "name": "BC_leaf_warm"
+   },
+   {
+    "imported": "BC_wood_dark",
+    "material": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+    "name": "BC_wood_dark"
+   }
+  ]
+ },
+ "/Game/Brinecove/Meshes/SM_BC_Plant_Broad7": {
+  "collision": {
+   "boxes": 0,
+   "convex": 1,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_DEFAULT"
+  },
+  "family": "plants",
+  "lods": [
+   {
+    "screen": 1.0,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "triangles": 1124
+   },
+   {
+    "screen": 0.3,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "triangles": 506
+   },
+   {
+    "screen": 0.12,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "triangles": 225
+   },
+   {
+    "screen": 0.04,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "triangles": 90
+   }
+  ],
+  "slots": [
+   {
+    "imported": "BC_leaf_deep",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_deep",
+    "name": "BC_leaf_deep"
+   },
+   {
+    "imported": "BC_leaf_light",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_light",
+    "name": "BC_leaf_light"
+   },
+   {
+    "imported": "BC_leaf_mid",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_mid",
+    "name": "BC_leaf_mid"
+   },
+   {
+    "imported": "BC_leaf_sun",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_sun",
+    "name": "BC_leaf_sun"
+   },
+   {
+    "imported": "BC_leaf_warm",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_warm",
+    "name": "BC_leaf_warm"
+   },
+   {
+    "imported": "BC_wood_dark",
+    "material": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+    "name": "BC_wood_dark"
+   }
+  ]
+ },
+ "/Game/Brinecove/Meshes/SM_BC_Plant_CoverFern0": {
+  "collision": {
+   "boxes": 0,
+   "convex": 1,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_DEFAULT"
+  },
+  "family": "plants",
+  "lods": [
+   {
+    "screen": 1.0,
+    "sections": [
+     0,
+     1
+    ],
+    "triangles": 140
+   },
+   {
+    "screen": 0.3,
+    "sections": [
+     0,
+     1
+    ],
+    "triangles": 64
+   },
+   {
+    "screen": 0.12,
+    "sections": [
+     0,
+     1
+    ],
+    "triangles": 64
+   },
+   {
+    "screen": 0.04,
+    "sections": [
+     0,
+     1
+    ],
+    "triangles": 64
+   }
+  ],
+  "slots": [
+   {
+    "imported": "BC_cover_fern",
+    "material": "/Game/Brinecove/Materials/MI_BC_cover_fern",
+    "name": "BC_cover_fern"
+   },
+   {
+    "imported": "BC_cover_fern_light",
+    "material": "/Game/Brinecove/Materials/MI_BC_cover_fern_light",
+    "name": "BC_cover_fern_light"
+   }
+  ]
+ },
+ "/Game/Brinecove/Meshes/SM_BC_Plant_CoverFern1": {
+  "collision": {
+   "boxes": 0,
+   "convex": 1,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_DEFAULT"
+  },
+  "family": "plants",
+  "lods": [
+   {
+    "screen": 1.0,
+    "sections": [
+     0,
+     1
+    ],
+    "triangles": 200
+   },
+   {
+    "screen": 0.3,
+    "sections": [
+     0,
+     1
+    ],
+    "triangles": 90
+   },
+   {
+    "screen": 0.12,
+    "sections": [
+     0,
+     1
+    ],
+    "triangles": 64
+   },
+   {
+    "screen": 0.04,
+    "sections": [
+     0,
+     1
+    ],
+    "triangles": 64
+   }
+  ],
+  "slots": [
+   {
+    "imported": "BC_cover_fern",
+    "material": "/Game/Brinecove/Materials/MI_BC_cover_fern",
+    "name": "BC_cover_fern"
+   },
+   {
+    "imported": "BC_cover_fern_light",
+    "material": "/Game/Brinecove/Materials/MI_BC_cover_fern_light",
+    "name": "BC_cover_fern_light"
+   }
+  ]
+ },
+ "/Game/Brinecove/Meshes/SM_BC_Plant_CoverFern2": {
+  "collision": {
+   "boxes": 0,
+   "convex": 1,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_DEFAULT"
+  },
+  "family": "plants",
+  "lods": [
+   {
+    "screen": 1.0,
+    "sections": [
+     0
+    ],
+    "triangles": 200
+   },
+   {
+    "screen": 0.3,
+    "sections": [
+     0
+    ],
+    "triangles": 90
+   },
+   {
+    "screen": 0.12,
+    "sections": [
+     0
+    ],
+    "triangles": 64
+   },
+   {
+    "screen": 0.04,
+    "sections": [
+     0
+    ],
+    "triangles": 64
+   }
+  ],
+  "slots": [
+   {
+    "imported": "BC_cover_fern",
+    "material": "/Game/Brinecove/Materials/MI_BC_cover_fern",
+    "name": "BC_cover_fern"
+   }
+  ]
+ },
+ "/Game/Brinecove/Meshes/SM_BC_Plant_CoverGrass0": {
+  "collision": {
+   "boxes": 0,
+   "convex": 1,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_DEFAULT"
+  },
+  "family": "plants",
+  "lods": [
+   {
+    "screen": 1.0,
+    "sections": [
+     0,
+     1
+    ],
+    "triangles": 144
+   },
+   {
+    "screen": 0.3,
+    "sections": [
+     0,
+     1
+    ],
+    "triangles": 64
+   },
+   {
+    "screen": 0.12,
+    "sections": [
+     0,
+     1
+    ],
+    "triangles": 64
+   },
+   {
+    "screen": 0.04,
+    "sections": [
+     0,
+     1
+    ],
+    "triangles": 64
+   }
+  ],
+  "slots": [
+   {
+    "imported": "BC_cover_grass",
+    "material": "/Game/Brinecove/Materials/MI_BC_cover_grass",
+    "name": "BC_cover_grass"
+   },
+   {
+    "imported": "BC_cover_grass_dry",
+    "material": "/Game/Brinecove/Materials/MI_BC_cover_grass_dry",
+    "name": "BC_cover_grass_dry"
+   }
+  ]
+ },
+ "/Game/Brinecove/Meshes/SM_BC_Plant_CoverGrass1": {
+  "collision": {
+   "boxes": 0,
+   "convex": 1,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_DEFAULT"
+  },
+  "family": "plants",
+  "lods": [
+   {
+    "screen": 1.0,
+    "sections": [
+     0,
+     1
+    ],
+    "triangles": 156
+   },
+   {
+    "screen": 0.3,
+    "sections": [
+     0,
+     1
+    ],
+    "triangles": 70
+   },
+   {
+    "screen": 0.12,
+    "sections": [
+     0,
+     1
+    ],
+    "triangles": 64
+   },
+   {
+    "screen": 0.04,
+    "sections": [
+     0,
+     1
+    ],
+    "triangles": 64
+   }
+  ],
+  "slots": [
+   {
+    "imported": "BC_cover_grass",
+    "material": "/Game/Brinecove/Materials/MI_BC_cover_grass",
+    "name": "BC_cover_grass"
+   },
+   {
+    "imported": "BC_cover_grass_dry",
+    "material": "/Game/Brinecove/Materials/MI_BC_cover_grass_dry",
+    "name": "BC_cover_grass_dry"
+   }
+  ]
+ },
+ "/Game/Brinecove/Meshes/SM_BC_Plant_CoverGrass2": {
+  "collision": {
+   "boxes": 0,
+   "convex": 1,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_DEFAULT"
+  },
+  "family": "plants",
+  "lods": [
+   {
+    "screen": 1.0,
+    "sections": [
+     0
+    ],
+    "triangles": 180
+   },
+   {
+    "screen": 0.3,
+    "sections": [
+     0
+    ],
+    "triangles": 80
+   },
+   {
+    "screen": 0.12,
+    "sections": [
+     0
+    ],
+    "triangles": 64
+   },
+   {
+    "screen": 0.04,
+    "sections": [
+     0
+    ],
+    "triangles": 64
+   }
+  ],
+  "slots": [
+   {
+    "imported": "BC_cover_grass",
+    "material": "/Game/Brinecove/Materials/MI_BC_cover_grass",
+    "name": "BC_cover_grass"
+   }
+  ]
+ },
+ "/Game/Brinecove/Meshes/SM_BC_Plant_CoverLeaf0": {
+  "collision": {
+   "boxes": 0,
+   "convex": 1,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_DEFAULT"
+  },
+  "family": "plants",
+  "lods": [
+   {
+    "screen": 1.0,
+    "sections": [
+     0,
+     1
+    ],
+    "triangles": 60
+   },
+   {
+    "screen": 0.3,
+    "sections": [
+     0,
+     1
+    ],
+    "triangles": 60
+   },
+   {
+    "screen": 0.12,
+    "sections": [
+     0,
+     1
+    ],
+    "triangles": 60
+   },
+   {
+    "screen": 0.04,
+    "sections": [
+     0,
+     1
+    ],
+    "triangles": 60
+   }
+  ],
+  "slots": [
+   {
+    "imported": "BC_cover_leaf",
+    "material": "/Game/Brinecove/Materials/MI_BC_cover_leaf",
+    "name": "BC_cover_leaf"
+   },
+   {
+    "imported": "BC_cover_leaf_light",
+    "material": "/Game/Brinecove/Materials/MI_BC_cover_leaf_light",
+    "name": "BC_cover_leaf_light"
+   }
+  ]
+ },
+ "/Game/Brinecove/Meshes/SM_BC_Plant_CoverLeaf1": {
+  "collision": {
+   "boxes": 0,
+   "convex": 1,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_DEFAULT"
+  },
+  "family": "plants",
+  "lods": [
+   {
+    "screen": 1.0,
+    "sections": [
+     0,
+     1
+    ],
+    "triangles": 72
+   },
+   {
+    "screen": 0.3,
+    "sections": [
+     0,
+     1
+    ],
+    "triangles": 64
+   },
+   {
+    "screen": 0.12,
+    "sections": [
+     0,
+     1
+    ],
+    "triangles": 64
+   },
+   {
+    "screen": 0.04,
+    "sections": [
+     0,
+     1
+    ],
+    "triangles": 64
+   }
+  ],
+  "slots": [
+   {
+    "imported": "BC_cover_leaf",
+    "material": "/Game/Brinecove/Materials/MI_BC_cover_leaf",
+    "name": "BC_cover_leaf"
+   },
+   {
+    "imported": "BC_cover_leaf_light",
+    "material": "/Game/Brinecove/Materials/MI_BC_cover_leaf_light",
+    "name": "BC_cover_leaf_light"
+   }
+  ]
+ },
+ "/Game/Brinecove/Meshes/SM_BC_Plant_CoverLeaf2": {
+  "collision": {
+   "boxes": 0,
+   "convex": 1,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_DEFAULT"
+  },
+  "family": "plants",
+  "lods": [
+   {
+    "screen": 1.0,
+    "sections": [
+     0,
+     1
+    ],
+    "triangles": 60
+   },
+   {
+    "screen": 0.3,
+    "sections": [
+     0,
+     1
+    ],
+    "triangles": 60
+   },
+   {
+    "screen": 0.12,
+    "sections": [
+     0,
+     1
+    ],
+    "triangles": 60
+   },
+   {
+    "screen": 0.04,
+    "sections": [
+     0,
+     1
+    ],
+    "triangles": 60
+   }
+  ],
+  "slots": [
+   {
+    "imported": "BC_cover_leaf",
+    "material": "/Game/Brinecove/Materials/MI_BC_cover_leaf",
+    "name": "BC_cover_leaf"
+   },
+   {
+    "imported": "BC_cover_leaf_light",
+    "material": "/Game/Brinecove/Materials/MI_BC_cover_leaf_light",
+    "name": "BC_cover_leaf_light"
+   }
+  ]
+ },
+ "/Game/Brinecove/Meshes/SM_BC_Plant_Emergent0": {
+  "collision": {
+   "boxes": 0,
+   "convex": 1,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_DEFAULT"
+  },
+  "family": "plants",
+  "lods": [
+   {
+    "screen": 1.0,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "triangles": 1554
+   },
+   {
+    "screen": 0.3,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "triangles": 700
+   },
+   {
+    "screen": 0.12,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "triangles": 311
+   },
+   {
+    "screen": 0.04,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "triangles": 125
+   }
+  ],
+  "slots": [
+   {
+    "imported": "BC_leaf_deep",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_deep",
+    "name": "BC_leaf_deep"
+   },
+   {
+    "imported": "BC_leaf_light",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_light",
+    "name": "BC_leaf_light"
+   },
+   {
+    "imported": "BC_leaf_mid",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_mid",
+    "name": "BC_leaf_mid"
+   },
+   {
+    "imported": "BC_leaf_sun",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_sun",
+    "name": "BC_leaf_sun"
+   },
+   {
+    "imported": "BC_leaf_warm",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_warm",
+    "name": "BC_leaf_warm"
+   },
+   {
+    "imported": "BC_wood_dark",
+    "material": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+    "name": "BC_wood_dark"
+   }
+  ]
+ },
+ "/Game/Brinecove/Meshes/SM_BC_Plant_Emergent1": {
+  "collision": {
+   "boxes": 0,
+   "convex": 1,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_DEFAULT"
+  },
+  "family": "plants",
+  "lods": [
+   {
+    "screen": 1.0,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "triangles": 1500
+   },
+   {
+    "screen": 0.3,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "triangles": 675
+   },
+   {
+    "screen": 0.12,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "triangles": 300
+   },
+   {
+    "screen": 0.04,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "triangles": 120
+   }
+  ],
+  "slots": [
+   {
+    "imported": "BC_leaf_deep",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_deep",
+    "name": "BC_leaf_deep"
+   },
+   {
+    "imported": "BC_leaf_gold",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_gold",
+    "name": "BC_leaf_gold"
+   },
+   {
+    "imported": "BC_leaf_mid",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_mid",
+    "name": "BC_leaf_mid"
+   },
+   {
+    "imported": "BC_leaf_sun",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_sun",
+    "name": "BC_leaf_sun"
+   },
+   {
+    "imported": "BC_leaf_warm",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_warm",
+    "name": "BC_leaf_warm"
+   },
+   {
+    "imported": "BC_wood_dark",
+    "material": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+    "name": "BC_wood_dark"
+   }
+  ]
+ },
+ "/Game/Brinecove/Meshes/SM_BC_Plant_Emergent2": {
+  "collision": {
+   "boxes": 0,
+   "convex": 1,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_DEFAULT"
+  },
+  "family": "plants",
+  "lods": [
+   {
+    "screen": 1.0,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "triangles": 1584
+   },
+   {
+    "screen": 0.3,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "triangles": 713
+   },
+   {
+    "screen": 0.12,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "triangles": 317
+   },
+   {
+    "screen": 0.04,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "triangles": 127
+   }
+  ],
+  "slots": [
+   {
+    "imported": "BC_leaf_deep",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_deep",
+    "name": "BC_leaf_deep"
+   },
+   {
+    "imported": "BC_leaf_light",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_light",
+    "name": "BC_leaf_light"
+   },
+   {
+    "imported": "BC_leaf_mid",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_mid",
+    "name": "BC_leaf_mid"
+   },
+   {
+    "imported": "BC_leaf_sun",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_sun",
+    "name": "BC_leaf_sun"
+   },
+   {
+    "imported": "BC_leaf_warm",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_warm",
+    "name": "BC_leaf_warm"
+   },
+   {
+    "imported": "BC_wood_dark",
+    "material": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+    "name": "BC_wood_dark"
+   }
+  ]
+ },
+ "/Game/Brinecove/Meshes/SM_BC_Plant_Palm0": {
+  "collision": {
+   "boxes": 0,
+   "convex": 1,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_DEFAULT"
+  },
+  "family": "plants",
+  "lods": [
+   {
+    "screen": 1.0,
+    "sections": [
+     0,
+     1,
+     2
+    ],
+    "triangles": 688
+   },
+   {
+    "screen": 0.3,
+    "sections": [
+     0,
+     1,
+     2
+    ],
+    "triangles": 310
+   },
+   {
+    "screen": 0.12,
+    "sections": [
+     0,
+     1
+    ],
+    "triangles": 138
+   },
+   {
+    "screen": 0.04,
+    "sections": [
+     0
+    ],
+    "triangles": 64
+   }
+  ],
+  "slots": [
+   {
+    "imported": "BC_palm_frond",
+    "material": "/Game/Brinecove/Materials/MI_BC_palm_frond",
+    "name": "BC_palm_frond"
+   },
+   {
+    "imported": "BC_palm_trunk",
+    "material": "/Game/Brinecove/Materials/MI_BC_palm_trunk",
+    "name": "BC_palm_trunk"
+   },
+   {
+    "imported": "BC_wood_dark",
+    "material": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+    "name": "BC_wood_dark"
+   }
+  ]
+ },
+ "/Game/Brinecove/Meshes/SM_BC_Plant_Palm1": {
+  "collision": {
+   "boxes": 0,
+   "convex": 1,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_DEFAULT"
+  },
+  "family": "plants",
+  "lods": [
+   {
+    "screen": 1.0,
+    "sections": [
+     0,
+     1,
+     2
+    ],
+    "triangles": 712
+   },
+   {
+    "screen": 0.3,
+    "sections": [
+     0,
+     1,
+     2
+    ],
+    "triangles": 320
+   },
+   {
+    "screen": 0.12,
+    "sections": [
+     0,
+     1
+    ],
+    "triangles": 143
+   },
+   {
+    "screen": 0.04,
+    "sections": [
+     0
+    ],
+    "triangles": 64
+   }
+  ],
+  "slots": [
+   {
+    "imported": "BC_palm_frond",
+    "material": "/Game/Brinecove/Materials/MI_BC_palm_frond",
+    "name": "BC_palm_frond"
+   },
+   {
+    "imported": "BC_palm_trunk",
+    "material": "/Game/Brinecove/Materials/MI_BC_palm_trunk",
+    "name": "BC_palm_trunk"
+   },
+   {
+    "imported": "BC_wood_dark",
+    "material": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+    "name": "BC_wood_dark"
+   }
+  ]
+ },
+ "/Game/Brinecove/Meshes/SM_BC_Plant_Palm2": {
+  "collision": {
+   "boxes": 0,
+   "convex": 1,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_DEFAULT"
+  },
+  "family": "plants",
+  "lods": [
+   {
+    "screen": 1.0,
+    "sections": [
+     0,
+     1,
+     2
+    ],
+    "triangles": 736
+   },
+   {
+    "screen": 0.3,
+    "sections": [
+     0,
+     1,
+     2
+    ],
+    "triangles": 332
+   },
+   {
+    "screen": 0.12,
+    "sections": [
+     0,
+     1
+    ],
+    "triangles": 148
+   },
+   {
+    "screen": 0.04,
+    "sections": [
+     0
+    ],
+    "triangles": 63
+   }
+  ],
+  "slots": [
+   {
+    "imported": "BC_palm_frond",
+    "material": "/Game/Brinecove/Materials/MI_BC_palm_frond",
+    "name": "BC_palm_frond"
+   },
+   {
+    "imported": "BC_palm_trunk",
+    "material": "/Game/Brinecove/Materials/MI_BC_palm_trunk",
+    "name": "BC_palm_trunk"
+   },
+   {
+    "imported": "BC_wood_dark",
+    "material": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+    "name": "BC_wood_dark"
+   }
+  ]
+ },
+ "/Game/Brinecove/Meshes/SM_BC_Plant_Palm3": {
+  "collision": {
+   "boxes": 0,
+   "convex": 1,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_DEFAULT"
+  },
+  "family": "plants",
+  "lods": [
+   {
+    "screen": 1.0,
+    "sections": [
+     0,
+     1,
+     2
+    ],
+    "triangles": 688
+   },
+   {
+    "screen": 0.3,
+    "sections": [
+     0,
+     1,
+     2
+    ],
+    "triangles": 310
+   },
+   {
+    "screen": 0.12,
+    "sections": [
+     0,
+     1
+    ],
+    "triangles": 138
+   },
+   {
+    "screen": 0.04,
+    "sections": [
+     0,
+     1
+    ],
+    "triangles": 64
+   }
+  ],
+  "slots": [
+   {
+    "imported": "BC_palm_frond",
+    "material": "/Game/Brinecove/Materials/MI_BC_palm_frond",
+    "name": "BC_palm_frond"
+   },
+   {
+    "imported": "BC_palm_trunk",
+    "material": "/Game/Brinecove/Materials/MI_BC_palm_trunk",
+    "name": "BC_palm_trunk"
+   },
+   {
+    "imported": "BC_wood_dark",
+    "material": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+    "name": "BC_wood_dark"
+   }
+  ]
+ },
+ "/Game/Brinecove/Meshes/SM_BC_Plant_Palm4": {
+  "collision": {
+   "boxes": 0,
+   "convex": 1,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_DEFAULT"
+  },
+  "family": "plants",
+  "lods": [
+   {
+    "screen": 1.0,
+    "sections": [
+     0,
+     1,
+     2
+    ],
+    "triangles": 712
+   },
+   {
+    "screen": 0.3,
+    "sections": [
+     0,
+     1,
+     2
+    ],
+    "triangles": 320
+   },
+   {
+    "screen": 0.12,
+    "sections": [
+     0,
+     1
+    ],
+    "triangles": 143
+   },
+   {
+    "screen": 0.04,
+    "sections": [
+     0
+    ],
+    "triangles": 64
+   }
+  ],
+  "slots": [
+   {
+    "imported": "BC_palm_frond",
+    "material": "/Game/Brinecove/Materials/MI_BC_palm_frond",
+    "name": "BC_palm_frond"
+   },
+   {
+    "imported": "BC_palm_trunk",
+    "material": "/Game/Brinecove/Materials/MI_BC_palm_trunk",
+    "name": "BC_palm_trunk"
+   },
+   {
+    "imported": "BC_wood_dark",
+    "material": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+    "name": "BC_wood_dark"
+   }
+  ]
+ },
+ "/Game/Brinecove/Meshes/SM_BC_Plant_Palm5": {
+  "collision": {
+   "boxes": 0,
+   "convex": 1,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_DEFAULT"
+  },
+  "family": "plants",
+  "lods": [
+   {
+    "screen": 1.0,
+    "sections": [
+     0,
+     1,
+     2
+    ],
+    "triangles": 736
+   },
+   {
+    "screen": 0.3,
+    "sections": [
+     0,
+     1,
+     2
+    ],
+    "triangles": 332
+   },
+   {
+    "screen": 0.12,
+    "sections": [
+     0,
+     1
+    ],
+    "triangles": 147
+   },
+   {
+    "screen": 0.04,
+    "sections": [
+     0
+    ],
+    "triangles": 64
+   }
+  ],
+  "slots": [
+   {
+    "imported": "BC_palm_frond",
+    "material": "/Game/Brinecove/Materials/MI_BC_palm_frond",
+    "name": "BC_palm_frond"
+   },
+   {
+    "imported": "BC_palm_trunk",
+    "material": "/Game/Brinecove/Materials/MI_BC_palm_trunk",
+    "name": "BC_palm_trunk"
+   },
+   {
+    "imported": "BC_wood_dark",
+    "material": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+    "name": "BC_wood_dark"
+   }
+  ]
+ },
+ "/Game/Brinecove/Meshes/SM_BC_Plant_Shrub0": {
+  "collision": {
+   "boxes": 0,
+   "convex": 1,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_DEFAULT"
+  },
+  "family": "plants",
+  "lods": [
+   {
+    "screen": 1.0,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ],
+    "triangles": 296
+   },
+   {
+    "screen": 0.3,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ],
+    "triangles": 134
+   },
+   {
+    "screen": 0.12,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ],
+    "triangles": 64
+   },
+   {
+    "screen": 0.04,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ],
+    "triangles": 64
+   }
+  ],
+  "slots": [
+   {
+    "imported": "BC_leaf_deep",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_deep",
+    "name": "BC_leaf_deep"
+   },
+   {
+    "imported": "BC_leaf_light",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_light",
+    "name": "BC_leaf_light"
+   },
+   {
+    "imported": "BC_leaf_mid",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_mid",
+    "name": "BC_leaf_mid"
+   },
+   {
+    "imported": "BC_leaf_sun",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_sun",
+    "name": "BC_leaf_sun"
+   },
+   {
+    "imported": "BC_leaf_warm",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_warm",
+    "name": "BC_leaf_warm"
+   }
+  ]
+ },
+ "/Game/Brinecove/Meshes/SM_BC_Plant_Shrub1": {
+  "collision": {
+   "boxes": 0,
+   "convex": 1,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_DEFAULT"
+  },
+  "family": "plants",
+  "lods": [
+   {
+    "screen": 1.0,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ],
+    "triangles": 384
+   },
+   {
+    "screen": 0.3,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ],
+    "triangles": 173
+   },
+   {
+    "screen": 0.12,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ],
+    "triangles": 77
+   },
+   {
+    "screen": 0.04,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ],
+    "triangles": 64
+   }
+  ],
+  "slots": [
+   {
+    "imported": "BC_leaf_deep",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_deep",
+    "name": "BC_leaf_deep"
+   },
+   {
+    "imported": "BC_leaf_light",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_light",
+    "name": "BC_leaf_light"
+   },
+   {
+    "imported": "BC_leaf_mid",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_mid",
+    "name": "BC_leaf_mid"
+   },
+   {
+    "imported": "BC_leaf_sun",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_sun",
+    "name": "BC_leaf_sun"
+   },
+   {
+    "imported": "BC_leaf_warm",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_warm",
+    "name": "BC_leaf_warm"
+   }
+  ]
+ },
+ "/Game/Brinecove/Meshes/SM_BC_Plant_Shrub2": {
+  "collision": {
+   "boxes": 0,
+   "convex": 1,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_DEFAULT"
+  },
+  "family": "plants",
+  "lods": [
+   {
+    "screen": 1.0,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ],
+    "triangles": 336
+   },
+   {
+    "screen": 0.3,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ],
+    "triangles": 152
+   },
+   {
+    "screen": 0.12,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ],
+    "triangles": 68
+   },
+   {
+    "screen": 0.04,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ],
+    "triangles": 64
+   }
+  ],
+  "slots": [
+   {
+    "imported": "BC_leaf_deep",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_deep",
+    "name": "BC_leaf_deep"
+   },
+   {
+    "imported": "BC_leaf_gold",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_gold",
+    "name": "BC_leaf_gold"
+   },
+   {
+    "imported": "BC_leaf_mid",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_mid",
+    "name": "BC_leaf_mid"
+   },
+   {
+    "imported": "BC_leaf_sun",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_sun",
+    "name": "BC_leaf_sun"
+   },
+   {
+    "imported": "BC_leaf_warm",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_warm",
+    "name": "BC_leaf_warm"
+   }
+  ]
+ },
+ "/Game/Brinecove/Meshes/SM_BC_Plant_Shrub3": {
+  "collision": {
+   "boxes": 0,
+   "convex": 1,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_DEFAULT"
+  },
+  "family": "plants",
+  "lods": [
+   {
+    "screen": 1.0,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ],
+    "triangles": 472
+   },
+   {
+    "screen": 0.3,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ],
+    "triangles": 213
+   },
+   {
+    "screen": 0.12,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ],
+    "triangles": 95
+   },
+   {
+    "screen": 0.04,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ],
+    "triangles": 64
+   }
+  ],
+  "slots": [
+   {
+    "imported": "BC_leaf_deep",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_deep",
+    "name": "BC_leaf_deep"
+   },
+   {
+    "imported": "BC_leaf_light",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_light",
+    "name": "BC_leaf_light"
+   },
+   {
+    "imported": "BC_leaf_mid",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_mid",
+    "name": "BC_leaf_mid"
+   },
+   {
+    "imported": "BC_leaf_sun",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_sun",
+    "name": "BC_leaf_sun"
+   },
+   {
+    "imported": "BC_leaf_warm",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_warm",
+    "name": "BC_leaf_warm"
+   }
+  ]
+ },
+ "/Game/Brinecove/Meshes/SM_BC_Plant_Shrub4": {
+  "collision": {
+   "boxes": 0,
+   "convex": 1,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_DEFAULT"
+  },
+  "family": "plants",
+  "lods": [
+   {
+    "screen": 1.0,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ],
+    "triangles": 312
+   },
+   {
+    "screen": 0.3,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ],
+    "triangles": 141
+   },
+   {
+    "screen": 0.12,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ],
+    "triangles": 64
+   },
+   {
+    "screen": 0.04,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ],
+    "triangles": 64
+   }
+  ],
+  "slots": [
+   {
+    "imported": "BC_leaf_deep",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_deep",
+    "name": "BC_leaf_deep"
+   },
+   {
+    "imported": "BC_leaf_gold",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_gold",
+    "name": "BC_leaf_gold"
+   },
+   {
+    "imported": "BC_leaf_mid",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_mid",
+    "name": "BC_leaf_mid"
+   },
+   {
+    "imported": "BC_leaf_rust",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_rust",
+    "name": "BC_leaf_rust"
+   },
+   {
+    "imported": "BC_leaf_warm",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_warm",
+    "name": "BC_leaf_warm"
+   }
+  ]
+ },
+ "/Game/Brinecove/Meshes/SM_BC_Plant_Small0": {
+  "collision": {
+   "boxes": 0,
+   "convex": 1,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_DEFAULT"
+  },
+  "family": "plants",
+  "lods": [
+   {
+    "screen": 1.0,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "triangles": 634
+   },
+   {
+    "screen": 0.3,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "triangles": 286
+   },
+   {
+    "screen": 0.12,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "triangles": 127
+   },
+   {
+    "screen": 0.04,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "triangles": 64
+   }
+  ],
+  "slots": [
+   {
+    "imported": "BC_leaf_deep",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_deep",
+    "name": "BC_leaf_deep"
+   },
+   {
+    "imported": "BC_leaf_light",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_light",
+    "name": "BC_leaf_light"
+   },
+   {
+    "imported": "BC_leaf_mid",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_mid",
+    "name": "BC_leaf_mid"
+   },
+   {
+    "imported": "BC_leaf_sun",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_sun",
+    "name": "BC_leaf_sun"
+   },
+   {
+    "imported": "BC_leaf_warm",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_warm",
+    "name": "BC_leaf_warm"
+   },
+   {
+    "imported": "BC_wood_dark",
+    "material": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+    "name": "BC_wood_dark"
+   }
+  ]
+ },
+ "/Game/Brinecove/Meshes/SM_BC_Plant_Small1": {
+  "collision": {
+   "boxes": 0,
+   "convex": 1,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_DEFAULT"
+  },
+  "family": "plants",
+  "lods": [
+   {
+    "screen": 1.0,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "triangles": 634
+   },
+   {
+    "screen": 0.3,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "triangles": 286
+   },
+   {
+    "screen": 0.12,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "triangles": 127
+   },
+   {
+    "screen": 0.04,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "triangles": 64
+   }
+  ],
+  "slots": [
+   {
+    "imported": "BC_leaf_deep",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_deep",
+    "name": "BC_leaf_deep"
+   },
+   {
+    "imported": "BC_leaf_gold",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_gold",
+    "name": "BC_leaf_gold"
+   },
+   {
+    "imported": "BC_leaf_mid",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_mid",
+    "name": "BC_leaf_mid"
+   },
+   {
+    "imported": "BC_leaf_sun",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_sun",
+    "name": "BC_leaf_sun"
+   },
+   {
+    "imported": "BC_leaf_warm",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_warm",
+    "name": "BC_leaf_warm"
+   },
+   {
+    "imported": "BC_wood_dark",
+    "material": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+    "name": "BC_wood_dark"
+   }
+  ]
+ },
+ "/Game/Brinecove/Meshes/SM_BC_Plant_Small2": {
+  "collision": {
+   "boxes": 0,
+   "convex": 1,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_DEFAULT"
+  },
+  "family": "plants",
+  "lods": [
+   {
+    "screen": 1.0,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "triangles": 634
+   },
+   {
+    "screen": 0.3,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "triangles": 286
+   },
+   {
+    "screen": 0.12,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "triangles": 127
+   },
+   {
+    "screen": 0.04,
+    "sections": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "triangles": 64
+   }
+  ],
+  "slots": [
+   {
+    "imported": "BC_leaf_deep",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_deep",
+    "name": "BC_leaf_deep"
+   },
+   {
+    "imported": "BC_leaf_gold",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_gold",
+    "name": "BC_leaf_gold"
+   },
+   {
+    "imported": "BC_leaf_mid",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_mid",
+    "name": "BC_leaf_mid"
+   },
+   {
+    "imported": "BC_leaf_rust",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_rust",
+    "name": "BC_leaf_rust"
+   },
+   {
+    "imported": "BC_leaf_warm",
+    "material": "/Game/Brinecove/Materials/MI_BC_leaf_warm",
+    "name": "BC_leaf_warm"
+   },
+   {
+    "imported": "BC_wood_dark",
+    "material": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+    "name": "BC_wood_dark"
+   }
+  ]
+ },
+ "/Game/Experiments/CityTrees/v4/HD_ArcadeTree_cell_-1_-1_v4": {
+  "collision": {
+   "boxes": 0,
+   "convex": 2,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_SIMPLE_AND_COMPLEX"
+  },
+  "family": "city-v4",
+  "lods": [
+   {
+    "screen": 1.0,
+    "sections": [
+     0
+    ],
+    "triangles": 19182
+   },
+   {
+    "screen": 0.18,
+    "sections": [
+     0
+    ],
+    "triangles": 9242
+   },
+   {
+    "screen": 0.07,
+    "sections": [
+     0
+    ],
+    "triangles": 5266
+   }
+  ],
+  "slots": [
+   {
+    "imported": "HidamariPalette",
+    "material": "/Game/Japan/Materials/M_Arcade",
+    "name": "HidamariPalette"
+   }
+  ]
+ },
+ "/Game/Experiments/CityTrees/v4/HD_ArcadeTree_cell_-1_0_v4": {
+  "collision": {
+   "boxes": 0,
+   "convex": 0,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_SIMPLE_AND_COMPLEX"
+  },
+  "family": "city-v4",
+  "lods": [
+   {
+    "screen": 1.0,
+    "sections": [
+     0
+    ],
+    "triangles": 25117
+   },
+   {
+    "screen": 0.18,
+    "sections": [
+     0
+    ],
+    "triangles": 11847
+   },
+   {
+    "screen": 0.07,
+    "sections": [
+     0
+    ],
+    "triangles": 6539
+   }
+  ],
+  "slots": [
+   {
+    "imported": "HidamariPalette",
+    "material": "/Game/Japan/Materials/M_Arcade",
+    "name": "HidamariPalette"
+   }
+  ]
+ },
+ "/Game/Experiments/CityTrees/v4/HD_ArcadeTree_cell_0_-1_v4": {
+  "collision": {
+   "boxes": 0,
+   "convex": 0,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_SIMPLE_AND_COMPLEX"
+  },
+  "family": "city-v4",
+  "lods": [
+   {
+    "screen": 1.0,
+    "sections": [
+     0
+    ],
+    "triangles": 21761
+   },
+   {
+    "screen": 0.18,
+    "sections": [
+     0
+    ],
+    "triangles": 10541
+   },
+   {
+    "screen": 0.07,
+    "sections": [
+     0
+    ],
+    "triangles": 6053
+   }
+  ],
+  "slots": [
+   {
+    "imported": "HidamariPalette",
+    "material": "/Game/Japan/Materials/M_Arcade",
+    "name": "HidamariPalette"
+   }
+  ]
+ },
+ "/Game/Experiments/CityTrees/v4/HD_ArcadeTree_cell_0_0_v4": {
+  "collision": {
+   "boxes": 0,
+   "convex": 0,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_SIMPLE_AND_COMPLEX"
+  },
+  "family": "city-v4",
+  "lods": [
+   {
+    "screen": 1.0,
+    "sections": [
+     0
+    ],
+    "triangles": 23472
+   },
+   {
+    "screen": 0.18,
+    "sections": [
+     0
+    ],
+    "triangles": 11402
+   },
+   {
+    "screen": 0.07,
+    "sections": [
+     0
+    ],
+    "triangles": 6574
+   }
+  ],
+  "slots": [
+   {
+    "imported": "HidamariPalette",
+    "material": "/Game/Japan/Materials/M_Arcade",
+    "name": "HidamariPalette"
+   }
+  ]
+ },
+ "/Game/Experiments/CityTrees/v4/HD_PlazaTreeGold_cell_-1_-1_v4": {
+  "collision": {
+   "boxes": 0,
+   "convex": 1,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_SIMPLE_AND_COMPLEX"
+  },
+  "family": "city-v4",
+  "lods": [
+   {
+    "screen": 1.0,
+    "sections": [
+     0
+    ],
+    "triangles": 11966
+   },
+   {
+    "screen": 0.18,
+    "sections": [
+     0
+    ],
+    "triangles": 5346
+   },
+   {
+    "screen": 0.07,
+    "sections": [
+     0
+    ],
+    "triangles": 2698
+   }
+  ],
+  "slots": [
+   {
+    "imported": "HidamariPalette",
+    "material": "/Game/Japan/Materials/M_Arcade",
+    "name": "HidamariPalette"
+   }
+  ]
+ },
+ "/Game/Experiments/CityTrees/v4/HD_PlazaTreeGold_cell_-1_0_v4": {
+  "collision": {
+   "boxes": 0,
+   "convex": 0,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_SIMPLE_AND_COMPLEX"
+  },
+  "family": "city-v4",
+  "lods": [
+   {
+    "screen": 1.0,
+    "sections": [
+     0
+    ],
+    "triangles": 16280
+   },
+   {
+    "screen": 0.18,
+    "sections": [
+     0
+    ],
+    "triangles": 7270
+   },
+   {
+    "screen": 0.07,
+    "sections": [
+     0
+    ],
+    "triangles": 3666
+   }
+  ],
+  "slots": [
+   {
+    "imported": "HidamariPalette",
+    "material": "/Game/Japan/Materials/M_Arcade",
+    "name": "HidamariPalette"
+   }
+  ]
+ },
+ "/Game/Experiments/CityTrees/v4/HD_PlazaTreeGold_cell_0_-1_v4": {
+  "collision": {
+   "boxes": 0,
+   "convex": 0,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_SIMPLE_AND_COMPLEX"
+  },
+  "family": "city-v4",
+  "lods": [
+   {
+    "screen": 1.0,
+    "sections": [
+     0
+    ],
+    "triangles": 13864
+   },
+   {
+    "screen": 0.18,
+    "sections": [
+     0
+    ],
+    "triangles": 6204
+   },
+   {
+    "screen": 0.07,
+    "sections": [
+     0
+    ],
+    "triangles": 3140
+   }
+  ],
+  "slots": [
+   {
+    "imported": "HidamariPalette",
+    "material": "/Game/Japan/Materials/M_Arcade",
+    "name": "HidamariPalette"
+   }
+  ]
+ },
+ "/Game/Experiments/CityTrees/v4/HD_PlazaTreeGold_cell_0_0_v4": {
+  "collision": {
+   "boxes": 0,
+   "convex": 0,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_SIMPLE_AND_COMPLEX"
+  },
+  "family": "city-v4",
+  "lods": [
+   {
+    "screen": 1.0,
+    "sections": [
+     0
+    ],
+    "triangles": 14854
+   },
+   {
+    "screen": 0.18,
+    "sections": [
+     0
+    ],
+    "triangles": 6644
+   },
+   {
+    "screen": 0.07,
+    "sections": [
+     0
+    ],
+    "triangles": 3360
+   }
+  ],
+  "slots": [
+   {
+    "imported": "HidamariPalette",
+    "material": "/Game/Japan/Materials/M_Arcade",
+    "name": "HidamariPalette"
+   }
+  ]
+ },
+ "/Game/Experiments/CityTrees/v4/HD_PlazaTreeOrange_cell_-1_-1_v4": {
+  "collision": {
+   "boxes": 0,
+   "convex": 1,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_SIMPLE_AND_COMPLEX"
+  },
+  "family": "city-v4",
+  "lods": [
+   {
+    "screen": 1.0,
+    "sections": [
+     0
+    ],
+    "triangles": 11966
+   },
+   {
+    "screen": 0.18,
+    "sections": [
+     0
+    ],
+    "triangles": 5346
+   },
+   {
+    "screen": 0.07,
+    "sections": [
+     0
+    ],
+    "triangles": 2698
+   }
+  ],
+  "slots": [
+   {
+    "imported": "HidamariPalette",
+    "material": "/Game/Japan/Materials/M_Arcade",
+    "name": "HidamariPalette"
+   }
+  ]
+ },
+ "/Game/Experiments/CityTrees/v4/HD_PlazaTreeOrange_cell_-1_0_v4": {
+  "collision": {
+   "boxes": 0,
+   "convex": 0,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_SIMPLE_AND_COMPLEX"
+  },
+  "family": "city-v4",
+  "lods": [
+   {
+    "screen": 1.0,
+    "sections": [
+     0
+    ],
+    "triangles": 16280
+   },
+   {
+    "screen": 0.18,
+    "sections": [
+     0
+    ],
+    "triangles": 7270
+   },
+   {
+    "screen": 0.07,
+    "sections": [
+     0
+    ],
+    "triangles": 3666
+   }
+  ],
+  "slots": [
+   {
+    "imported": "HidamariPalette",
+    "material": "/Game/Japan/Materials/M_Arcade",
+    "name": "HidamariPalette"
+   }
+  ]
+ },
+ "/Game/Experiments/CityTrees/v4/HD_PlazaTreeOrange_cell_0_-1_v4": {
+  "collision": {
+   "boxes": 0,
+   "convex": 0,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_SIMPLE_AND_COMPLEX"
+  },
+  "family": "city-v4",
+  "lods": [
+   {
+    "screen": 1.0,
+    "sections": [
+     0
+    ],
+    "triangles": 13864
+   },
+   {
+    "screen": 0.18,
+    "sections": [
+     0
+    ],
+    "triangles": 6204
+   },
+   {
+    "screen": 0.07,
+    "sections": [
+     0
+    ],
+    "triangles": 3140
+   }
+  ],
+  "slots": [
+   {
+    "imported": "HidamariPalette",
+    "material": "/Game/Japan/Materials/M_Arcade",
+    "name": "HidamariPalette"
+   }
+  ]
+ },
+ "/Game/Experiments/CityTrees/v4/HD_PlazaTreeOrange_cell_0_0_v4": {
+  "collision": {
+   "boxes": 0,
+   "convex": 0,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_SIMPLE_AND_COMPLEX"
+  },
+  "family": "city-v4",
+  "lods": [
+   {
+    "screen": 1.0,
+    "sections": [
+     0
+    ],
+    "triangles": 14854
+   },
+   {
+    "screen": 0.18,
+    "sections": [
+     0
+    ],
+    "triangles": 6644
+   },
+   {
+    "screen": 0.07,
+    "sections": [
+     0
+    ],
+    "triangles": 3360
+   }
+  ],
+  "slots": [
+   {
+    "imported": "HidamariPalette",
+    "material": "/Game/Japan/Materials/M_Arcade",
+    "name": "HidamariPalette"
+   }
+  ]
+ },
+ "/Game/Experiments/CityTrees/v4/lods/HD_ArcadeTree_LOD1_cell_-1_-1": {
+  "collision": {
+   "boxes": 0,
+   "convex": 0,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_DEFAULT"
+  },
+  "family": "city-lods",
+  "lods": [
+   {
+    "screen": 2.0,
+    "sections": [
+     0
+    ],
+    "triangles": 9242
+   }
+  ],
+  "slots": [
+   {
+    "imported": "HidamariPalette",
+    "material": "/Game/Japan/Materials/M_Arcade",
+    "name": "HidamariPalette"
+   }
+  ]
+ },
+ "/Game/Experiments/CityTrees/v4/lods/HD_ArcadeTree_LOD1_cell_-1_0": {
+  "collision": {
+   "boxes": 0,
+   "convex": 0,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_DEFAULT"
+  },
+  "family": "city-lods",
+  "lods": [
+   {
+    "screen": 2.0,
+    "sections": [
+     0
+    ],
+    "triangles": 11847
+   }
+  ],
+  "slots": [
+   {
+    "imported": "HidamariPalette",
+    "material": "/Game/Japan/Materials/M_Arcade",
+    "name": "HidamariPalette"
+   }
+  ]
+ },
+ "/Game/Experiments/CityTrees/v4/lods/HD_ArcadeTree_LOD1_cell_0_-1": {
+  "collision": {
+   "boxes": 0,
+   "convex": 0,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_DEFAULT"
+  },
+  "family": "city-lods",
+  "lods": [
+   {
+    "screen": 2.0,
+    "sections": [
+     0
+    ],
+    "triangles": 10541
+   }
+  ],
+  "slots": [
+   {
+    "imported": "HidamariPalette",
+    "material": "/Game/Japan/Materials/M_Arcade",
+    "name": "HidamariPalette"
+   }
+  ]
+ },
+ "/Game/Experiments/CityTrees/v4/lods/HD_ArcadeTree_LOD1_cell_0_0": {
+  "collision": {
+   "boxes": 0,
+   "convex": 0,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_DEFAULT"
+  },
+  "family": "city-lods",
+  "lods": [
+   {
+    "screen": 2.0,
+    "sections": [
+     0
+    ],
+    "triangles": 11402
+   }
+  ],
+  "slots": [
+   {
+    "imported": "HidamariPalette",
+    "material": "/Game/Japan/Materials/M_Arcade",
+    "name": "HidamariPalette"
+   }
+  ]
+ },
+ "/Game/Experiments/CityTrees/v4/lods/HD_ArcadeTree_LOD2_cell_-1_-1": {
+  "collision": {
+   "boxes": 0,
+   "convex": 0,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_DEFAULT"
+  },
+  "family": "city-lods",
+  "lods": [
+   {
+    "screen": 2.0,
+    "sections": [
+     0
+    ],
+    "triangles": 5266
+   }
+  ],
+  "slots": [
+   {
+    "imported": "HidamariPalette",
+    "material": "/Game/Japan/Materials/M_Arcade",
+    "name": "HidamariPalette"
+   }
+  ]
+ },
+ "/Game/Experiments/CityTrees/v4/lods/HD_ArcadeTree_LOD2_cell_-1_0": {
+  "collision": {
+   "boxes": 0,
+   "convex": 0,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_DEFAULT"
+  },
+  "family": "city-lods",
+  "lods": [
+   {
+    "screen": 2.0,
+    "sections": [
+     0
+    ],
+    "triangles": 6539
+   }
+  ],
+  "slots": [
+   {
+    "imported": "HidamariPalette",
+    "material": "/Game/Japan/Materials/M_Arcade",
+    "name": "HidamariPalette"
+   }
+  ]
+ },
+ "/Game/Experiments/CityTrees/v4/lods/HD_ArcadeTree_LOD2_cell_0_-1": {
+  "collision": {
+   "boxes": 0,
+   "convex": 0,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_DEFAULT"
+  },
+  "family": "city-lods",
+  "lods": [
+   {
+    "screen": 2.0,
+    "sections": [
+     0
+    ],
+    "triangles": 6053
+   }
+  ],
+  "slots": [
+   {
+    "imported": "HidamariPalette",
+    "material": "/Game/Japan/Materials/M_Arcade",
+    "name": "HidamariPalette"
+   }
+  ]
+ },
+ "/Game/Experiments/CityTrees/v4/lods/HD_ArcadeTree_LOD2_cell_0_0": {
+  "collision": {
+   "boxes": 0,
+   "convex": 0,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_DEFAULT"
+  },
+  "family": "city-lods",
+  "lods": [
+   {
+    "screen": 2.0,
+    "sections": [
+     0
+    ],
+    "triangles": 6574
+   }
+  ],
+  "slots": [
+   {
+    "imported": "HidamariPalette",
+    "material": "/Game/Japan/Materials/M_Arcade",
+    "name": "HidamariPalette"
+   }
+  ]
+ },
+ "/Game/Experiments/CityTrees/v4/lods/HD_PlazaTreeGold_LOD1_cell_-1_-1": {
+  "collision": {
+   "boxes": 0,
+   "convex": 0,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_DEFAULT"
+  },
+  "family": "city-lods",
+  "lods": [
+   {
+    "screen": 2.0,
+    "sections": [
+     0
+    ],
+    "triangles": 5346
+   }
+  ],
+  "slots": [
+   {
+    "imported": "HidamariPalette",
+    "material": "/Game/Japan/Materials/M_Arcade",
+    "name": "HidamariPalette"
+   }
+  ]
+ },
+ "/Game/Experiments/CityTrees/v4/lods/HD_PlazaTreeGold_LOD1_cell_-1_0": {
+  "collision": {
+   "boxes": 0,
+   "convex": 0,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_DEFAULT"
+  },
+  "family": "city-lods",
+  "lods": [
+   {
+    "screen": 2.0,
+    "sections": [
+     0
+    ],
+    "triangles": 7270
+   }
+  ],
+  "slots": [
+   {
+    "imported": "HidamariPalette",
+    "material": "/Game/Japan/Materials/M_Arcade",
+    "name": "HidamariPalette"
+   }
+  ]
+ },
+ "/Game/Experiments/CityTrees/v4/lods/HD_PlazaTreeGold_LOD1_cell_0_-1": {
+  "collision": {
+   "boxes": 0,
+   "convex": 0,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_DEFAULT"
+  },
+  "family": "city-lods",
+  "lods": [
+   {
+    "screen": 2.0,
+    "sections": [
+     0
+    ],
+    "triangles": 6204
+   }
+  ],
+  "slots": [
+   {
+    "imported": "HidamariPalette",
+    "material": "/Game/Japan/Materials/M_Arcade",
+    "name": "HidamariPalette"
+   }
+  ]
+ },
+ "/Game/Experiments/CityTrees/v4/lods/HD_PlazaTreeGold_LOD1_cell_0_0": {
+  "collision": {
+   "boxes": 0,
+   "convex": 0,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_DEFAULT"
+  },
+  "family": "city-lods",
+  "lods": [
+   {
+    "screen": 2.0,
+    "sections": [
+     0
+    ],
+    "triangles": 6644
+   }
+  ],
+  "slots": [
+   {
+    "imported": "HidamariPalette",
+    "material": "/Game/Japan/Materials/M_Arcade",
+    "name": "HidamariPalette"
+   }
+  ]
+ },
+ "/Game/Experiments/CityTrees/v4/lods/HD_PlazaTreeGold_LOD2_cell_-1_-1": {
+  "collision": {
+   "boxes": 0,
+   "convex": 0,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_DEFAULT"
+  },
+  "family": "city-lods",
+  "lods": [
+   {
+    "screen": 2.0,
+    "sections": [
+     0
+    ],
+    "triangles": 2698
+   }
+  ],
+  "slots": [
+   {
+    "imported": "HidamariPalette",
+    "material": "/Game/Japan/Materials/M_Arcade",
+    "name": "HidamariPalette"
+   }
+  ]
+ },
+ "/Game/Experiments/CityTrees/v4/lods/HD_PlazaTreeGold_LOD2_cell_-1_0": {
+  "collision": {
+   "boxes": 0,
+   "convex": 0,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_DEFAULT"
+  },
+  "family": "city-lods",
+  "lods": [
+   {
+    "screen": 2.0,
+    "sections": [
+     0
+    ],
+    "triangles": 3666
+   }
+  ],
+  "slots": [
+   {
+    "imported": "HidamariPalette",
+    "material": "/Game/Japan/Materials/M_Arcade",
+    "name": "HidamariPalette"
+   }
+  ]
+ },
+ "/Game/Experiments/CityTrees/v4/lods/HD_PlazaTreeGold_LOD2_cell_0_-1": {
+  "collision": {
+   "boxes": 0,
+   "convex": 0,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_DEFAULT"
+  },
+  "family": "city-lods",
+  "lods": [
+   {
+    "screen": 2.0,
+    "sections": [
+     0
+    ],
+    "triangles": 3140
+   }
+  ],
+  "slots": [
+   {
+    "imported": "HidamariPalette",
+    "material": "/Game/Japan/Materials/M_Arcade",
+    "name": "HidamariPalette"
+   }
+  ]
+ },
+ "/Game/Experiments/CityTrees/v4/lods/HD_PlazaTreeGold_LOD2_cell_0_0": {
+  "collision": {
+   "boxes": 0,
+   "convex": 0,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_DEFAULT"
+  },
+  "family": "city-lods",
+  "lods": [
+   {
+    "screen": 2.0,
+    "sections": [
+     0
+    ],
+    "triangles": 3360
+   }
+  ],
+  "slots": [
+   {
+    "imported": "HidamariPalette",
+    "material": "/Game/Japan/Materials/M_Arcade",
+    "name": "HidamariPalette"
+   }
+  ]
+ },
+ "/Game/Experiments/CityTrees/v4/lods/HD_PlazaTreeOrange_LOD1_cell_-1_-1": {
+  "collision": {
+   "boxes": 0,
+   "convex": 0,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_DEFAULT"
+  },
+  "family": "city-lods",
+  "lods": [
+   {
+    "screen": 2.0,
+    "sections": [
+     0
+    ],
+    "triangles": 5346
+   }
+  ],
+  "slots": [
+   {
+    "imported": "HidamariPalette",
+    "material": "/Game/Japan/Materials/M_Arcade",
+    "name": "HidamariPalette"
+   }
+  ]
+ },
+ "/Game/Experiments/CityTrees/v4/lods/HD_PlazaTreeOrange_LOD1_cell_-1_0": {
+  "collision": {
+   "boxes": 0,
+   "convex": 0,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_DEFAULT"
+  },
+  "family": "city-lods",
+  "lods": [
+   {
+    "screen": 2.0,
+    "sections": [
+     0
+    ],
+    "triangles": 7270
+   }
+  ],
+  "slots": [
+   {
+    "imported": "HidamariPalette",
+    "material": "/Game/Japan/Materials/M_Arcade",
+    "name": "HidamariPalette"
+   }
+  ]
+ },
+ "/Game/Experiments/CityTrees/v4/lods/HD_PlazaTreeOrange_LOD1_cell_0_-1": {
+  "collision": {
+   "boxes": 0,
+   "convex": 0,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_DEFAULT"
+  },
+  "family": "city-lods",
+  "lods": [
+   {
+    "screen": 2.0,
+    "sections": [
+     0
+    ],
+    "triangles": 6204
+   }
+  ],
+  "slots": [
+   {
+    "imported": "HidamariPalette",
+    "material": "/Game/Japan/Materials/M_Arcade",
+    "name": "HidamariPalette"
+   }
+  ]
+ },
+ "/Game/Experiments/CityTrees/v4/lods/HD_PlazaTreeOrange_LOD1_cell_0_0": {
+  "collision": {
+   "boxes": 0,
+   "convex": 0,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_DEFAULT"
+  },
+  "family": "city-lods",
+  "lods": [
+   {
+    "screen": 2.0,
+    "sections": [
+     0
+    ],
+    "triangles": 6644
+   }
+  ],
+  "slots": [
+   {
+    "imported": "HidamariPalette",
+    "material": "/Game/Japan/Materials/M_Arcade",
+    "name": "HidamariPalette"
+   }
+  ]
+ },
+ "/Game/Experiments/CityTrees/v4/lods/HD_PlazaTreeOrange_LOD2_cell_-1_-1": {
+  "collision": {
+   "boxes": 0,
+   "convex": 0,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_DEFAULT"
+  },
+  "family": "city-lods",
+  "lods": [
+   {
+    "screen": 2.0,
+    "sections": [
+     0
+    ],
+    "triangles": 2698
+   }
+  ],
+  "slots": [
+   {
+    "imported": "HidamariPalette",
+    "material": "/Game/Japan/Materials/M_Arcade",
+    "name": "HidamariPalette"
+   }
+  ]
+ },
+ "/Game/Experiments/CityTrees/v4/lods/HD_PlazaTreeOrange_LOD2_cell_-1_0": {
+  "collision": {
+   "boxes": 0,
+   "convex": 0,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_DEFAULT"
+  },
+  "family": "city-lods",
+  "lods": [
+   {
+    "screen": 2.0,
+    "sections": [
+     0
+    ],
+    "triangles": 3666
+   }
+  ],
+  "slots": [
+   {
+    "imported": "HidamariPalette",
+    "material": "/Game/Japan/Materials/M_Arcade",
+    "name": "HidamariPalette"
+   }
+  ]
+ },
+ "/Game/Experiments/CityTrees/v4/lods/HD_PlazaTreeOrange_LOD2_cell_0_-1": {
+  "collision": {
+   "boxes": 0,
+   "convex": 0,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_DEFAULT"
+  },
+  "family": "city-lods",
+  "lods": [
+   {
+    "screen": 2.0,
+    "sections": [
+     0
+    ],
+    "triangles": 3140
+   }
+  ],
+  "slots": [
+   {
+    "imported": "HidamariPalette",
+    "material": "/Game/Japan/Materials/M_Arcade",
+    "name": "HidamariPalette"
+   }
+  ]
+ },
+ "/Game/Experiments/CityTrees/v4/lods/HD_PlazaTreeOrange_LOD2_cell_0_0": {
+  "collision": {
+   "boxes": 0,
+   "convex": 0,
+   "double_sided": false,
+   "simple": 0,
+   "trace": "CTF_USE_DEFAULT"
+  },
+  "family": "city-lods",
+  "lods": [
+   {
+    "screen": 2.0,
+    "sections": [
+     0
+    ],
+    "triangles": 3360
+   }
+  ],
+  "slots": [
+   {
+    "imported": "HidamariPalette",
+    "material": "/Game/Japan/Materials/M_Arcade",
+    "name": "HidamariPalette"
+   }
+  ]
+ }
+}

@@ -1252,9 +1252,13 @@
         "SM_BC_Plant_Bloom1"
       ],
       "id": "object/brinecove/plant-bloom",
-      "model": "adopted/brinecove/plant-bloom",
+      "model": [
+        "prop/brinecove/plant-bloom0",
+        "prop/brinecove/plant-bloom1"
+      ],
       "models": [
-        "adopted/brinecove/plant-bloom"
+        "prop/brinecove/plant-bloom0",
+        "prop/brinecove/plant-bloom1"
       ]
     },
     "object/brinecove/plant-broad": {
@@ -1269,9 +1273,25 @@
         "SM_BC_Plant_Broad7"
       ],
       "id": "object/brinecove/plant-broad",
-      "model": "adopted/brinecove/plant-broad",
+      "model": [
+        "prop/brinecove/plant-broad0",
+        "prop/brinecove/plant-broad1",
+        "prop/brinecove/plant-broad2",
+        "prop/brinecove/plant-broad3",
+        "prop/brinecove/plant-broad4",
+        "prop/brinecove/plant-broad5",
+        "prop/brinecove/plant-broad6",
+        "prop/brinecove/plant-broad7"
+      ],
       "models": [
-        "adopted/brinecove/plant-broad"
+        "prop/brinecove/plant-broad0",
+        "prop/brinecove/plant-broad1",
+        "prop/brinecove/plant-broad2",
+        "prop/brinecove/plant-broad3",
+        "prop/brinecove/plant-broad4",
+        "prop/brinecove/plant-broad5",
+        "prop/brinecove/plant-broad6",
+        "prop/brinecove/plant-broad7"
       ]
     },
     "object/brinecove/plant-cover-fern": {
@@ -1281,9 +1301,15 @@
         "SM_BC_Plant_CoverFern2#479"
       ],
       "id": "object/brinecove/plant-cover-fern",
-      "model": "adopted/brinecove/plant-cover-fern",
+      "model": [
+        "prop/brinecove/plant-cover-fern0",
+        "prop/brinecove/plant-cover-fern1",
+        "prop/brinecove/plant-cover-fern2"
+      ],
       "models": [
-        "adopted/brinecove/plant-cover-fern"
+        "prop/brinecove/plant-cover-fern0",
+        "prop/brinecove/plant-cover-fern1",
+        "prop/brinecove/plant-cover-fern2"
       ]
     },
     "object/brinecove/plant-cover-fern-m2-0": {
@@ -1326,9 +1352,15 @@
         "SM_BC_Plant_CoverFern2#478@-6_3"
       ],
       "id": "object/brinecove/plant-cover-fern-m2-0",
-      "model": "adopted/brinecove/plant-cover-fern",
+      "model": [
+        "prop/brinecove/plant-cover-fern0",
+        "prop/brinecove/plant-cover-fern1",
+        "prop/brinecove/plant-cover-fern2"
+      ],
       "models": [
-        "adopted/brinecove/plant-cover-fern"
+        "prop/brinecove/plant-cover-fern0",
+        "prop/brinecove/plant-cover-fern1",
+        "prop/brinecove/plant-cover-fern2"
       ]
     },
     "object/brinecove/plant-cover-fern-m2-1": {
@@ -1344,9 +1376,15 @@
         "SM_BC_Plant_CoverFern2#478@-6_4"
       ],
       "id": "object/brinecove/plant-cover-fern-m2-1",
-      "model": "adopted/brinecove/plant-cover-fern",
+      "model": [
+        "prop/brinecove/plant-cover-fern0",
+        "prop/brinecove/plant-cover-fern1",
+        "prop/brinecove/plant-cover-fern2"
+      ],
       "models": [
-        "adopted/brinecove/plant-cover-fern"
+        "prop/brinecove/plant-cover-fern0",
+        "prop/brinecove/plant-cover-fern1",
+        "prop/brinecove/plant-cover-fern2"
       ]
     },
     "object/brinecove/plant-cover-fern-m2-m1": {
@@ -1389,9 +1427,15 @@
         "SM_BC_Plant_CoverFern2#478@-6_-1"
       ],
       "id": "object/brinecove/plant-cover-fern-m2-m1",
-      "model": "adopted/brinecove/plant-cover-fern",
+      "model": [
+        "prop/brinecove/plant-cover-fern0",
+        "prop/brinecove/plant-cover-fern1",
+        "prop/brinecove/plant-cover-fern2"
+      ],
       "models": [
-        "adopted/brinecove/plant-cover-fern"
+        "prop/brinecove/plant-cover-fern0",
+        "prop/brinecove/plant-cover-fern1",
+        "prop/brinecove/plant-cover-fern2"
       ]
     },
     "object/brinecove/plant-cover-fern-m2-m2": {
@@ -1415,9 +1459,15 @@
         "SM_BC_Plant_CoverFern2#478@-6_-5"
       ],
       "id": "object/brinecove/plant-cover-fern-m2-m2",
-      "model": "adopted/brinecove/plant-cover-fern",
+      "model": [
+        "prop/brinecove/plant-cover-fern0",
+        "prop/brinecove/plant-cover-fern1",
+        "prop/brinecove/plant-cover-fern2"
+      ],
       "models": [
-        "adopted/brinecove/plant-cover-fern"
+        "prop/brinecove/plant-cover-fern0",
+        "prop/brinecove/plant-cover-fern1",
+        "prop/brinecove/plant-cover-fern2"
       ]
     },
     "object/brinecove/plant-cover-fern-m3-0": {
@@ -1472,9 +1522,15 @@
         "SM_BC_Plant_CoverFern2#478@-9_3"
       ],
       "id": "object/brinecove/plant-cover-fern-m3-0",
-      "model": "adopted/brinecove/plant-cover-fern",
+      "model": [
+        "prop/brinecove/plant-cover-fern0",
+        "prop/brinecove/plant-cover-fern1",
+        "prop/brinecove/plant-cover-fern2"
+      ],
       "models": [
-        "adopted/brinecove/plant-cover-fern"
+        "prop/brinecove/plant-cover-fern0",
+        "prop/brinecove/plant-cover-fern1",
+        "prop/brinecove/plant-cover-fern2"
       ]
     },
     "object/brinecove/plant-cover-fern-m3-1": {
@@ -1493,9 +1549,15 @@
         "SM_BC_Plant_CoverFern2#478@-9_4"
       ],
       "id": "object/brinecove/plant-cover-fern-m3-1",
-      "model": "adopted/brinecove/plant-cover-fern",
+      "model": [
+        "prop/brinecove/plant-cover-fern0",
+        "prop/brinecove/plant-cover-fern1",
+        "prop/brinecove/plant-cover-fern2"
+      ],
       "models": [
-        "adopted/brinecove/plant-cover-fern"
+        "prop/brinecove/plant-cover-fern0",
+        "prop/brinecove/plant-cover-fern1",
+        "prop/brinecove/plant-cover-fern2"
       ]
     },
     "object/brinecove/plant-cover-fern-m3-m1": {
@@ -1513,9 +1575,15 @@
         "SM_BC_Plant_CoverFern2#478@-9_-1"
       ],
       "id": "object/brinecove/plant-cover-fern-m3-m1",
-      "model": "adopted/brinecove/plant-cover-fern",
+      "model": [
+        "prop/brinecove/plant-cover-fern0",
+        "prop/brinecove/plant-cover-fern1",
+        "prop/brinecove/plant-cover-fern2"
+      ],
       "models": [
-        "adopted/brinecove/plant-cover-fern"
+        "prop/brinecove/plant-cover-fern0",
+        "prop/brinecove/plant-cover-fern1",
+        "prop/brinecove/plant-cover-fern2"
       ]
     },
     "object/brinecove/plant-cover-fern-m4-0": {
@@ -1570,9 +1638,15 @@
         "SM_BC_Plant_CoverFern2#478@-13_3"
       ],
       "id": "object/brinecove/plant-cover-fern-m4-0",
-      "model": "adopted/brinecove/plant-cover-fern",
+      "model": [
+        "prop/brinecove/plant-cover-fern0",
+        "prop/brinecove/plant-cover-fern1",
+        "prop/brinecove/plant-cover-fern2"
+      ],
       "models": [
-        "adopted/brinecove/plant-cover-fern"
+        "prop/brinecove/plant-cover-fern0",
+        "prop/brinecove/plant-cover-fern1",
+        "prop/brinecove/plant-cover-fern2"
       ]
     },
     "object/brinecove/plant-cover-fern-m4-1": {
@@ -1591,9 +1665,15 @@
         "SM_BC_Plant_CoverFern2#478@-13_4"
       ],
       "id": "object/brinecove/plant-cover-fern-m4-1",
-      "model": "adopted/brinecove/plant-cover-fern",
+      "model": [
+        "prop/brinecove/plant-cover-fern0",
+        "prop/brinecove/plant-cover-fern1",
+        "prop/brinecove/plant-cover-fern2"
+      ],
       "models": [
-        "adopted/brinecove/plant-cover-fern"
+        "prop/brinecove/plant-cover-fern0",
+        "prop/brinecove/plant-cover-fern1",
+        "prop/brinecove/plant-cover-fern2"
       ]
     },
     "object/brinecove/plant-cover-fern-m4-m1": {
@@ -1618,9 +1698,15 @@
         "SM_BC_Plant_CoverFern2#478@-14_-1"
       ],
       "id": "object/brinecove/plant-cover-fern-m4-m1",
-      "model": "adopted/brinecove/plant-cover-fern",
+      "model": [
+        "prop/brinecove/plant-cover-fern0",
+        "prop/brinecove/plant-cover-fern1",
+        "prop/brinecove/plant-cover-fern2"
+      ],
       "models": [
-        "adopted/brinecove/plant-cover-fern"
+        "prop/brinecove/plant-cover-fern0",
+        "prop/brinecove/plant-cover-fern1",
+        "prop/brinecove/plant-cover-fern2"
       ]
     },
     "object/brinecove/plant-cover-fern-m5-0": {
@@ -1675,9 +1761,15 @@
         "SM_BC_Plant_CoverFern2#478@-17_3"
       ],
       "id": "object/brinecove/plant-cover-fern-m5-0",
-      "model": "adopted/brinecove/plant-cover-fern",
+      "model": [
+        "prop/brinecove/plant-cover-fern0",
+        "prop/brinecove/plant-cover-fern1",
+        "prop/brinecove/plant-cover-fern2"
+      ],
       "models": [
-        "adopted/brinecove/plant-cover-fern"
+        "prop/brinecove/plant-cover-fern0",
+        "prop/brinecove/plant-cover-fern1",
+        "prop/brinecove/plant-cover-fern2"
       ]
     },
     "object/brinecove/plant-cover-fern-m5-1": {
@@ -1696,9 +1788,15 @@
         "SM_BC_Plant_CoverFern2#478@-17_4"
       ],
       "id": "object/brinecove/plant-cover-fern-m5-1",
-      "model": "adopted/brinecove/plant-cover-fern",
+      "model": [
+        "prop/brinecove/plant-cover-fern0",
+        "prop/brinecove/plant-cover-fern1",
+        "prop/brinecove/plant-cover-fern2"
+      ],
       "models": [
-        "adopted/brinecove/plant-cover-fern"
+        "prop/brinecove/plant-cover-fern0",
+        "prop/brinecove/plant-cover-fern1",
+        "prop/brinecove/plant-cover-fern2"
       ]
     },
     "object/brinecove/plant-cover-fern-m5-m1": {
@@ -1744,9 +1842,15 @@
         "SM_BC_Plant_CoverFern2#478@-17_-1"
       ],
       "id": "object/brinecove/plant-cover-fern-m5-m1",
-      "model": "adopted/brinecove/plant-cover-fern",
+      "model": [
+        "prop/brinecove/plant-cover-fern0",
+        "prop/brinecove/plant-cover-fern1",
+        "prop/brinecove/plant-cover-fern2"
+      ],
       "models": [
-        "adopted/brinecove/plant-cover-fern"
+        "prop/brinecove/plant-cover-fern0",
+        "prop/brinecove/plant-cover-fern1",
+        "prop/brinecove/plant-cover-fern2"
       ]
     },
     "object/brinecove/plant-cover-fern-m5-m2": {
@@ -1774,9 +1878,15 @@
         "SM_BC_Plant_CoverFern2#478@-17_-5"
       ],
       "id": "object/brinecove/plant-cover-fern-m5-m2",
-      "model": "adopted/brinecove/plant-cover-fern",
+      "model": [
+        "prop/brinecove/plant-cover-fern0",
+        "prop/brinecove/plant-cover-fern1",
+        "prop/brinecove/plant-cover-fern2"
+      ],
       "models": [
-        "adopted/brinecove/plant-cover-fern"
+        "prop/brinecove/plant-cover-fern0",
+        "prop/brinecove/plant-cover-fern1",
+        "prop/brinecove/plant-cover-fern2"
       ]
     },
     "object/brinecove/plant-cover-grass": {
@@ -1786,9 +1896,15 @@
         "SM_BC_Plant_CoverGrass2#481"
       ],
       "id": "object/brinecove/plant-cover-grass",
-      "model": "adopted/brinecove/plant-cover-grass",
+      "model": [
+        "prop/brinecove/plant-cover-grass0",
+        "prop/brinecove/plant-cover-grass1",
+        "prop/brinecove/plant-cover-grass2"
+      ],
       "models": [
-        "adopted/brinecove/plant-cover-grass"
+        "prop/brinecove/plant-cover-grass0",
+        "prop/brinecove/plant-cover-grass1",
+        "prop/brinecove/plant-cover-grass2"
       ]
     },
     "object/brinecove/plant-cover-grass-m2-0": {
@@ -1831,9 +1947,15 @@
         "SM_BC_Plant_CoverGrass2#480@-6_3"
       ],
       "id": "object/brinecove/plant-cover-grass-m2-0",
-      "model": "adopted/brinecove/plant-cover-grass",
+      "model": [
+        "prop/brinecove/plant-cover-grass0",
+        "prop/brinecove/plant-cover-grass1",
+        "prop/brinecove/plant-cover-grass2"
+      ],
       "models": [
-        "adopted/brinecove/plant-cover-grass"
+        "prop/brinecove/plant-cover-grass0",
+        "prop/brinecove/plant-cover-grass1",
+        "prop/brinecove/plant-cover-grass2"
       ]
     },
     "object/brinecove/plant-cover-grass-m2-1": {
@@ -1849,9 +1971,15 @@
         "SM_BC_Plant_CoverGrass2#480@-6_4"
       ],
       "id": "object/brinecove/plant-cover-grass-m2-1",
-      "model": "adopted/brinecove/plant-cover-grass",
+      "model": [
+        "prop/brinecove/plant-cover-grass0",
+        "prop/brinecove/plant-cover-grass1",
+        "prop/brinecove/plant-cover-grass2"
+      ],
       "models": [
-        "adopted/brinecove/plant-cover-grass"
+        "prop/brinecove/plant-cover-grass0",
+        "prop/brinecove/plant-cover-grass1",
+        "prop/brinecove/plant-cover-grass2"
       ]
     },
     "object/brinecove/plant-cover-grass-m2-m1": {
@@ -1894,9 +2022,15 @@
         "SM_BC_Plant_CoverGrass2#480@-6_-1"
       ],
       "id": "object/brinecove/plant-cover-grass-m2-m1",
-      "model": "adopted/brinecove/plant-cover-grass",
+      "model": [
+        "prop/brinecove/plant-cover-grass0",
+        "prop/brinecove/plant-cover-grass1",
+        "prop/brinecove/plant-cover-grass2"
+      ],
       "models": [
-        "adopted/brinecove/plant-cover-grass"
+        "prop/brinecove/plant-cover-grass0",
+        "prop/brinecove/plant-cover-grass1",
+        "prop/brinecove/plant-cover-grass2"
       ]
     },
     "object/brinecove/plant-cover-grass-m2-m2": {
@@ -1920,9 +2054,15 @@
         "SM_BC_Plant_CoverGrass2#480@-6_-5"
       ],
       "id": "object/brinecove/plant-cover-grass-m2-m2",
-      "model": "adopted/brinecove/plant-cover-grass",
+      "model": [
+        "prop/brinecove/plant-cover-grass0",
+        "prop/brinecove/plant-cover-grass1",
+        "prop/brinecove/plant-cover-grass2"
+      ],
       "models": [
-        "adopted/brinecove/plant-cover-grass"
+        "prop/brinecove/plant-cover-grass0",
+        "prop/brinecove/plant-cover-grass1",
+        "prop/brinecove/plant-cover-grass2"
       ]
     },
     "object/brinecove/plant-cover-grass-m3-0": {
@@ -1977,9 +2117,15 @@
         "SM_BC_Plant_CoverGrass2#480@-9_3"
       ],
       "id": "object/brinecove/plant-cover-grass-m3-0",
-      "model": "adopted/brinecove/plant-cover-grass",
+      "model": [
+        "prop/brinecove/plant-cover-grass0",
+        "prop/brinecove/plant-cover-grass1",
+        "prop/brinecove/plant-cover-grass2"
+      ],
       "models": [
-        "adopted/brinecove/plant-cover-grass"
+        "prop/brinecove/plant-cover-grass0",
+        "prop/brinecove/plant-cover-grass1",
+        "prop/brinecove/plant-cover-grass2"
       ]
     },
     "object/brinecove/plant-cover-grass-m3-1": {
@@ -1998,9 +2144,15 @@
         "SM_BC_Plant_CoverGrass2#480@-9_4"
       ],
       "id": "object/brinecove/plant-cover-grass-m3-1",
-      "model": "adopted/brinecove/plant-cover-grass",
+      "model": [
+        "prop/brinecove/plant-cover-grass0",
+        "prop/brinecove/plant-cover-grass1",
+        "prop/brinecove/plant-cover-grass2"
+      ],
       "models": [
-        "adopted/brinecove/plant-cover-grass"
+        "prop/brinecove/plant-cover-grass0",
+        "prop/brinecove/plant-cover-grass1",
+        "prop/brinecove/plant-cover-grass2"
       ]
     },
     "object/brinecove/plant-cover-grass-m3-m1": {
@@ -2018,9 +2170,15 @@
         "SM_BC_Plant_CoverGrass2#480@-9_-1"
       ],
       "id": "object/brinecove/plant-cover-grass-m3-m1",
-      "model": "adopted/brinecove/plant-cover-grass",
+      "model": [
+        "prop/brinecove/plant-cover-grass0",
+        "prop/brinecove/plant-cover-grass1",
+        "prop/brinecove/plant-cover-grass2"
+      ],
       "models": [
-        "adopted/brinecove/plant-cover-grass"
+        "prop/brinecove/plant-cover-grass0",
+        "prop/brinecove/plant-cover-grass1",
+        "prop/brinecove/plant-cover-grass2"
       ]
     },
     "object/brinecove/plant-cover-grass-m4-0": {
@@ -2075,9 +2233,15 @@
         "SM_BC_Plant_CoverGrass2#480@-13_3"
       ],
       "id": "object/brinecove/plant-cover-grass-m4-0",
-      "model": "adopted/brinecove/plant-cover-grass",
+      "model": [
+        "prop/brinecove/plant-cover-grass0",
+        "prop/brinecove/plant-cover-grass1",
+        "prop/brinecove/plant-cover-grass2"
+      ],
       "models": [
-        "adopted/brinecove/plant-cover-grass"
+        "prop/brinecove/plant-cover-grass0",
+        "prop/brinecove/plant-cover-grass1",
+        "prop/brinecove/plant-cover-grass2"
       ]
     },
     "object/brinecove/plant-cover-grass-m4-1": {
@@ -2096,9 +2260,15 @@
         "SM_BC_Plant_CoverGrass2#480@-13_4"
       ],
       "id": "object/brinecove/plant-cover-grass-m4-1",
-      "model": "adopted/brinecove/plant-cover-grass",
+      "model": [
+        "prop/brinecove/plant-cover-grass0",
+        "prop/brinecove/plant-cover-grass1",
+        "prop/brinecove/plant-cover-grass2"
+      ],
       "models": [
-        "adopted/brinecove/plant-cover-grass"
+        "prop/brinecove/plant-cover-grass0",
+        "prop/brinecove/plant-cover-grass1",
+        "prop/brinecove/plant-cover-grass2"
       ]
     },
     "object/brinecove/plant-cover-grass-m4-m1": {
@@ -2124,9 +2294,15 @@
         "SM_BC_Plant_CoverGrass2#480@-14_-1"
       ],
       "id": "object/brinecove/plant-cover-grass-m4-m1",
-      "model": "adopted/brinecove/plant-cover-grass",
+      "model": [
+        "prop/brinecove/plant-cover-grass0",
+        "prop/brinecove/plant-cover-grass1",
+        "prop/brinecove/plant-cover-grass2"
+      ],
       "models": [
-        "adopted/brinecove/plant-cover-grass"
+        "prop/brinecove/plant-cover-grass0",
+        "prop/brinecove/plant-cover-grass1",
+        "prop/brinecove/plant-cover-grass2"
       ]
     },
     "object/brinecove/plant-cover-grass-m5-0": {
@@ -2181,9 +2357,15 @@
         "SM_BC_Plant_CoverGrass2#480@-17_3"
       ],
       "id": "object/brinecove/plant-cover-grass-m5-0",
-      "model": "adopted/brinecove/plant-cover-grass",
+      "model": [
+        "prop/brinecove/plant-cover-grass0",
+        "prop/brinecove/plant-cover-grass1",
+        "prop/brinecove/plant-cover-grass2"
+      ],
       "models": [
-        "adopted/brinecove/plant-cover-grass"
+        "prop/brinecove/plant-cover-grass0",
+        "prop/brinecove/plant-cover-grass1",
+        "prop/brinecove/plant-cover-grass2"
       ]
     },
     "object/brinecove/plant-cover-grass-m5-1": {
@@ -2202,9 +2384,15 @@
         "SM_BC_Plant_CoverGrass2#480@-17_4"
       ],
       "id": "object/brinecove/plant-cover-grass-m5-1",
-      "model": "adopted/brinecove/plant-cover-grass",
+      "model": [
+        "prop/brinecove/plant-cover-grass0",
+        "prop/brinecove/plant-cover-grass1",
+        "prop/brinecove/plant-cover-grass2"
+      ],
       "models": [
-        "adopted/brinecove/plant-cover-grass"
+        "prop/brinecove/plant-cover-grass0",
+        "prop/brinecove/plant-cover-grass1",
+        "prop/brinecove/plant-cover-grass2"
       ]
     },
     "object/brinecove/plant-cover-grass-m5-m1": {
@@ -2250,9 +2438,15 @@
         "SM_BC_Plant_CoverGrass2#480@-17_-1"
       ],
       "id": "object/brinecove/plant-cover-grass-m5-m1",
-      "model": "adopted/brinecove/plant-cover-grass",
+      "model": [
+        "prop/brinecove/plant-cover-grass0",
+        "prop/brinecove/plant-cover-grass1",
+        "prop/brinecove/plant-cover-grass2"
+      ],
       "models": [
-        "adopted/brinecove/plant-cover-grass"
+        "prop/brinecove/plant-cover-grass0",
+        "prop/brinecove/plant-cover-grass1",
+        "prop/brinecove/plant-cover-grass2"
       ]
     },
     "object/brinecove/plant-cover-grass-m5-m2": {
@@ -2279,9 +2473,15 @@
         "SM_BC_Plant_CoverGrass2#480@-17_-5"
       ],
       "id": "object/brinecove/plant-cover-grass-m5-m2",
-      "model": "adopted/brinecove/plant-cover-grass",
+      "model": [
+        "prop/brinecove/plant-cover-grass0",
+        "prop/brinecove/plant-cover-grass1",
+        "prop/brinecove/plant-cover-grass2"
+      ],
       "models": [
-        "adopted/brinecove/plant-cover-grass"
+        "prop/brinecove/plant-cover-grass0",
+        "prop/brinecove/plant-cover-grass1",
+        "prop/brinecove/plant-cover-grass2"
       ]
     },
     "object/brinecove/plant-cover-leaf": {
@@ -2291,9 +2491,15 @@
         "SM_BC_Plant_CoverLeaf2#483"
       ],
       "id": "object/brinecove/plant-cover-leaf",
-      "model": "adopted/brinecove/plant-cover-leaf",
+      "model": [
+        "prop/brinecove/plant-cover-leaf0",
+        "prop/brinecove/plant-cover-leaf1",
+        "prop/brinecove/plant-cover-leaf2"
+      ],
       "models": [
-        "adopted/brinecove/plant-cover-leaf"
+        "prop/brinecove/plant-cover-leaf0",
+        "prop/brinecove/plant-cover-leaf1",
+        "prop/brinecove/plant-cover-leaf2"
       ]
     },
     "object/brinecove/plant-cover-leaf-m2-0": {
@@ -2336,9 +2542,15 @@
         "SM_BC_Plant_CoverLeaf2#482@-6_3"
       ],
       "id": "object/brinecove/plant-cover-leaf-m2-0",
-      "model": "adopted/brinecove/plant-cover-leaf",
+      "model": [
+        "prop/brinecove/plant-cover-leaf0",
+        "prop/brinecove/plant-cover-leaf1",
+        "prop/brinecove/plant-cover-leaf2"
+      ],
       "models": [
-        "adopted/brinecove/plant-cover-leaf"
+        "prop/brinecove/plant-cover-leaf0",
+        "prop/brinecove/plant-cover-leaf1",
+        "prop/brinecove/plant-cover-leaf2"
       ]
     },
     "object/brinecove/plant-cover-leaf-m2-1": {
@@ -2354,9 +2566,15 @@
         "SM_BC_Plant_CoverLeaf2#482@-6_4"
       ],
       "id": "object/brinecove/plant-cover-leaf-m2-1",
-      "model": "adopted/brinecove/plant-cover-leaf",
+      "model": [
+        "prop/brinecove/plant-cover-leaf0",
+        "prop/brinecove/plant-cover-leaf1",
+        "prop/brinecove/plant-cover-leaf2"
+      ],
       "models": [
-        "adopted/brinecove/plant-cover-leaf"
+        "prop/brinecove/plant-cover-leaf0",
+        "prop/brinecove/plant-cover-leaf1",
+        "prop/brinecove/plant-cover-leaf2"
       ]
     },
     "object/brinecove/plant-cover-leaf-m2-m1": {
@@ -2399,9 +2617,15 @@
         "SM_BC_Plant_CoverLeaf2#482@-6_-1"
       ],
       "id": "object/brinecove/plant-cover-leaf-m2-m1",
-      "model": "adopted/brinecove/plant-cover-leaf",
+      "model": [
+        "prop/brinecove/plant-cover-leaf0",
+        "prop/brinecove/plant-cover-leaf1",
+        "prop/brinecove/plant-cover-leaf2"
+      ],
       "models": [
-        "adopted/brinecove/plant-cover-leaf"
+        "prop/brinecove/plant-cover-leaf0",
+        "prop/brinecove/plant-cover-leaf1",
+        "prop/brinecove/plant-cover-leaf2"
       ]
     },
     "object/brinecove/plant-cover-leaf-m2-m2": {
@@ -2429,9 +2653,15 @@
         "SM_BC_Plant_CoverLeaf2#482@-6_-5"
       ],
       "id": "object/brinecove/plant-cover-leaf-m2-m2",
-      "model": "adopted/brinecove/plant-cover-leaf",
+      "model": [
+        "prop/brinecove/plant-cover-leaf0",
+        "prop/brinecove/plant-cover-leaf1",
+        "prop/brinecove/plant-cover-leaf2"
+      ],
       "models": [
-        "adopted/brinecove/plant-cover-leaf"
+        "prop/brinecove/plant-cover-leaf0",
+        "prop/brinecove/plant-cover-leaf1",
+        "prop/brinecove/plant-cover-leaf2"
       ]
     },
     "object/brinecove/plant-cover-leaf-m3-0": {
@@ -2486,9 +2716,15 @@
         "SM_BC_Plant_CoverLeaf2#482@-9_3"
       ],
       "id": "object/brinecove/plant-cover-leaf-m3-0",
-      "model": "adopted/brinecove/plant-cover-leaf",
+      "model": [
+        "prop/brinecove/plant-cover-leaf0",
+        "prop/brinecove/plant-cover-leaf1",
+        "prop/brinecove/plant-cover-leaf2"
+      ],
       "models": [
-        "adopted/brinecove/plant-cover-leaf"
+        "prop/brinecove/plant-cover-leaf0",
+        "prop/brinecove/plant-cover-leaf1",
+        "prop/brinecove/plant-cover-leaf2"
       ]
     },
     "object/brinecove/plant-cover-leaf-m3-1": {
@@ -2507,9 +2743,15 @@
         "SM_BC_Plant_CoverLeaf2#482@-9_4"
       ],
       "id": "object/brinecove/plant-cover-leaf-m3-1",
-      "model": "adopted/brinecove/plant-cover-leaf",
+      "model": [
+        "prop/brinecove/plant-cover-leaf0",
+        "prop/brinecove/plant-cover-leaf1",
+        "prop/brinecove/plant-cover-leaf2"
+      ],
       "models": [
-        "adopted/brinecove/plant-cover-leaf"
+        "prop/brinecove/plant-cover-leaf0",
+        "prop/brinecove/plant-cover-leaf1",
+        "prop/brinecove/plant-cover-leaf2"
       ]
     },
     "object/brinecove/plant-cover-leaf-m3-m1": {
@@ -2528,9 +2770,15 @@
         "SM_BC_Plant_CoverLeaf2#482@-9_-1"
       ],
       "id": "object/brinecove/plant-cover-leaf-m3-m1",
-      "model": "adopted/brinecove/plant-cover-leaf",
+      "model": [
+        "prop/brinecove/plant-cover-leaf0",
+        "prop/brinecove/plant-cover-leaf1",
+        "prop/brinecove/plant-cover-leaf2"
+      ],
       "models": [
-        "adopted/brinecove/plant-cover-leaf"
+        "prop/brinecove/plant-cover-leaf0",
+        "prop/brinecove/plant-cover-leaf1",
+        "prop/brinecove/plant-cover-leaf2"
       ]
     },
     "object/brinecove/plant-cover-leaf-m4-0": {
@@ -2585,9 +2833,15 @@
         "SM_BC_Plant_CoverLeaf2#482@-13_3"
       ],
       "id": "object/brinecove/plant-cover-leaf-m4-0",
-      "model": "adopted/brinecove/plant-cover-leaf",
+      "model": [
+        "prop/brinecove/plant-cover-leaf0",
+        "prop/brinecove/plant-cover-leaf1",
+        "prop/brinecove/plant-cover-leaf2"
+      ],
       "models": [
-        "adopted/brinecove/plant-cover-leaf"
+        "prop/brinecove/plant-cover-leaf0",
+        "prop/brinecove/plant-cover-leaf1",
+        "prop/brinecove/plant-cover-leaf2"
       ]
     },
     "object/brinecove/plant-cover-leaf-m4-1": {
@@ -2606,9 +2860,15 @@
         "SM_BC_Plant_CoverLeaf2#482@-13_4"
       ],
       "id": "object/brinecove/plant-cover-leaf-m4-1",
-      "model": "adopted/brinecove/plant-cover-leaf",
+      "model": [
+        "prop/brinecove/plant-cover-leaf0",
+        "prop/brinecove/plant-cover-leaf1",
+        "prop/brinecove/plant-cover-leaf2"
+      ],
       "models": [
-        "adopted/brinecove/plant-cover-leaf"
+        "prop/brinecove/plant-cover-leaf0",
+        "prop/brinecove/plant-cover-leaf1",
+        "prop/brinecove/plant-cover-leaf2"
       ]
     },
     "object/brinecove/plant-cover-leaf-m4-m1": {
@@ -2630,9 +2890,15 @@
         "SM_BC_Plant_CoverLeaf2#482@-15_-1"
       ],
       "id": "object/brinecove/plant-cover-leaf-m4-m1",
-      "model": "adopted/brinecove/plant-cover-leaf",
+      "model": [
+        "prop/brinecove/plant-cover-leaf0",
+        "prop/brinecove/plant-cover-leaf1",
+        "prop/brinecove/plant-cover-leaf2"
+      ],
       "models": [
-        "adopted/brinecove/plant-cover-leaf"
+        "prop/brinecove/plant-cover-leaf0",
+        "prop/brinecove/plant-cover-leaf1",
+        "prop/brinecove/plant-cover-leaf2"
       ]
     },
     "object/brinecove/plant-cover-leaf-m5-0": {
@@ -2687,9 +2953,15 @@
         "SM_BC_Plant_CoverLeaf2#482@-17_3"
       ],
       "id": "object/brinecove/plant-cover-leaf-m5-0",
-      "model": "adopted/brinecove/plant-cover-leaf",
+      "model": [
+        "prop/brinecove/plant-cover-leaf0",
+        "prop/brinecove/plant-cover-leaf1",
+        "prop/brinecove/plant-cover-leaf2"
+      ],
       "models": [
-        "adopted/brinecove/plant-cover-leaf"
+        "prop/brinecove/plant-cover-leaf0",
+        "prop/brinecove/plant-cover-leaf1",
+        "prop/brinecove/plant-cover-leaf2"
       ]
     },
     "object/brinecove/plant-cover-leaf-m5-1": {
@@ -2708,9 +2980,15 @@
         "SM_BC_Plant_CoverLeaf2#482@-17_4"
       ],
       "id": "object/brinecove/plant-cover-leaf-m5-1",
-      "model": "adopted/brinecove/plant-cover-leaf",
+      "model": [
+        "prop/brinecove/plant-cover-leaf0",
+        "prop/brinecove/plant-cover-leaf1",
+        "prop/brinecove/plant-cover-leaf2"
+      ],
       "models": [
-        "adopted/brinecove/plant-cover-leaf"
+        "prop/brinecove/plant-cover-leaf0",
+        "prop/brinecove/plant-cover-leaf1",
+        "prop/brinecove/plant-cover-leaf2"
       ]
     },
     "object/brinecove/plant-cover-leaf-m5-m1": {
@@ -2756,9 +3034,15 @@
         "SM_BC_Plant_CoverLeaf2#482@-17_-1"
       ],
       "id": "object/brinecove/plant-cover-leaf-m5-m1",
-      "model": "adopted/brinecove/plant-cover-leaf",
+      "model": [
+        "prop/brinecove/plant-cover-leaf0",
+        "prop/brinecove/plant-cover-leaf1",
+        "prop/brinecove/plant-cover-leaf2"
+      ],
       "models": [
-        "adopted/brinecove/plant-cover-leaf"
+        "prop/brinecove/plant-cover-leaf0",
+        "prop/brinecove/plant-cover-leaf1",
+        "prop/brinecove/plant-cover-leaf2"
       ]
     },
     "object/brinecove/plant-cover-leaf-m5-m2": {
@@ -2785,9 +3069,15 @@
         "SM_BC_Plant_CoverLeaf2#482@-17_-5"
       ],
       "id": "object/brinecove/plant-cover-leaf-m5-m2",
-      "model": "adopted/brinecove/plant-cover-leaf",
+      "model": [
+        "prop/brinecove/plant-cover-leaf0",
+        "prop/brinecove/plant-cover-leaf1",
+        "prop/brinecove/plant-cover-leaf2"
+      ],
       "models": [
-        "adopted/brinecove/plant-cover-leaf"
+        "prop/brinecove/plant-cover-leaf0",
+        "prop/brinecove/plant-cover-leaf1",
+        "prop/brinecove/plant-cover-leaf2"
       ]
     },
     "object/brinecove/plant-emergent": {
@@ -2797,9 +3087,15 @@
         "SM_BC_Plant_Emergent2"
       ],
       "id": "object/brinecove/plant-emergent",
-      "model": "adopted/brinecove/plant-emergent",
+      "model": [
+        "prop/brinecove/plant-emergent0",
+        "prop/brinecove/plant-emergent1",
+        "prop/brinecove/plant-emergent2"
+      ],
       "models": [
-        "adopted/brinecove/plant-emergent"
+        "prop/brinecove/plant-emergent0",
+        "prop/brinecove/plant-emergent1",
+        "prop/brinecove/plant-emergent2"
       ]
     },
     "object/brinecove/plant-palm": {
@@ -2812,9 +3108,21 @@
         "SM_BC_Plant_Palm5"
       ],
       "id": "object/brinecove/plant-palm",
-      "model": "adopted/brinecove/plant-palm",
+      "model": [
+        "prop/brinecove/plant-palm0",
+        "prop/brinecove/plant-palm1",
+        "prop/brinecove/plant-palm2",
+        "prop/brinecove/plant-palm3",
+        "prop/brinecove/plant-palm4",
+        "prop/brinecove/plant-palm5"
+      ],
       "models": [
-        "adopted/brinecove/plant-palm"
+        "prop/brinecove/plant-palm0",
+        "prop/brinecove/plant-palm1",
+        "prop/brinecove/plant-palm2",
+        "prop/brinecove/plant-palm3",
+        "prop/brinecove/plant-palm4",
+        "prop/brinecove/plant-palm5"
       ]
     },
     "object/brinecove/plant-shrub": {
@@ -2826,9 +3134,19 @@
         "SM_BC_Plant_Shrub4"
       ],
       "id": "object/brinecove/plant-shrub",
-      "model": "adopted/brinecove/plant-shrub",
+      "model": [
+        "prop/brinecove/plant-shrub0",
+        "prop/brinecove/plant-shrub1",
+        "prop/brinecove/plant-shrub2",
+        "prop/brinecove/plant-shrub3",
+        "prop/brinecove/plant-shrub4"
+      ],
       "models": [
-        "adopted/brinecove/plant-shrub"
+        "prop/brinecove/plant-shrub0",
+        "prop/brinecove/plant-shrub1",
+        "prop/brinecove/plant-shrub2",
+        "prop/brinecove/plant-shrub3",
+        "prop/brinecove/plant-shrub4"
       ]
     },
     "object/brinecove/plant-small": {
@@ -2838,9 +3156,15 @@
         "SM_BC_Plant_Small2"
       ],
       "id": "object/brinecove/plant-small",
-      "model": "adopted/brinecove/plant-small",
+      "model": [
+        "prop/brinecove/plant-small0",
+        "prop/brinecove/plant-small1",
+        "prop/brinecove/plant-small2"
+      ],
       "models": [
-        "adopted/brinecove/plant-small"
+        "prop/brinecove/plant-small0",
+        "prop/brinecove/plant-small1",
+        "prop/brinecove/plant-small2"
       ]
     },
     "object/brinecove/props-2-2": {

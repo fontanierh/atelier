@@ -1,12 +1,12 @@
 # One saved object of region/w09-brinecove (tools/migrate/objects.py, from its objects.toml): Brine Cove plant-broad (8 groups).
-# Its placement is this actor package; its model is adopted/brinecove/plant-broad. Edit it in the editor and save-validate
+# Its placement is this actor package; its models are the plant records it references. Edit it in the editor and save-validate
 # this record: the region's other objects and actors are not part of it.
 schema = 1
 id = "object/brinecove/plant-broad"
 kind = "placement"
 authority = "editor"
 owner = "region/w09-brinecove"
-references = ["adopted/brinecove/plant-broad"]
+references = ["prop/brinecove/plant-broad0", "prop/brinecove/plant-broad1", "prop/brinecove/plant-broad2", "prop/brinecove/plant-broad3", "prop/brinecove/plant-broad4", "prop/brinecove/plant-broad5", "prop/brinecove/plant-broad6", "prop/brinecove/plant-broad7"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/E/95/F1O2V0EFRE4WT05RMLCJV6"

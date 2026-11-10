@@ -1,0 +1,46 @@
+{
+  "asset": "prop/brinecove/plant-palm5",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_Plant_Palm5.uasset": "844aa78d1600dc0917d48eb73d207c0f41f2a29b4937620e762a60ae9d6555cc"
+  },
+  "input_fingerprint": "69037b1751daaa134ddb507b8f765a9e4a890fd0e5fc0eedcae5fd4ad2625f95",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_Plant_Palm5": {
+      "after": {
+        "count": 4,
+        "reductions": [
+          1.0,
+          0.44999998807907104,
+          0.20000000298023224,
+          0.07999999821186066
+        ],
+        "screen_sizes": [
+          1.0,
+          0.30000001192092896,
+          0.11999999731779099,
+          0.03999999910593033
+        ]
+      },
+      "before": {
+        "count": 4,
+        "reductions": [
+          1.0,
+          0.44999998807907104,
+          0.20000000298023224,
+          0.07999999821186066
+        ],
+        "screen_sizes": [
+          1.0,
+          0.30000001192092896,
+          0.11999999731779099,
+          0.03999999910593033
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

@@ -1,0 +1,42 @@
+{
+  "asset": "prop/citytrees/hd-arcade-tree-cell-0-m1-v4",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Experiments/CityTrees/v4/HD_ArcadeTree_cell_0_-1_v4.uasset": "4988f21305c79410dac5767cb6afc9d5fe142984f0455799a5640e5a67ae8cd0"
+  },
+  "input_fingerprint": "18cae0d1a699a8a9e519a2f639d7e245eda55596c9b0d5b4a6862b1e1905680b",
+  "kind": "imported",
+  "lods": {
+    "/Game/Experiments/CityTrees/v4/HD_ArcadeTree_cell_0_-1_v4": {
+      "after": {
+        "count": 3,
+        "reductions": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "screen_sizes": [
+          1.0,
+          0.18000000715255737,
+          0.07000000029802322
+        ]
+      },
+      "before": {
+        "count": 3,
+        "reductions": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "screen_sizes": [
+          1.0,
+          0.18000000715255737,
+          0.07000000029802322
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

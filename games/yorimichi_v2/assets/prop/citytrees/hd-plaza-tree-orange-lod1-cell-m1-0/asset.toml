@@ -1,0 +1,24 @@
+# Recovered from the donor (tools/migrate/plant_sources.py): HD_PlazaTreeOrange_LOD1_cell_-1_0: the HD_PlazaTreeOrange LOD level as a standalone mesh (donor FBX).
+# The donor files are committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/citytrees/hd-plaza-tree-orange-lod1-cell-m1-0"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/experiments/citytrees"
+references = ["adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/HD_PlazaTreeOrange_LOD1_cell_-1_0.fbx"
+sha256 = "80d37dae9afcfcd5c9f439d3e8cb1a45d5a8fc825f3d898b7298b13f413ccdb2"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Japan/Materials/M_Arcade"]
+triangles = 7270
+
+[[outputs]]
+package = "/Game/Experiments/CityTrees/v4/lods/HD_PlazaTreeOrange_LOD1_cell_-1_0"

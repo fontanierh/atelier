@@ -1,0 +1,26 @@
+# Recovered from the donor (tools/migrate/plant_sources.py): SM_BC_Plant_CoverFern0: one Brine Cove plant, LOD0 GLB with its four-level reduction plan.
+# The donor files are committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/brinecove/plant-cover-fern0"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/brinecove/plant-cover-fern"
+references = ["adopted/brinecove/materials"]
+
+[[sources]]
+path = "src/SM_BC_Plant_CoverFern0.glb"
+sha256 = "d1980dbc42197def121ce4303e714b5603161693e481bd1690899e85640f25a1"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Brinecove/Materials/MI_BC_cover_fern", "/Game/Brinecove/Materials/MI_BC_cover_fern_light"]
+triangles = 140
+full_precision_uvs = true
+lods = [[1.0, 1.0], [0.45, 0.3], [0.2, 0.12], [0.08, 0.04]]
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_Plant_CoverFern0"

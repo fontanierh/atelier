@@ -1,0 +1,26 @@
+# Recovered from the donor (tools/migrate/plant_sources.py): SM_BC_Plant_Palm0: one Brine Cove plant, LOD0 GLB with its four-level reduction plan.
+# The donor files are committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/brinecove/plant-palm0"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/brinecove/plant-palm"
+references = ["adopted/brinecove/materials"]
+
+[[sources]]
+path = "src/SM_BC_Plant_Palm0.glb"
+sha256 = "8ef96351b65a86197a9ac9d58a8e60e463f3dbfcf436add2ef7d143aeed46479"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Brinecove/Materials/MI_BC_palm_frond", "/Game/Brinecove/Materials/MI_BC_palm_trunk", "/Game/Brinecove/Materials/MI_BC_wood_dark"]
+triangles = 688
+full_precision_uvs = true
+lods = [[1.0, 1.0], [0.45, 0.3], [0.2, 0.12], [0.08, 0.04]]
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_Plant_Palm0"

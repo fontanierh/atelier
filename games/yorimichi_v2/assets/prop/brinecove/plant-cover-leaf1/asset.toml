@@ -1,0 +1,26 @@
+# Recovered from the donor (tools/migrate/plant_sources.py): SM_BC_Plant_CoverLeaf1: one Brine Cove plant, LOD0 GLB with its four-level reduction plan.
+# The donor files are committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/brinecove/plant-cover-leaf1"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/brinecove/plant-cover-leaf"
+references = ["adopted/brinecove/materials"]
+
+[[sources]]
+path = "src/SM_BC_Plant_CoverLeaf1.glb"
+sha256 = "8a5d9fbc3926e60f3e87dad79aba750560971e7a8d68cc167b16d76719ae98c1"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Brinecove/Materials/MI_BC_cover_leaf", "/Game/Brinecove/Materials/MI_BC_cover_leaf_light"]
+triangles = 72
+full_precision_uvs = true
+lods = [[1.0, 1.0], [0.45, 0.3], [0.2, 0.12], [0.08, 0.04]]
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_Plant_CoverLeaf1"

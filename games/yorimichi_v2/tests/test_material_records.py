@@ -309,3 +309,13 @@ def test_a_switch_lookup_that_reports_not_found_raises(monkeypatch):
     assert module._switch_value(found, instance, 'bHasNormalTexture') is True
     with pytest.raises(RuntimeError, match='has no static switch bHasNormalTexure'):
         module._switch_value(missing, instance, 'bHasNormalTexure')
+
+
+def test_the_import_script_never_rebinds_its_plan():
+    """`plan` in import_asset.main() is the import plan read from V2_IMPORT_PLAN; a later branch reads plan['importer'],
+    so a rebinding (as a reduction plan once was) would break every static-mesh import before its save."""
+    import ast
+    tree = ast.parse((ROOT / 'unreal' / 'Scripts' / 'import_asset.py').read_text())
+    main = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == 'main')
+    stores = [n.lineno for n in ast.walk(main) if isinstance(n, ast.Name) and n.id == 'plan' and isinstance(n.ctx, ast.Store)]
+    assert len(stores) == 1, f'plan is assigned at lines {stores}'

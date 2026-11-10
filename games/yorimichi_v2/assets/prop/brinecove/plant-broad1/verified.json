@@ -1,0 +1,46 @@
+{
+  "asset": "prop/brinecove/plant-broad1",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_Plant_Broad1.uasset": "210ba901ad2da20f482de94e211d886dd02d006d4857d5778172560f9a64cfdd"
+  },
+  "input_fingerprint": "3a86ba95a9397a524a0a524098073ac22c8de33360060efc8ded33a2565ffe0e",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_Plant_Broad1": {
+      "after": {
+        "count": 4,
+        "reductions": [
+          1.0,
+          0.44999998807907104,
+          0.20000000298023224,
+          0.07999999821186066
+        ],
+        "screen_sizes": [
+          1.0,
+          0.30000001192092896,
+          0.11999999731779099,
+          0.03999999910593033
+        ]
+      },
+      "before": {
+        "count": 4,
+        "reductions": [
+          1.0,
+          0.44999998807907104,
+          0.20000000298023224,
+          0.07999999821186066
+        ],
+        "screen_sizes": [
+          1.0,
+          0.30000001192092896,
+          0.11999999731779099,
+          0.03999999910593033
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

@@ -1,0 +1,26 @@
+# Recovered from the donor (tools/migrate/plant_sources.py): SM_BC_Plant_CoverGrass0: one Brine Cove plant, LOD0 GLB with its four-level reduction plan.
+# The donor files are committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/brinecove/plant-cover-grass0"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/brinecove/plant-cover-grass"
+references = ["adopted/brinecove/materials"]
+
+[[sources]]
+path = "src/SM_BC_Plant_CoverGrass0.glb"
+sha256 = "8d298d59ad8940d0ae49fc6850fb944f5f61b4a9bc013d3b83fde143638e929e"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Brinecove/Materials/MI_BC_cover_grass", "/Game/Brinecove/Materials/MI_BC_cover_grass_dry"]
+triangles = 144
+full_precision_uvs = true
+lods = [[1.0, 1.0], [0.45, 0.3], [0.2, 0.12], [0.08, 0.04]]
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_Plant_CoverGrass0"

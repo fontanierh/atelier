@@ -1,0 +1,46 @@
+{
+  "asset": "prop/brinecove/plant-cover-fern1",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_Plant_CoverFern1.uasset": "319e1d2b3eb4b593b6fb9a36cc29750e4ccc115963db277812af8be06ca694db"
+  },
+  "input_fingerprint": "2efedb94edc43a0c8a0680526b041a20fa46556079d7a79b0acaaf0cf3024737",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_Plant_CoverFern1": {
+      "after": {
+        "count": 4,
+        "reductions": [
+          1.0,
+          0.44999998807907104,
+          0.20000000298023224,
+          0.07999999821186066
+        ],
+        "screen_sizes": [
+          1.0,
+          0.30000001192092896,
+          0.11999999731779099,
+          0.03999999910593033
+        ]
+      },
+      "before": {
+        "count": 4,
+        "reductions": [
+          1.0,
+          0.44999998807907104,
+          0.20000000298023224,
+          0.07999999821186066
+        ],
+        "screen_sizes": [
+          1.0,
+          0.30000001192092896,
+          0.11999999731779099,
+          0.03999999910593033
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}
