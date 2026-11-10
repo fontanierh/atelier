@@ -58,8 +58,13 @@ Saved, prepared and packaged totals are kept separate:
   contains 36 generated material masters with pinned builders: Hippodrome, skating, FX, racing, Sword Camp, Mega Park,
   Hidamari city and 13 Japan base masters. The native batches were accepted by the digest at that revision; final
   review strengthens source-pin and graph checks. Their historical reports do not establish the newer rooted comparison.
-  Fourteen Japan base packages remain with the adopted record (13 other masters and `MPC_Wind`); follow-up families
-  move these in separate claimed batches. Source-only generator records retain all 30 Hidamari and 43 Mega Park pins.
+  Source-only generator records retain all 30 Hidamari and 43 Mega Park pins.
+- **Imported on a branch, stacked on #803:** [PR #804](https://github.com/fontanierh/atelier/pull/804) adds the other 13
+  Japan base masters: M_Sea and M_HarborWater (`japan_sea`), then 11 in one claimed batch (`japan_terrain`,
+  `japan_terrain_ground`, `japan_sky_painterly`, `japan_surfaces`, `japan_vegetation`). Each saved package was read back
+  and matched its original through the native input reader. The adopted base-materials record now keeps only
+  `MPC_Wind`, a collection rather than a material. The Sword Camp and Hidamari city masters were re-imported on the
+  shared `master_haze` helper in the same batch.
 - **Still open:** the remaining master inputs and kept packages, the Hidamari instance, held Mega Park seams and MI_TH_pane;
   see [exceptions](inventory/exceptions.md) and the current [master recovery status](inventory/master-sources.md).
 
