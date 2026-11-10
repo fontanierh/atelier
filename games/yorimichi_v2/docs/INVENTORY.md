@@ -65,8 +65,10 @@ Saved, prepared and packaged totals are kept separate:
 - **Remaining source/detail work:** the Hippodrome mesh residuals (14 packages on main: four Color textures
   and ten instances), the two Mega Park seam instances with two-sided base-property overrides, the standalone
   Mega Park map's reference check, `MI_TH_pane`, the Hidamari `MI_HD_flat` instance and the 41 Japan
-  material instances. Parent-master recovery alone does not close their instance records. Hippodrome recovery is an active saved working-checkout
-  follow-up to #804, not main content at this checkpoint. The other current material/settings classification
+  material instances. Parent-master recovery alone does not close their instance records. Hippodrome recovery
+  is saved in #804 commit `74a1002c86`: four texture and four instance records were imported, the four
+  dependent props re-imported, and six unused course instances retired after a reference check. The native
+  before/after reads agree; this is pending integration, not main/package content. The other material/settings classification
   rows and their branch dispositions are in [exceptions](inventory/exceptions.md#current-source-classification).
 
 Remaining construction work:
@@ -77,8 +79,9 @@ Remaining construction work:
 - Produce the next package checkpoint from accepted merged work and retain the existing package. The packaging
   guard fix merged in [PR #805](https://github.com/fontanierh/atelier/pull/805) is separate from a successful native rerun;
   no replacement package is claimed here. The six remaining manual acceptance checks and final owner-led
-  gameplay/multiplayer playtesting remain unrecorded. Earlier same-day forecasts are superseded by these
-  evidence-based states; they are not completion promises.
+  gameplay/multiplayer playtesting remain unrecorded. The last forecast was **14:00 Paris on 2026-11-10 for
+  the held source set and 20:00 for useful-object splitting** (historical, unconfirmed). This documentation
+  audit has not re-estimated it; package-guard and review work add uncertainty.
 
 ## Runtime and ownership facts
 

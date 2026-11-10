@@ -45,7 +45,7 @@ can still need recoverable inputs and an accepted import. See [sources](sources.
 |---|---:|---|
 | `adopted/japan/materials/{bark,buildings,foliage,ground,rock-concrete,sky-wind,water}` | 7 / 41 | The adopted owners remain on this main snapshot. Their parent masters are in #803/#804, but these 41 instance packages still need source closure; a recovered parent does not close its instances |
 | `adopted/hippodrome/materials` | 1 / 5 | Five masters imported in #803's saved branch work; that branch retires this old owner |
-| `adopted/hippodrome/meshes` | 1 / 14 | Four Color textures and ten instances on main. Recovery is a saved working-checkout follow-up to #804; integration is still pending |
+| `adopted/hippodrome/meshes` | 1 / 14 | Four Color textures and ten instances on main. Saved in #804 commit `74a1002c86`: four texture/four instance records imported, six unused course instances retired with reference proof, old owner retired; integration is pending |
 | `adopted/japan/hidamari/surface-flat` | 1 / 1 | `MI_HD_flat` remains open; its parent `M_HDCity` is recovered in #803's saved follow-up |
 | `adopted/japan/treehouse/surface-pane` | 1 / 1 | `MI_TH_pane` remains unresolved; the old flat/glass/rope/trunk records are already retired in main |
 | `adopted/megapark/seam` | 1 / 2 | Two seam instances remain; preserve their two-sided base-property overrides |
@@ -71,7 +71,7 @@ planning list. Their review/integration and the next package checkpoint are trac
 | Brine Cove carved sources | #787 preserves the fused originals and recorded carve selections; accepted remainders and saved placements remain intact |
 
 These batches are included in package `0adbb5ab212e` at `7719234597`. None needs re-importing to resolve the
-historical wording below. The three Mega Park retail masters and five Hippodrome masters are saved on #803,
+historical wording below. The three Mega Park masters and five Hippodrome masters are saved on #803,
 not in that package or this audited main revision.
 
 ## Historical donor reads and preparation plans
