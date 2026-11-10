@@ -1,7 +1,44 @@
-"""The rule that accepts a skate RuntimeData import after the Skate plugin's Verify passed (USkateDataLibrary::Verify,
-SkateMotionData.cpp:473): its report must agree with the receipt tools/import/skate_runtime.py wrote for the assembled
-package. Pure data, no editor: unreal/Scripts/import_asset.py calls it, and the tests use it.
+"""The rules that accept a skate RuntimeData import: the assembled package must be the bytes its pinned manifest lists
+(package_problems, before ImportRuntime and again after Verify), and the Skate plugin's Verify report
+(USkateDataLibrary::Verify, SkateMotionData.cpp:473) must agree with the receipt tools/import/skate_runtime.py wrote for
+that package (problems). Pure Python, no editor: unreal/Scripts/import_asset.py calls them, and the tests use them.
 """
+import hashlib
+import json
+from pathlib import Path
+
+MANIFEST = 'package-manifest.json'
+
+
+def package_problems(folder, manifest_sha256, receipt):
+    """@cc [owner:fontanierh,label:correctness] skate-runtime-package-pinned
+    What refuses an assembled RuntimeData package before it is imported (and again once Verify has read it): its
+    manifest must hash to the record's pinned `manifest_sha256`; the folder must hold exactly the files the manifest
+    lists, plus the manifest, each with its listed size and sha256; and each of the receipt's runtime files must keep
+    its size and SHA-1. Native Verify compares the saved asset with this folder, so a payload changed after assembly
+    would otherwise be imported and recorded under the original pins. [] when accepted."""
+    folder = Path(folder)
+    raw = (folder / MANIFEST).read_bytes()
+    if hashlib.sha256(raw).hexdigest() != manifest_sha256:
+        return [f'the package manifest hashes to {hashlib.sha256(raw).hexdigest()}, not the pinned {manifest_sha256}']
+    listed = json.loads(raw)['files']
+    found = []
+    present = {path.relative_to(folder).as_posix() for path in folder.rglob('*') if path.is_file()} - {MANIFEST}
+    for name in sorted(present - set(listed)):
+        found.append(f'{name} is in the package but not in its manifest')
+    for name, want in sorted(listed.items()):
+        if name not in present:
+            found.append(f'{name} is in the manifest but not in the package')
+            continue
+        data = (folder / name).read_bytes()
+        if len(data) != want['bytes'] or hashlib.sha256(data).hexdigest() != want['sha256']:
+            found.append(f'{name} differs from its manifest entry')
+    for name, want in sorted(receipt['runtime'].items()):
+        path = folder / name
+        data = path.read_bytes() if path.is_file() else b''
+        if len(data) != want['bytes'] or hashlib.sha1(data).hexdigest() != want['sha1']:
+            found.append(f'runtime file {name} differs from the receipt')
+    return found
 
 
 def problems(report, receipt, package):

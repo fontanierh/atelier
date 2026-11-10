@@ -150,11 +150,52 @@ def test_a_verify_report_that_disagrees_is_refused(change, reason):
     assert found and any(reason in p for p in found)
 
 
+def pinned_package(tmp_path):
+    folder = tmp_path / 'package'
+    (folder / 'runtime').mkdir(parents=True)
+    files = {'settings.skate': b'settings', 'animation/clips/0/A.skate': b'clip'}
+    for name, data in files.items():
+        (folder / name).parent.mkdir(parents=True, exist_ok=True)
+        (folder / name).write_bytes(data)
+    listed = {name: {'bytes': len(data), 'sha256': hashlib.sha256(data).hexdigest()} for name, data in files.items()}
+    raw = json.dumps({'version': 1, 'files': listed}).encode()
+    (folder / 'package-manifest.json').write_bytes(raw)
+    receipt = {'runtime': {'settings.skate': {'bytes': 8, 'sha1': hashlib.sha1(b'settings').hexdigest()}}}
+    return folder, hashlib.sha256(raw).hexdigest(), receipt
+
+
+def test_a_package_that_is_its_pinned_manifest_is_accepted(tmp_path):
+    folder, pin, receipt = pinned_package(tmp_path)
+    assert verify.package_problems(folder, pin, receipt) == []
+
+
+@pytest.mark.parametrize('change, reason', [
+    (lambda f: (f / 'animation/clips/0/A.skate').write_bytes(b'CLIP'), 'differs from its manifest entry'),
+    (lambda f: (f / 'settings.skate').write_bytes(b'SETTINGS'), 'differs from its manifest entry'),
+    (lambda f: (f / 'animation/clips/0/A.skate').unlink(), 'not in the package'),
+    (lambda f: (f / 'extra.skate').write_bytes(b'x'), 'not in its manifest'),
+    (lambda f: (f / 'package-manifest.json').write_bytes(b'{"files": {}}'), 'not the pinned'),
+])
+def test_a_package_changed_after_assembly_is_refused(tmp_path, change, reason):
+    """A same-size change too: native Verify compares the asset with the folder, so only the pins catch it."""
+    folder, pin, receipt = pinned_package(tmp_path)
+    change(folder)
+    found = verify.package_problems(folder, pin, receipt)
+    assert found and any(reason in p for p in found)
+
+
+def test_a_runtime_file_that_differs_from_the_receipt_is_refused(tmp_path):
+    folder, pin, receipt = pinned_package(tmp_path)
+    receipt['runtime']['settings.skate']['sha1'] = hashlib.sha1(b'other').hexdigest()
+    assert any('differs from the receipt' in p for p in verify.package_problems(folder, pin, receipt))
+
+
 def test_the_importer_imports_then_verifies_and_checks_the_report():
     source = (ROOT / 'unreal/Scripts/import_asset.py').read_text()
     body = source[source.index('def _skate_runtime(plan):'):source.index('def main():')]
     body = body[body.index('"""', body.index('"""') + 3):]   # the code after the docstring
-    assert body.index('import_runtime') < body.index('.verify,') < body.index('skate_verify.problems')
+    assert (body.index('skate_verify.package_problems') < body.index('import_runtime') < body.index('.verify,')
+            < body.rindex('skate_verify.package_problems') < body.index('skate_verify.problems('))
     assert "plan['importer'] == 'skate-runtime'" in source
     plan = (ROOT / 'tools/import/run.py').read_text()
     assert "skate_runtime.prepare(asset.folder, build)" in plan

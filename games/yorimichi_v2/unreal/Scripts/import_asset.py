@@ -718,17 +718,23 @@ def _skate_runtime(plan):
     Skate plugin's ImportRuntime decodes the seven runtime files into typed properties, refuses unless they encode back
     to the same bytes, and saves the one output package. Its exhaustive Verify is the read-back (the configured
     USkateSettings assets through the game's loaders, compared with the package byte for byte, with replays and negative
-    controls), and its report must agree with the receipt (skate_verify.problems). Nothing else is written."""
+    controls), and its report must agree with the receipt (skate_verify.problems). The package folder must be the bytes
+    its pinned manifest lists before the import and again after Verify (skate_verify.package_problems). Nothing else is
+    written."""
     if len(plan['packages']) != 1 or not plan.get('package_folder') or not plan.get('receipt'):
         raise RuntimeError('a skate-runtime plan names one package, its assembled package folder and its receipt')
     package = plan['packages'][0]
     receipt = json.loads(Path(plan['receipt']).read_text())
     if receipt.get('manifest_sha256') != plan['settings']['manifest_sha256']:
         raise RuntimeError(f'the receipt manifest {receipt.get("manifest_sha256")} is not the record\'s')
+    changed = skate_verify.package_problems(plan['package_folder'], plan['settings']['manifest_sha256'], receipt)
+    if changed:
+        raise RuntimeError('the assembled package is not its pinned manifest: ' + '; '.join(changed[:8]))
     _skate_library_call(U.SkateDataLibrary.import_runtime, plan['package_folder'], package.rsplit('/', 1)[0])
     report_file = Path(os.environ['V2_IMPORT_PLAN']).with_name('skate-verify.json')
     _skate_library_call(U.SkateDataLibrary.verify, plan['package_folder'], str(report_file))
-    problems = skate_verify.problems(json.loads(report_file.read_text()), receipt, package)
+    problems = skate_verify.package_problems(plan['package_folder'], plan['settings']['manifest_sha256'], receipt)
+    problems += skate_verify.problems(json.loads(report_file.read_text()), receipt, package)
     if problems:
         raise RuntimeError(f'{package} reads back different from its package: ' + '; '.join(problems[:8]))
     U.log(f'V2 import wrote {package} from {plan["portable_sources"][-1]} (manifest {receipt["manifest_sha256"][:16]}, '
