@@ -1,0 +1,1520 @@
+{
+ "schema": 1,
+ "baseline": {
+  "donor_commit": "7eec0f98dd02c9505d3870336717b3edf830be73",
+  "donor_root": "games/yorimichi (relative to the donor root)",
+  "sha256": "of the committed blob at the baseline commit, not of the donor working tree (which is dirty)",
+  "pins_checked": "docs/inventory/exceptions.md line ~781 pins match these values for shared_materials.py, material_assets.py, forest_ground.py"
+ },
+ "scope": "Held generator masters in the small families (docs/inventory/small-families-masters.txt: 19) plus the Mega Park retail parents (named in the brief) and M_HDCity (the hidamari family master).",
+ "masters": [
+  {
+   "package": "/Game/Hippodrome/Materials/M_HD_Structure",
+   "record": "adopted/hippodrome/materials",
+   "family": "hippodrome",
+   "generator": {
+    "path": "games/yorimichi/unreal/Scripts/import_hippodrome.py",
+    "lines": [
+     59,
+     78
+    ],
+    "builder": "structure_material",
+    "call": "import_hippodrome.py:135-136",
+    "package_lines": [
+     60,
+     61
+    ],
+    "sha256": "bdf9698adf1a1718cfeb3b73eacd08669ac12d4c9ea6b40e54aa5b3486f88914"
+   },
+   "inputs": [
+    {
+     "kind": "engine",
+     "name": "/Engine/EngineResources/WhiteSquareTexture",
+     "owner": null,
+     "note": "default of BaseColorTexture; the instance overrides it"
+    },
+    {
+     "kind": "parameter",
+     "name": "BaseColorTexture",
+     "default": "WhiteSquareTexture",
+     "note": "texture parameter; Multiply const_b .3 into emissive; roughness .7; specular .3; two-sided"
+    }
+   ],
+   "helpers": [],
+   "fit": "direct",
+   "reason": "Graph is fully built in-script; only an engine texture default."
+  },
+  {
+   "package": "/Game/Hippodrome/Materials/M_HD_Grass",
+   "record": "adopted/hippodrome/materials",
+   "family": "hippodrome",
+   "generator": {
+    "path": "games/yorimichi/unreal/Scripts/import_hippodrome.py",
+    "lines": [
+     36,
+     55
+    ],
+    "builder": "surface",
+    "call": "import_hippodrome.py:137",
+    "arguments": {
+     "key": "HD_Grass",
+     "roughness": 0.95,
+     "two_sided": false
+    },
+    "surfaces_row": "SURFACES['HD_Grass']",
+    "sha256": "bdf9698adf1a1718cfeb3b73eacd08669ac12d4c9ea6b40e54aa5b3486f88914"
+   },
+   "inputs": [
+    {
+     "kind": "texture",
+     "name": "/Game/Hippodrome/Textures/T_Grass",
+     "owner": "texture/hippodrome/grass",
+     "donor_source": "world/regions/hippodrome/venue_data.py textures()",
+     "note": "colour map T_HD_Grass.png; wrap; sRGB"
+    },
+    {
+     "kind": "parameter",
+     "name": "metallic",
+     "default": 0.0,
+     "note": ""
+    },
+    {
+     "kind": "parameter",
+     "name": "specular",
+     "default": 0.3,
+     "note": ""
+    },
+    {
+     "kind": "parameter",
+     "name": "roughness",
+     "default": 0.95,
+     "note": ""
+    }
+   ],
+   "helpers": [
+    {
+     "path": "games/yorimichi/unreal/Scripts/import_megapark.py",
+     "sha256": "ac0c1df05fd3ff3b48862ad68a07c28189afb7fc3663652f7020a33106f80a7a",
+     "lines": [
+      43,
+      65
+     ],
+     "used_for": "the donor texture() import helper, reached through runpy at import_hippodrome.py:30; V2 uses the texture record instead"
+    }
+   ],
+   "fit": "direct",
+   "reason": "Colour map from a texture record; the rest is constants. The runpy helper is the donor texture import, not a graph helper.",
+   "reads": [
+    "/Game/Hippodrome/Textures/T_Grass"
+   ]
+  },
+  {
+   "package": "/Game/Hippodrome/Materials/M_HD_Dirt",
+   "record": "adopted/hippodrome/materials",
+   "family": "hippodrome",
+   "generator": {
+    "path": "games/yorimichi/unreal/Scripts/import_hippodrome.py",
+    "lines": [
+     36,
+     55
+    ],
+    "builder": "surface",
+    "call": "import_hippodrome.py:137",
+    "arguments": {
+     "key": "HD_Dirt",
+     "roughness": 0.95,
+     "two_sided": false
+    },
+    "surfaces_row": "SURFACES['HD_Dirt']",
+    "sha256": "bdf9698adf1a1718cfeb3b73eacd08669ac12d4c9ea6b40e54aa5b3486f88914"
+   },
+   "inputs": [
+    {
+     "kind": "texture",
+     "name": "/Game/Hippodrome/Textures/T_Dirt",
+     "owner": "texture/hippodrome/dirt",
+     "donor_source": "world/regions/hippodrome/venue_data.py textures()",
+     "note": "colour map T_HD_Dirt.png; wrap; sRGB"
+    },
+    {
+     "kind": "parameter",
+     "name": "metallic",
+     "default": 0.0,
+     "note": ""
+    },
+    {
+     "kind": "parameter",
+     "name": "specular",
+     "default": 0.3,
+     "note": ""
+    },
+    {
+     "kind": "parameter",
+     "name": "roughness",
+     "default": 0.95,
+     "note": ""
+    }
+   ],
+   "helpers": [
+    {
+     "path": "games/yorimichi/unreal/Scripts/import_megapark.py",
+     "sha256": "ac0c1df05fd3ff3b48862ad68a07c28189afb7fc3663652f7020a33106f80a7a",
+     "lines": [
+      43,
+      65
+     ],
+     "used_for": "the donor texture() import helper, reached through runpy at import_hippodrome.py:30; V2 uses the texture record instead"
+    }
+   ],
+   "fit": "direct",
+   "reason": "Colour map from a texture record; the rest is constants. The runpy helper is the donor texture import, not a graph helper.",
+   "reads": [
+    "/Game/Hippodrome/Textures/T_Dirt"
+   ]
+  },
+  {
+   "package": "/Game/Hippodrome/Materials/M_HD_Stone",
+   "record": "adopted/hippodrome/materials",
+   "family": "hippodrome",
+   "generator": {
+    "path": "games/yorimichi/unreal/Scripts/import_hippodrome.py",
+    "lines": [
+     36,
+     55
+    ],
+    "builder": "surface",
+    "call": "import_hippodrome.py:137",
+    "arguments": {
+     "key": "HD_Stone",
+     "colour": "(.36, .35, .32)",
+     "roughness": 0.9,
+     "two_sided": true
+    },
+    "sha256": "bdf9698adf1a1718cfeb3b73eacd08669ac12d4c9ea6b40e54aa5b3486f88914"
+   },
+   "inputs": [
+    {
+     "kind": "parameter",
+     "name": "colour",
+     "default": "(.36, .35, .32)",
+     "note": "constant base colour (linear RGB)"
+    },
+    {
+     "kind": "parameter",
+     "name": "roughness",
+     "default": 0.9,
+     "note": ""
+    }
+   ],
+   "helpers": [],
+   "fit": "direct",
+   "reason": "Constant base colour; no texture input.",
+   "reads": []
+  },
+  {
+   "package": "/Game/Hippodrome/Materials/M_HD_Rail",
+   "record": "adopted/hippodrome/materials",
+   "family": "hippodrome",
+   "generator": {
+    "path": "games/yorimichi/unreal/Scripts/import_hippodrome.py",
+    "lines": [
+     36,
+     55
+    ],
+    "builder": "surface",
+    "call": "import_hippodrome.py:137",
+    "arguments": {
+     "key": "HD_Rail",
+     "colour": "(.86, .85, .80)",
+     "roughness": 0.6,
+     "two_sided": false
+    },
+    "sha256": "bdf9698adf1a1718cfeb3b73eacd08669ac12d4c9ea6b40e54aa5b3486f88914"
+   },
+   "inputs": [
+    {
+     "kind": "parameter",
+     "name": "colour",
+     "default": "(.86, .85, .80)",
+     "note": "constant base colour (linear RGB)"
+    },
+    {
+     "kind": "parameter",
+     "name": "roughness",
+     "default": 0.6,
+     "note": ""
+    }
+   ],
+   "helpers": [],
+   "fit": "direct",
+   "reason": "Constant base colour; no texture input.",
+   "reads": []
+  },
+  {
+   "package": "/Game/SkatePark/Materials/M_Pier_basalt",
+   "record": "adopted/skatepark/materials",
+   "family": "skatepark",
+   "generator": {
+    "path": "games/yorimichi/unreal/Scripts/import_skatepark.py",
+    "lines": [
+     132,
+     174
+    ],
+    "texture_helper_lines": [
+     115,
+     129
+    ],
+    "builder": "materials",
+    "texture_writer": {
+     "path": "games/yorimichi/tools/pier_texture_finish.py",
+     "sha256": "884a434b5dc54f0fe552eb678fd9128289df29bdeb09a120026e649585b90f3b",
+     "lines": [
+      45,
+      78
+     ],
+     "writes": "assets/skatepark/textures sources to textures.json (metallic, repeat)"
+    },
+    "call": "import_skatepark.py:177 (loop body for this key, lines 136-173)",
+    "key": "basalt",
+    "sha256": "5d07f84d217d82a87e6610344bffdbedefadb457e37cf6b472346ff833b7a9ea"
+   },
+   "inputs": [
+    {
+     "kind": "texture",
+     "name": "/Game/SkatePark/Textures/T_Pier_basalt_albedo",
+     "owner": "texture/skatepark/pier-basalt-albedo",
+     "donor_source": "tools/pier_texture_finish.py finish() (textures.json)",
+     "note": ""
+    },
+    {
+     "kind": "texture",
+     "name": "/Game/SkatePark/Textures/T_Pier_basalt_normal",
+     "owner": "texture/skatepark/pier-basalt-normal",
+     "donor_source": "tools/pier_texture_finish.py finish() (textures.json)",
+     "note": "albedo sRGB; normal TC_NORMALMAP"
+    },
+    {
+     "kind": "texture",
+     "name": "/Game/SkatePark/Textures/T_Pier_basalt_roughness",
+     "owner": "texture/skatepark/pier-basalt-roughness",
+     "donor_source": "tools/pier_texture_finish.py finish() (textures.json)",
+     "note": ""
+    },
+    {
+     "kind": "parameter",
+     "name": "metallic",
+     "default": 0.0,
+     "note": "from pier_texture_finish.py manifest (steel 1, others 0)"
+    },
+    {
+     "kind": "parameter",
+     "name": "fill",
+     "default": 0.035,
+     "note": "emissive = colour * .035 (constant)"
+    }
+   ],
+   "helpers": [],
+   "fit": "direct",
+   "reason": "Graph is built in the loop body (lines 136-173): VertexColor x albedo custom, normal and roughness samples, metallic constant, emissive fill .035. Needs the loop body wrapped as a per-key builder (no behaviour change).",
+   "reads": [
+    "/Game/SkatePark/Textures/T_Pier_basalt_albedo",
+    "/Game/SkatePark/Textures/T_Pier_basalt_normal",
+    "/Game/SkatePark/Textures/T_Pier_basalt_roughness"
+   ]
+  },
+  {
+   "package": "/Game/SkatePark/Materials/M_Pier_ceramic",
+   "record": "adopted/skatepark/materials",
+   "family": "skatepark",
+   "generator": {
+    "path": "games/yorimichi/unreal/Scripts/import_skatepark.py",
+    "lines": [
+     132,
+     174
+    ],
+    "texture_helper_lines": [
+     115,
+     129
+    ],
+    "builder": "materials",
+    "texture_writer": {
+     "path": "games/yorimichi/tools/pier_texture_finish.py",
+     "sha256": "884a434b5dc54f0fe552eb678fd9128289df29bdeb09a120026e649585b90f3b",
+     "lines": [
+      45,
+      78
+     ],
+     "writes": "assets/skatepark/textures sources to textures.json (metallic, repeat)"
+    },
+    "call": "import_skatepark.py:177 (loop body for this key, lines 136-173)",
+    "key": "ceramic",
+    "sha256": "5d07f84d217d82a87e6610344bffdbedefadb457e37cf6b472346ff833b7a9ea"
+   },
+   "inputs": [
+    {
+     "kind": "texture",
+     "name": "/Game/SkatePark/Textures/T_Pier_ceramic_albedo",
+     "owner": "texture/skatepark/pier-ceramic-albedo",
+     "donor_source": "tools/pier_texture_finish.py finish() (textures.json)",
+     "note": ""
+    },
+    {
+     "kind": "texture",
+     "name": "/Game/SkatePark/Textures/T_Pier_ceramic_normal",
+     "owner": "texture/skatepark/pier-ceramic-normal",
+     "donor_source": "tools/pier_texture_finish.py finish() (textures.json)",
+     "note": "albedo sRGB; normal TC_NORMALMAP"
+    },
+    {
+     "kind": "texture",
+     "name": "/Game/SkatePark/Textures/T_Pier_ceramic_roughness",
+     "owner": "texture/skatepark/pier-ceramic-roughness",
+     "donor_source": "tools/pier_texture_finish.py finish() (textures.json)",
+     "note": ""
+    },
+    {
+     "kind": "parameter",
+     "name": "metallic",
+     "default": 0.0,
+     "note": "from pier_texture_finish.py manifest (steel 1, others 0)"
+    },
+    {
+     "kind": "parameter",
+     "name": "fill",
+     "default": 0.035,
+     "note": "emissive = colour * .035 (constant)"
+    }
+   ],
+   "helpers": [],
+   "fit": "direct",
+   "reason": "Graph is built in the loop body (lines 136-173): VertexColor x albedo custom, normal and roughness samples, metallic constant, emissive fill .035. Needs the loop body wrapped as a per-key builder (no behaviour change).",
+   "reads": [
+    "/Game/SkatePark/Textures/T_Pier_ceramic_albedo",
+    "/Game/SkatePark/Textures/T_Pier_ceramic_normal",
+    "/Game/SkatePark/Textures/T_Pier_ceramic_roughness"
+   ]
+  },
+  {
+   "package": "/Game/SkatePark/Materials/M_Pier_concrete",
+   "record": "adopted/skatepark/materials",
+   "family": "skatepark",
+   "generator": {
+    "path": "games/yorimichi/unreal/Scripts/import_skatepark.py",
+    "lines": [
+     132,
+     174
+    ],
+    "texture_helper_lines": [
+     115,
+     129
+    ],
+    "builder": "materials",
+    "texture_writer": {
+     "path": "games/yorimichi/tools/pier_texture_finish.py",
+     "sha256": "884a434b5dc54f0fe552eb678fd9128289df29bdeb09a120026e649585b90f3b",
+     "lines": [
+      45,
+      78
+     ],
+     "writes": "assets/skatepark/textures sources to textures.json (metallic, repeat)"
+    },
+    "call": "import_skatepark.py:177 (loop body for this key, lines 136-173)",
+    "key": "concrete",
+    "sha256": "5d07f84d217d82a87e6610344bffdbedefadb457e37cf6b472346ff833b7a9ea"
+   },
+   "inputs": [
+    {
+     "kind": "texture",
+     "name": "/Game/SkatePark/Textures/T_Pier_concrete_albedo",
+     "owner": "texture/skatepark/pier-concrete-albedo",
+     "donor_source": "tools/pier_texture_finish.py finish() (textures.json)",
+     "note": ""
+    },
+    {
+     "kind": "texture",
+     "name": "/Game/SkatePark/Textures/T_Pier_concrete_normal",
+     "owner": "texture/skatepark/pier-concrete-normal",
+     "donor_source": "tools/pier_texture_finish.py finish() (textures.json)",
+     "note": "albedo sRGB; normal TC_NORMALMAP"
+    },
+    {
+     "kind": "texture",
+     "name": "/Game/SkatePark/Textures/T_Pier_concrete_roughness",
+     "owner": "texture/skatepark/pier-concrete-roughness",
+     "donor_source": "tools/pier_texture_finish.py finish() (textures.json)",
+     "note": ""
+    },
+    {
+     "kind": "parameter",
+     "name": "metallic",
+     "default": 0.0,
+     "note": "from pier_texture_finish.py manifest (steel 1, others 0)"
+    },
+    {
+     "kind": "parameter",
+     "name": "fill",
+     "default": 0.035,
+     "note": "emissive = colour * .035 (constant)"
+    }
+   ],
+   "helpers": [],
+   "fit": "direct",
+   "reason": "Graph is built in the loop body (lines 136-173): VertexColor x albedo custom, normal and roughness samples, metallic constant, emissive fill .035. Needs the loop body wrapped as a per-key builder (no behaviour change).",
+   "reads": [
+    "/Game/SkatePark/Textures/T_Pier_concrete_albedo",
+    "/Game/SkatePark/Textures/T_Pier_concrete_normal",
+    "/Game/SkatePark/Textures/T_Pier_concrete_roughness"
+   ]
+  },
+  {
+   "package": "/Game/SkatePark/Materials/M_Pier_mural",
+   "record": "adopted/skatepark/materials",
+   "family": "skatepark",
+   "generator": {
+    "path": "games/yorimichi/unreal/Scripts/import_skatepark.py",
+    "lines": [
+     132,
+     174
+    ],
+    "texture_helper_lines": [
+     115,
+     129
+    ],
+    "builder": "materials",
+    "texture_writer": {
+     "path": "games/yorimichi/tools/pier_texture_finish.py",
+     "sha256": "884a434b5dc54f0fe552eb678fd9128289df29bdeb09a120026e649585b90f3b",
+     "lines": [
+      45,
+      78
+     ],
+     "writes": "assets/skatepark/textures sources to textures.json (metallic, repeat)"
+    },
+    "call": "import_skatepark.py:177 (loop body for this key, lines 136-173)",
+    "key": "mural",
+    "sha256": "5d07f84d217d82a87e6610344bffdbedefadb457e37cf6b472346ff833b7a9ea"
+   },
+   "inputs": [
+    {
+     "kind": "texture",
+     "name": "/Game/SkatePark/Textures/T_Pier_mural_albedo",
+     "owner": "texture/skatepark/pier-mural-albedo",
+     "donor_source": "tools/pier_texture_finish.py finish() (textures.json)",
+     "note": ""
+    },
+    {
+     "kind": "parameter",
+     "name": "metallic",
+     "default": 0.0,
+     "note": "from pier_texture_finish.py manifest (steel 1, others 0)"
+    },
+    {
+     "kind": "parameter",
+     "name": "fill",
+     "default": 0.035,
+     "note": "emissive = colour * .035 (constant)"
+    }
+   ],
+   "helpers": [],
+   "fit": "direct",
+   "reason": "Mural: albedo only, no vertex colour (import_skatepark.py:152-153).",
+   "reads": [
+    "/Game/SkatePark/Textures/T_Pier_mural_albedo"
+   ]
+  },
+  {
+   "package": "/Game/SkatePark/Materials/M_Pier_painted",
+   "record": "adopted/skatepark/materials",
+   "family": "skatepark",
+   "generator": {
+    "path": "games/yorimichi/unreal/Scripts/import_skatepark.py",
+    "lines": [
+     132,
+     174
+    ],
+    "texture_helper_lines": [
+     115,
+     129
+    ],
+    "builder": "materials",
+    "texture_writer": {
+     "path": "games/yorimichi/tools/pier_texture_finish.py",
+     "sha256": "884a434b5dc54f0fe552eb678fd9128289df29bdeb09a120026e649585b90f3b",
+     "lines": [
+      45,
+      78
+     ],
+     "writes": "assets/skatepark/textures sources to textures.json (metallic, repeat)"
+    },
+    "call": "import_skatepark.py:177 (loop body for this key, lines 136-173)",
+    "key": "painted",
+    "sha256": "5d07f84d217d82a87e6610344bffdbedefadb457e37cf6b472346ff833b7a9ea"
+   },
+   "inputs": [
+    {
+     "kind": "texture",
+     "name": "/Game/SkatePark/Textures/T_Pier_painted_albedo",
+     "owner": "texture/skatepark/pier-painted-albedo",
+     "donor_source": "tools/pier_texture_finish.py finish() (textures.json)",
+     "note": ""
+    },
+    {
+     "kind": "texture",
+     "name": "/Game/SkatePark/Textures/T_Pier_painted_normal",
+     "owner": "texture/skatepark/pier-painted-normal",
+     "donor_source": "tools/pier_texture_finish.py finish() (textures.json)",
+     "note": "albedo sRGB; normal TC_NORMALMAP"
+    },
+    {
+     "kind": "texture",
+     "name": "/Game/SkatePark/Textures/T_Pier_painted_roughness",
+     "owner": "texture/skatepark/pier-painted-roughness",
+     "donor_source": "tools/pier_texture_finish.py finish() (textures.json)",
+     "note": ""
+    },
+    {
+     "kind": "parameter",
+     "name": "metallic",
+     "default": 0.0,
+     "note": "from pier_texture_finish.py manifest (steel 1, others 0); painted is steel with metallic 0 (import_skatepark.py:134)"
+    },
+    {
+     "kind": "parameter",
+     "name": "fill",
+     "default": 0.035,
+     "note": "emissive = colour * .035 (constant)"
+    }
+   ],
+   "helpers": [],
+   "fit": "direct",
+   "reason": "Graph is built in the loop body (lines 136-173): VertexColor x albedo custom, normal and roughness samples, metallic constant, emissive fill .035. Needs the loop body wrapped as a per-key builder (no behaviour change).",
+   "reads": [
+    "/Game/SkatePark/Textures/T_Pier_painted_albedo",
+    "/Game/SkatePark/Textures/T_Pier_painted_normal",
+    "/Game/SkatePark/Textures/T_Pier_painted_roughness"
+   ]
+  },
+  {
+   "package": "/Game/SkatePark/Materials/M_Pier_steel",
+   "record": "adopted/skatepark/materials",
+   "family": "skatepark",
+   "generator": {
+    "path": "games/yorimichi/unreal/Scripts/import_skatepark.py",
+    "lines": [
+     132,
+     174
+    ],
+    "texture_helper_lines": [
+     115,
+     129
+    ],
+    "builder": "materials",
+    "texture_writer": {
+     "path": "games/yorimichi/tools/pier_texture_finish.py",
+     "sha256": "884a434b5dc54f0fe552eb678fd9128289df29bdeb09a120026e649585b90f3b",
+     "lines": [
+      45,
+      78
+     ],
+     "writes": "assets/skatepark/textures sources to textures.json (metallic, repeat)"
+    },
+    "call": "import_skatepark.py:177 (loop body for this key, lines 136-173)",
+    "key": "steel",
+    "sha256": "5d07f84d217d82a87e6610344bffdbedefadb457e37cf6b472346ff833b7a9ea"
+   },
+   "inputs": [
+    {
+     "kind": "texture",
+     "name": "/Game/SkatePark/Textures/T_Pier_steel_albedo",
+     "owner": "texture/skatepark/pier-steel-albedo",
+     "donor_source": "tools/pier_texture_finish.py finish() (textures.json)",
+     "note": ""
+    },
+    {
+     "kind": "texture",
+     "name": "/Game/SkatePark/Textures/T_Pier_steel_normal",
+     "owner": "texture/skatepark/pier-steel-normal",
+     "donor_source": "tools/pier_texture_finish.py finish() (textures.json)",
+     "note": "albedo sRGB; normal TC_NORMALMAP"
+    },
+    {
+     "kind": "texture",
+     "name": "/Game/SkatePark/Textures/T_Pier_steel_roughness",
+     "owner": "texture/skatepark/pier-steel-roughness",
+     "donor_source": "tools/pier_texture_finish.py finish() (textures.json)",
+     "note": ""
+    },
+    {
+     "kind": "parameter",
+     "name": "metallic",
+     "default": 1.0,
+     "note": "from pier_texture_finish.py manifest (steel 1, others 0)"
+    },
+    {
+     "kind": "parameter",
+     "name": "fill",
+     "default": 0.035,
+     "note": "emissive = colour * .035 (constant)"
+    }
+   ],
+   "helpers": [],
+   "fit": "direct",
+   "reason": "Graph is built in the loop body (lines 136-173): VertexColor x albedo custom, normal and roughness samples, metallic constant, emissive fill .035. Needs the loop body wrapped as a per-key builder (no behaviour change).",
+   "reads": [
+    "/Game/SkatePark/Textures/T_Pier_steel_albedo",
+    "/Game/SkatePark/Textures/T_Pier_steel_normal",
+    "/Game/SkatePark/Textures/T_Pier_steel_roughness"
+   ]
+  },
+  {
+   "package": "/Game/SkatePark/Materials/M_Pier_wood",
+   "record": "adopted/skatepark/materials",
+   "family": "skatepark",
+   "generator": {
+    "path": "games/yorimichi/unreal/Scripts/import_skatepark.py",
+    "lines": [
+     132,
+     174
+    ],
+    "texture_helper_lines": [
+     115,
+     129
+    ],
+    "builder": "materials",
+    "texture_writer": {
+     "path": "games/yorimichi/tools/pier_texture_finish.py",
+     "sha256": "884a434b5dc54f0fe552eb678fd9128289df29bdeb09a120026e649585b90f3b",
+     "lines": [
+      45,
+      78
+     ],
+     "writes": "assets/skatepark/textures sources to textures.json (metallic, repeat)"
+    },
+    "call": "import_skatepark.py:177 (loop body for this key, lines 136-173)",
+    "key": "wood",
+    "sha256": "5d07f84d217d82a87e6610344bffdbedefadb457e37cf6b472346ff833b7a9ea"
+   },
+   "inputs": [
+    {
+     "kind": "texture",
+     "name": "/Game/SkatePark/Textures/T_Pier_wood_albedo",
+     "owner": "texture/skatepark/pier-wood-albedo",
+     "donor_source": "tools/pier_texture_finish.py finish() (textures.json)",
+     "note": ""
+    },
+    {
+     "kind": "texture",
+     "name": "/Game/SkatePark/Textures/T_Pier_wood_normal",
+     "owner": "texture/skatepark/pier-wood-normal",
+     "donor_source": "tools/pier_texture_finish.py finish() (textures.json)",
+     "note": "albedo sRGB; normal TC_NORMALMAP"
+    },
+    {
+     "kind": "texture",
+     "name": "/Game/SkatePark/Textures/T_Pier_wood_roughness",
+     "owner": "texture/skatepark/pier-wood-roughness",
+     "donor_source": "tools/pier_texture_finish.py finish() (textures.json)",
+     "note": ""
+    },
+    {
+     "kind": "parameter",
+     "name": "metallic",
+     "default": 0.0,
+     "note": "from pier_texture_finish.py manifest (steel 1, others 0)"
+    },
+    {
+     "kind": "parameter",
+     "name": "fill",
+     "default": 0.035,
+     "note": "emissive = colour * .035 (constant)"
+    }
+   ],
+   "helpers": [],
+   "fit": "direct",
+   "reason": "Graph is built in the loop body (lines 136-173): VertexColor x albedo custom, normal and roughness samples, metallic constant, emissive fill .035. Needs the loop body wrapped as a per-key builder (no behaviour change).",
+   "reads": [
+    "/Game/SkatePark/Textures/T_Pier_wood_albedo",
+    "/Game/SkatePark/Textures/T_Pier_wood_normal",
+    "/Game/SkatePark/Textures/T_Pier_wood_roughness"
+   ]
+  },
+  {
+   "package": "/Game/SkatePark/Board/M_BoardDissolve",
+   "record": "adopted/skatepark/board",
+   "family": "skatepark",
+   "generator": {
+    "path": "games/yorimichi/unreal/Scripts/board_dissolve_material.py",
+    "lines": [
+     1,
+     95
+    ],
+    "path_lines": [
+     11,
+     16
+    ],
+    "graph_lines": [
+     44,
+     91
+    ],
+    "builder": "module body (wrap as one builder)",
+    "call": "top-level code; runs on import",
+    "sha256": "a201e90d5dc6ccb9fb3f3b4eda753e946d0992a8994518daa2c8259368adaa2e"
+   },
+   "inputs": [
+    {
+     "kind": "parameter",
+     "name": "Dissolve",
+     "default": 0.0,
+     "note": "scalar, mask against noise"
+    },
+    {
+     "kind": "parameter",
+     "name": "fill",
+     "default": "(.64, .68, .76) haze and vertex colour, roughness 1, specular 0",
+     "note": "M_Village look copied as constants (no M_Village read)"
+    }
+   ],
+   "helpers": [],
+   "fit": "direct",
+   "reason": "No texture or parameter read; the M_Village look is copied as constants in the script. The module body must be wrapped in one function.",
+   "reads": []
+  },
+  {
+   "package": "/Game/SwordCamp/Materials/M_SwordCamp",
+   "record": "adopted/swordcamp/materials",
+   "family": "swordcamp",
+   "generator": {
+    "path": "games/yorimichi/unreal/Scripts/import_swordcamp.py",
+    "lines": [
+     46,
+     113
+    ],
+    "atlas_import_lines": [
+     28,
+     43
+    ],
+    "builder": "build_material",
+    "call": "import_swordcamp.py:178",
+    "haze_call_line": 80,
+    "sha256": "86ce7b5e3450c017464f0456f7831ce3e292db61a571f9b4d9155c3ca9601db2"
+   },
+   "inputs": [
+    {
+     "kind": "texture",
+     "name": "/Game/SwordCamp/Textures/T_SwordCampAtlas",
+     "owner": "texture/swordcamp/atlas",
+     "donor_source": "world/regions/swordcamp/make_atlas.py (swordcamp_atlas.jpg)",
+     "note": "parameter Tex; TEXTUREGROUP_WORLD, max 2048"
+    },
+    {
+     "kind": "parameter",
+     "name": "Tex",
+     "default": "T_SwordCampAtlas",
+     "note": ""
+    },
+    {
+     "kind": "parameter",
+     "name": "wind",
+     "default": "WPO sine: amplitude 2.4/1.6/0.5, phase T*2.1",
+     "note": ""
+    },
+    {
+     "kind": "parameter",
+     "name": "roughness",
+     "default": 0.92,
+     "note": ""
+    },
+    {
+     "kind": "parameter",
+     "name": "specular",
+     "default": 0.04,
+     "note": ""
+    }
+   ],
+   "helpers": [
+    {
+     "path": "games/yorimichi/unreal/Scripts/atmosphere.py",
+     "sha256": "b59478df43df83b8c7386e7ff7c097f32faf647716fdacb804f3cf0c99336ebf",
+     "lines": [
+      1,
+      62
+     ],
+     "used_for": "atmosphere.apply: aerial-perspective haze on base colour and emissive"
+    },
+    {
+     "path": "games/yorimichi/unreal/Scripts/sea_look.py",
+     "sha256": "ffae53cded2bb461534c88c100bc75d3f93ec3bf396eb303e5d4ec3ad4dbb4fa",
+     "lines": [
+      38,
+      43
+     ],
+     "used_for": "num() and f3() formatting used by atmosphere.py"
+    },
+    {
+     "path": "games/yorimichi/unreal/Scripts/sea_look.py",
+     "sha256": "ffae53cded2bb461534c88c100bc75d3f93ec3bf396eb303e5d4ec3ad4dbb4fa",
+     "lines": [
+      67,
+      69
+     ],
+     "used_for": "HAZE_CM and FAR_COLOUR constants used by atmosphere.py"
+    }
+   ],
+   "fit": "needs helper",
+   "reason": "Haze comes from atmosphere.py, which imports sea_look.py; a V2 port needs the haze constants and the two formatters (not the whole sea_look module).",
+   "reads": [
+    "/Game/SwordCamp/Textures/T_SwordCampAtlas"
+   ]
+  },
+  {
+   "package": "/Game/SwordCamp/Materials/M_RoninBody",
+   "record": "adopted/swordcamp/materials",
+   "family": "swordcamp",
+   "generator": {
+    "path": "games/yorimichi/unreal/Scripts/import_swordcamp.py",
+    "lines": [
+     116,
+     171
+    ],
+    "tex_lines": [
+     128,
+     130
+    ],
+    "tint_lines": [
+     132,
+     134
+    ],
+    "recolour_lines": [
+     136,
+     153
+    ],
+    "builder": "build_ronin_body_material",
+    "call": "import_swordcamp.py:179",
+    "sha256": "86ce7b5e3450c017464f0456f7831ce3e292db61a571f9b4d9155c3ca9601db2"
+   },
+   "inputs": [
+    {
+     "kind": "texture",
+     "name": "/Game/SwordCamp/Textures/T_SwordCampAtlas",
+     "owner": "texture/swordcamp/atlas",
+     "donor_source": "world/regions/swordcamp/make_atlas.py (swordcamp_atlas.jpg)",
+     "note": "parameter BaseTex"
+    },
+    {
+     "kind": "parameter",
+     "name": "CoatTint",
+     "default": [
+      0.16,
+      0.3,
+      0.62,
+      1.0
+     ],
+     "note": "vector parameter"
+    }
+   ],
+   "helpers": [],
+   "fit": "direct",
+   "reason": "Skeletal-mesh material with a recolour custom node; no donor helper.",
+   "reads": [
+    "/Game/SwordCamp/Textures/T_SwordCampAtlas"
+   ]
+  },
+  {
+   "package": "/Game/Racing/M_RacingTv",
+   "record": "adopted/racing",
+   "family": "racing",
+   "generator": {
+    "path": "games/yorimichi/unreal/Scripts/racing_tv_material.py",
+    "lines": [
+     1,
+     57
+    ],
+    "path_lines": [
+     12,
+     18
+    ],
+    "graph_lines": [
+     35,
+     53
+    ],
+    "builder": "module body (wrap as one builder)",
+    "call": "top-level code; runs on import",
+    "sha256": "ea890e75e712104451256f62acaae1bb304b2fd577d350d3a6bb5a223dc00344"
+   },
+   "inputs": [
+    {
+     "kind": "engine",
+     "name": "/Engine/EngineResources/Black",
+     "owner": null,
+     "note": "default of Picture"
+    },
+    {
+     "kind": "parameter",
+     "name": "Picture",
+     "default": "/Engine/EngineResources/Black",
+     "note": "runtime render target written by ARacingBroadcast; not a generator input"
+    },
+    {
+     "kind": "parameter",
+     "name": "Brightness",
+     "default": 1.0,
+     "note": "scalar"
+    },
+    {
+     "kind": "parameter",
+     "name": "EyeAdaptationInverse input",
+     "default": "LightValueInput | LightValue | Light Value",
+     "note": "the first pin name the engine accepts"
+    }
+   ],
+   "helpers": [],
+   "fit": "direct",
+   "reason": "No texture is built by the generator; the Picture parameter is a runtime render target, so the read-back checks the graph and defaults only. The EyeAdaptationInverse pin name depends on the engine version.",
+   "reads": []
+  },
+  {
+   "package": "/Game/FX/M_FX_Additive",
+   "record": "adopted/fx",
+   "family": "fx",
+   "generator": {
+    "path": "games/yorimichi/unreal/Scripts/import_combat_fx.py",
+    "lines": [
+     52,
+     70
+    ],
+    "material_lines": [
+     37,
+     43
+    ],
+    "texture_lines": [
+     25,
+     34
+    ],
+    "builder": "sprite_material",
+    "call": "import_combat_fx.py:82",
+    "arguments": {
+     "name": "M_FX_Additive",
+     "blend": "BLEND_ADDITIVE",
+     "default": "T_FX_Glow"
+    },
+    "sha256": "bf9820e1db843baee6fc4454ecc6ca4da1aec637efe67a8fefcba57923fd1c7d"
+   },
+   "inputs": [
+    {
+     "kind": "texture",
+     "name": "/Game/FX/Textures/T_FX_Glow",
+     "owner": "texture/fx/glow",
+     "donor_source": "assets/fx/gen_textures.py (T_FX_Glow)",
+     "note": "parameter Sprite, default"
+    },
+    {
+     "kind": "parameter",
+     "name": "Sprite",
+     "default": "T_FX_Glow",
+     "note": ""
+    },
+    {
+     "kind": "parameter",
+     "name": "per-instance custom data",
+     "default": "PerInstanceCustomData 0..3",
+     "note": "read by the instances, not the master"
+    }
+   ],
+   "helpers": [],
+   "fit": "direct",
+   "reason": "Unlit additive sprite master; the Sprite texture is the only input.",
+   "reads": [
+    "/Game/FX/Textures/T_FX_Glow"
+   ]
+  },
+  {
+   "package": "/Game/FX/M_FX_Dust",
+   "record": "adopted/fx",
+   "family": "fx",
+   "generator": {
+    "path": "games/yorimichi/unreal/Scripts/import_combat_fx.py",
+    "lines": [
+     52,
+     70
+    ],
+    "builder": "sprite_material",
+    "call": "import_combat_fx.py:83",
+    "arguments": {
+     "name": "M_FX_Dust",
+     "blend": "BLEND_TRANSLUCENT",
+     "default": "T_FX_Dust"
+    },
+    "sha256": "bf9820e1db843baee6fc4454ecc6ca4da1aec637efe67a8fefcba57923fd1c7d"
+   },
+   "inputs": [
+    {
+     "kind": "texture",
+     "name": "/Game/FX/Textures/T_FX_Dust",
+     "owner": "texture/fx/dust",
+     "donor_source": "assets/fx/gen_textures.py (T_FX_Dust)",
+     "note": "parameter Sprite, default"
+    },
+    {
+     "kind": "parameter",
+     "name": "Sprite",
+     "default": "T_FX_Dust",
+     "note": ""
+    }
+   ],
+   "helpers": [],
+   "fit": "direct",
+   "reason": "Translucent branch: opacity = saturate(mask) (import_combat_fx.py:66-67).",
+   "reads": [
+    "/Game/FX/Textures/T_FX_Dust"
+   ]
+  },
+  {
+   "package": "/Game/FX/M_FX_Trail",
+   "record": "adopted/fx",
+   "family": "fx",
+   "generator": {
+    "path": "games/yorimichi/unreal/Scripts/import_combat_fx.py",
+    "lines": [
+     87,
+     96
+    ],
+    "builder": "trail (module body)",
+    "call": "import_combat_fx.py:87-96",
+    "sha256": "bf9820e1db843baee6fc4454ecc6ca4da1aec637efe67a8fefcba57923fd1c7d"
+   },
+   "inputs": [
+    {
+     "kind": "texture",
+     "name": "/Game/FX/Textures/T_FX_Trail",
+     "owner": "texture/fx/trail",
+     "donor_source": "assets/fx/gen_textures.py (T_FX_Trail)",
+     "note": "streak texture"
+    },
+    {
+     "kind": "parameter",
+     "name": "Intensity",
+     "default": 4.0,
+     "note": "scalar, default 4"
+    }
+   ],
+   "helpers": [],
+   "fit": "direct",
+   "reason": "Vertex colour x vertex alpha x streak texture x Intensity; no helper. Module-body builder (wrap as a function).",
+   "reads": [
+    "/Game/FX/Textures/T_FX_Trail"
+   ]
+  },
+  {
+   "package": "/Game/MegaPark/Materials/M_RetailOpaque",
+   "record": "adopted/megapark/base-materials",
+   "family": "megapark",
+   "generator": {
+    "path": "games/yorimichi/unreal/Scripts/import_megapark.py",
+    "lines": [
+     68,
+     163
+    ],
+    "name_tuple_line": 76,
+    "blend_lines": [
+     77,
+     82
+    ],
+    "graph_lines": [
+     104,
+     161
+    ],
+    "builder": "material",
+    "call": "import_megapark.py:189",
+    "arguments": {
+     "alpha": 0
+    },
+    "sha256": "ac0c1df05fd3ff3b48862ad68a07c28189afb7fc3663652f7020a33106f80a7a"
+   },
+   "inputs": [
+    {
+     "kind": "texture",
+     "name": "/Game/MegaPark/Textures/T_DefaultWhite",
+     "owner": "adopted/megapark/shared-textures-common",
+     "donor_source": "import_megapark.py:183 (white.png)",
+     "note": "Diffuse, Decal, Macro, Transparent defaults"
+    },
+    {
+     "kind": "texture",
+     "name": "/Game/MegaPark/Textures/T_DefaultLinear",
+     "owner": "adopted/megapark/shared-textures-common",
+     "donor_source": "import_megapark.py:184 (white.png, linear)",
+     "note": "Lightmap default"
+    },
+    {
+     "kind": "texture",
+     "name": "/Game/MegaPark/Textures/T_DefaultBlack",
+     "owner": "adopted/megapark/shared-textures-common",
+     "donor_source": "import_megapark.py:185 (black.png)",
+     "note": "Specular default"
+    },
+    {
+     "kind": "texture",
+     "name": "/Game/MegaPark/Textures/T_DefaultNormal",
+     "owner": "adopted/megapark/shared-textures-common",
+     "donor_source": "import_megapark.py:186 (normal.png)",
+     "note": "Normal and Detail defaults"
+    }
+   ],
+   "helpers": [],
+   "fit": "direct",
+   "reason": "Graph is in material(); committed in V2 already as adopted/megapark/base-materials/source/unreal/Scripts/import_megapark.py (sha-identical). Only the four default textures are inputs, and the editor-owned record owns them.",
+   "reads": [
+    "/Game/MegaPark/Textures/T_DefaultWhite",
+    "/Game/MegaPark/Textures/T_DefaultLinear",
+    "/Game/MegaPark/Textures/T_DefaultBlack",
+    "/Game/MegaPark/Textures/T_DefaultNormal"
+   ]
+  },
+  {
+   "package": "/Game/MegaPark/Materials/M_RetailMasked",
+   "record": "adopted/megapark/base-materials",
+   "family": "megapark",
+   "generator": {
+    "path": "games/yorimichi/unreal/Scripts/import_megapark.py",
+    "lines": [
+     68,
+     163
+    ],
+    "name_tuple_line": 76,
+    "blend_lines": [
+     77,
+     82
+    ],
+    "graph_lines": [
+     104,
+     161
+    ],
+    "builder": "material",
+    "call": "import_megapark.py:189",
+    "arguments": {
+     "alpha": 1
+    },
+    "sha256": "ac0c1df05fd3ff3b48862ad68a07c28189afb7fc3663652f7020a33106f80a7a"
+   },
+   "inputs": [
+    {
+     "kind": "texture",
+     "name": "/Game/MegaPark/Textures/T_DefaultWhite",
+     "owner": "adopted/megapark/shared-textures-common",
+     "donor_source": "import_megapark.py:183 (white.png)",
+     "note": "Diffuse, Decal, Macro, Transparent defaults"
+    },
+    {
+     "kind": "texture",
+     "name": "/Game/MegaPark/Textures/T_DefaultLinear",
+     "owner": "adopted/megapark/shared-textures-common",
+     "donor_source": "import_megapark.py:184 (white.png, linear)",
+     "note": "Lightmap default"
+    },
+    {
+     "kind": "texture",
+     "name": "/Game/MegaPark/Textures/T_DefaultBlack",
+     "owner": "adopted/megapark/shared-textures-common",
+     "donor_source": "import_megapark.py:185 (black.png)",
+     "note": "Specular default"
+    },
+    {
+     "kind": "texture",
+     "name": "/Game/MegaPark/Textures/T_DefaultNormal",
+     "owner": "adopted/megapark/shared-textures-common",
+     "donor_source": "import_megapark.py:186 (normal.png)",
+     "note": "Normal and Detail defaults"
+    }
+   ],
+   "helpers": [],
+   "fit": "direct",
+   "reason": "Graph is in material(); committed in V2 already as adopted/megapark/base-materials/source/unreal/Scripts/import_megapark.py (sha-identical). Only the four default textures are inputs, and the editor-owned record owns them.",
+   "reads": [
+    "/Game/MegaPark/Textures/T_DefaultWhite",
+    "/Game/MegaPark/Textures/T_DefaultLinear",
+    "/Game/MegaPark/Textures/T_DefaultBlack",
+    "/Game/MegaPark/Textures/T_DefaultNormal"
+   ]
+  },
+  {
+   "package": "/Game/MegaPark/Materials/M_RetailTranslucent",
+   "record": "adopted/megapark/base-materials",
+   "family": "megapark",
+   "generator": {
+    "path": "games/yorimichi/unreal/Scripts/import_megapark.py",
+    "lines": [
+     68,
+     163
+    ],
+    "name_tuple_line": 76,
+    "blend_lines": [
+     77,
+     82
+    ],
+    "graph_lines": [
+     104,
+     161
+    ],
+    "builder": "material",
+    "call": "import_megapark.py:189",
+    "arguments": {
+     "alpha": 2
+    },
+    "sha256": "ac0c1df05fd3ff3b48862ad68a07c28189afb7fc3663652f7020a33106f80a7a"
+   },
+   "inputs": [
+    {
+     "kind": "texture",
+     "name": "/Game/MegaPark/Textures/T_DefaultWhite",
+     "owner": "adopted/megapark/shared-textures-common",
+     "donor_source": "import_megapark.py:183 (white.png)",
+     "note": "Diffuse, Decal, Macro, Transparent defaults"
+    },
+    {
+     "kind": "texture",
+     "name": "/Game/MegaPark/Textures/T_DefaultLinear",
+     "owner": "adopted/megapark/shared-textures-common",
+     "donor_source": "import_megapark.py:184 (white.png, linear)",
+     "note": "Lightmap default"
+    },
+    {
+     "kind": "texture",
+     "name": "/Game/MegaPark/Textures/T_DefaultBlack",
+     "owner": "adopted/megapark/shared-textures-common",
+     "donor_source": "import_megapark.py:185 (black.png)",
+     "note": "Specular default"
+    },
+    {
+     "kind": "texture",
+     "name": "/Game/MegaPark/Textures/T_DefaultNormal",
+     "owner": "adopted/megapark/shared-textures-common",
+     "donor_source": "import_megapark.py:186 (normal.png)",
+     "note": "Normal and Detail defaults"
+    }
+   ],
+   "helpers": [],
+   "fit": "direct",
+   "reason": "Graph is in material(); committed in V2 already as adopted/megapark/base-materials/source/unreal/Scripts/import_megapark.py (sha-identical). Only the four default textures are inputs, and the editor-owned record owns them.",
+   "reads": [
+    "/Game/MegaPark/Textures/T_DefaultWhite",
+    "/Game/MegaPark/Textures/T_DefaultLinear",
+    "/Game/MegaPark/Textures/T_DefaultBlack",
+    "/Game/MegaPark/Textures/T_DefaultNormal"
+   ]
+  },
+  {
+   "package": "/Game/Japan/Hidamari/Materials/M_HDCity",
+   "record": "adopted/japan/hidamari/generator",
+   "family": "hidamari",
+   "generator": {
+    "path": "games/yorimichi/unreal/Scripts/city_material.py",
+    "lines": [
+     42,
+     95
+    ],
+    "name_line": 43,
+    "base_graph_lines": [
+     68,
+     78
+    ],
+    "glow_lines": [
+     80,
+     87
+    ],
+    "haze_call_line": 88,
+    "constants_lines": [
+     91,
+     92
+    ],
+    "builder": "parent",
+    "call": "city_material.py:115 (materials())",
+    "parent_default_line": 115,
+    "sha256": "0d7cf543ce988914e21f6b33960fa0d7ed34726c2e9142d0c3cfd57157c2325e"
+   },
+   "inputs": [
+    {
+     "kind": "texture",
+     "name": "/Game/Japan/Hidamari/Textures/T_HD_plaster",
+     "owner": "adopted/japan/hidamari/surface-plaster",
+     "donor_source": "tools/hidamari_textures.py via materials() texture(slug) (city_material.py:113-114)",
+     "note": "parameter Tex default (the plaster texture or the first slug)"
+    },
+    {
+     "kind": "parameter",
+     "name": "Tile",
+     "default": 1.5,
+     "note": ""
+    },
+    {
+     "kind": "parameter",
+     "name": "Strength",
+     "default": 1.0,
+     "note": ""
+    },
+    {
+     "kind": "parameter",
+     "name": "Macro",
+     "default": 0.5,
+     "note": ""
+    },
+    {
+     "kind": "parameter",
+     "name": "Gain",
+     "default": 1.0,
+     "note": ""
+    }
+   ],
+   "helpers": [
+    {
+     "path": "games/yorimichi/unreal/Scripts/atmosphere.py",
+     "sha256": "b59478df43df83b8c7386e7ff7c097f32faf647716fdacb804f3cf0c99336ebf",
+     "lines": [
+      1,
+      62
+     ],
+     "used_for": "atmosphere.apply haze (city_material.py:88)"
+    },
+    {
+     "path": "games/yorimichi/unreal/Scripts/sea_look.py",
+     "sha256": "ffae53cded2bb461534c88c100bc75d3f93ec3bf396eb303e5d4ec3ad4dbb4fa",
+     "lines": [
+      38,
+      43
+     ],
+     "used_for": "num() and f3() formatting used by atmosphere.py"
+    },
+    {
+     "path": "games/yorimichi/unreal/Scripts/sea_look.py",
+     "sha256": "ffae53cded2bb461534c88c100bc75d3f93ec3bf396eb303e5d4ec3ad4dbb4fa",
+     "lines": [
+      67,
+      69
+     ],
+     "used_for": "HAZE_CM and FAR_COLOUR used by atmosphere.py"
+    }
+   ],
+   "fit": "needs helper",
+   "reason": "Same haze helper as M_SwordCamp. The glow and detail graph is self-contained. M_HDCity keeps its own generator record (adopted/japan/hidamari/generator).",
+   "reads": [
+    "/Game/Japan/Hidamari/Textures/T_HD_plaster"
+   ]
+  }
+ ],
+ "helper_files": [
+  {
+   "path": "games/yorimichi/unreal/Scripts/import_megapark.py",
+   "sha256": "ac0c1df05fd3ff3b48862ad68a07c28189afb7fc3663652f7020a33106f80a7a",
+   "bytes": 26539,
+   "lines": 406
+  },
+  {
+   "path": "games/yorimichi/unreal/Scripts/import_hippodrome.py",
+   "sha256": "bdf9698adf1a1718cfeb3b73eacd08669ac12d4c9ea6b40e54aa5b3486f88914",
+   "bytes": 11828,
+   "lines": 205
+  },
+  {
+   "path": "games/yorimichi/unreal/Scripts/import_skatepark.py",
+   "sha256": "5d07f84d217d82a87e6610344bffdbedefadb457e37cf6b472346ff833b7a9ea",
+   "bytes": 15519,
+   "lines": 257
+  },
+  {
+   "path": "games/yorimichi/unreal/Scripts/import_swordcamp.py",
+   "sha256": "86ce7b5e3450c017464f0456f7831ce3e292db61a571f9b4d9155c3ca9601db2",
+   "bytes": 8236,
+   "lines": 201
+  },
+  {
+   "path": "games/yorimichi/unreal/Scripts/import_combat_fx.py",
+   "sha256": "bf9820e1db843baee6fc4454ecc6ca4da1aec637efe67a8fefcba57923fd1c7d",
+   "bytes": 6197,
+   "lines": 100
+  },
+  {
+   "path": "games/yorimichi/unreal/Scripts/board_dissolve_material.py",
+   "sha256": "a201e90d5dc6ccb9fb3f3b4eda753e946d0992a8994518daa2c8259368adaa2e",
+   "bytes": 4976,
+   "lines": 95
+  },
+  {
+   "path": "games/yorimichi/unreal/Scripts/racing_tv_material.py",
+   "sha256": "ea890e75e712104451256f62acaae1bb304b2fd577d350d3a6bb5a223dc00344",
+   "bytes": 2776,
+   "lines": 57
+  },
+  {
+   "path": "games/yorimichi/unreal/Scripts/city_material.py",
+   "sha256": "0d7cf543ce988914e21f6b33960fa0d7ed34726c2e9142d0c3cfd57157c2325e",
+   "bytes": 7833,
+   "lines": 134
+  },
+  {
+   "path": "games/yorimichi/unreal/Scripts/atmosphere.py",
+   "sha256": "b59478df43df83b8c7386e7ff7c097f32faf647716fdacb804f3cf0c99336ebf",
+   "bytes": 3125,
+   "lines": 62
+  },
+  {
+   "path": "games/yorimichi/unreal/Scripts/sea_look.py",
+   "sha256": "ffae53cded2bb461534c88c100bc75d3f93ec3bf396eb303e5d4ec3ad4dbb4fa",
+   "bytes": 7825,
+   "lines": 150
+  },
+  {
+   "path": "games/yorimichi/world/regions/hippodrome/venue_data.py",
+   "sha256": "d73d0bb3041eeba2451587a3178f44383029edd0f76a1614654a998294f4f497",
+   "bytes": 3243,
+   "lines": 59
+  },
+  {
+   "path": "games/yorimichi/tools/pier_texture_finish.py",
+   "sha256": "884a434b5dc54f0fe552eb678fd9128289df29bdeb09a120026e649585b90f3b",
+   "bytes": 3692,
+   "lines": 83
+  },
+  {
+   "path": "games/yorimichi/world/regions/swordcamp/make_atlas.py",
+   "sha256": "926b7f0596774185e36462b08d15f963191b520e4503f47438a2e9ea7723e289",
+   "bytes": 7026,
+   "lines": 136
+  },
+  {
+   "path": "games/yorimichi/assets/fx/gen_textures.py",
+   "sha256": "e20324bc15bd2c26701653f3797c83785206ae310a55e0632e6633602cb62b7e",
+   "bytes": 3700,
+   "lines": 79
+  },
+  {
+   "path": "games/yorimichi/world/yori.py",
+   "sha256": "2abacfc5e937251ae247614d0caca9839ee39f68e67567a7b44ac49c6581e3bf",
+   "bytes": 1440,
+   "lines": 31
+  }
+ ],
+ "examined_not_used": [
+  {
+   "path": "games/yorimichi/unreal/Scripts/material_assets.py",
+   "sha256": "4f48db1203b44c5abca932291ce323f7247a655753167a5f72dfefe5ac4be50f",
+   "note": "not imported or called by any held master generator (checked); used by instance builders only"
+  }
+ ],
+ "not_inventoried": [
+  {
+   "package": "/Game/Japan/Materials/M_Arcade",
+   "note": "arcade_material.py:24-28 (plaza); not in the held list; owned by adopted/japan/materials/base-materials"
+  },
+  {
+   "package": "/Game/Japan/Materials/M_ArcadePaving",
+   "note": "arcade_material.py:24-28; as M_Arcade"
+  },
+  {
+   "package": "/Game/Japan/Materials/M_Harbor",
+   "note": "harbor_material.py:39-42; plaza family, not in the held list"
+  },
+  {
+   "package": "/Game/Japan/Materials/M_HarborWater",
+   "note": "harbor_material.py:39-42; as M_Harbor"
+  }
+ ]
+}

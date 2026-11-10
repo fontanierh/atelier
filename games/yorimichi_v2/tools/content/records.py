@@ -21,8 +21,8 @@ from pathlib import Path, PurePosixPath
 
 SCHEMA = 1
 AUTHORITIES = ('generated', 'editor', 'split')
-KINDS = ('static-mesh', 'skeletal-mesh', 'skeleton', 'animation', 'material', 'material-instance', 'texture',
-         'audio', 'map', 'blueprint', 'data', 'level-instance', 'foliage', 'physics',
+KINDS = ('static-mesh', 'skeletal-mesh', 'skeleton', 'animation', 'material', 'material-instance', 'material-master',
+         'texture', 'audio', 'map', 'blueprint', 'data', 'level-instance', 'foliage', 'physics',
          # One ownership unit of donor packages taken once as they are (tools/migrate/adopt.py, nested IDs such as
          # adopted/japan/hidamari), editor-owned from then on.
          'adopted',
@@ -290,6 +290,54 @@ def material_settings(recipe: dict, where: Path, inputs: list[str], outputs: lis
     return settings
 
 
+MASTER_IMPORTER = ('material-master', 1)
+MASTER_SETTINGS = {'builder', 'reads', 'arguments'}
+MASTER_BUILDER = re.compile(r'^[a-z][a-z0-9_]*$')
+
+
+def material_master_settings(recipe: dict, where: Path, authority: str, sources: list, outputs: list[str]) -> dict:
+    """@cc [owner:fontanierh,label:correctness] material-master-generator-pinned
+    Validate a material-master [recipe]: `importer = "material-master"`, version 1, and [recipe.settings] with `builder`
+    (the lower-case name of the generator function that builds the graph), `reads` (optional: the /Game packages the graph
+    samples, each an output of an input dependency; see material_master_input_problems) and `arguments` (optional: one plain
+    scalar or string per builder argument; lists and tables are refused). A master is generator-built, so its authority is
+    generated and its generator is one or more pinned .py [[sources]]: the recipe names a builder, it does not restate the
+    graph. Each output is a /Game package named M_<name>."""
+    _known(recipe, MATERIAL_RECIPE_KEYS, where, '[recipe]')
+    if (recipe.get('importer'), recipe.get('version')) != MASTER_IMPORTER:
+        raise RecordError(f'{where}: a material-master recipe is importer "material-master" version 1')
+    if authority != 'generated':
+        raise RecordError(f'{where}: a material-master is generator-built, so its authority is generated, not {authority!r}')
+    if not sources or any(not source.path.endswith('.py') for source in sources):
+        raise RecordError(f'{where}: a material-master names its generator as [[sources]] .py files, each pinned by sha256')
+    settings = recipe.get('settings')
+    if not isinstance(settings, dict):
+        raise RecordError(f'{where}: a material-master needs [recipe.settings]')
+    _known(settings, MASTER_SETTINGS, where, '[recipe.settings]')
+    builder = _need(settings, 'builder', where)
+    if not MASTER_BUILDER.match(builder):
+        raise RecordError(f'{where}: builder {builder!r} must be a lower-case function name')
+    reads = settings.get('reads', [])
+    if not isinstance(reads, list) or len(set(reads)) != len(reads) \
+            or any(not isinstance(package, str) or not PACKAGE.match(package) for package in reads):
+        raise RecordError(f'{where}: reads must be a list of distinct /Game packages')
+    arguments = settings.get('arguments', {})
+    if not isinstance(arguments, dict):
+        raise RecordError(f'{where}: arguments must be a table of name = value')
+    for name, value in arguments.items():
+        if not PARAMETER_NAME.match(name) or isinstance(value, (list, dict)):
+            raise RecordError(f'{where}: argument {name!r} must be a name with a plain scalar or string value')
+    for package in outputs:
+        if not package.rsplit('/', 1)[-1].startswith('M_'):
+            raise RecordError(f'{where}: output {package!r} is a material master and must be named M_<name>')
+    return settings
+
+
+def material_master_reads(asset: 'Asset') -> list[str]:
+    """The /Game packages a material master's graph samples, in the order its record states them."""
+    return list((asset.recipe or {}).get('settings', {}).get('reads', []))
+
+
 def material_rows(asset: 'Asset') -> list[dict]:
     """One row per instance the record writes: {package, parent, textures, scalars, vectors}."""
     settings = (asset.recipe or {}).get('settings', {})
@@ -310,13 +358,17 @@ def material_inputs(asset: 'Asset') -> list[str]:
 
 
 def material_input_problems(asset: 'Asset', outputs_of: dict[str, set[str]]) -> list[str]:
-    """Each package a material instance reads must be an output of one of its input_dependencies; [] when all are.
-    `outputs_of` maps every record ID to the set of its /Game output packages."""
-    if asset.kind != 'material-instance':
+    """Each package a material instance or master reads must be an output of one of its input_dependencies; [] when all
+    are. `outputs_of` maps every record ID to the set of its /Game output packages."""
+    if asset.kind == 'material-master':
+        wanted = material_master_reads(asset)
+    elif asset.kind == 'material-instance':
+        wanted = material_inputs(asset)
+    else:
         return []
     covered = set().union(*(outputs_of.get(dep, set()) for dep in asset.input_dependencies))
     return [f'{package} is read by {asset.id} but no input dependency owns it'
-            for package in material_inputs(asset) if package not in covered]
+            for package in wanted if package not in covered]
 
 
 def load_asset(path: Path) -> Asset:
@@ -358,6 +410,9 @@ def load_asset(path: Path) -> Asset:
         if authority != 'generated' or [s.path for s in sources] != names:
             raise RecordError(f'{path}: [derive] needs generated authority and sources exactly {names}')
         derive = dict(derive)
+    if kind == 'material-master' and authority != 'generated':
+        # A master stays generator-built until its generator is recoverable; it is never converted by omission.
+        raise RecordError(f'{path}: a material-master is generator-built, so its authority is generated, not {authority!r}')
     recipe = data.get('recipe')
     inputs = list(data.get('input_dependencies', []))
     if authority in ('generated', 'split'):
@@ -368,6 +423,10 @@ def load_asset(path: Path) -> Asset:
         # input_dependencies (material_settings), so it needs those instead of a source.
         if kind == 'material-instance':
             material_settings(recipe, path, inputs, [entry.get('package', '') for entry in data.get('outputs', [])])
+        elif kind == 'material-master':
+            # A master's generator is its pinned .py source; its reads are checked against input_dependencies later
+            # (material_input_problems), once every record's outputs are known.
+            material_master_settings(recipe, path, authority, sources, [entry.get('package', '') for entry in data.get('outputs', [])])
         else:
             if not sources:
                 raise RecordError(f'{path}: generated content needs at least one source')
