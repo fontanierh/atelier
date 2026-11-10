@@ -6,7 +6,7 @@ id = "prop/treehouse/trunks"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/treehouse/trunks"
-references = ["adopted/japan/treehouse/surface-trunk"]
+references = ["material/japan/treehouse/surface-trunk-instances"]
 
 [[sources]]
 path = "src/TH_Trunks.fbx"

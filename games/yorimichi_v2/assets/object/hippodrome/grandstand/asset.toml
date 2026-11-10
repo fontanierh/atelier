@@ -6,7 +6,7 @@ id = "object/hippodrome/grandstand"
 kind = "placement"
 authority = "editor"
 owner = "region/w15-hippodrome"
-references = ["adopted/hippodrome/loose_files"]
+references = ["prop/hippodrome/grandstand"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/1/43/MV6NW2Y43X6UG59VJUH515"

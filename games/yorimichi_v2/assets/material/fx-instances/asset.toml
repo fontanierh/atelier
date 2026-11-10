@@ -1,0 +1,49 @@
+# Planned from the donor (tools/migrate/small_instances.py): 4 instances of adopted/fx, each agreeing with its editor read.
+# The values are the generator's, agreeing with the committed editor read (docs/inventory/small-families-reads/
+# instances); the import writes each instance from its row and reads every value back. Never edited by hand.
+schema = 1
+id = "material/fx-instances"
+kind = "material-instance"
+authority = "generated"
+owner = "shared/fx-instances"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02); pinned by sha256"
+input_dependencies = ["adopted/fx", "texture/fx/dust", "texture/fx/glow", "texture/fx/ring", "texture/fx/spark"]
+
+[recipe]
+importer = "material-instance"
+version = 2
+
+[recipe.settings]
+
+[[recipe.settings.instances]]
+package = "/Game/FX/MI_FX_Dust"
+parent = "/Game/FX/M_FX_Dust"
+textures = {Sprite = "/Game/FX/Textures/T_FX_Dust"}
+
+[[recipe.settings.instances]]
+package = "/Game/FX/MI_FX_Glow"
+parent = "/Game/FX/M_FX_Additive"
+textures = {Sprite = "/Game/FX/Textures/T_FX_Glow"}
+
+[[recipe.settings.instances]]
+package = "/Game/FX/MI_FX_Ring"
+parent = "/Game/FX/M_FX_Additive"
+textures = {Sprite = "/Game/FX/Textures/T_FX_Ring"}
+
+[[recipe.settings.instances]]
+package = "/Game/FX/MI_FX_Spark"
+parent = "/Game/FX/M_FX_Additive"
+textures = {Sprite = "/Game/FX/Textures/T_FX_Spark"}
+
+[[outputs]]
+package = "/Game/FX/MI_FX_Dust"
+
+[[outputs]]
+package = "/Game/FX/MI_FX_Glow"
+
+[[outputs]]
+package = "/Game/FX/MI_FX_Ring"
+
+[[outputs]]
+package = "/Game/FX/MI_FX_Spark"

@@ -1,0 +1,26 @@
+# Planned from the donor (tools/migrate/small_instances.py): 1 instances of adopted/megapark/shared-materials-pavement, each agreeing with its editor read.
+# The values are the generator's, agreeing with the committed editor read (docs/inventory/small-families-reads/
+# instances); the import writes each instance from its row and reads every value back. Never edited by hand.
+schema = 1
+id = "material/megapark/shared-materials-pavement-instances"
+kind = "material-instance"
+authority = "generated"
+owner = "shared/megapark/shared-materials-pavement-instances"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02); pinned by sha256"
+input_dependencies = ["adopted/megapark/base-materials", "adopted/megapark/shared-textures-common", "adopted/megapark/shared-textures-pavement"]
+
+[recipe]
+importer = "material-instance"
+version = 2
+
+[recipe.settings]
+
+[[recipe.settings.instances]]
+package = "/Game/MegaPark/Materials/MI_99622005a8467a13"
+parent = "/Game/MegaPark/Materials/M_RetailOpaque"
+textures = {Diffuse = "/Game/MegaPark/Textures/T_2c70170a00040018", Decal = "/Game/MegaPark/Textures/T_DefaultWhite", Macro = "/Game/MegaPark/Textures/T_2c70170a00120009", Lightmap = "/Game/MegaPark/Textures/T_9c0719ed9f4cde40", Normal = "/Game/MegaPark/Textures/T_2c70170a000400cc", Detail = "/Game/MegaPark/Textures/T_00008ccc03e3870a", Specular = "/Game/MegaPark/Textures/T_2c70170a00040017", Transparent = "/Game/MegaPark/Textures/T_DefaultWhite"}
+scalars = {MacroScale = 0.30000001192092896, DetailScale = 10.0, MacroOpacity = 0.6000000238418579, UseDecal = 0.0, HasLightmap = 1.0, HasTransparent = 0.0, LightmapNorm = 3.81, Moss = 0.0}
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_99622005a8467a13"

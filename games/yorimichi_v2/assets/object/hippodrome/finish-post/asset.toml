@@ -6,7 +6,7 @@ id = "object/hippodrome/finish-post"
 kind = "placement"
 authority = "editor"
 owner = "region/w15-hippodrome"
-references = ["adopted/hippodrome/loose_files"]
+references = ["prop/hippodrome/finish-post"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/C/8O/4X31270UMZ35S5TNW7XB67"

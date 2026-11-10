@@ -6,7 +6,7 @@ id = "prop/treehouse/dressing-cell-m2-2-piece20"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/treehouse/dressing-cell-m2-2-piece20"
-references = ["adopted/japan/treehouse/surface-canvas", "adopted/japan/treehouse/surface-cushion", "adopted/japan/treehouse/surface-flat", "adopted/japan/treehouse/surface-glass", "adopted/japan/treehouse/surface-indigo", "adopted/japan/treehouse/surface-map", "adopted/japan/treehouse/surface-moss", "adopted/japan/treehouse/surface-noren-indigo", "adopted/japan/treehouse/surface-pane", "adopted/japan/treehouse/surface-paper", "adopted/japan/treehouse/surface-pictures", "adopted/japan/treehouse/surface-quilt", "adopted/japan/treehouse/surface-rope", "adopted/japan/treehouse/surface-rug", "adopted/japan/treehouse/surface-wood-timber"]
+references = ["adopted/japan/treehouse/surface-canvas", "adopted/japan/treehouse/surface-cushion", "adopted/japan/treehouse/surface-indigo", "adopted/japan/treehouse/surface-map", "adopted/japan/treehouse/surface-moss", "adopted/japan/treehouse/surface-noren-indigo", "adopted/japan/treehouse/surface-pane", "adopted/japan/treehouse/surface-paper", "adopted/japan/treehouse/surface-pictures", "adopted/japan/treehouse/surface-quilt", "adopted/japan/treehouse/surface-rug", "adopted/japan/treehouse/surface-wood-timber", "material/japan/treehouse/surface-flat-instances", "material/japan/treehouse/surface-glass-instances", "material/japan/treehouse/surface-rope-instances", "texture/japan/treehouse-flat", "texture/japan/treehouse-glass", "texture/japan/treehouse-rope"]
 
 [[sources]]
 path = "src/TH_Dressing_cell_-2_2_Piece20.fbx"

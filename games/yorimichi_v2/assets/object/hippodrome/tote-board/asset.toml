@@ -6,7 +6,7 @@ id = "object/hippodrome/tote-board"
 kind = "placement"
 authority = "editor"
 owner = "region/w15-hippodrome"
-references = ["adopted/hippodrome/loose_files"]
+references = ["prop/hippodrome/tote-board"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/6/JA/J9BCCXCXHG72TJNX2BI548"

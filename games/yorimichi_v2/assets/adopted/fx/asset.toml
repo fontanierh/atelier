@@ -9,18 +9,6 @@ provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DEC
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
 
 [[outputs]]
-package = "/Game/FX/MI_FX_Dust"
-
-[[outputs]]
-package = "/Game/FX/MI_FX_Glow"
-
-[[outputs]]
-package = "/Game/FX/MI_FX_Ring"
-
-[[outputs]]
-package = "/Game/FX/MI_FX_Spark"
-
-[[outputs]]
 package = "/Game/FX/M_FX_Additive"
 
 [[outputs]]

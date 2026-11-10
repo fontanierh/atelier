@@ -3,9 +3,21 @@
     "object/hippodrome/course": {
       "groups": [],
       "id": "object/hippodrome/course",
-      "model": "adopted/hippodrome/loose_files",
+      "model": [
+        "prop/hippodrome/ground",
+        "prop/hippodrome/lane",
+        "prop/hippodrome/lane-skirt",
+        "prop/hippodrome/rails",
+        "prop/hippodrome/skirt",
+        "prop/hippodrome/track"
+      ],
       "models": [
-        "adopted/hippodrome/loose_files"
+        "prop/hippodrome/ground",
+        "prop/hippodrome/lane",
+        "prop/hippodrome/lane-skirt",
+        "prop/hippodrome/rails",
+        "prop/hippodrome/skirt",
+        "prop/hippodrome/track"
       ],
       "park": [
         "SM_HD_Ground",
@@ -19,9 +31,9 @@
     "object/hippodrome/finish-post": {
       "groups": [],
       "id": "object/hippodrome/finish-post",
-      "model": "adopted/hippodrome/loose_files",
+      "model": "prop/hippodrome/finish-post",
       "models": [
-        "adopted/hippodrome/loose_files"
+        "prop/hippodrome/finish-post"
       ],
       "park": [
         "SM_HD_FinishPost"
@@ -30,9 +42,9 @@
     "object/hippodrome/grandstand": {
       "groups": [],
       "id": "object/hippodrome/grandstand",
-      "model": "adopted/hippodrome/loose_files",
+      "model": "prop/hippodrome/grandstand",
       "models": [
-        "adopted/hippodrome/loose_files"
+        "prop/hippodrome/grandstand"
       ],
       "park": [
         "SM_HD_Grandstand"
@@ -41,9 +53,9 @@
     "object/hippodrome/judges-tower": {
       "groups": [],
       "id": "object/hippodrome/judges-tower",
-      "model": "adopted/hippodrome/loose_files",
+      "model": "prop/hippodrome/judges-tower",
       "models": [
-        "adopted/hippodrome/loose_files"
+        "prop/hippodrome/judges-tower"
       ],
       "park": [
         "SM_HD_JudgesTower"
@@ -52,9 +64,9 @@
     "object/hippodrome/tote-board": {
       "groups": [],
       "id": "object/hippodrome/tote-board",
-      "model": "adopted/hippodrome/loose_files",
+      "model": "prop/hippodrome/tote-board",
       "models": [
-        "adopted/hippodrome/loose_files"
+        "prop/hippodrome/tote-board"
       ],
       "park": [
         "SM_HD_ToteBoard"
