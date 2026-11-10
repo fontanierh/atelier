@@ -17,6 +17,7 @@ from atelier.ai import ledger
 
 MODEL, QUALITY = 'gpt-image-2.6-sunburst', 'high'
 API = 'https://api.openai.com/v1'
+_RETIRED_MODELS = ('gpt-image-2.5-sunburst', 'gpt-image-2.5-sunburst-2026-09-08')
 _FORMATS = ('png', 'jpeg', 'webp', 'gif', 'svg')
 _COMPLEXITIES = ('low', 'medium', 'high')
 _BACKGROUNDS = ('transparent', 'opaque', 'auto')
@@ -28,6 +29,8 @@ def _is_int(value):
 
 def _request_fields(prompt, size, *, quality=QUALITY, model=MODEL, output_format=None,
                     frame_count=None, frame_duration_ms=None, complexity=None, background=None):
+    if model in _RETIRED_MODELS:
+        raise ValueError(f'{model} is retired; use {MODEL}')
     if output_format is not None and output_format not in _FORMATS:
         raise ValueError(f'output_format must be one of {_FORMATS}')
     if (frame_count is not None or frame_duration_ms is not None) and output_format != 'gif':

@@ -72,8 +72,13 @@ def test_paint_writes_the_record_before_the_call_and_never_repays(api, tmp_path,
     assert len(seen) == 1
 
 
-def test_default_model_is_sunburst_2_6():
+def test_default_model_is_sunburst_2_6_and_2_5_is_refused(api, tmp_path):
+    seen, _ = api
     assert images.MODEL == 'gpt-image-2.6-sunburst'
+    record = tmp_path / 'retired.provenance.json'
+    with pytest.raises(ValueError, match='retired'):
+        images.paint(tmp_path / 'x.png', 'p', '1024x1024', record=record, model='gpt-image-2.5-sunburst', key='sk-test')
+    assert not record.exists() and seen == []
 
 
 def test_gif_generation_and_edit_fields(api, tmp_path):

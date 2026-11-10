@@ -91,3 +91,11 @@ def test_the_well_formed_settings_load(tmp_path):
 def test_mirror_addressing_is_stated_and_checked(tmp_path):
     asset = records.load_asset(write_record(tmp_path, 'address = "mirror"\n'))
     assert asset.recipe['settings']['address'] == 'mirror'
+
+
+def test_mip_gen_setting_is_validated_in_both_layers(tmp_path):
+    assert set(records.TEXTURE_MIP_GEN) == set(import_settings.MIP_GEN_SETTINGS)
+    asset = records.load_asset(write_record(tmp_path / 'ok', 'mip_gen = "TMGS_FROM_TEXTURE_GROUP"\n'))
+    assert import_settings.mip_gen(asset.recipe['settings']) == 'TMGS_FROM_TEXTURE_GROUP'
+    with pytest.raises(records.RecordError):
+        records.load_asset(write_record(tmp_path / 'bad', 'mip_gen = "TMGS_BOGUS"\n'))

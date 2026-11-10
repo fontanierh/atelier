@@ -231,12 +231,12 @@ def native_import(game, asset, plan_file: Path):
         raise ImportError_(f'{asset.id}: the editor import failed (exit {result.returncode}); see build/yorimichi_v2/logs')
 
 
-def write_plan(game, asset, by_id, kind, claim, write_set, plan_file: Path):
+def write_plan(game, asset, by_id, kind, claim, write_set, plan_file: Path, *, allow_graph_change: bool = False):
     """The import plan the editor step re-checks at its write boundary (build.py _authorize_import)."""
     allowed = {records.content_relative(game, f) for f in write_set}
     deps = {d: state_of(by_id, d) for d in asset.input_dependencies}
     sources = carve.plan_sources(asset, BUILD)      # a carved record's one source is its derived remainder
-    extra = {}
+    extra = {'allow_graph_change': True} if allow_graph_change and kind[0] == 'material-master' else {}
     if kind[0] == 'skate-runtime':
         # The package and its receipt, assembled from the record's pinned inputs only (skate_runtime.prepare).
         build = BUILD / 'skate-runtime' / asset.id.replace('/', '.')
@@ -321,7 +321,7 @@ def check_master_pins(asset):
             raise ImportError_(f'{asset.id}: builder source {source.path} differs from its pinned sha256')
 
 
-def import_one(game, asset, by_id, *, engine, claim, importer=native_import, echo=print):
+def import_one(game, asset, by_id, *, engine, claim, importer=native_import, echo=print, allow_graph_change: bool = False):
     deps = {d: state_of(by_id, d) for d in asset.input_dependencies}
     stale = [d for d, s in deps.items() if s is None]
     if stale:
@@ -353,7 +353,7 @@ def import_one(game, asset, by_id, *, engine, claim, importer=native_import, ech
     allowed = {records.content_relative(game, f) for f in write_set}
     before = content_snapshot(game)
     plan_file = journal.dir / 'plan.json'
-    write_plan(game, asset, by_id, kind, claim, write_set, plan_file)
+    write_plan(game, asset, by_id, kind, claim, write_set, plan_file, allow_graph_change=allow_graph_change)
     try:
         importer(game, asset, plan_file)
         lods = read_lod_result(plan_file, asset)
@@ -460,7 +460,7 @@ class _Prepared:
         self.plan_file, self.deps, self.hashes, self.fingerprint = plan_file, deps, hashes, fingerprint
 
 
-def _prepare_batch(game, asset, by_id, *, claim, echo, authorized=False):
+def _prepare_batch(game, asset, by_id, *, claim, echo, authorized=False, allow_graph_change: bool = False):
     """import_one's steps before its editor run: fingerprint, authorize (unless the batch already did), journal,
     plan. None when up to date."""
     deps = {d: state_of(by_id, d) for d in asset.input_dependencies}
@@ -491,7 +491,7 @@ def _prepare_batch(game, asset, by_id, *, claim, echo, authorized=False):
         echo(f'recovered  {asset.id}: restored {len(recovered)} file(s) an interrupted import left')
     journal.begin(write_set)
     plan_file = journal.dir / 'plan.json'
-    write_plan(game, asset, by_id, kind, claim, write_set, plan_file)
+    write_plan(game, asset, by_id, kind, claim, write_set, plan_file, allow_graph_change=allow_graph_change)
     return _Prepared(asset, journal, write_set, plan_file, deps, hashes, fingerprint)
 
 
@@ -523,7 +523,8 @@ def _verify_batch(game, prepared, result, *, engine, echo):
     echo(f'imported   {asset.id}: {len(files)} file(s)')
 
 
-def import_batch(game, asset_ids, *, engine, claim, batch_size, runner=run_session, echo=print) -> dict:
+def import_batch(game, asset_ids, *, engine, claim, batch_size, runner=run_session, echo=print,
+                 allow_graph_change: bool = False) -> dict:
     """@cc [owner:fontanierh,label:correctness] import-batch-ready-dependencies
     Gather dependency-ready assets of one kind from the remaining queue, at most `batch_size` jobs per session.
     A selected dependency MUST be verified and recorded before its dependent is prepared, including across kinds.
@@ -570,7 +571,8 @@ def import_batch(game, asset_ids, *, engine, claim, batch_size, runner=run_sessi
             queue.pop(index)
             kind = asset.kind                        # keep the cohort even when its first assets are unchanged
             try:
-                prepared = _prepare_batch(game, asset, by_id, claim=claim, echo=echo, authorized=True)
+                prepared = _prepare_batch(game, asset, by_id, claim=claim, echo=echo, authorized=True,
+                                          allow_graph_change=allow_graph_change)
             except ImportError_ as error:
                 report['failed'][asset_id] = str(error)
                 echo(f'failed     {asset_id}: {error}; no record written')
@@ -648,6 +650,8 @@ def main(argv=None) -> int:
     parser.add_argument('--claim', help='the active claim (task ID) authorizing these writes')
     parser.add_argument('--batch', type=int, default=0, metavar='N',
                         help='import through one warm editor session per N assets (default: one editor per asset)')
+    parser.add_argument('--allow-graph-change', action='store_true',
+                        help='accept an intentional material-master graph update whose saved parameters are preserved')
     args = parser.parse_args(argv)
     try:
         ordered, by_id = plan(GAME, args.assets)
@@ -658,7 +662,8 @@ def main(argv=None) -> int:
         from atelier import engine as engine_paths
         engine = engine_identity(Path(engine_paths.unreal_root()))
         if args.batch:
-            report = import_batch(GAME, args.assets, engine=engine, claim=args.claim, batch_size=args.batch)
+            report = import_batch(GAME, args.assets, engine=engine, claim=args.claim, batch_size=args.batch,
+                                  allow_graph_change=args.allow_graph_change)
             print(f'batch: {len(report["imported"])} imported, {len(report["unchanged"])} unchanged, '
                   f'{len(report["failed"])} failed, {len(report["not_run"])} not run'
                   + (f'; stopped: {report["interrupted"]}' if report['interrupted'] else ''))
@@ -667,7 +672,8 @@ def main(argv=None) -> int:
             return 1 if report['failed'] or report['interrupted'] else 0
         for asset in ordered:
             by_id = {a.id: a for a in records.discover(GAME)[0]}      # fresh: dependencies were just imported
-            import_one(GAME, by_id[asset.id], by_id, engine=engine, claim=args.claim)
+            import_one(GAME, by_id[asset.id], by_id, engine=engine, claim=args.claim,
+                       allow_graph_change=args.allow_graph_change)
     except (ImportError_, RecordError) as error:
         print(f'import failed: {error}', file=sys.stderr)
         return 1
