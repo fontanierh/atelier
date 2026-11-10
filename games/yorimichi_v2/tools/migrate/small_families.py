@@ -474,9 +474,10 @@ def claim_records(donor: Path, game: Path) -> list:
         out += instance_records(game, donor, texture_owner)
     return out
 
-def instance_records(game: Path, donor: Path, texture_owner: dict) -> list:
+def instance_records(game: Path, donor: Path, texture_owner: dict, families=None) -> list:
     """One material-instance record per adopted record whose instances agree with the read (small_instances.agreement).
-    Its inputs are the owners of each parent and texture it reads; a texture moving in this write names its new record."""
+    Its inputs are the owners of each parent and texture it reads; a texture moving in this write names its new record.
+    `families` defaults to INSTANCE_FAMILIES (the SMALLFAM claim); japan_instances.py passes its own."""
     owner_of, adopted_of = dict(texture_owner), {}
     for path in records.record_paths(game):
         asset = records.load_asset(path)
@@ -485,7 +486,7 @@ def instance_records(game: Path, donor: Path, texture_owner: dict) -> list:
             if asset.id.startswith('adopted/'):
                 adopted_of[output.package] = asset.id
     out = []
-    for family in INSTANCE_FAMILIES:
+    for family in INSTANCE_FAMILIES if families is None else families:
         agreed, expected = si.agreement(family, donor), si.EXPECTED[family](donor)
         groups = {}
         for package, verdict in sorted(agreed.items()):
@@ -521,8 +522,9 @@ def hippo_slot(name: str) -> str:
 
 
 # The families whose agreeing instances the claim plans. Hidamari is held: its adopted surface record is referenced by 173
-# citysurfaces prop records (another owner), and a claim that rewrites them would need that scope. (tests narrow this.)
-INSTANCE_FAMILIES = tuple(f for f in si.EXPECTED if f != 'hidamari')
+# citysurfaces prop records (another owner), and a claim that rewrites them would need that scope. Japan has its own
+# claim (japan_instances.py). (tests narrow this.)
+INSTANCE_FAMILIES = tuple(f for f in si.EXPECTED if f not in ('hidamari', 'japan'))
 
 
 def instance_record_text(rec: NewRecord) -> str:
@@ -571,12 +573,12 @@ def _owner_of(text: str) -> str:
     return match.group(1) if match else ''
 
 
-def claim_ops(game: Path, donor: Path) -> dict:
+def claim_ops(game: Path, donor: Path, recs=None) -> dict:
     """The one write: {'writes': {rel: bytes}, 'deletes': [rel]}. The new records and their src/ copies. An adopted record
     that gives up every package is deleted with its verified.json; one that keeps some (a tree house surface keeps its
     instance) loses the moved outputs from its asset.toml and their entries from its verified.json. The units.json of each
     folder drops the moved packages, and a record that references a fully moved record names the new records."""
-    recs = claim_records(donor, game)
+    recs = claim_records(donor, game) if recs is None else recs
     writes, deletes, moved, new_ids = {}, [], {}, {}
     for rec in recs:
         folder = 'assets/' + rec.id

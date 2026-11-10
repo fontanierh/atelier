@@ -1,0 +1,1488 @@
+{
+ "/Game/Japan/Materials/MI_Bark": {
+  "base": {
+   "blend_mode": "BLEND_MASKED",
+   "dithered_lod_transition": true,
+   "opacity_mask_clip_value": 0.5
+  },
+  "effective": {
+   "scalar": {
+    "FadeMode": 0.0
+   },
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_bark.T_bark"
+   },
+   "vector": {
+    "CutScale": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ],
+    "Tint": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  "overrides": {
+   "scalar": {},
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_bark.T_bark"
+   },
+   "vector": {}
+  },
+  "parent": "/Game/Japan/Materials/M_Painted.M_Painted",
+  "switches": {}
+ },
+ "/Game/Japan/Materials/MI_BarkOlive": {
+  "base": {
+   "dithered_lod_transition": true
+  },
+  "effective": {
+   "scalar": {
+    "FadeMode": 0.0
+   },
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_bark_olive.T_bark_olive"
+   },
+   "vector": {
+    "CutScale": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ],
+    "Tint": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  "overrides": {
+   "scalar": {},
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_bark_olive.T_bark_olive"
+   },
+   "vector": {}
+  },
+  "parent": "/Game/Japan/Materials/M_Painted.M_Painted",
+  "switches": {}
+ },
+ "/Game/Japan/Materials/MI_BarkTuscan": {
+  "base": {
+   "dithered_lod_transition": true
+  },
+  "effective": {
+   "scalar": {
+    "FadeMode": 0.0
+   },
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_bark_olive.T_bark_olive"
+   },
+   "vector": {
+    "CutScale": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ],
+    "Tint": [
+     0.65,
+     0.55,
+     0.4,
+     1.0
+    ]
+   }
+  },
+  "overrides": {
+   "scalar": {},
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_bark_olive.T_bark_olive"
+   },
+   "vector": {
+    "Tint": [
+     0.65,
+     0.55,
+     0.4,
+     1.0
+    ]
+   }
+  },
+  "parent": "/Game/Japan/Materials/M_Painted.M_Painted",
+  "switches": {}
+ },
+ "/Game/Japan/Materials/MI_Coast": {
+  "base": {},
+  "effective": {
+   "scalar": {
+    "NearGround": 1.0
+   },
+   "texture": {},
+   "vector": {}
+  },
+  "overrides": {
+   "scalar": {
+    "NearGround": 1.0
+   },
+   "texture": {},
+   "vector": {}
+  },
+  "parent": "/Game/Japan/Materials/M_ForestGround.M_ForestGround",
+  "switches": {}
+ },
+ "/Game/Japan/Materials/MI_CoastRock": {
+  "base": {},
+  "effective": {
+   "scalar": {},
+   "texture": {},
+   "vector": {}
+  },
+  "overrides": {
+   "scalar": {},
+   "texture": {},
+   "vector": {}
+  },
+  "parent": "/Game/Japan/Materials/M_CoastRock.M_CoastRock",
+  "switches": {}
+ },
+ "/Game/Japan/Materials/MI_Concrete": {
+  "base": {
+   "blend_mode": "BLEND_MASKED",
+   "opacity_mask_clip_value": 0.5
+  },
+  "effective": {
+   "scalar": {
+    "FadeMode": 0.0
+   },
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_concrete.T_concrete"
+   },
+   "vector": {
+    "CutScale": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ],
+    "Tint": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  "overrides": {
+   "scalar": {},
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_concrete.T_concrete"
+   },
+   "vector": {}
+  },
+  "parent": "/Game/Japan/Materials/M_Painted.M_Painted",
+  "switches": {}
+ },
+ "/Game/Japan/Materials/MI_FarForest": {
+  "base": {},
+  "effective": {
+   "scalar": {
+    "NearGround": 0.0
+   },
+   "texture": {},
+   "vector": {}
+  },
+  "overrides": {
+   "scalar": {},
+   "texture": {},
+   "vector": {}
+  },
+  "parent": "/Game/Japan/Materials/M_ForestGround.M_ForestGround",
+  "switches": {}
+ },
+ "/Game/Japan/Materials/MI_Feather": {
+  "base": {},
+  "effective": {
+   "scalar": {
+    "FadeMode": 0.0
+   },
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_white.T_white"
+   },
+   "vector": {
+    "CutScale": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ],
+    "Tint": [
+     0.92,
+     0.92,
+     0.9,
+     1.0
+    ]
+   }
+  },
+  "overrides": {
+   "scalar": {},
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_white.T_white"
+   },
+   "vector": {
+    "Tint": [
+     0.92,
+     0.92,
+     0.9,
+     1.0
+    ]
+   }
+  },
+  "parent": "/Game/Japan/Materials/M_Painted.M_Painted",
+  "switches": {}
+ },
+ "/Game/Japan/Materials/MI_FeatherDark": {
+  "base": {},
+  "effective": {
+   "scalar": {
+    "FadeMode": 0.0
+   },
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_white.T_white"
+   },
+   "vector": {
+    "CutScale": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ],
+    "Tint": [
+     0.1,
+     0.1,
+     0.12,
+     1.0
+    ]
+   }
+  },
+  "overrides": {
+   "scalar": {},
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_white.T_white"
+   },
+   "vector": {
+    "Tint": [
+     0.1,
+     0.1,
+     0.12,
+     1.0
+    ]
+   }
+  },
+  "parent": "/Game/Japan/Materials/M_Painted.M_Painted",
+  "switches": {}
+ },
+ "/Game/Japan/Materials/MI_Flower": {
+  "base": {},
+  "effective": {
+   "scalar": {
+    "FadeMode": 0.0
+   },
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_flower.T_flower"
+   },
+   "vector": {
+    "CutScale": [
+     1.0,
+     1.0,
+     2.0,
+     1.0
+    ],
+    "Tint": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  "overrides": {
+   "scalar": {},
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_flower.T_flower"
+   },
+   "vector": {}
+  },
+  "parent": "/Game/Japan/Materials/M_Foliage.M_Foliage",
+  "switches": {}
+ },
+ "/Game/Japan/Materials/MI_Grass": {
+  "base": {},
+  "effective": {
+   "scalar": {
+    "FadeMode": 0.0
+   },
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_grass.T_grass"
+   },
+   "vector": {
+    "CutScale": [
+     1.0,
+     1.0,
+     2.5,
+     1.0
+    ],
+    "Tint": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  "overrides": {
+   "scalar": {},
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_grass.T_grass"
+   },
+   "vector": {}
+  },
+  "parent": "/Game/Japan/Materials/M_Grass.M_Grass",
+  "switches": {}
+ },
+ "/Game/Japan/Materials/MI_Ground": {
+  "base": {},
+  "effective": {
+   "scalar": {
+    "FadeMode": 0.0
+   },
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_ground.T_ground"
+   },
+   "vector": {
+    "CutScale": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ],
+    "Tint": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  "overrides": {
+   "scalar": {},
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_ground.T_ground"
+   },
+   "vector": {}
+  },
+  "parent": "/Game/Japan/Materials/M_Painted.M_Painted",
+  "switches": {}
+ },
+ "/Game/Japan/Materials/MI_Lattice": {
+  "base": {
+   "blend_mode": "BLEND_MASKED",
+   "opacity_mask_clip_value": 0.5
+  },
+  "effective": {
+   "scalar": {
+    "FadeMode": 0.0
+   },
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_white.T_white"
+   },
+   "vector": {
+    "CutScale": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ],
+    "Tint": [
+     0.14,
+     0.1,
+     0.08,
+     1.0
+    ]
+   }
+  },
+  "overrides": {
+   "scalar": {},
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_white.T_white"
+   },
+   "vector": {
+    "Tint": [
+     0.14,
+     0.1,
+     0.08,
+     1.0
+    ]
+   }
+  },
+  "parent": "/Game/Japan/Materials/M_Painted.M_Painted",
+  "switches": {}
+ },
+ "/Game/Japan/Materials/MI_LeafBroad": {
+  "base": {},
+  "effective": {
+   "scalar": {
+    "FadeMode": 0.0
+   },
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_leaf_broad.T_leaf_broad"
+   },
+   "vector": {
+    "CutScale": [
+     1.0,
+     1.0,
+     2.0,
+     1.0
+    ],
+    "Tint": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  "overrides": {
+   "scalar": {},
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_leaf_broad.T_leaf_broad"
+   },
+   "vector": {}
+  },
+  "parent": "/Game/Japan/Materials/M_Foliage.M_Foliage",
+  "switches": {}
+ },
+ "/Game/Japan/Materials/MI_LeafCedar": {
+  "base": {},
+  "effective": {
+   "scalar": {
+    "FadeMode": 0.0
+   },
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_leaf_cedar.T_leaf_cedar"
+   },
+   "vector": {
+    "CutScale": [
+     1.0,
+     1.0,
+     2.0,
+     1.0
+    ],
+    "Tint": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  "overrides": {
+   "scalar": {},
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_leaf_cedar.T_leaf_cedar"
+   },
+   "vector": {}
+  },
+  "parent": "/Game/Japan/Materials/M_Foliage.M_Foliage",
+  "switches": {}
+ },
+ "/Game/Japan/Materials/MI_LeafCypress": {
+  "base": {},
+  "effective": {
+   "scalar": {
+    "FadeMode": 0.0
+   },
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_LeafCypress.T_LeafCypress"
+   },
+   "vector": {
+    "CutScale": [
+     1.0,
+     1.0,
+     2.0,
+     1.0
+    ],
+    "Tint": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  "overrides": {
+   "scalar": {},
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_LeafCypress.T_LeafCypress"
+   },
+   "vector": {}
+  },
+  "parent": "/Game/Japan/Materials/M_Foliage.M_Foliage",
+  "switches": {}
+ },
+ "/Game/Japan/Materials/MI_LeafGinkgo": {
+  "base": {},
+  "effective": {
+   "scalar": {
+    "FadeMode": 0.0
+   },
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_leaf_ginkgo.T_leaf_ginkgo"
+   },
+   "vector": {
+    "CutScale": [
+     1.0,
+     1.0,
+     2.0,
+     1.0
+    ],
+    "Tint": [
+     1.0,
+     0.72,
+     0.42,
+     1.0
+    ]
+   }
+  },
+  "overrides": {
+   "scalar": {},
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_leaf_ginkgo.T_leaf_ginkgo"
+   },
+   "vector": {
+    "Tint": [
+     1.0,
+     0.72,
+     0.42,
+     1.0
+    ]
+   }
+  },
+  "parent": "/Game/Japan/Materials/M_Foliage.M_Foliage",
+  "switches": {}
+ },
+ "/Game/Japan/Materials/MI_LeafMaple": {
+  "base": {},
+  "effective": {
+   "scalar": {
+    "FadeMode": 0.0
+   },
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_leaf_maple.T_leaf_maple"
+   },
+   "vector": {
+    "CutScale": [
+     1.0,
+     1.0,
+     2.0,
+     1.0
+    ],
+    "Tint": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  "overrides": {
+   "scalar": {},
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_leaf_maple.T_leaf_maple"
+   },
+   "vector": {}
+  },
+  "parent": "/Game/Japan/Materials/M_Foliage.M_Foliage",
+  "switches": {}
+ },
+ "/Game/Japan/Materials/MI_LeafOak": {
+  "base": {},
+  "effective": {
+   "scalar": {
+    "FadeMode": 0.0
+   },
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_LeafOak.T_LeafOak"
+   },
+   "vector": {
+    "CutScale": [
+     1.0,
+     1.0,
+     2.0,
+     1.0
+    ],
+    "Tint": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  "overrides": {
+   "scalar": {},
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_LeafOak.T_LeafOak"
+   },
+   "vector": {}
+  },
+  "parent": "/Game/Japan/Materials/M_Foliage.M_Foliage",
+  "switches": {}
+ },
+ "/Game/Japan/Materials/MI_LeafOchre": {
+  "base": {},
+  "effective": {
+   "scalar": {
+    "FadeMode": 0.0
+   },
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_leaf_ochre.T_leaf_ochre"
+   },
+   "vector": {
+    "CutScale": [
+     1.0,
+     1.0,
+     2.0,
+     1.0
+    ],
+    "Tint": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  "overrides": {
+   "scalar": {},
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_leaf_ochre.T_leaf_ochre"
+   },
+   "vector": {}
+  },
+  "parent": "/Game/Japan/Materials/M_Foliage.M_Foliage",
+  "switches": {}
+ },
+ "/Game/Japan/Materials/MI_LeafOchreSmall": {
+  "base": {},
+  "effective": {
+   "scalar": {
+    "FadeMode": 0.0
+   },
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_leaf_ochre_small.T_leaf_ochre_small"
+   },
+   "vector": {
+    "CutScale": [
+     1.0,
+     1.0,
+     2.0,
+     1.0
+    ],
+    "Tint": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  "overrides": {
+   "scalar": {},
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_leaf_ochre_small.T_leaf_ochre_small"
+   },
+   "vector": {}
+  },
+  "parent": "/Game/Japan/Materials/M_Foliage.M_Foliage",
+  "switches": {}
+ },
+ "/Game/Japan/Materials/MI_LeafOlive": {
+  "base": {},
+  "effective": {
+   "scalar": {
+    "FadeMode": 0.0
+   },
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_LeafOlive.T_LeafOlive"
+   },
+   "vector": {
+    "CutScale": [
+     1.0,
+     1.0,
+     2.0,
+     1.0
+    ],
+    "Tint": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  "overrides": {
+   "scalar": {},
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_LeafOlive.T_LeafOlive"
+   },
+   "vector": {}
+  },
+  "parent": "/Game/Japan/Materials/M_Foliage.M_Foliage",
+  "switches": {}
+ },
+ "/Game/Japan/Materials/MI_LeafPine": {
+  "base": {},
+  "effective": {
+   "scalar": {
+    "FadeMode": 0.0
+   },
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_leaf_pine.T_leaf_pine"
+   },
+   "vector": {
+    "CutScale": [
+     1.0,
+     1.0,
+     2.0,
+     1.0
+    ],
+    "Tint": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  "overrides": {
+   "scalar": {},
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_leaf_pine.T_leaf_pine"
+   },
+   "vector": {}
+  },
+  "parent": "/Game/Japan/Materials/M_Foliage.M_Foliage",
+  "switches": {}
+ },
+ "/Game/Japan/Materials/MI_LeafSmall": {
+  "base": {},
+  "effective": {
+   "scalar": {
+    "FadeMode": 0.0
+   },
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_leaf_small.T_leaf_small"
+   },
+   "vector": {
+    "CutScale": [
+     1.0,
+     1.0,
+     2.0,
+     1.0
+    ],
+    "Tint": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  "overrides": {
+   "scalar": {},
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_leaf_small.T_leaf_small"
+   },
+   "vector": {}
+  },
+  "parent": "/Game/Japan/Materials/M_Foliage.M_Foliage",
+  "switches": {}
+ },
+ "/Game/Japan/Materials/MI_LeafStonePine": {
+  "base": {},
+  "effective": {
+   "scalar": {
+    "FadeMode": 0.0
+   },
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_LeafStonePine.T_LeafStonePine"
+   },
+   "vector": {
+    "CutScale": [
+     1.0,
+     1.0,
+     2.0,
+     1.0
+    ],
+    "Tint": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  "overrides": {
+   "scalar": {},
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_LeafStonePine.T_LeafStonePine"
+   },
+   "vector": {}
+  },
+  "parent": "/Game/Japan/Materials/M_Foliage.M_Foliage",
+  "switches": {}
+ },
+ "/Game/Japan/Materials/MI_Litter": {
+  "base": {},
+  "effective": {
+   "scalar": {
+    "FadeMode": 0.0
+   },
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_litter.T_litter"
+   },
+   "vector": {
+    "CutScale": [
+     1.0,
+     1.0,
+     2.0,
+     1.0
+    ],
+    "Tint": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  "overrides": {
+   "scalar": {},
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_litter.T_litter"
+   },
+   "vector": {}
+  },
+  "parent": "/Game/Japan/Materials/M_Foliage.M_Foliage",
+  "switches": {}
+ },
+ "/Game/Japan/Materials/MI_Metal": {
+  "base": {
+   "blend_mode": "BLEND_MASKED",
+   "opacity_mask_clip_value": 0.5
+  },
+  "effective": {
+   "scalar": {
+    "FadeMode": 0.0
+   },
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_white.T_white"
+   },
+   "vector": {
+    "CutScale": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ],
+    "Tint": [
+     0.08,
+     0.08,
+     0.09,
+     1.0
+    ]
+   }
+  },
+  "overrides": {
+   "scalar": {},
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_white.T_white"
+   },
+   "vector": {
+    "Tint": [
+     0.08,
+     0.08,
+     0.09,
+     1.0
+    ]
+   }
+  },
+  "parent": "/Game/Japan/Materials/M_Painted.M_Painted",
+  "switches": {}
+ },
+ "/Game/Japan/Materials/MI_Moss": {
+  "base": {},
+  "effective": {
+   "scalar": {
+    "FadeMode": 0.0
+   },
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_white.T_white"
+   },
+   "vector": {
+    "CutScale": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ],
+    "Tint": [
+     0.3,
+     0.38,
+     0.16,
+     1.0
+    ]
+   }
+  },
+  "overrides": {
+   "scalar": {},
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_white.T_white"
+   },
+   "vector": {
+    "Tint": [
+     0.3,
+     0.38,
+     0.16,
+     1.0
+    ]
+   }
+  },
+  "parent": "/Game/Japan/Materials/M_Painted.M_Painted",
+  "switches": {}
+ },
+ "/Game/Japan/Materials/MI_NorthRockCaps": {
+  "base": {},
+  "effective": {
+   "scalar": {
+    "Caps": 1.0
+   },
+   "texture": {},
+   "vector": {}
+  },
+  "overrides": {
+   "scalar": {
+    "Caps": 1.0
+   },
+   "texture": {},
+   "vector": {}
+  },
+  "parent": "/Game/Japan/Materials/M_NorthMountains.M_NorthMountains",
+  "switches": {}
+ },
+ "/Game/Japan/Materials/MI_Paint": {
+  "base": {
+   "blend_mode": "BLEND_MASKED",
+   "opacity_mask_clip_value": 0.5
+  },
+  "effective": {
+   "scalar": {
+    "FadeMode": 0.0
+   },
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_white.T_white"
+   },
+   "vector": {
+    "CutScale": [
+     1.0,
+     0.25,
+     1.0,
+     1.0
+    ],
+    "Tint": [
+     0.85,
+     0.85,
+     0.82,
+     1.0
+    ]
+   }
+  },
+  "overrides": {
+   "scalar": {},
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_white.T_white"
+   },
+   "vector": {
+    "CutScale": [
+     1.0,
+     0.25,
+     1.0,
+     1.0
+    ],
+    "Tint": [
+     0.85,
+     0.85,
+     0.82,
+     1.0
+    ]
+   }
+  },
+  "parent": "/Game/Japan/Materials/M_Painted.M_Painted",
+  "switches": {}
+ },
+ "/Game/Japan/Materials/MI_Plaster": {
+  "base": {
+   "blend_mode": "BLEND_MASKED",
+   "opacity_mask_clip_value": 0.5
+  },
+  "effective": {
+   "scalar": {
+    "FadeMode": 0.0
+   },
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_white.T_white"
+   },
+   "vector": {
+    "CutScale": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ],
+    "Tint": [
+     0.8,
+     0.74,
+     0.62,
+     1.0
+    ]
+   }
+  },
+  "overrides": {
+   "scalar": {},
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_white.T_white"
+   },
+   "vector": {
+    "Tint": [
+     0.8,
+     0.74,
+     0.62,
+     1.0
+    ]
+   }
+  },
+  "parent": "/Game/Japan/Materials/M_Painted.M_Painted",
+  "switches": {}
+ },
+ "/Game/Japan/Materials/MI_Road": {
+  "base": {},
+  "effective": {
+   "scalar": {
+    "FadeMode": 0.0
+   },
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_road.T_road"
+   },
+   "vector": {
+    "CutScale": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ],
+    "Tint": [
+     0.34,
+     0.33,
+     0.33,
+     1.0
+    ]
+   }
+  },
+  "overrides": {
+   "scalar": {},
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_road.T_road"
+   },
+   "vector": {
+    "Tint": [
+     0.34,
+     0.33,
+     0.33,
+     1.0
+    ]
+   }
+  },
+  "parent": "/Game/Japan/Materials/M_Painted.M_Painted",
+  "switches": {}
+ },
+ "/Game/Japan/Materials/MI_Rock": {
+  "base": {},
+  "effective": {
+   "scalar": {
+    "FadeMode": 0.0
+   },
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_white.T_white"
+   },
+   "vector": {
+    "CutScale": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ],
+    "Tint": [
+     0.3,
+     0.27,
+     0.24,
+     1.0
+    ]
+   }
+  },
+  "overrides": {
+   "scalar": {},
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_white.T_white"
+   },
+   "vector": {
+    "Tint": [
+     0.3,
+     0.27,
+     0.24,
+     1.0
+    ]
+   }
+  },
+  "parent": "/Game/Japan/Materials/M_Painted.M_Painted",
+  "switches": {}
+ },
+ "/Game/Japan/Materials/MI_RoofTile": {
+  "base": {
+   "blend_mode": "BLEND_MASKED",
+   "opacity_mask_clip_value": 0.5
+  },
+  "effective": {
+   "scalar": {
+    "FadeMode": 0.0
+   },
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_rooftile.T_rooftile"
+   },
+   "vector": {
+    "CutScale": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ],
+    "Tint": [
+     0.4,
+     0.42,
+     0.48,
+     1.0
+    ]
+   }
+  },
+  "overrides": {
+   "scalar": {},
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_rooftile.T_rooftile"
+   },
+   "vector": {
+    "Tint": [
+     0.4,
+     0.42,
+     0.48,
+     1.0
+    ]
+   }
+  },
+  "parent": "/Game/Japan/Materials/M_Painted.M_Painted",
+  "switches": {}
+ },
+ "/Game/Japan/Materials/MI_Sand": {
+  "base": {},
+  "effective": {
+   "scalar": {
+    "FadeMode": 0.0
+   },
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_white.T_white"
+   },
+   "vector": {
+    "CutScale": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ],
+    "Tint": [
+     0.24,
+     0.185,
+     0.1,
+     1.0
+    ]
+   }
+  },
+  "overrides": {
+   "scalar": {},
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_white.T_white"
+   },
+   "vector": {
+    "Tint": [
+     0.24,
+     0.185,
+     0.1,
+     1.0
+    ]
+   }
+  },
+  "parent": "/Game/Japan/Materials/M_Painted.M_Painted",
+  "switches": {}
+ },
+ "/Game/Japan/Materials/MI_Sky": {
+  "base": {},
+  "effective": {
+   "scalar": {},
+   "texture": {},
+   "vector": {
+    "Tint": [
+     1.35,
+     1.35,
+     1.35,
+     1.0
+    ]
+   }
+  },
+  "overrides": {
+   "scalar": {},
+   "texture": {},
+   "vector": {
+    "Tint": [
+     1.35,
+     1.35,
+     1.35,
+     1.0
+    ]
+   }
+  },
+  "parent": "/Game/Japan/Materials/M_Sky.M_Sky",
+  "switches": {}
+ },
+ "/Game/Japan/Materials/MI_Stone": {
+  "base": {
+   "blend_mode": "BLEND_MASKED",
+   "opacity_mask_clip_value": 0.5
+  },
+  "effective": {
+   "scalar": {
+    "FadeMode": 0.0
+   },
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_white.T_white"
+   },
+   "vector": {
+    "CutScale": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ],
+    "Tint": [
+     0.5,
+     0.5,
+     0.47,
+     1.0
+    ]
+   }
+  },
+  "overrides": {
+   "scalar": {},
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_white.T_white"
+   },
+   "vector": {
+    "Tint": [
+     0.5,
+     0.5,
+     0.47,
+     1.0
+    ]
+   }
+  },
+  "parent": "/Game/Japan/Materials/M_Painted.M_Painted",
+  "switches": {}
+ },
+ "/Game/Japan/Materials/MI_Tile": {
+  "base": {
+   "blend_mode": "BLEND_MASKED",
+   "opacity_mask_clip_value": 0.5
+  },
+  "effective": {
+   "scalar": {
+    "FadeMode": 0.0
+   },
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_white.T_white"
+   },
+   "vector": {
+    "CutScale": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ],
+    "Tint": [
+     0.16,
+     0.17,
+     0.2,
+     1.0
+    ]
+   }
+  },
+  "overrides": {
+   "scalar": {},
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_white.T_white"
+   },
+   "vector": {
+    "Tint": [
+     0.16,
+     0.17,
+     0.2,
+     1.0
+    ]
+   }
+  },
+  "parent": "/Game/Japan/Materials/M_Painted.M_Painted",
+  "switches": {}
+ },
+ "/Game/Japan/Materials/MI_Vermilion": {
+  "base": {
+   "blend_mode": "BLEND_MASKED",
+   "opacity_mask_clip_value": 0.5
+  },
+  "effective": {
+   "scalar": {
+    "FadeMode": 0.0
+   },
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_white.T_white"
+   },
+   "vector": {
+    "CutScale": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ],
+    "Tint": [
+     0.62,
+     0.12,
+     0.06,
+     1.0
+    ]
+   }
+  },
+  "overrides": {
+   "scalar": {},
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_white.T_white"
+   },
+   "vector": {
+    "Tint": [
+     0.62,
+     0.12,
+     0.06,
+     1.0
+    ]
+   }
+  },
+  "parent": "/Game/Japan/Materials/M_Painted.M_Painted",
+  "switches": {}
+ },
+ "/Game/Japan/Materials/MI_Water": {
+  "base": {},
+  "effective": {
+   "scalar": {
+    "FadeMode": 0.0
+   },
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_water.T_water"
+   },
+   "vector": {
+    "CutScale": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ],
+    "Tint": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  "overrides": {
+   "scalar": {},
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_water.T_water"
+   },
+   "vector": {}
+  },
+  "parent": "/Game/Japan/Materials/M_Painted.M_Painted",
+  "switches": {}
+ },
+ "/Game/Japan/Materials/MI_Wood": {
+  "base": {
+   "blend_mode": "BLEND_MASKED",
+   "opacity_mask_clip_value": 0.5
+  },
+  "effective": {
+   "scalar": {
+    "FadeMode": 0.0
+   },
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_white.T_white"
+   },
+   "vector": {
+    "CutScale": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ],
+    "Tint": [
+     0.18,
+     0.11,
+     0.07,
+     1.0
+    ]
+   }
+  },
+  "overrides": {
+   "scalar": {},
+   "texture": {
+    "Tex": "/Game/Japan/Textures/T_white.T_white"
+   },
+   "vector": {
+    "Tint": [
+     0.18,
+     0.11,
+     0.07,
+     1.0
+    ]
+   }
+  },
+  "parent": "/Game/Japan/Materials/M_Painted.M_Painted",
+  "switches": {}
+ }
+}

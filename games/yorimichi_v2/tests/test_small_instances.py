@@ -50,7 +50,7 @@ def test_the_hidamari_and_fx_instances_agree_and_their_masters_are_held_as_not_i
 
 def test_the_committed_reads_name_the_instances_the_tests_assume():
     counts = {f: len(json.loads((si.READS / f'{f}.json').read_text())) for f in si.EXPECTED}
-    assert counts == {'megapark': 24, 'belmonte': 7, 'treehouse': 5, 'hidamari': 3, 'fx': 7}
+    assert counts == {'megapark': 24, 'belmonte': 7, 'treehouse': 5, 'hidamari': 3, 'fx': 7, 'japan': 41}
 
 
 def claim_written():
@@ -115,3 +115,38 @@ def test_a_stated_value_without_read_evidence_holds_the_instance(tmp_path, monke
     # The same asset name in another folder is another asset: parent and texture compare whole package paths.
     assert verdict['/Game/F/MI_Moved']['held'] == ['parent /Game/F/M_Base.M_Base is not /Game/Other/M_Base',
                                                   'texture Tex reads /Game/F/T_Glow.T_Glow, not /Game/Other/T_Glow']
+
+
+def test_the_41_japan_instances_agree_with_their_read_base_overrides_included(tmp_path):
+    """The donor tables (small_instances.JAPAN_ROWS) and the committed read agree on all 41 instances, including the
+    base-property overrides: LOD blending on the three bark instances, mask at clip 0.5 on the eleven see-through
+    instances. A base override the read does not show, or one it shows that is not stated, holds the instance; the
+    planned record states `base` only where the donor sets it."""
+    import records
+    import small_families as sf
+    verdict = si.agreement('japan', None)
+    assert len(verdict) == 41 and all(v['agree'] for v in verdict.values())
+    want = si.expected_japan(None)
+    assert sum(bool(w['base']) for w in want.values()) == 13
+    read = json.loads((si.READS / 'japan.json').read_text())
+    bark = '/Game/Japan/Materials/MI_BarkOlive'
+    read[bark]['base'] = {}
+    read['/Game/Japan/Materials/MI_Ground']['base'] = {'two_sided': True}
+    folder = tmp_path / 'reads'
+    folder.mkdir()
+    (folder / 'japan.json').write_text(json.dumps(read))
+    import pytest
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr(si, 'READS', folder)
+        changed = si.agreement('japan', None)
+    assert not changed[bark]['agree'] and not changed['/Game/Japan/Materials/MI_Ground']['agree']
+    assert sum(v['agree'] for v in changed.values()) == 39
+    rows = {r['package']: r for r in [{'package': p, **w} for p, w in want.items()]}
+    rec = sf.NewRecord(id='material/japan/materials/bark-instances', kind='material-instance',
+                       owner='shared/japan/materials/bark-instances', references=[], sources=[], settings={},
+                       outputs=[bark], adopted='adopted/japan/materials/bark', about='test',
+                       inputs=['master/japan/surfaces/painted'], instances=[rows[bark]])
+    path = tmp_path / 'asset.toml'
+    path.write_text(sf.instance_record_text(rec))
+    assert 'base = {dithered_lod_transition = true}' in path.read_text()
+    assert records.load_asset(path).kind == 'material-instance'
