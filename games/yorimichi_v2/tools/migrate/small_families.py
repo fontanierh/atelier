@@ -115,6 +115,8 @@ REGISTRY = {
         'build.py:1813 (RuntimeData output); unreal/Scripts/skate_ride/verify_data.py:15', 'blocked',
         'no importer for data assets; the cooked data is the only copy in the editor'),
 }
+# The spec's families that name more than one registry family (their native lists cover all of them).
+FAMILY_GROUPS = {'hidamari': ('hidamari', 'racing', 'seethrough', 'skateruntime')}
 FAMILY_ORDER = ('megapark', 'hippodrome', 'treehouse', 'skatepark', 'belmonte', 'fx', 'plaza', 'bike', 'swordcamp', 'hidamari',
                 'racing', 'seethrough', 'skateruntime')
 

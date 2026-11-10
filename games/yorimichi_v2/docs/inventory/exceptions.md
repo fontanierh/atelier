@@ -956,7 +956,7 @@ The ten smaller families of "Source closure still to classify" (90 packages in 2
 ### Hippodrome (3 records, 23 packages)
 
 Plan: `games/yorimichi_v2/tools/migrate/small_families.py` (plan mode only; `--claim` is refused). Donor checkout read
-only (`~/dev/atelier-yv2-donor`, commit `7eec0f98dd`). Evidence and verdicts for the three records:
+only (the donor checkout, commit `7eec0f98dd`). Evidence and verdicts for the three records:
 
 - `adopted/hippodrome/loose_files` (4 static meshes): the donor writes these GLBs in `world/regions/hippodrome/build.py`
   and imports them in `unreal/Scripts/import_hippodrome.py:161-177`. The four GLBs are in the donor

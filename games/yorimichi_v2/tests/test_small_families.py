@@ -170,7 +170,8 @@ def test_native_read_lists_match_the_records():
     result = sf.classify(sf.GAME)
     inventory = sf.GAME / 'docs/inventory'
     for family in sf.FAMILY_ORDER:
-        rows = [r for r in result['records'] if r['family'] == family]
+        members = sf.FAMILY_GROUPS.get(family, (family,))
+        rows = [r for r in result['records'] if r['family'] in members]
         if not rows:
             continue
         packages = sorted({p for r in rows for p in r['packages']})
