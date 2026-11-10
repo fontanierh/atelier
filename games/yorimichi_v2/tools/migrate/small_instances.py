@@ -140,6 +140,11 @@ EXPECTED = {'megapark': expected_megapark, 'belmonte': expected_belmonte, 'treeh
 READ_FILE = {'megapark': 'megapark', 'belmonte': 'belmonte', 'treehouse': 'treehouse', 'hidamari': 'hidamari', 'fx': 'fx'}
 
 
+def _package(path: str) -> str:
+    """/Game/X/T_Y.T_Y -> /Game/X/T_Y: an object path's package, compared whole."""
+    return path.split('.')[0]
+
+
 def _close(a, b, tol=1e-2):
     try:
         return abs(float(a) - float(b)) <= tol
@@ -162,7 +167,7 @@ def agreement(family: str, donor: Path) -> dict:
         want = expected[package]
         held = []
         eff = row.get('effective', {})
-        if row['parent'].split('.')[0].split('/')[-1] != want['parent'].split('/')[-1]:
+        if _package(row['parent']) != _package(want['parent']):   # the full package path, not just its name
             held.append(f'parent {row["parent"]} is not {want["parent"]}')
         # Every stated value needs read evidence: the effective value, or the package's own stored override (an
         # opaque Mega Park instance stores HasTransparent although its parent declares no such parameter).
@@ -183,7 +188,7 @@ def agreement(family: str, donor: Path) -> dict:
             if package_path is None:
                 continue
             got = eff.get('texture', {}).get(name)
-            if got is None or got.split('.')[0].split('/')[-1] != package_path.split('/')[-1]:
+            if got is None or _package(got) != _package(package_path):
                 held.append(f'texture {name} reads {got}, not {package_path}')
         if family == 'belmonte' and want['textures'] and any(v is None for v in want['textures'].values()):
             held.append('a textured Belmonte row: its texture is not yet mapped to a package')

@@ -90,14 +90,17 @@ def test_a_stated_value_without_read_evidence_holds_the_instance(tmp_path, monke
             '/Game/F/MI_NoTint': {'parent': '/Game/F/M_Base.M_Base', 'effective': {'scalar': {}, 'vector': {}, 'texture': {}}},
             '/Game/F/MI_Stored': {'parent': '/Game/F/M_Base.M_Base', 'effective': {'scalar': {}, 'vector': {}, 'texture': {}},
                                   'overrides': {'scalar': {'HasTransparent': 0.}}},
-            '/Game/F/MI_Alpha': {'parent': '/Game/F/M_Base.M_Base', 'effective': {'scalar': {}, 'vector': {'Tint': [1, 1, 1, .5]}, 'texture': {}}}}
+            '/Game/F/MI_Alpha': {'parent': '/Game/F/M_Base.M_Base', 'effective': {'scalar': {}, 'vector': {'Tint': [1, 1, 1, .5]}, 'texture': {}}},
+            '/Game/F/MI_Moved': {'parent': '/Game/F/M_Base.M_Base',
+                                 'effective': {'scalar': {}, 'vector': {}, 'texture': {'Tex': '/Game/F/T_Glow.T_Glow'}}}}
     (tmp_path / 'fake.json').write_text(json.dumps(read))
     want = {'/Game/F/MI_Shown': {'parent': '/Game/F/M_Base', 'textures': {}, 'scalars': {'Gloss': .5}, 'vectors': {}},
             '/Game/F/MI_Unread': {'parent': '/Game/F/M_Base', 'textures': {}, 'scalars': {'Gloss': .5, 'HasTransparent': 0.},
                                   'vectors': {}},
             '/Game/F/MI_NoTint': {'parent': '/Game/F/M_Base', 'textures': {}, 'scalars': {}, 'vectors': {'Tint': [1, 1, 1, 1]}},
             '/Game/F/MI_Stored': {'parent': '/Game/F/M_Base', 'textures': {}, 'scalars': {'HasTransparent': 0.}, 'vectors': {}},
-            '/Game/F/MI_Alpha': {'parent': '/Game/F/M_Base', 'textures': {}, 'scalars': {}, 'vectors': {'Tint': [1, 1, 1, 1]}}}
+            '/Game/F/MI_Alpha': {'parent': '/Game/F/M_Base', 'textures': {}, 'scalars': {}, 'vectors': {'Tint': [1, 1, 1, 1]}},
+            '/Game/F/MI_Moved': {'parent': '/Game/Other/M_Base', 'textures': {'Tex': '/Game/Other/T_Glow'}, 'scalars': {}, 'vectors': {}}}
     for row in want.values():
         row.update(natural=False, seam=False)
     monkeypatch.setattr(si, 'READS', tmp_path)
@@ -109,3 +112,6 @@ def test_a_stated_value_without_read_evidence_holds_the_instance(tmp_path, monke
     assert verdict['/Game/F/MI_NoTint']['held'] == ['vector Tint is stated but the read does not show it']
     assert verdict['/Game/F/MI_Stored'] == {'agree': True, 'held': []}   # the package's own stored override is evidence
     assert verdict['/Game/F/MI_Alpha']['held'] == ['vector Tint reads [1, 1, 1, 0.5], not [1, 1, 1, 1]']   # alpha counts
+    # The same asset name in another folder is another asset: parent and texture compare whole package paths.
+    assert verdict['/Game/F/MI_Moved']['held'] == ['parent /Game/F/M_Base.M_Base is not /Game/Other/M_Base',
+                                                  'texture Tex reads /Game/F/T_Glow.T_Glow, not /Game/Other/T_Glow']
