@@ -96,7 +96,9 @@ REGISTRY = {
         'import_megapark.py:166-221', 'need-read', 'as shared-materials-wood'),
     'adopted/megapark/standalone-level': ('megapark', 'editor-saved level built by a script from committed native source',
         'import_megapark.py:20-28 (LEVEL), :347 (main)', 'unreal-authored',
-        'keeps its editor-saved form (authority editor); a native read lists the actors it references'),
+        'keeps its editor-saved form (authority editor). Reference check done: docs/inventory/small-families-reads/'
+        'megapark-map-refs.json (report_map_refs.py) resolves all 79 /Game dependencies to their records; the 29 '
+        'collision references are the cell records\' UC_MP_<hash>_0 meshes, and all 79 mesh components load'),
     'adopted/skatepark/board': ('skatepark', 'generator master M_BoardDissolve',
         'board_dissolve_material.py:11-15', 'need-read', 'generator-built master; loaded, parameters unread.'+MASTER_NOTE),
     'adopted/skatepark/materials': ('skatepark', 'generator masters M_Pier_<surface>',

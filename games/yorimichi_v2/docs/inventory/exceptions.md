@@ -36,13 +36,13 @@ optional simply because a patch is legal to save.
 
 This table is derived from canonical `record_paths` at the audited main revision, excluding nested donor
 `asset.toml` inputs. Of 807 adopted records without direct sources or a recipe, 800 use restricted-manifest routes and
-three use the 124 Adventure/animation links. The remaining **3 records / 3 packages** below have neither (the bike wheels, listed too, migrated since). This is a classification query, not a
+three use the 124 Adventure/animation links. The remaining **2 records / 2 packages** below have neither (the bike wheels migrated and the Mega Park map was checked since; both stay listed). This is a classification query, not a
 claim that those packages lack originals, nor a complete recovery backlog: generator records with pinned source files
 can still need recoverable inputs and an accepted import. See [sources](sources.md).
 
 | Main owner(s) | Records / packages | Current disposition |
 |---|---:|---|
-| `adopted/megapark/standalone-level` | 1 / 1 | Saved Unreal map; reference check remains. This is not an imported-model source gap |
+| `adopted/megapark/standalone-level` | checked | Saved Unreal map (editor-authored); the reference check is done: all 79 `/Game` dependencies resolve to their records ([megapark-map-refs.json](small-families-reads/megapark-map-refs.json)). Not an imported-model source gap |
 | `adopted/japan/assets/bike` | migrated | `BK_WheelFront` and `BK_WheelRear` are `prop/bike/wheel-front` and `wheel-rear`, generated from the pinned `generator/bike/wheels` and imported (BCBIKE; see "Bike residual packages") |
 | `adopted/seethrough`, `adopted/skateruntime` | 2 / 2 | `MPC_SeeThrough` and `RuntimeData` still need recoverable generator/settings/input routes; the earlier reads do not establish source closure |
 
@@ -1108,20 +1108,23 @@ Status per record:
 - `standalone-level` (`/Game/MegaPark/Maps/SuperUltraMegaPark`): **unreal-authored**. `import_megapark.py:20-28` names the
   level, and `:375` spawns the `MegaParkLayout` actor and saves it, so the level is an editor save from a script over
   committed native source. It keeps its editor-saved record form (`authority = "editor"`). The map references 29
-  `/Game/MegaPark/Meshes/UC_MP_<hash>` collision packages. The cell records own the `UC_MP_<hash>_0` names of the same
-  hashes (`cell-*` outputs), so whether the map's references resolve to them is a native check, not a conclusion.
+  collision meshes by the `UC_MP_<hash>` hashes the cell records own. The native read
+  ([megapark-map-refs.json](small-families-reads/megapark-map-refs.json), `unreal/Scripts/report_map_refs.py`, read-only
+  `editor.run`) settles it: the map's 79 `/Game` package dependencies all resolve, each owned by an `adopted/megapark`
+  record; the 29 collision references are the `cell-*` records' `UC_MP_<hash>_0` packages (each holds the static mesh
+  `UC_MP_<hash>_0`); and all 79 static mesh components of its 85 actors load their mesh.
 
 Native reads still needed (read-only; editor and clean hydrate): the 24 instances through `report_materials.py`, using the
 material list file `docs/inventory/small-families-megapark-materials.txt`, `V2_REPORT_OUT` under
-`build/yorimichi_v2/reports/`, as an `editor.run` step. The map needs a reader for its actor references (none in this tree).
+`build/yorimichi_v2/reports/`, as an `editor.run` step. The map's reference read is done (above).
 
 Blockers: the two-sided override on the natural rows (recipe v2 has no field for it); the restyle lightmap norms
-(`textures.json` not in the records); the map's collision references need the native check above.
+(`textures.json` not in the records); the map's references are checked (above).
 
 - `adopted/megapark/shared-materials-wood`: generator-built material instances MI_<key>. Evidence: import_megapark.py:166-221 (materials(report)). Status: **need-read**. parameters come from the donor import-report materials; the two-sided base-property override (lines 218-219) is not expressible in recipe v2
 - `adopted/megapark/seam`: generator-built seam instances MI_<key>_Seam. Evidence: import_megapark.py:166-221 with the seam scalars (SpecularScale, Gloss, LightmapOcclusion). Status: **need-read**. as shared-materials-wood, plus the seam scalars
 - `adopted/megapark/shared-materials-pavement`: generator-built material instance. Evidence: import_megapark.py:166-221. Status: **need-read**. as shared-materials-wood
-- `adopted/megapark/standalone-level`: editor-saved level built by a script from committed native source. Evidence: import_megapark.py:20-28 (LEVEL), :347 (main). Status: **unreal-authored**. keeps its editor-saved form (authority editor); a native read lists the actors it references
+- `adopted/megapark/standalone-level`: editor-saved level built by a script from committed native source. Evidence: import_megapark.py:20-28 (LEVEL), :347 (main). Status: **unreal-authored**. keeps its editor-saved form (authority editor). Reference check done: megapark-map-refs.json (report_map_refs.py) resolves all 79 /Game dependencies to their records; the 29 collision references are the cell records' UC_MP_<hash>_0 meshes, and all 79 mesh components load
 
 | Package | Record | Status | Inputs (owner records) | Native read still needed |
 |---|---|---|---|---|
@@ -1149,7 +1152,7 @@ Blockers: the two-sided override on the natural rows (recipe v2 has no field for
 | `MI_4cef5bb305cb09eb_Seam` | `megapark/seam` | need-read | MegaPark/Materials/M_RetailOpaque, MegaPark/Materials/M_RetailOpaque, MegaPark/Textures/T_0000043d03e3870a ... | `report_materials` (material list) |
 | `MI_b4686eeb54647811_Seam` | `megapark/seam` | need-read | MegaPark/Materials/M_RetailOpaque, MegaPark/Materials/M_RetailOpaque, MegaPark/Textures/T_0000043d03e3870a ... | `report_materials` (material list) |
 | `MI_99622005a8467a13` | `megapark/shared-materials-pavement` | need-read | MegaPark/Materials/M_RetailOpaque, MegaPark/Materials/M_RetailOpaque, MegaPark/Textures/T_00008ccc03e3870a ... | `report_materials` (material list) |
-| `SuperUltraMegaPark` | `megapark/standalone-level` | unreal-authored | Japan/Maps/Slice, MegaPark/Meshes/SM_MP_04CCB1FDB63D6C87, MegaPark/Meshes/SM_MP_072BEA8B3D376763 ... | no reader in this tree |
+| `SuperUltraMegaPark` | `megapark/standalone-level` | unreal-authored | Japan/Maps/Slice, MegaPark/Meshes/SM_MP_04CCB1FDB63D6C87, MegaPark/Meshes/SM_MP_072BEA8B3D376763 ... | none: checked by report_map_refs.py (megapark-map-refs.json) |
 
 ### Skatepark board and materials (2 records, 8 packages)
 
