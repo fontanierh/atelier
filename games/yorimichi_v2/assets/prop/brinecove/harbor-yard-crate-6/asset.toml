@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_HarborYardCrate6: the harbor yard crate 6, cut from the fused tile(s) Harbor_5_4 (36 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/brinecove/harbor-yard-crate-6"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/brinecove/harbor-yard-crate-6"
+references = ["adopted/brinecove/materials"]
+
+[[sources]]
+path = "src/SM_BC_HarborYardCrate6.glb"
+sha256 = "c57d8e5cf7d0a1b28038d6ba53d899cecd5816b1e45f8d4f4987f9d1b9d17ab9"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Brinecove/Materials/MI_BC_wood_dark", "/Game/Brinecove/Materials/MI_BC_wood_light"]
+triangles = 36
+collision = "complex"
+full_precision_uvs = true
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_HarborYardCrate6"

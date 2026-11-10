@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/harbor-rowboat-w225",
+  "dependencies": {
+    "prop/brinecove/harbor-rowboat-w225": "c2d6e99a655d9afd6650d2457058b5ed7d77c53c9fe1b951dbf70eee19161af8"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/9/BB/Q9JXLYOSAMG1TNNYYQ7YKV.uasset": "c380676b26f59fe3eb72fbf170fb400239a20f0344f727e64f6239de3ff35692"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

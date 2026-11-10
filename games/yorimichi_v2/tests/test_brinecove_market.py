@@ -491,7 +491,7 @@ def test_check_for_the_groups_stage_allows_the_tile_record_to_remain(monkeypatch
 
 def test_batch_names_all_lists_and_checks_names():
     names = market.batch_names('all')
-    assert names[:4] == ['market1', 'market2', 'market3', 'town1'] and names[-8:] == ['town9', 'props1', 'props2', 'props3', 'harbor1', 'props4', 'props5', 'props6'] and len(names) == 19
+    assert names[:4] == ['market1', 'market2', 'market3', 'town1'] and names[-9:] == ['town9', 'props1', 'props2', 'props3', 'harbor1', 'props4', 'props5', 'props6', 'harbor2'] and len(names) == 20
     assert market.batch_names('town2, market1,town2') == ['town2', 'market1']
     with pytest.raises(market.MarketError, match='unknown batch town99'):
         market.batch_names('town99')
@@ -713,6 +713,17 @@ def test_donor_props6_rope_coils_and_gulls_are_whole():
     assert set(counts) == set(market.BATCHES['props6'])
     assert {counts[n] for n in market.BATCHES['props6'] if '-rope-coil-' in n} == {144}
     assert {counts[n] for n in market.BATCHES['props6'] if '-gull-' in n} == {22}
+
+
+def test_the_harbor2_batch_names_each_yard_crate_and_rowboat_once():
+    """harbor2: the shipyard's 8 loose crates and the 8 small rowboats in open water, each its loop body in
+    procedural/harbor.py, named under the Harbor component."""
+    names = market.BATCHES['harbor2']
+    assert len(names) == len(set(names)) == 16
+    assert {n for n in names if '-yard-crate-' in n} == {f'harbor-yard-crate-{i}' for i in range(1, 9)}
+    assert 'harbor-rowboat-w380' in names and 'harbor-rowboat-e420' in names
+    assert not set(names) & {n for b in market.BATCHES if b != 'harbor2' for n in market.BATCHES[b]}
+    assert {market.COMPONENT_OF[p] for p in ('harbor-yard-crate-', 'harbor-rowboat-')} == {'Harbor'}
 
 
 def test_the_props5_batch_splits_each_coarse_cargo_object_into_its_pieces():

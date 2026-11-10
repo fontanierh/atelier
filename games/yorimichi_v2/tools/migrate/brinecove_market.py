@@ -119,6 +119,11 @@ SCOPES = (
          key="'pier-%s-rope%d' % (name, round(t * 100))"),
     dict(component='Harbor', module='harbor', loop='for px, py in ((-330, 72), (-280, 96), (-180, 72), (-110, 96), (110, 96), (180, 72),',
          key="'palm-%s%d' % ('w' if px < 0 else 'e', abs(px))"),
+    # The shipyard's eight loose crates and the small rowboats in open water (only those whose spot is water are built),
+    # each its loop body (harbor2).
+    dict(component='Harbor', module='harbor', loop='for i in range(8):', key="'yard-crate-%d' % (i + 1)"),
+    dict(component='Harbor', module='harbor', loop='for x, y, yaw in ((-225, -40, -22), (-150, -90, -14), (-30, -150, 8), (100, -70, 35),',
+         key="'rowboat-%s%d' % ('w' if x < 0 else 'e', abs(x))"),
 )
 
 
@@ -546,8 +551,11 @@ BATCHES['props5'] = tuple(f'{c}-{piece}' for c in _CARGO for piece in ('crate1',
 REPLACES = {'props5': frozenset(_CARGO + _PIERS)}
 # The last loose props of the fused Props tiles: the three rope coils by the fish shed and the 18 gulls.
 BATCHES['props6'] = tuple(f'props-rope-coil-{i}' for i in range(1, 4)) + tuple(f'props-gull-{i}' for i in range(1, 19))
+# The harbour's loose pieces: the shipyard's 8 crates and the rowboats in open water (procedural/harbor.py).
+BATCHES['harbor2'] = tuple(f'harbor-yard-crate-{i}' for i in range(1, 9)) + tuple(
+    f'harbor-rowboat-{_SIDE(x)}' for x in (-225, -150, -30, 100, 180, 300, -380, 420))
 
-COMPONENT_OF = {'market-': 'Market', 'town-lower-': 'TownLower', 'town-upper-': 'TownUpper', 'props-': 'Props', 'harbor-pier-': 'Harbor', 'harbor-palm-': 'Harbor'}
+COMPONENT_OF = {'market-': 'Market', 'town-lower-': 'TownLower', 'town-upper-': 'TownUpper', 'props-': 'Props', 'harbor-pier-': 'Harbor', 'harbor-palm-': 'Harbor', 'harbor-yard-crate-': 'Harbor', 'harbor-rowboat-': 'Harbor'}
 ALL_OBJECTS = frozenset(o for names in BATCHES.values() for o in names)
 
 

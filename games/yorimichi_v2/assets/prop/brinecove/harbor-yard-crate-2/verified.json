@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/harbor-yard-crate-2",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_HarborYardCrate2.uasset": "b000d06c61766d127f2f5d4dd8ca7c1783cde1033e230535755611990a4d0fb8"
+  },
+  "input_fingerprint": "7b2706718f3ddc86a59da67bc954c8e5e9fc7802e222f6560e077bc5794b3b21",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_HarborYardCrate2": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

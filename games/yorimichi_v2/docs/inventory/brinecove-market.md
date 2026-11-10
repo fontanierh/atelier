@@ -303,3 +303,19 @@ donor proof counts the later pieces in place of a retired coarse part.
 The emptied tiles are retired with the three stages above (`--batch props6`). No fused `Props` tile remains: every
 triangle of the component belongs to an object.
 
+## Shipyard crates and rowboats (`harbor2`)
+
+`harbor2` takes two loose families from `procedural/harbor.py`, each its loop body:
+- the shipyard's 8 crates (`for i in range(8):`), `harbor-yard-crate-1` to `8` (36 triangles each), from the `Harbor_5_4`
+  remainder, not from the accepted `shipyard-yard` object;
+- the small rowboats in open water (only spots that are water are built), `harbor-rowboat-<side><|x|>` (96 triangles
+  each, 8 built).
+
+| Tiles touched | Triangles taken | Tiles remade | Tiles emptied | Records |
+|---|---|---|---|---|
+| 6 | 1,056 | `Harbor_2_3`, `3_3`, `4_3`, `5_3`, `5_4` | 1 (`Harbor_4_2`) | 21 |
+
+The emptied tile is retired with the three stages above (`--batch harbor2`); its placement held only that tile.
+The rest of the harbour (quay wall, paving, water steps) belongs to no object. Further batches are on demand; see
+the backlog in [INVENTORY](../INVENTORY.md).
+

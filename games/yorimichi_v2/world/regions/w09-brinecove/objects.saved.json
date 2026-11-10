@@ -721,16 +721,6 @@
         "prop/brinecove/harbor-3-4"
       ]
     },
-    "object/brinecove/harbor-4-2": {
-      "groups": [
-        "SM_BC_Harbor_4_2"
-      ],
-      "id": "object/brinecove/harbor-4-2",
-      "model": "prop/brinecove/harbor-4-2",
-      "models": [
-        "prop/brinecove/harbor-4-2"
-      ]
-    },
     "object/brinecove/harbor-4-3": {
       "groups": [
         "SM_BC_Harbor_4_3"
@@ -1219,6 +1209,166 @@
       "model": "prop/brinecove/harbor-pier-west-rope78",
       "models": [
         "prop/brinecove/harbor-pier-west-rope78"
+      ]
+    },
+    "object/brinecove/harbor-rowboat-e100": {
+      "groups": [
+        "SM_BC_HarborRowboatE100"
+      ],
+      "id": "object/brinecove/harbor-rowboat-e100",
+      "model": "prop/brinecove/harbor-rowboat-e100",
+      "models": [
+        "prop/brinecove/harbor-rowboat-e100"
+      ]
+    },
+    "object/brinecove/harbor-rowboat-e180": {
+      "groups": [
+        "SM_BC_HarborRowboatE180"
+      ],
+      "id": "object/brinecove/harbor-rowboat-e180",
+      "model": "prop/brinecove/harbor-rowboat-e180",
+      "models": [
+        "prop/brinecove/harbor-rowboat-e180"
+      ]
+    },
+    "object/brinecove/harbor-rowboat-e300": {
+      "groups": [
+        "SM_BC_HarborRowboatE300"
+      ],
+      "id": "object/brinecove/harbor-rowboat-e300",
+      "model": "prop/brinecove/harbor-rowboat-e300",
+      "models": [
+        "prop/brinecove/harbor-rowboat-e300"
+      ]
+    },
+    "object/brinecove/harbor-rowboat-e420": {
+      "groups": [
+        "SM_BC_HarborRowboatE420"
+      ],
+      "id": "object/brinecove/harbor-rowboat-e420",
+      "model": "prop/brinecove/harbor-rowboat-e420",
+      "models": [
+        "prop/brinecove/harbor-rowboat-e420"
+      ]
+    },
+    "object/brinecove/harbor-rowboat-w150": {
+      "groups": [
+        "SM_BC_HarborRowboatW150"
+      ],
+      "id": "object/brinecove/harbor-rowboat-w150",
+      "model": "prop/brinecove/harbor-rowboat-w150",
+      "models": [
+        "prop/brinecove/harbor-rowboat-w150"
+      ]
+    },
+    "object/brinecove/harbor-rowboat-w225": {
+      "groups": [
+        "SM_BC_HarborRowboatW225"
+      ],
+      "id": "object/brinecove/harbor-rowboat-w225",
+      "model": "prop/brinecove/harbor-rowboat-w225",
+      "models": [
+        "prop/brinecove/harbor-rowboat-w225"
+      ]
+    },
+    "object/brinecove/harbor-rowboat-w30": {
+      "groups": [
+        "SM_BC_HarborRowboatW30"
+      ],
+      "id": "object/brinecove/harbor-rowboat-w30",
+      "model": "prop/brinecove/harbor-rowboat-w30",
+      "models": [
+        "prop/brinecove/harbor-rowboat-w30"
+      ]
+    },
+    "object/brinecove/harbor-rowboat-w380": {
+      "groups": [
+        "SM_BC_HarborRowboatW380"
+      ],
+      "id": "object/brinecove/harbor-rowboat-w380",
+      "model": "prop/brinecove/harbor-rowboat-w380",
+      "models": [
+        "prop/brinecove/harbor-rowboat-w380"
+      ]
+    },
+    "object/brinecove/harbor-yard-crate-1": {
+      "groups": [
+        "SM_BC_HarborYardCrate1"
+      ],
+      "id": "object/brinecove/harbor-yard-crate-1",
+      "model": "prop/brinecove/harbor-yard-crate-1",
+      "models": [
+        "prop/brinecove/harbor-yard-crate-1"
+      ]
+    },
+    "object/brinecove/harbor-yard-crate-2": {
+      "groups": [
+        "SM_BC_HarborYardCrate2"
+      ],
+      "id": "object/brinecove/harbor-yard-crate-2",
+      "model": "prop/brinecove/harbor-yard-crate-2",
+      "models": [
+        "prop/brinecove/harbor-yard-crate-2"
+      ]
+    },
+    "object/brinecove/harbor-yard-crate-3": {
+      "groups": [
+        "SM_BC_HarborYardCrate3"
+      ],
+      "id": "object/brinecove/harbor-yard-crate-3",
+      "model": "prop/brinecove/harbor-yard-crate-3",
+      "models": [
+        "prop/brinecove/harbor-yard-crate-3"
+      ]
+    },
+    "object/brinecove/harbor-yard-crate-4": {
+      "groups": [
+        "SM_BC_HarborYardCrate4"
+      ],
+      "id": "object/brinecove/harbor-yard-crate-4",
+      "model": "prop/brinecove/harbor-yard-crate-4",
+      "models": [
+        "prop/brinecove/harbor-yard-crate-4"
+      ]
+    },
+    "object/brinecove/harbor-yard-crate-5": {
+      "groups": [
+        "SM_BC_HarborYardCrate5"
+      ],
+      "id": "object/brinecove/harbor-yard-crate-5",
+      "model": "prop/brinecove/harbor-yard-crate-5",
+      "models": [
+        "prop/brinecove/harbor-yard-crate-5"
+      ]
+    },
+    "object/brinecove/harbor-yard-crate-6": {
+      "groups": [
+        "SM_BC_HarborYardCrate6"
+      ],
+      "id": "object/brinecove/harbor-yard-crate-6",
+      "model": "prop/brinecove/harbor-yard-crate-6",
+      "models": [
+        "prop/brinecove/harbor-yard-crate-6"
+      ]
+    },
+    "object/brinecove/harbor-yard-crate-7": {
+      "groups": [
+        "SM_BC_HarborYardCrate7"
+      ],
+      "id": "object/brinecove/harbor-yard-crate-7",
+      "model": "prop/brinecove/harbor-yard-crate-7",
+      "models": [
+        "prop/brinecove/harbor-yard-crate-7"
+      ]
+    },
+    "object/brinecove/harbor-yard-crate-8": {
+      "groups": [
+        "SM_BC_HarborYardCrate8"
+      ],
+      "id": "object/brinecove/harbor-yard-crate-8",
+      "model": "prop/brinecove/harbor-yard-crate-8",
+      "models": [
+        "prop/brinecove/harbor-yard-crate-8"
       ]
     },
     "object/brinecove/hero-harbor-capstan": {

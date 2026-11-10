@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/harbor-rowboat-e300",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_HarborRowboatE300.uasset": "93c284646d6e5e383bc6173e8363a9bd5fdc6e1b4e0d6df075216fed38133ffa"
+  },
+  "input_fingerprint": "bec54d7c163685f9ae017f5952ccb658f1df8bed8f87cf7eb575d6f2e8deda52",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_HarborRowboatE300": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

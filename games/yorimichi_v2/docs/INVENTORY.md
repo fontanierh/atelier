@@ -78,33 +78,47 @@ Saved, prepared and packaged totals are kept separate:
   [exceptions](inventory/exceptions.md#current-source-classification). Brine Cove `props1` (13 harbour objects, claim
   `BCPROPS1`, [PR #813](https://github.com/fontanierh/atelier/pull/813)) is merged too. Package `c89f535441be` predates
   both.
-- **Remaining source/detail work:** no whole-source item is left once #827 merges: `MPC_SeeThrough` (claim
+- **Remaining source/detail work:** no whole-source item is left (#826, #827 merged): `MPC_SeeThrough` (claim
   `SEETHRU`, the `parameter-collection` importer) and `RuntimeData` (claim `SKATERT`, the `skate-runtime` importer) are
-  imported from their pinned generators (#826 merged); see
+  imported from their pinned generators; see
   [exceptions](inventory/exceptions.md#current-source-classification).
 
-Remaining construction work:
-- Close the other useful-object/source gaps in [exceptions](inventory/exceptions.md) and
-  [sources](inventory/sources.md); an imported package with an unknown original stays unfinished.
+After the migration (on demand, not acceptance gates):
+- Split the remaining useful objects when someone needs to edit them (backlog below); an imported package with an
+  unknown original stays marked as such in [sources](inventory/sources.md) and [exceptions](inventory/exceptions.md).
 - The master follow-ups are integrated. The earlier #799/#801 preparation and
   [master recovery design](inventory/master-sources.md) explain their provenance; they are not another backlog.
-- Retain the current package while the next source batch proceeds. The guard fixes (#805/#807), multiplayer
-  manifest (#809) and host/leave check (#810) are merged. The six manual acceptance checks and final owner-led
-  gameplay/two-machine playtesting remain open.
-- **Forecast updated 2026-11-10 20:45, Paris:**
-  - Done since 16:00: the Mega Park standalone map's reference check (#824) and the bike wheels (#820).
-  - The 19:30 target for the whole-source routes was missed. The capacity broker was in recovery after a failed
-    editor start; it recovered at 20:23 (#828), and the native steps then ran:
-    - `MPC_SeeThrough` (#826): the collection, its three masters and the 8 dependent material-instance records are
-      imported (one warm batch at 20:27); a rerun leaves all 12 unchanged.
-    - `RuntimeData` (#827): imported at 20:40 from its pinned inputs, with the plugin's exhaustive read-back; a rerun
-      is unchanged.
-    - The Brine Cove props5 pier generator (#823): the 3 pier placements are saved again from their carved meshes.
-  - #823 and #826 are merged; #827 is in review. Forecast **21:30**, low confidence, for its merge (review and CI on
-    the exact head).
-  - Useful-object splitting stays at **23:00**, low confidence. Brine Cove `props5` (the cargo re-split into 54 pieces,
-    with the pier generator) is merged (#823); `props6` (the 3 fish-shed rope coils and 18 gulls) is saved and in
-    review, and leaves no fused `Props` tile. The remaining residual fused scenery and patches are unsized.
+- The available package `c89f535441be` (main `da0a41f891`) predates the batches merged since; no newer package is
+  built. The guard fixes (#805/#807), multiplayer manifest (#809) and host/leave check (#810) are merged. The six
+  manual acceptance checks and owner-led gameplay/two-machine playtesting are still open: nothing above records them.
+- **Migration complete by owner decision (2026-11-10, Paris).** The owner chose on-demand splitting: the V2 migration is
+  complete with the work merged so far, and the earlier full-splitting targets are withdrawn. Useful objects still
+  bundled in generated tiles or area patches are split **on demand**, when someone needs to edit them. The table below
+  is that authoring backlog, not a migration acceptance gate. Before a geometry edit, the selected generated model gets
+  an independent generator first (`independent-generator-before-model-edit`); recoverable originals and all completed
+  content are preserved. Counts are constructor groups (one loop body or call each), a lower bound: a group may hold
+  several useful props, sized when that batch is planned.
+
+  | Area | Bundled useful objects | Groups | Work | Batch |
+  |---|---|---:|---|---|
+  | Brine Cove props | 3 fish-shed rope coils, 18 gulls | 21 | done (#830) | `props6` |
+  | Brine Cove harbour | 8 shipyard crates, 8 open-water rowboats | 16 | done (this change) | `harbor2` |
+  | Brine Cove lower town | walkways, waterfront bunting, fish crates, plant and sack pairs (likely 8 pieces) | 29 | cut, import, save | `townlower2` |
+  | Brine Cove upper town | 3 terrace stairs, cistern, laundry line, 4 palms, bunting, pots, benches | 22 | cut, import, save | `townupper2` |
+  | Brine Cove market | foreground stall, 34 parasols, 6 trees, 6 palms, 6 colonnade bays, 9 lantern strings, benches, bunting, carts, sacks | 114 | cut, import, save | `market4` |
+  | Brine Cove market lanes | 59 small lane stalls; their goods are unsized (could add 100 to 300 pieces) | 59+ | size goods, cut, import, save | `market5a`, `market5b` |
+  | Brine Cove landmarks | fort towers, keep, gatehouse, ramp, lighthouse cottage, tower and shed, rope bridge, shrine | about 12 | extend the split tool to `landmarks.py`, then cut, import, save | `landmarks1` |
+  | Mega Park | 16 stream-cell units hold 33 hashed render meshes: ramps, rails and bowls in a cell are fused | unsized | identify features in the park generator before any cut | to size |
+  | Treehouse (W06) | `TH_Dressing` (16 cells) and `TH_Structure` (5 cells) area patches still bundle treehouse dressing and structure | 21 patches, contents unsized | read the patch members, then promote or split | `treehouse1` |
+  | Mega Park gate (W11) | `HD_NorthGate` area patches | 6 | promote or split | `megapark-gate` |
+  | Hidamari harbour (W07) | `HD_PlazaShopSides` (57) and its corner piece (1) are still area instances; 2 `Pole`/`Pole_Lamp` rows look like duplicates of saved city rows | 58 (owner decision), 2 to check | look, then split | `hidamari-plaza` |
+  | Villages, start, pier, south-west coast, Hidamari station | poles, lamps, lanterns, torii, signs, houses, shops and props are saved objects (audited against the donor rows); `HD_Wires` overhead cables are area infrastructure | 0 | none | none |
+  | Brine Cove ships, Crater Park, hippodrome, Belmonte, Sword Camp, transport, forests | each ship, park piece, course unit, camp prop, terminal, pylon and fitting is already its own object; forests are terrain and plants | 0 | none | none |
+
+  Sizes for planning an on-demand batch: a Brine Cove batch has taken 10 to 20 minutes native plus 20 to 40 minutes
+  review and CI; batches in one region share its claims and run one after another. Lane-stall goods and other
+  sub-pieces may add 1 to 2 batches; `landmarks1` needs a split-tool extension (3 to 4 hours); Mega Park needs its
+  features identified in the park generator before any estimate.
 
 ## Runtime and ownership facts
 

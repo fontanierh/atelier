@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/harbor-rowboat-w225",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_HarborRowboatW225.uasset": "768385923796d6f9f65ae7f7330ba57d6a8aa4b307bd2647940c2e379c6bd44e"
+  },
+  "input_fingerprint": "0fdad450e7ec9b221d4582965f5121e52ee91141ad0dab051bf1f98ae7b9e1cc",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_HarborRowboatW225": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}
