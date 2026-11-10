@@ -318,59 +318,35 @@ def _build_lod_chain(asset, settings, resolve):
                                f'{asset.get_num_triangles(level)} triangles, the record {sections} and {triangles}')
 
 
-def _material_instances(plan, settings):
-    """Write each planned material instance in place: its parent and the parameter values the record states, nothing
-    else. A new package is created; an existing one keeps its object path, so references to it survive. The values
-    are read back before the save, because UE 5.8's setters report False (tint_material.py), so the read is the proof."""
-    MEL = U.MaterialEditingLibrary
-    parent_path = settings['parent']
-    parent = EAL.load_asset(parent_path)
-    if parent is None:
-        raise RuntimeError(f'the parent {parent_path} is not in the project')
-    for package in plan['packages']:
-        if EAL.does_asset_exist(package):
-            instance = EAL.load_asset(package)
-        else:
-            folder, name = package.rsplit('/', 1)
-            instance = TOOLS.create_asset(name, folder, U.MaterialInstanceConstant,
-                                          U.MaterialInstanceConstantFactoryNew())
-        if not isinstance(instance, U.MaterialInstanceConstant):
-            raise RuntimeError(f'{package} is not a material instance')
-        instance.set_editor_property('parent', parent)   # the editable parent property, as the saved records hold it
-        # Every earlier override goes first, so a value the record no longer states falls back to the parent.
-        MEL.clear_all_material_instance_parameters(instance)
-        for name, texture_path in sorted(settings.get('textures', {}).items()):
-            texture = EAL.load_asset(texture_path)
-            if texture is None:
-                raise RuntimeError(f'texture {texture_path} is not in the project')
-            MEL.set_material_instance_texture_parameter_value(instance, name, texture)
-        for name, value in sorted(settings.get('scalars', {}).items()):
-            MEL.set_material_instance_scalar_parameter_value(instance, name, float(value))
-        for name, value in sorted(settings.get('vectors', {}).items()):
-            MEL.set_material_instance_vector_parameter_value(instance, name, U.LinearColor(*map(float, value)))
-        MEL.update_material_instance(instance)
-        # The read-back: the parent and every value the record states, and no other override.
-        if instance.get_editor_property('parent') != parent:
-            raise RuntimeError(f'{package} does not read back its parent {parent_path}')
-        for name, texture_path in sorted(settings.get('textures', {}).items()):
-            got = MEL.get_material_instance_texture_parameter_value(instance, name)
-            if got is None or got.get_path_name().split('.')[0] != texture_path:
-                raise RuntimeError(f'{package} {name} reads {got} instead of {texture_path}')
-        for name, value in sorted(settings.get('scalars', {}).items()):
-            got = float(MEL.get_material_instance_scalar_parameter_value(instance, name))
-            if abs(got - float(value)) > 1e-4:
-                raise RuntimeError(f'{package} {name} reads {got} instead of {value}')
-        for name, value in sorted(settings.get('vectors', {}).items()):
-            got = MEL.get_material_instance_vector_parameter_value(instance, name)
-            want = list(map(float, value))
-            if max(abs(a - b) for a, b in zip([got.r, got.g, got.b, got.a], want)) > 1e-4:
-                raise RuntimeError(f'{package} {name} reads {got} instead of {value}')
-        stray = _undeclared_overrides(instance, settings)
-        if stray:
-            raise RuntimeError(f'{package} keeps overrides its record does not state: {", ".join(stray)}')
-        if not EAL.save_asset(package, only_if_is_dirty=False):
-            raise RuntimeError(f'could not save {package}')
-        U.log(f'V2 import wrote {package} from parent {parent_path}')
+def _scrub_import_data(asset, package):
+    """An existing instance's donor provenance, blanked before the save as scrub_import_data.py does it: each recorded
+    source file, and an Interchange node graph that repeats them. The read-back refuses a save while any file is left."""
+    try:
+        data = asset.get_editor_property('asset_import_data')
+    except Exception:
+        data = None
+    if data is None:
+        return
+    for slot in range(len(data.extract_filenames())):
+        data.scripted_add_filename('', slot, '')
+    if hasattr(data, 'set_node_container') and hasattr(U, 'InterchangeBaseNodeContainer'):
+        data.set_node_container(U.new_object(U.InterchangeBaseNodeContainer, outer=data))
+        if not U.ImportProvenance.rename_interchange_node(data, f'Factory_{asset.get_name()}'):
+            raise RuntimeError(f'{package}: Interchange data without a renamable node ID')
+    left = import_settings.donor_free(data.extract_filenames(), os.getcwd())
+    if left:
+        raise RuntimeError(f'{package} still names {left} after the scrub; not saved')
+
+
+def _refuse_donor_names(asset, package):
+    """A texture's import data may keep only its repository-relative source: an absolute name (a checkout's, a home
+    folder's) refuses the save. Checked after the portable source is set."""
+    data = asset.get_editor_property('asset_import_data')
+    if data is None:
+        return
+    left = import_settings.donor_named(data.extract_filenames(), os.getcwd())
+    if left:
+        raise RuntimeError(f'{package} names a donor path {left} after the portable source; not saved')
 
 
 def _override_names(instance):
@@ -386,6 +362,124 @@ def _undeclared_overrides(instance, settings):
     """Sorted `kind:name` of every saved override the record's settings do not state."""
     return sorted(f'{kind}:{name}' for kind, have in _override_names(instance).items()
                   for name in have - set(settings.get(kind, {})))
+
+
+def _switch_value(MEL, instance, name):
+    """A static switch's value as the editor reads it (the call may return the value alone or a (value, found) pair)."""
+    got = MEL.get_material_instance_static_switch_parameter_value(instance, name)
+    if isinstance(got, tuple):
+        if len(got) > 1 and not got[1]:
+            raise RuntimeError(f'{instance.get_path_name()} has no static switch {name}')
+        got = got[0]
+    return bool(got)
+
+
+def unknown_switches(stated, names):
+    """Sorted switch names the row states that the instance does not have: a misspelt name would otherwise read back as
+    false, the editor's answer for a missing switch, and pass as verified."""
+    return sorted(set(stated) - set(names))
+
+
+def stale_switches(stated, own, inherited):
+    """Sorted names of the static switches the row does not state whose value differs from the parent's, or whose parent
+    value cannot be read. `own` and `inherited` map each switch name to the instance's and the parent's value. Such a
+    switch may be an earlier override the record no longer asks for: UE 5.8's clear does not reach static switches, so
+    the import refuses it instead."""
+    return sorted(n for n, v in own.items() if n not in stated and (n not in inherited or v != inherited[n]))
+
+
+def _parent_switch_values(MEL, parent, names):
+    """The parent's value of each switch: an instance parent reads like the instance, a base material its default."""
+    out = {}
+    for name in names:
+        try:
+            if isinstance(parent, U.MaterialInstance):
+                out[name] = _switch_value(MEL, parent, name)
+            else:
+                got = MEL.get_material_default_static_switch_parameter_value(parent, name)
+                out[name] = bool(got[0] if isinstance(got, tuple) else got)
+        except Exception:
+            pass   # a switch the parent cannot report is left out; stale_switches then refuses it unless stated
+    return out
+
+
+def _material_instances(plan, settings):
+    """Write each planned material instance in place: its parent and the parameter values the record states, nothing
+    else. A new package is created; an existing one keeps its object path, so references to it survive, and its donor
+    import data is scrubbed first. The values are read back before the save, because UE 5.8's setters report False
+    (tint_material.py), so the read is the proof. Parameter names come from the record (BaseColorTexture, BaseColorFactor,
+    RoughnessFactor, ...). Static switches are written where the row states them; one it does not state must read the
+    parent's value, or the import is refused."""
+    MEL = U.MaterialEditingLibrary
+    for row in import_settings.material_instances(settings, plan['packages']):
+        package, parent_path = row['package'], row['parent']
+        parent = EAL.load_asset(parent_path)
+        if parent is None:
+            raise RuntimeError(f'the parent {parent_path} is not in the project')
+        if EAL.does_asset_exist(package):
+            instance = EAL.load_asset(package)
+            if isinstance(instance, U.MaterialInstanceConstant):
+                _scrub_import_data(instance, package)
+        else:
+            folder, name = package.rsplit('/', 1)
+            instance = TOOLS.create_asset(name, folder, U.MaterialInstanceConstant,
+                                          U.MaterialInstanceConstantFactoryNew())
+        if not isinstance(instance, U.MaterialInstanceConstant):
+            raise RuntimeError(f'{package} is not a material instance')
+        instance.set_editor_property('parent', parent)   # the editable parent property, as the saved records hold it
+        # Every earlier override goes first, so a value the row no longer states falls back to the parent. This clears the
+        # scalar, vector and texture overrides only: a read-only editor probe (2026-11-10) showed UE 5.8's clear leaves
+        # static switches as they were. So every switch the row states is written below, and a switch it does not state
+        # must read the parent's value, or the import is refused before the save (stale_switches).
+        MEL.clear_all_material_instance_parameters(instance)
+        for name, texture_path in sorted(row['textures'].items()):
+            texture = EAL.load_asset(texture_path)
+            if texture is None:
+                raise RuntimeError(f'texture {texture_path} is not in the project')
+            MEL.set_material_instance_texture_parameter_value(instance, name, texture)
+        for name, value in sorted(row['scalars'].items()):
+            MEL.set_material_instance_scalar_parameter_value(instance, name, float(value))
+        for name, value in sorted(row['vectors'].items()):
+            MEL.set_material_instance_vector_parameter_value(instance, name, U.LinearColor(*map(float, value)))
+        names = {str(n) for n in MEL.get_static_switch_parameter_names(instance)}
+        unknown = unknown_switches(row['switches'], names)
+        if unknown:
+            raise RuntimeError(f'{package} has no static switch {", ".join(unknown)}; nothing is saved')
+        for name, value in sorted(row['switches'].items()):
+            MEL.set_material_instance_static_switch_parameter_value(instance, name, bool(value))
+        MEL.update_material_instance(instance)
+        # The read-back: the parent, every value the record states, and no donor path in the import data.
+        if instance.get_editor_property('parent') != parent:
+            raise RuntimeError(f'{package} does not read back its parent {parent_path}')
+        for name, texture_path in sorted(row['textures'].items()):
+            got = MEL.get_material_instance_texture_parameter_value(instance, name)
+            if got is None or got.get_path_name().split('.')[0] != texture_path:
+                raise RuntimeError(f'{package} {name} reads {got} instead of {texture_path}')
+        for name, value in sorted(row['scalars'].items()):
+            got = float(MEL.get_material_instance_scalar_parameter_value(instance, name))
+            if abs(got - float(value)) > 1e-4:
+                raise RuntimeError(f'{package} {name} reads {got} instead of {value}')
+        for name, value in sorted(row['vectors'].items()):
+            got = MEL.get_material_instance_vector_parameter_value(instance, name)
+            want = list(map(float, value))
+            if max(abs(a - b) for a, b in zip([got.r, got.g, got.b, got.a], want)) > 1e-4:
+                raise RuntimeError(f'{package} {name} reads {got} instead of {value}')
+        for name, value in sorted(row['switches'].items()):
+            if _switch_value(MEL, instance, name) != bool(value):
+                raise RuntimeError(f'{package} {name} reads {_switch_value(MEL, instance, name)} instead of {value}')
+        own = {name: _switch_value(MEL, instance, name) for name in names}
+        stale = stale_switches(row['switches'], own, _parent_switch_values(MEL, parent, names))
+        if stale:
+            raise RuntimeError(f'{package} keeps static switch overrides its record does not state: {", ".join(stale)}')
+        stray = _undeclared_overrides(instance, row)
+        if stray:
+            raise RuntimeError(f'{package} keeps overrides its record does not state: {", ".join(stray)}')
+        data = instance.get_editor_property('asset_import_data')
+        if data is not None and import_settings.donor_free(data.extract_filenames(), os.getcwd()):
+            raise RuntimeError(f'{package} still names a donor file in its import data; not saved')
+        if not EAL.save_asset(package, only_if_is_dirty=False):
+            raise RuntimeError(f'could not save {package}')
+        U.log(f'V2 import wrote {package} from parent {parent_path}')
 
 
 def main():
@@ -457,9 +551,14 @@ def main():
         elif plan['importer'] == 'texture':
             asset = _import(source, package, _texture(settings))
             _apply_texture_settings(asset, settings)
+            # The import recorded its source at this checkout's absolute path: blank it, and the node graph that repeats
+            # it, before the repository-relative source is set; then refuse any absolute name left (as scrub does).
+            _scrub_import_data(asset, package)
         else:
             raise RuntimeError(f'no editor importer {plan["importer"]}')
         _portable_source(asset, portable)
+        if plan['importer'] == 'texture':
+            _refuse_donor_names(asset, package)
         if not EAL.save_asset(package, only_if_is_dirty=False):
             raise RuntimeError(f'could not save {package}')
         U.log(f'V2 import wrote {package} from {portable}')

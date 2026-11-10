@@ -160,7 +160,7 @@ ASSET_KEYS = {'schema', 'id', 'kind', 'authority', 'owner', 'sources', 'recipe',
               'outputs', 'license', 'provenance', 'validation', 'derive'}
 DERIVE_KEYS = {'kind', 'version', 'original', 'selection'}
 MATERIAL_RECIPE_KEYS = {'importer', 'version', 'settings'}
-MATERIAL_SETTINGS = {'parent', 'textures', 'scalars', 'vectors'}
+MATERIAL_SETTINGS = {'parent', 'textures', 'scalars', 'vectors', 'switches'}
 PARAMETER_NAME = re.compile(r'^[A-Za-z_][A-Za-z0-9_]*$')
 REGION_KEYS = {'schema', 'id', 'bounds_cm', 'neighbours', 'maps', 'shared', 'about', 'patch_m'}
 
@@ -171,50 +171,109 @@ def _known(data: dict, keys: set, where: Path, table: str = ''):
         raise RecordError(f'{where}: unknown key(s) {", ".join(unknown)}{" in " + table if table else ""}')
 
 
-def material_settings(recipe: dict, where: Path, inputs: list[str]) -> dict:
-    """Validate a material-instance [recipe]: `importer = "material-instance"`, version 1, and [recipe.settings] with
-    `parent` (a /Game package), `textures` ({parameter: /Game texture package}), `scalars` ({parameter: number}) and
-    `vectors` ({parameter: [r, g, b, a]}). The instance is written as exactly these values: none is an override that
-    the record does not state. Every package it reads must be an output of one of its input_dependencies."""
-    _known(recipe, MATERIAL_RECIPE_KEYS, where, '[recipe]')
-    if recipe.get('importer') != 'material-instance' or recipe.get('version') != 2:
-        raise RecordError(f'{where}: a material-instance recipe is importer "material-instance" version 2')
-    settings = recipe.get('settings')
-    if not isinstance(settings, dict):
-        raise RecordError(f'{where}: a material-instance needs [recipe.settings]')
-    _known(settings, MATERIAL_SETTINGS, where, '[recipe.settings]')
-    parent = _need(settings, 'parent', where)
-    if not PACKAGE.match(parent):
-        raise RecordError(f'{where}: parent {parent!r} must be a /Game package path')
-    textures = settings.get('textures', {})
+# The Interchange default instances a generated instance may name as its parent: engine-provided, owned by no record.
+ENGINE_PARENTS = frozenset({'/InterchangeAssets/gltf/MaterialInstances/MI_Default_Opaque_DS',
+                            '/InterchangeAssets/gltf/MaterialInstances/MI_Default_Opaque',
+                            '/InterchangeAssets/gltf/MaterialInstances/MI_Default_Blend_DS',
+                            '/InterchangeAssets/gltf/MaterialInstances/MI_ClearCoat_Opaque_DS'})
+INSTANCE_KEYS = {'package', 'parent', 'textures', 'scalars', 'vectors', 'switches'}
+SWITCH_NAME = re.compile(r'^bHas[A-Za-z]+$')   # the static switches the record may state: the Interchange bHas* booleans
+
+
+def _parent(values: dict, where: Path) -> str:
+    parent = _need(values, 'parent', where)
+    if not PACKAGE.match(parent) and parent not in ENGINE_PARENTS:
+        raise RecordError(f'{where}: parent {parent!r} must be a /Game package or an Interchange default instance')
+    return parent
+
+
+def _parameters(values: dict, where: Path) -> None:
+    switches = values.get('switches', {})
+    if not isinstance(switches, dict):
+        raise RecordError(f'{where}: switches must be a table of bHas... = true or false')
+    for name, value in switches.items():
+        if not SWITCH_NAME.match(name) or not isinstance(value, bool):
+            raise RecordError(f'{where}: switch {name!r} must be a bHas... name with true or false')
+    textures = values.get('textures', {})
     if not isinstance(textures, dict):
         raise RecordError(f'{where}: textures must be a table of parameter = /Game package')
     for name, package in textures.items():
         if not PARAMETER_NAME.match(name) or not isinstance(package, str) or not PACKAGE.match(package):
             raise RecordError(f'{where}: texture {name!r} = {package!r} must be a parameter name and a /Game package')
-    scalars = settings.get('scalars', {})
+    scalars = values.get('scalars', {})
     if not isinstance(scalars, dict):
         raise RecordError(f'{where}: scalars must be a table of parameter = number')
     for name, value in scalars.items():
         if not PARAMETER_NAME.match(name) or isinstance(value, bool) or not isinstance(value, (int, float)):
             raise RecordError(f'{where}: scalar {name!r} must be a number')
-    vectors = settings.get('vectors', {})
+    vectors = values.get('vectors', {})
     if not isinstance(vectors, dict):
         raise RecordError(f'{where}: vectors must be a table of parameter = [r, g, b, a]')
     for name, value in vectors.items():
         if not PARAMETER_NAME.match(name) or not isinstance(value, list) or len(value) != 4 \
                 or any(isinstance(v, bool) or not isinstance(v, (int, float)) for v in value):
             raise RecordError(f'{where}: vector {name!r} must be four numbers [r, g, b, a]')
+
+
+def material_settings(recipe: dict, where: Path, inputs: list[str], outputs: list[str]) -> dict:
+    """Validate a material-instance [recipe]: `importer = "material-instance"`, version 2, and one of two forms.
+
+    Single form: [recipe.settings] with `parent`, `textures` ({parameter: /Game texture package}), `scalars` ({parameter:
+    number}) and `vectors` ({parameter: [r, g, b, a]}), written to every output. Instances form: [[recipe.settings.instances]]
+    with one row per output, `package` and the same keys (each row's `parent` as well). The instance is written as exactly
+    the values the record states; none is an override the record does not state. Every /Game package it reads must be an
+    output of one of its input_dependencies (an Interchange default parent is engine-provided, not read from a record)."""
+    _known(recipe, MATERIAL_RECIPE_KEYS, where, '[recipe]')
+    if recipe.get('importer') != 'material-instance' or recipe.get('version') != 2:
+        raise RecordError(f'{where}: a material-instance recipe is importer "material-instance" version 2')
+    settings = recipe.get('settings')
+    if not isinstance(settings, dict):
+        raise RecordError(f'{where}: a material-instance needs [recipe.settings]')
+    if 'instances' in settings:
+        _known(settings, {'instances'}, where, '[recipe.settings]')
+        rows = settings['instances']
+        if not isinstance(rows, list) or not rows:
+            raise RecordError(f'{where}: instances must be a non-empty list of [[recipe.settings.instances]] tables')
+        packages = []
+        for row in rows:
+            if not isinstance(row, dict):
+                raise RecordError(f'{where}: each instance is a table')
+            _known(row, INSTANCE_KEYS, where, '[[recipe.settings.instances]]')
+            package = _need(row, 'package', where)
+            if not PACKAGE.match(package) or package in packages:
+                raise RecordError(f'{where}: instance package {package!r} must be a /Game package named once')
+            packages.append(package)
+            _parent(row, where)
+            _parameters(row, where)
+        if sorted(packages) != sorted(outputs):
+            raise RecordError(f'{where}: the instances name {sorted(packages)} but the outputs are {sorted(outputs)}')
+        return settings
+    _known(settings, MATERIAL_SETTINGS, where, '[recipe.settings]')
+    _parent(settings, where)
+    _parameters(settings, where)
     if not inputs:
         raise RecordError(f'{where}: a material-instance names the owners of its parent and textures as '
                           f'input_dependencies')
     return settings
 
 
-def material_inputs(asset: 'Asset') -> list[str]:
-    """The /Game packages a material instance reads: its parent, then its textures in parameter order."""
+def material_rows(asset: 'Asset') -> list[dict]:
+    """One row per instance the record writes: {package, parent, textures, scalars, vectors}."""
     settings = (asset.recipe or {}).get('settings', {})
-    return [settings['parent'], *(settings.get('textures', {})[k] for k in sorted(settings.get('textures', {})))]
+    if 'instances' in settings:
+        return [dict(row) for row in settings['instances']]
+    return [dict(settings, package=o.package) for o in asset.outputs]
+
+
+def material_inputs(asset: 'Asset') -> list[str]:
+    """The /Game packages a material instance reads: each row's parent (unless it is an engine default), then its
+    textures in parameter order, without repeats."""
+    out = []
+    for row in material_rows(asset):
+        for package in [row['parent'], *(row.get('textures', {})[k] for k in sorted(row.get('textures', {})))]:
+            if package not in ENGINE_PARENTS and package not in out:
+                out.append(package)
+    return out
 
 
 def material_input_problems(asset: 'Asset', outputs_of: dict[str, set[str]]) -> list[str]:
@@ -275,7 +334,7 @@ def load_asset(path: Path) -> Asset:
         # A material instance pins no file of its own: its parent and textures are the packages of its
         # input_dependencies (material_settings), so it needs those instead of a source.
         if kind == 'material-instance':
-            material_settings(recipe, path, inputs)
+            material_settings(recipe, path, inputs, [entry.get('package', '') for entry in data.get('outputs', [])])
         elif not sources:
             raise RecordError(f'{path}: generated content needs at least one source')
     elif recipe is not None:

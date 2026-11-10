@@ -279,3 +279,33 @@ def test_an_override_the_record_no_longer_states_is_refused(monkeypatch):
                 'scalars': {}, 'vectors': {}}
     assert module._undeclared_overrides(FakeInstance(textures=['Tex']), settings) == []
     assert module._undeclared_overrides(FakeInstance(vectors=['Tint'], textures=['Tex']), settings) == ['vectors:Tint']
+
+
+def test_a_switch_the_record_no_longer_states_must_read_the_parent_value(monkeypatch):
+    module = _import_asset_with_fake_unreal(monkeypatch)
+    parent = {'bHasNormalTexture': True, 'bHasBaseColorTexture': True}
+    # The record dropped bHasNormalTexture = false, but the instance still holds that earlier override.
+    assert module.stale_switches({}, {'bHasNormalTexture': False, 'bHasBaseColorTexture': True}, parent) == ['bHasNormalTexture']
+    # A stated switch may differ from the parent; an unstated one that matches the parent is not stale.
+    assert module.stale_switches({'bHasNormalTexture': False}, {'bHasNormalTexture': False, 'bHasBaseColorTexture': True},
+                                 parent) == []
+    # An unstated switch whose parent value cannot be read is refused too; a stated one is not.
+    assert module.stale_switches({}, {'bHasIridescence': False}, parent) == ['bHasIridescence']
+    assert module.stale_switches({'bHasIridescence': False}, {'bHasIridescence': False}, parent) == []
+
+
+def test_a_stated_switch_the_instance_does_not_have_is_refused(monkeypatch):
+    module = _import_asset_with_fake_unreal(monkeypatch)
+    names = {'bHasNormalTexture', 'bHasBaseColorTexture'}
+    assert module.unknown_switches({'bHasNormalTexure': False}, names) == ['bHasNormalTexure']
+    assert module.unknown_switches({'bHasNormalTexture': False}, names) == []
+
+
+def test_a_switch_lookup_that_reports_not_found_raises(monkeypatch):
+    module = _import_asset_with_fake_unreal(monkeypatch)
+    instance = types.SimpleNamespace(get_path_name=lambda: '/Game/T/MI')
+    found = types.SimpleNamespace(get_material_instance_static_switch_parameter_value=lambda i, n: (True, True))
+    missing = types.SimpleNamespace(get_material_instance_static_switch_parameter_value=lambda i, n: (False, False))
+    assert module._switch_value(found, instance, 'bHasNormalTexture') is True
+    with pytest.raises(RuntimeError, match='has no static switch bHasNormalTexure'):
+        module._switch_value(missing, instance, 'bHasNormalTexure')

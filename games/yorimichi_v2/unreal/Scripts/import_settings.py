@@ -7,6 +7,7 @@ Every setting defaults to what the importer did before it existed, so a record t
 - mesh `collision_trace` (a CTF_USE_* name): absent leaves the flag the collision mode sets;
 - texture `max_texture_size` (int, 0 = engine default) and `lod_group` (a TEXTUREGROUP_* name): absent leaves them as imported.
 """
+import os
 
 TEXTURE_GROUPS = {'TEXTUREGROUP_WORLD', 'TEXTUREGROUP_EFFECTS', 'TEXTUREGROUP_CHARACTER', 'TEXTUREGROUP_UI',
                   'TEXTUREGROUP_WORLD_NORMAL_MAP', 'TEXTUREGROUP_WORLD_SPECULAR'}
@@ -72,3 +73,42 @@ def collision_trace(settings: dict):
     if value not in TRACE_FLAGS:
         raise SettingError(f'unknown collision_trace {value!r}')
     return value
+
+
+def material_instances(settings: dict, packages: list) -> list:
+    """Pure: one row {package, parent, textures, scalars, vectors} per planned package, from either recipe form. The single
+    form gives every package the same values; the instances form gives each package its own row, and a package it does not
+    name (or a row for a package not planned) is refused, so nothing is written from a guess."""
+    if 'instances' in settings:
+        rows = {row.get('package'): row for row in settings['instances']}
+        missing = [p for p in packages if p not in rows]
+        extra = sorted(set(rows) - set(packages))
+        if missing or extra:
+            raise SettingError(f'instances do not match the planned packages (missing {missing}, extra {extra})')
+        source = rows
+    else:
+        source = {p: settings for p in packages}
+    out = []
+    for package in packages:
+        values = source[package]
+        if 'parent' not in values:
+            raise SettingError(f'{package} names no parent')
+        out.append(dict(package=package, parent=values['parent'], textures=dict(values.get('textures', {})),
+                        scalars=dict(values.get('scalars', {})), vectors=dict(values.get('vectors', {})),
+                        switches=dict(values.get('switches', {}))))
+    return out
+
+
+def donor_named(names, blank_folder: str) -> list:
+    """Pure: the absolute paths among the import-data names, other than the editor's working folder. A texture's import data
+    keeps its repository-relative source (set by the portable-source step), which is not a donor path; an absolute one is."""
+    blank = os.path.normpath(blank_folder)
+    return [name for name in names if name and os.path.isabs(name) and os.path.normpath(name) != blank]
+
+
+def donor_free(names, blank_folder: str) -> list:
+    """Pure: the import-data file names that still name something. A blanked entry (empty) or the editor's working folder
+    (where a blanked file reads back) does not count, so an empty result means no donor path is left."""
+    blank = os.path.normpath(blank_folder)
+    return [name for name in names if name and os.path.normpath(name) != blank]
+
