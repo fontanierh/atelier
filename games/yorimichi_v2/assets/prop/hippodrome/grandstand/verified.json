@@ -1,13 +1,13 @@
 {
   "asset": "prop/hippodrome/grandstand",
   "dependencies": {
-    "adopted/hippodrome/meshes": "1dc4e8a62fa069424357490bd2e10b0e803546989b468f19d5034a2d3419bf0c"
+    "material/hippodrome/grandstand": "59c7f9bf02633ea0d9f4f3495c12aa6ab6284333dfa965e773dbc89adfd2b1a4"
   },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Hippodrome/SM_HD_Grandstand.uasset": "8bed5418f058a6099f1317deea8682d7ab61a47761aaf29fac269686791b7038"
+    "unreal/Content/Hippodrome/SM_HD_Grandstand.uasset": "7334186ebfddd7c631953c7878a18af1588de79c931308ae949187135c6109b5"
   },
-  "input_fingerprint": "ede135d21e175c37e5d765a715c42361531f626085d3bece105c5106da9fb87e",
+  "input_fingerprint": "dea284479c0f953cf2e071cd155f32308b10b8c305a366b9b0b04f9719d64ef8",
   "kind": "imported",
   "lods": {
     "/Game/Hippodrome/SM_HD_Grandstand": {

@@ -8,7 +8,7 @@ id = "prop/megapark/kei-wagon"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/megapark/kei-wagon"
-references = ["adopted/japan/materials/base-materials"]
+references = ["master/japan/surfaces/village"]
 
 [[sources]]
 path = "src/SM_Kei_Wagon.fbx"

@@ -6,7 +6,7 @@ id = "prop/citysurfaces/wires-cell-4-m1"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/citysurfaces/wires-cell-4-m1"
-references = ["adopted/japan/materials/base-materials"]
+references = ["master/japan/surfaces/village"]
 
 [[sources]]
 path = "src/HD_Wires_cell_4_-1.fbx"

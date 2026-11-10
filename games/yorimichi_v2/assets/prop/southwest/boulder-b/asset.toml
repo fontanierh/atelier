@@ -6,7 +6,7 @@ id = "prop/southwest/boulder-b"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/southwest/boulder-b"
-references = ["adopted/japan/materials/base-materials"]
+references = ["master/japan/surfaces/village"]
 
 [[sources]]
 path = "src/SW_Boulder_B.fbx"

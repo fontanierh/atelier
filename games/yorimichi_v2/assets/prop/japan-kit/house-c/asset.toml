@@ -6,7 +6,7 @@ id = "prop/japan-kit/house-c"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/japan-kit/house-c"
-references = ["adopted/japan/materials/base-materials"]
+references = ["master/japan/surfaces/village"]
 
 [[sources]]
 path = "src/House_C.fbx"

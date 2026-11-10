@@ -6,7 +6,7 @@ id = "prop/southwest/boat"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/southwest/boat"
-references = ["adopted/japan/materials/base-materials"]
+references = ["master/japan/surfaces/village"]
 
 [[sources]]
 path = "src/SW_Boat.fbx"

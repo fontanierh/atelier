@@ -6,7 +6,7 @@ id = "prop/japan-kit/house-lot-3"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/japan-kit/house-lot-3"
-references = ["adopted/japan/materials/base-materials", "adopted/japan/materials/ground"]
+references = ["master/japan/surfaces/village", "adopted/japan/materials/ground"]
 
 [[sources]]
 path = "src/HouseLot_3.fbx"

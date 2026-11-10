@@ -6,7 +6,7 @@ id = "prop/southwest/fisher-house-a"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/southwest/fisher-house-a"
-references = ["adopted/japan/materials/base-materials"]
+references = ["master/japan/surfaces/village"]
 
 [[sources]]
 path = "src/SW_FisherHouseA.fbx"

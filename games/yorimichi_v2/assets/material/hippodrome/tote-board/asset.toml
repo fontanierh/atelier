@@ -1,0 +1,24 @@
+# Recovered from the donor import (tools/migrate/hippodrome_meshes.py): import_hippodrome.py restyle (lines
+# 116-124) cleared the imported instance, reparented it to M_HD_Structure and set BaseColorTexture to the image
+# its GLB embeds. The importer (tools/import/run.py) writes it in place and reads every value back.
+schema = 1
+id = "material/hippodrome/tote-board"
+kind = "material-instance"
+authority = "generated"
+owner = "shared/hippodrome/materials/tote-board"
+provenance = "donor games/yorimichi/unreal/Scripts/import_hippodrome.py at the V2 source baseline (docs/DECISIONS.md D01, D02), restyle lines 116-124"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+input_dependencies = ["master/hippodrome/structure", "texture/hippodrome/tote-board-color"]
+
+[recipe]
+importer = "material-instance"
+version = 2
+
+[recipe.settings]
+parent = "/Game/Hippodrome/Materials/M_HD_Structure"
+textures = { BaseColorTexture = "/Game/Hippodrome/Meshes/SM_HD_ToteBoard/Color_72c00844-b377-41e6-8796-37d3e46331b9" }
+scalars = {}
+vectors = {}
+
+[[outputs]]
+package = "/Game/Hippodrome/Meshes/SM_HD_ToteBoard/HD_ToteBoard"

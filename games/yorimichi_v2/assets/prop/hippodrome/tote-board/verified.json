@@ -1,13 +1,13 @@
 {
   "asset": "prop/hippodrome/tote-board",
   "dependencies": {
-    "adopted/hippodrome/meshes": "1dc4e8a62fa069424357490bd2e10b0e803546989b468f19d5034a2d3419bf0c"
+    "material/hippodrome/tote-board": "2bd13b9e89ab01896f3bb9aa8cb5fe8ffc649ffde0c269f3522e74908968fa50"
   },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Hippodrome/SM_HD_ToteBoard.uasset": "374fb1b0b074b5a8a18206a64de9c64ab2ec542d0baa74a252d30d15c3b21acb"
+    "unreal/Content/Hippodrome/SM_HD_ToteBoard.uasset": "9fce8a0dd56aa603efb0c5f099dfa5a36075b31e2ba5c0c20ca513b2f547d9c4"
   },
-  "input_fingerprint": "9b926082711b63848ce099274cff8956740e9a367814b122a84800703b67d1ef",
+  "input_fingerprint": "8ecf2dfcb397d0c24e700459af3c0719bf48f16024e79d26bb229fa128a2abf8",
   "kind": "imported",
   "lods": {
     "/Game/Hippodrome/SM_HD_ToteBoard": {

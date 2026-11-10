@@ -6,7 +6,7 @@ id = "prop/southwest/coconut-stand"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/southwest/coconut-stand"
-references = ["adopted/japan/materials/base-materials"]
+references = ["master/japan/surfaces/village"]
 
 [[sources]]
 path = "src/SW_CoconutStand.fbx"

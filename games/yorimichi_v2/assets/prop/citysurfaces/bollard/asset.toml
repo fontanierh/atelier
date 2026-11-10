@@ -6,7 +6,7 @@ id = "prop/citysurfaces/bollard"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/citysurfaces/bollard"
-references = ["adopted/japan/materials/base-materials"]
+references = ["master/japan/surfaces/village"]
 
 [[sources]]
 path = "src/HD_Bollard.fbx"

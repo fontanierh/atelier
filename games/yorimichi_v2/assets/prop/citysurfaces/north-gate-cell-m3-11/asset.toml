@@ -6,7 +6,7 @@ id = "prop/citysurfaces/north-gate-cell-m3-11"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/citysurfaces/north-gate-cell-m3-11"
-references = ["adopted/japan/materials/base-materials"]
+references = ["master/japan/terrain/north-gate"]
 
 [[sources]]
 path = "src/HD_NorthGate_cell_-3_11.fbx"

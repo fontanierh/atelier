@@ -255,7 +255,7 @@ def megapark_report(donor: Path | None) -> dict:
 # their rows report `migrated`.
 MIGRATED = frozenset({
     'adopted/belmonte/shared-metal-glass', 'adopted/belmonte/shared-water', 'adopted/hippodrome/loose_files',
-    'adopted/hippodrome/materials', 'adopted/skatepark/materials', 'adopted/skatepark/board', 'adopted/fx', 'adopted/racing',
+    'adopted/hippodrome/materials', 'adopted/hippodrome/meshes', 'adopted/skatepark/materials', 'adopted/skatepark/board', 'adopted/fx', 'adopted/racing',
     'adopted/swordcamp/materials',
     'adopted/japan/textures/plaza-harbor', 'adopted/japan/treehouse/surface-flat', 'adopted/japan/treehouse/surface-glass',
     'adopted/japan/treehouse/surface-rope', 'adopted/japan/treehouse/surface-trunk',

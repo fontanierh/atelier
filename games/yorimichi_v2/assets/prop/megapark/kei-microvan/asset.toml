@@ -8,7 +8,7 @@ id = "prop/megapark/kei-microvan"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/megapark/kei-microvan"
-references = ["adopted/japan/materials/base-materials"]
+references = ["master/japan/surfaces/village"]
 
 [[sources]]
 path = "src/SM_Kei_Microvan.fbx"

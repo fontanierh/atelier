@@ -218,6 +218,28 @@ def test_both_families_are_done_and_the_city_keeps_its_generator_record():
     assert CITY['generator'] and 'generator' not in SWORD
 
 
+def test_a_refresh_rewrites_only_what_the_changed_sources_plan_and_never_a_receipt(tmp_path):
+    """A done family whose builder or helpers changed: the refresh writes the differing records and sources, removes a
+    module the plan no longer declares, leaves verified.json alone, and is empty once applied."""
+    import shutil
+    shutil.copytree(GAME / 'assets/master/swordcamp', tmp_path / 'assets/master/swordcamp')
+    stale = tmp_path / 'assets/master/swordcamp/camp/src/old_helper.py'
+    stale.write_text('# no longer declared\n')
+    ops = planner.refresh_ops(tmp_path, SWORD)
+    assert not any(rel.endswith('verified.json') for rel in [*ops['writes'], *ops['deletes']])
+    assert ops['deletes'] == ['assets/master/swordcamp/camp/src/old_helper.py']
+    for rel, data in ops['writes'].items():
+        (tmp_path / rel).parent.mkdir(parents=True, exist_ok=True)
+        (tmp_path / rel).write_bytes(data)
+    stale.unlink()
+    assert planner.refresh_ops(tmp_path, SWORD) == {'writes': {}, 'deletes': []}
+    for master in SWORD['masters']:
+        text = (tmp_path / f'assets/{master["id"]}/asset.toml').read_text()
+        assert text == planner.record_text(SWORD, master, planner.builder_sha(SWORD))
+    with pytest.raises(planner.PlanError):   # no record of it in the copy: never done, so never refreshed
+        planner.refresh_ops(tmp_path, FAMILIES['japan_vegetation'])
+
+
 def test_every_read_is_an_output_of_a_record_the_master_names_as_input():
     for family in (SWORD, CITY):
         for master in family['masters']:

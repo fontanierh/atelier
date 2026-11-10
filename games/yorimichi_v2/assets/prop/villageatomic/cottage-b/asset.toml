@@ -6,7 +6,7 @@ id = "prop/villageatomic/cottage-b"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/villageatomic/cottage-b"
-references = ["adopted/japan/materials/base-materials"]
+references = ["master/japan/surfaces/village"]
 
 [[sources]]
 path = "src/Village_CottageB.fbx"

@@ -6,7 +6,7 @@ id = "prop/villageatomic/edges"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/villageatomic/edges"
-references = ["adopted/japan/materials/base-materials"]
+references = ["master/japan/surfaces/village"]
 
 [[sources]]
 path = "src/Village_Edges.fbx"

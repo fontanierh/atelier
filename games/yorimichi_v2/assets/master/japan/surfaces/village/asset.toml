@@ -1,0 +1,30 @@
+# Recovered as a material master (tools/migrate/master_records.py): /Game/Japan/Materials/M_Village.
+# The builder is src/japan_surface_masters.py, pinned by sha256; the master is rebuilt by the V2 editor and read back
+# against its saved original, never edited by hand.
+schema = 1
+id = "master/japan/surfaces/village"
+kind = "material-master"
+authority = "generated"
+owner = "shared/japan/materials/base-materials"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+provenance = "donor generator games/yorimichi/unreal/Scripts at 7eec0f98dd (pins in docs/inventory/japan-surfaces-prep.md) at the V2 source baseline (docs/DECISIONS.md D01, D02), village_material lines import_village.py 17-60; atmosphere.py 14-56; sea_look.py 38-69"
+
+[[sources]]
+path = "src/japan_surface_masters.py"
+sha256 = "e8efd891daddf6dfaa3382b290a2619a733077cf2c6d881972c01ccc80150ca4"
+
+[[sources]]
+path = "src/master_haze.py"
+sha256 = "329f98441c026c766803a3ce1d1d5e1aba5e09927ee91e12fc51152b8b77a49b"
+
+[recipe]
+importer = "material-master"
+version = 1
+
+[recipe.settings]
+builder = "village_material"
+reads = []
+arguments = {  }
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_Village"

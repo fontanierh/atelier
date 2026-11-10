@@ -1,0 +1,12 @@
+{
+  "asset": "master/japan/sea/open-sea",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Materials/M_Sea.uasset": "3361a8422c1e2131adc8fd8609060947525c49ca2c74e1d001fa4d7f225fd180"
+  },
+  "input_fingerprint": "8525ddd353c32e0b15fb63a73bdd6929bbfa802f04863cc7dab08f02536e08ac",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "material-master@1"
+}

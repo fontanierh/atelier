@@ -6,7 +6,7 @@ id = "prop/mega/trail"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/mega/trail"
-references = ["adopted/japan/materials/base-materials"]
+references = ["master/japan/surfaces/village"]
 
 [[sources]]
 path = "src/Mega_Trail.fbx"

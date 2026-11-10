@@ -1,0 +1,14 @@
+{
+  "asset": "master/japan/base/sky",
+  "dependencies": {
+    "texture/japan/sky": "7d0d882097e1751b15bc8f078371807f7c6ee968c30a38153d7be331eab7c174"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Materials/M_Sky.uasset": "2330aef38d9480c8cf6fe1e24f743a3d097ff4ecc0be5b7465477870d95c3566"
+  },
+  "input_fingerprint": "56c1e4d09f65d32df13785d328e6fb547875e0cdeca3b4dce02ba1f36f5e3b0d",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "material-master@1"
+}

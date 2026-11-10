@@ -1,0 +1,12 @@
+{
+  "asset": "texture/hippodrome/tote-board-color",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Hippodrome/Meshes/SM_HD_ToteBoard/Color_72c00844-b377-41e6-8796-37d3e46331b9.uasset": "adea9af442520bc897139ddfcb09aca2dc09fe3d7928097555deea28ef9a86a0"
+  },
+  "input_fingerprint": "918208390221b5fb76309183b67e3353621358c3d01d1ede752f9db96f2e8680",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

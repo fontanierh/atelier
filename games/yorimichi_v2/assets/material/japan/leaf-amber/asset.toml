@@ -9,7 +9,7 @@ authority = "generated"
 owner = "shared/japan/materials/leaf-amber"
 provenance = "recipe recorded from the saved parent M_Foliage and the texture owned by adopted/japan/textures/leaf-atlases; no donor builder"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
-input_dependencies = ["adopted/japan/materials/base-materials", "adopted/japan/textures/leaf-atlases"]
+input_dependencies = ["master/japan/surfaces/foliage", "adopted/japan/textures/leaf-atlases"]
 
 [recipe]
 importer = "material-instance"
