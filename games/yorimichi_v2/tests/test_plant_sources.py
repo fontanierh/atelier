@@ -160,7 +160,7 @@ def test_the_planned_records_are_valid_records_and_the_claim_moves_them(fake, tm
     assert units['packages'] == {}
     placer = ops['writes']['assets/prop/fake/placer/asset.toml'].decode()
     assert 'adopted/brinecove/plant-broad' not in placer and 'prop/brinecove/plant-broad0' in placer
-    assert 'region/w09-brinecove' in ps.scopes_of_ops(ops) and 'shared/brinecove/plant-broad' in ps.scopes_of_ops(ops)
+    assert 'region/w09-brinecove' in ps.scopes_of_ops(fake['game'], ops) and 'shared/brinecove/plant-broad' in ps.scopes_of_ops(fake['game'], ops)
 
 
 def test_a_package_no_record_plans_is_reported_and_a_missing_donor_file_is_refused(fake):
@@ -282,9 +282,10 @@ def test_the_real_tree_is_split():
 
 @pytest.mark.skipif(not REAL_DONOR or not (Path(REAL_DONOR).expanduser() / 'brinecove' / 'build-report.json').is_file(),
                     reason='needs the donor build (YV2_DONOR_BUILD)')
-def test_the_done_state_checks_the_written_records_in_a_copy(tmp_path):
+def test_the_done_state_checks_the_written_records_in_a_copy(tmp_path, unprepared):
     """The move applied to a copy of the records (no claim, and the real tree is not written): the state is done, and the
-    written records agree with the committed evidence, slot names included."""
+    written records agree with the committed evidence, slot names included. It needs the adopted records, so it runs
+    only while the real tree is unprepared; the done state is pinned by test_the_real_tree_is_split."""
     import shutil
     game = tmp_path / 'game'
     shutil.copytree(ROOT / 'assets', game / 'assets')

@@ -520,7 +520,7 @@ def build_writes(game: Path, plan_: Plan) -> dict:
     return {'writes': writes, 'deletes': sorted(set(deletes))}
 
 
-def scopes_of_ops(ops: dict) -> list:
+def scopes_of_ops(game: Path, ops: dict) -> list:
     """Every owner scope a write or delete touches: the new records' and the rewritten referencers' (and the adopted ones')."""
     owners = set()
     for rel, data in ops['writes'].items():
@@ -528,7 +528,7 @@ def scopes_of_ops(ops: dict) -> list:
             owners.add(_owner_of_text(data.decode()))
     for rel in ops['deletes']:
         if rel.endswith('asset.toml'):
-            owners.add(_owner_of_text((Path(GAME, rel)).read_text()))
+            owners.add(_owner_of_text((game / rel).read_text()))
     return sorted(o for o in owners if o)
 
 
@@ -539,7 +539,7 @@ def claimed_paths(ops: dict) -> list:
 def materialize(game: Path, plan_: Plan, claim: str, *, lockable=apply.lockable_present, echo=print) -> str:
     apply.Journal(game).recover(claim)
     ops = build_writes(game, plan_)
-    scopes = scopes_of_ops(ops)
+    scopes = scopes_of_ops(game, ops)
     try:
         authority.authorize([f'{GAME_REL}/{rel}' for rel in claimed_paths(ops)], claim,
                             'Brine Cove plants and city tree packages', scopes=scopes)
@@ -602,7 +602,7 @@ def main(argv=None) -> int:
         if args.paths:
             ops = build_writes(GAME, plan_)
             print('\n'.join(f'{GAME_REL}/{rel}' for rel in claimed_paths(ops)))
-            print('scopes: ' + ' '.join(scopes_of_ops(ops)))
+            print('scopes: ' + ' '.join(scopes_of_ops(GAME, ops)))
             return 0
         checks = byte_check(GAME, plan_)
         print(table(plan_, checks) if args.table else summary(plan_, checks))
