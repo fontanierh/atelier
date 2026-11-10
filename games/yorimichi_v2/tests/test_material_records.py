@@ -343,15 +343,18 @@ def test_a_malformed_base_override_is_refused(tmp_path, base, reason):
 
 
 class FakeOverrides:
+    """A FMaterialInstanceBasePropertyOverrides as UE 5.8's Python shows it: every flag readable by name, none listed
+    by dir(). A key it does not have raises, as the editor's getter does."""
     def __init__(self, **values):
-        self.values = dict(override_blend_mode=False, override_two_sided=False, override_opacity_mask_clip_value=False,
-                           override_dithered_lod_transition=False, override_shading_model=False, blend_mode=None,
-                           two_sided=False, opacity_mask_clip_value=0.3333, dithered_lod_transition=False,
-                           shading_model=None)
+        sys.path.insert(0, str(ROOT / 'unreal' / 'Scripts'))
+        import material_base
+        self.values = {material_base.candidates(field)[-1]: False for field in material_base.FLAGS}
+        self.values.update(blend_mode=None, two_sided=False, opacity_mask_clip_value=0.3333,
+                           dithered_lod_transition=False, shading_model=None)
         self.values.update(values)
 
     def __dir__(self):
-        return list(self.values)
+        return []
 
     def get_editor_property(self, key):
         return self.values[key]
@@ -387,3 +390,18 @@ def test_base_overrides_are_written_exactly_and_every_other_flag_is_cleared(monk
     assert module.base_matches({}, {}) and not module.base_matches({}, {'dithered_lod_transition': True})
     with pytest.raises(RuntimeError, match='no base override'):
         module._write_base(Instance(), {'not_a_flag': True}, '/Game/X')
+
+
+def test_every_base_flag_is_probed_by_name_and_a_missing_one_refuses():
+    """dir() lists no struct properties in UE 5.8's Python, so the 15 header flags are probed by name; one that cannot
+    be read stops the write and the report rather than leaving an override uncleared or unreported."""
+    sys.path.insert(0, str(ROOT / 'unreal' / 'Scripts'))
+    import material_base
+    assert material_base.snake('DitheredLODTransition') == 'dithered_lod_transition'
+    assert material_base.candidates('bIsThinSurface') == ['override_b_is_thin_surface', 'override_is_thin_surface']
+    overrides = FakeOverrides()
+    assert len(material_base.flags(overrides)) == 15 and 'override_opacity_mask_clip_value' in material_base.flags(
+        overrides)
+    del overrides.values['override_two_sided']
+    with pytest.raises(RuntimeError, match='bOverride_TwoSided'):
+        material_base.flags(overrides)
