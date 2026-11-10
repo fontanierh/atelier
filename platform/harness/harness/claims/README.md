@@ -111,6 +111,20 @@ atelier claims events --after 120                           # durable polling cu
 atelier claims status
 ```
 
+`task merged` verifies the merge, then the **client** attempts the unlocks before returning. The service
+does not run a background unlock worker. Calling `POST /tasks/T42/merged` directly records the merge and
+marks proven-own locks for release; an API client must also run `release_locks` with the holder's credentials.
+
+If an unlock fails, the merge stays recorded and the affected claim stays `releasing`, holding its paths.
+The CLI prints the resulting state and exits nonzero while release is incomplete (also for cancellation
+and `unlock`). Inspect `claims show ID`, restore remote access, then retry `claims unlock ID` as the same
+owner. Uncertain locks need reconciliation; never force-unlock another claim or treat an account match as
+ownership. Reconciliation can confirm a lock is already gone, but does not unlock one still on the remote.
+
+Run these commands with `uv run atelier claims ...` from a current checkout after `uv sync`. If an older
+machine installation says `claims` is an invalid command, it is not running this checkout's CLI. No service
+restart is needed to use the current client.
+
 **Coordinator** (configured with `serve --coordinator NAME`):
 
 ```sh

@@ -126,10 +126,10 @@ def real_tree_ready():
 @pytest.mark.skipif(not real_tree_ready(), reason='family package bytes are not hydrated')
 def test_real_tree_counts_and_bytes():
     result = sf.classify(sf.GAME)
-    assert result['packages'] == 90
+    assert result['packages'] == 88                     # the bike wheels moved to prop/bike (BCBIKE)
     assert result['problems'] == []
     expect = {'megapark': (4, 25), 'hippodrome': (3, 23), 'treehouse': (5, 8), 'skatepark': (2, 8), 'belmonte': (2, 7),
-              'fx': (1, 7), 'plaza': (1, 4), 'bike': (1, 2), 'swordcamp': (1, 2), 'hidamari': (1, 1), 'broadcast': (1, 1),
+              'fx': (1, 7), 'plaza': (1, 4), 'bike': (1, 0), 'swordcamp': (1, 2), 'hidamari': (1, 1), 'broadcast': (1, 1),
               'seethrough': (1, 1), 'skateruntime': (1, 1)}
     got = {f: (v['records'], v['packages']) for f, v in result['families'].items()}
     assert got == expect
@@ -394,7 +394,7 @@ def test_the_default_plan_runs_after_the_claim_and_reports_the_moved_records():
     moved = sorted(r['record'] for r in result['records'] if r['status'] == 'migrated')
     assert moved == sorted(sf.MIGRATED)
     assert all(not (ROOT / f'assets/{record}/asset.toml').is_file() for record in moved)
-    assert sum(f['migrated'] for f in result['families'].values()) == len(sf.MIGRATED) == 20
+    assert sum(f['migrated'] for f in result['families'].values()) == len(sf.MIGRATED) == 21
     assert sf.summary_lines(result)[0].split()[-1] == 'migrated'
 
 
@@ -406,3 +406,20 @@ def test_a_migrated_record_that_is_still_present_is_refused(tmp_path, monkeypatc
     monkeypatch.setattr(sf, 'MIGRATED', frozenset({record}))
     with pytest.raises(sf.FamilyError, match='still present'):
         sf.classify(tmp_path)
+
+
+def test_bike_wheels_are_migrated_on_the_pinned_generator():
+    """The wheel row is migrated (BCBIKE): its generator record pins the donor wheel sources, each pin is the tracked
+    file, and both wheel records reference it."""
+    _, _, _, status, note = sf.REGISTRY['adopted/japan/assets/bike']
+    assert status == 'planned' and 'generator/bike/wheels' in note and 'adopted/japan/assets/bike' in sf.MIGRATED
+    for wheel in ('wheel-front', 'wheel-rear'):
+        record = records.load_asset(sf.GAME / f'assets/prop/bike/{wheel}/asset.toml')
+        assert 'generator/bike/wheels' in record.references and record.recipe['settings']['allow_cpu_access'] is True
+    generator = records.load_asset(sf.GAME / 'assets/generator/bike/wheels/asset.toml')
+    assert generator.kind == 'generator' and generator.outputs == []
+    assert [s.path for s in generator.sources] == [f'src/{Path(rel).name}' for rel in sf.recover.BIKE_GENERATOR_SOURCES]
+    for rel, source in zip(sf.recover.BIKE_GENERATOR_SOURCES, generator.sources):
+        assert sf.sha256_file(sf.recover.DONOR_GAME / rel) == source.sha256
+        assert sf.sha256_file(sf.GAME / 'assets/generator/bike/wheels' / source.path) == source.sha256
+    assert generator.sources[0].sha256 == '460f61c1cfb60fa810f1b32a2a61fd33617107c12e0c9bf45e1ec5ecdcf61084'

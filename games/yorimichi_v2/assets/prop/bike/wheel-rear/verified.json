@@ -1,0 +1,34 @@
+{
+  "asset": "prop/bike/wheel-rear",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Assets/BK_WheelRear.uasset": "987c0cb60f7da34304cad9484e32282b8f5c4b09efcf94f5e2082f44f98b80af"
+  },
+  "input_fingerprint": "f73a66e427b252fb046a23c7b503b22dcab3028fa60d00019179c273360f9df6",
+  "kind": "imported",
+  "lods": {
+    "/Game/Japan/Assets/BK_WheelRear": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

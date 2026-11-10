@@ -110,6 +110,15 @@ Before writing or reviewing any world geometry, terrain, region, placement, asse
 read [`games/CONTRACTS`](games/CONTRACTS) and [world build practices](docs/WORLD_BUILD_PRACTICES.md). The paid
 contract review reads them on every PR. Playtests keep finding the same defects, so design them out from the start:
 
+- **Make the model independently generatable before editing it (owner 2026-11-10).** This applies to agents and
+  humans. Before changing a generated model's geometry, first verify that its generator can select that model,
+  with explicit parameters and inputs, without constructing unrelated models or rebuilding its city/region.
+  If it cannot, first parameterize the existing generator or extract a separate model script, keeping shared
+  helpers shared. Preserve the accepted result during that refactor; then make the requested geometry change
+  through the independent route. A separate GLB/FBX, Unreal mesh or post-generation cut alone is insufficient.
+  Record the targeted generation and import route with the asset. For imported or hand-authored models, keep an
+  independent editable original and targeted preparation/import route; do not invent a procedural generator.
+  See [the model-edit workflow](docs/WORLD_BUILD_PRACTICES.md#make-a-model-independent-before-editing-it).
 - **Ground on what is drawn.** Seat every tree, prop and building on the final surface that owns its footprint,
   never on a natural, hidden or neighbouring surface, nor on the higher of two.
 - **One owner per seam.** Where two surfaces abut, the other side follows the owner's exact edge profile.

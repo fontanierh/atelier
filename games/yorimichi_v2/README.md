@@ -170,9 +170,19 @@ The object queue's 15-job proof and production import use are recorded in
 Every package under `unreal/Content` belongs to exactly one record. The content check fails on a package that
 nobody owns.
 
+**Before an agent or human edits a generated model, first make its generator independent.** Confirm that the
+model can be generated from its own explicit parameters and inputs without constructing the rest of its city,
+region or unrelated collection. If not, parameterize the generator to select the model before construction,
+or extract a separate model script, with shared helpers kept shared. Preserve the accepted result during
+that refactor, then apply the requested geometry change. A separate source mesh or Unreal asset alone does
+not meet this requirement. Record the selected generation and import route with the asset. Imported or
+hand-authored models instead need their independent editable original and targeted preparation/import route.
+Follow the [model-edit workflow](../../docs/WORLD_BUILD_PRACTICES.md#make-a-model-independent-before-editing-it).
+
 - **Generated asset** (`authority = "generated"`): its sources and recipe are authoritative, and only its importer
-  writes its packages. Change a source and run the targeted import for that asset ID. The importer skips unchanged
-  inputs without starting Unreal and writes only the declared packages. A failed job retains or restores its journaled writes; already accepted jobs in a batch stay completed.
+  writes its packages. After the model-edit prerequisite above, change its source and run the targeted import
+  for that asset ID. The importer skips unchanged inputs without starting Unreal and writes only the declared
+  packages. A failed job retains or restores its journaled writes; already accepted jobs in a batch stay completed.
 - **Editor-owned asset or saved actors** (`authority = "editor"`, region actor records): the saved package is
   authoritative for editor edits; save under its claim and record the result with save validation. This write
   authority does not establish source provenance. Adopted imported/generated art still needs its original inputs

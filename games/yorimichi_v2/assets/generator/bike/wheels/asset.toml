@@ -1,0 +1,34 @@
+# Donor generator (tools/migrate/recover.py): bike wheel generator: the wheel constructor, its extractor and the exporter that writes the wheel source data.
+# It owns no package. Its sources are copied into src/ and pinned by sha256; the records it generated
+# reference it. Editor-owned: nothing here is imported.
+schema = 1
+id = "generator/bike/wheels"
+kind = "generator"
+authority = "editor"
+owner = "shared/japan/assets/bike"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+
+[[sources]]
+path = "src/build.py"
+sha256 = "460f61c1cfb60fa810f1b32a2a61fd33617107c12e0c9bf45e1ec5ecdcf61084"
+
+[[sources]]
+path = "src/bike_sources.py"
+sha256 = "35945ddf398613c392568392f1c71c4a70534014fec7b41cb3accc21d0418629"
+
+[[sources]]
+path = "src/vehicle_sources.py"
+sha256 = "31683757639ef101d64d5a8a56260ab3148516fcc6f25f0badc16917556ac99c"
+
+[[sources]]
+path = "src/vehicle_atomic_build.py"
+sha256 = "f577b76a30aabc44cc17b203ca123a46a20287d326dd7748772277146165f617"
+
+[[sources]]
+path = "src/region_exports.py"
+sha256 = "c7832a6b28805360ff6d0c35d2ff5844b0d709cf553fda5d3bc64830d734a467"
+
+[[sources]]
+path = "src/yori.py"
+sha256 = "2abacfc5e937251ae247614d0caca9839ee39f68e67567a7b44ac49c6581e3bf"

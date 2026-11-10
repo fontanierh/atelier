@@ -36,14 +36,14 @@ optional simply because a patch is legal to save.
 
 This table is derived from canonical `record_paths` at the audited main revision, excluding nested donor
 `asset.toml` inputs. Of 807 adopted records without direct sources or a recipe, 800 use restricted-manifest routes and
-three use the 124 Adventure/animation links. The remaining **4 records / 5 packages** below have neither. This is a classification query, not a
+three use the 124 Adventure/animation links. The remaining **3 records / 3 packages** below have neither (the bike wheels, listed too, migrated since). This is a classification query, not a
 claim that those packages lack originals, nor a complete recovery backlog: generator records with pinned source files
 can still need recoverable inputs and an accepted import. See [sources](sources.md).
 
 | Main owner(s) | Records / packages | Current disposition |
 |---|---:|---|
 | `adopted/megapark/standalone-level` | 1 / 1 | Saved Unreal map; reference check remains. This is not an imported-model source gap |
-| `adopted/japan/assets/bike` | 1 / 2 | `BK_WheelFront` and `BK_WheelRear`: the donor reads exist, but the `Bike.blend` generator is not recorded; recovery remains open |
+| `adopted/japan/assets/bike` | migrated | `BK_WheelFront` and `BK_WheelRear` are `prop/bike/wheel-front` and `wheel-rear`, generated from the pinned `generator/bike/wheels` and imported (BCBIKE; see "Bike residual packages") |
 | `adopted/seethrough`, `adopted/skateruntime` | 2 / 2 | `MPC_SeeThrough` and `RuntimeData` still need recoverable generator/settings/input routes; the earlier reads do not establish source closure |
 
 **Closed by claim `JAPANMI` (branch `jim5/yv2-japan-instances`, not yet in a package): 10 records / 45 instances.**
@@ -1275,7 +1275,7 @@ Native read (run; the gate file is its output): the four texture packages' setti
 | `T_Harbor_paving` | `japan/textures/plaza-harbor` | planned | Japan/Textures | no reader in this tree |
 | `T_Harbor_timber` | `japan/textures/plaza-harbor` | planned | Japan/Textures | no reader in this tree |
 
-### Bike residual packages (1 record, 2 packages)
+### Bike residual packages (migrated: 1 record, 2 packages)
 
 Donor evidence: `unreal/Scripts/import_bike.py:36-46` imports each bike part from `build/yorimichi/bike/assets/<part>.fbx`, with its entry in `build/yorimichi/bike/manifest.json` (`parts`, 26060 triangles for each wheel) and the wheel rule that requires CPU access and no full-precision UVs. `M_Bike` is the parent, owned by `adopted/japan/materials/base-materials`.
 
@@ -1283,18 +1283,20 @@ Byte evidence: `BK_WheelFront` and `BK_WheelRear` are 550 KB each and reference 
 
 Donor FBX pins (sha256, `build/yorimichi/bike/assets/`): `BK_WheelFront.fbx` `b9d91c3ff4143f67…`, `BK_WheelRear.fbx` `5a62e75f11e02be6…`.
 
-Status: **blocked** (`adopted/japan/assets/bike`). The generator, `Bike.blend`, is not tracked in the donor: `git ls-files` finds no `.blend` under the bike build, and the FBX files sit in a git-ignored build folder. An FBX with no recorded generator cannot be pinned as its original, as the generated-art rule requires, so the wheels are not claimed. The importer itself takes FBX and the static-mesh recipe can state the wheel settings (`allow_cpu_access`, `full_precision_uvs`, as `prop/megapark/seam-collision` already does), so the block is the generator alone. Recording a tracked generator would unblock the rows.
+Status: **migrated** (`adopted/japan/assets/bike`, claim `BCBIKE`). The generator is pinned as `generator/bike/wheels` (`kind = "generator"`, editor-owned, no outputs): six donor sources copied into its `src/` and pinned by sha256: `games/yorimichi/assets/vehicles/bike/build.py` (`wheel(name, hub_half)` at line 237; the wheel settings `.048` and `.050` for `BK_WheelFront` and `BK_WheelRear` at line 733), `world/bike_sources.py` (one independent constructor per part; the wheel half widths at lines 69-70), `world/vehicle_sources.py` and `vehicle_atomic_build.py` (the exporter that writes each part's source data and FBX), and `region_exports.py` and `world/yori.py` (what those import). All six hash identically at `7eec0f98dd` and on `main`. The earlier diagnosis was wrong: `Bike.blend` is a review-scene output of `vehicle_atomic_build.py` (its lines 45-50), not a source. The FBX pins are the donor's atomic exports (`atomic_regions/vehicle_bike/assets/manifest.json`, sha256 `b9d91c3f…` and `5a62e75f…`, 26060 triangles each). The V2 importer takes `allow_cpu_access` (`unreal/Scripts/import_settings.py`, applied at `unreal/Scripts/import_asset.py:115-117`), so the wheel settings fit the static-mesh recipe.
 
-Native read done (`docs/inventory/small-families-reads/bike-meshes.json`): one `BikePalette` slot bound to `M_Bike`, one LOD of 26060 triangles, matching the manifest. The block stands on the generator alone.
+Done (`BCBIKE`): `tools/migrate/recover.py japan/assets --only prop/bike/wheel-front,prop/bike/wheel-rear --apply` moved both wheels out of `adopted/japan/assets/bike` (now deleted) into `prop/bike/wheel-front` and `prop/bike/wheel-rear`, each referencing `generator/bike/wheels`. `--only` leaves the rest of the family alone (a full apply would rewrite the hand-edited tree house frame). The claimed import kept 26060 triangles per wheel on the one `M_Bike` slot with CPU access, equal to the native read below; its single-LOD screen size is the importer's, as for the accepted bike frame.
 
-Native read run earlier: the wheels' saved settings and the `M_Bike` slot. The read is `unreal/Scripts/report_meshes.py` with `docs/inventory/small-families-bike-meshes.txt` (`BK_WheelFront`, `BK_WheelRear`), `V2_REPORT_OUT` under `build/yorimichi_v2/reports/`, as an `editor.run` step. It is listed for when the generator is recorded; the block stands until then.
+Native read done (`docs/inventory/small-families-reads/bike-meshes.json`): one `BikePalette` slot bound to `M_Bike`, one LOD of 26060 triangles, matching the manifest. It is the reference for the native equality check after the claimed import.
 
-- `adopted/japan/assets/bike`: generated wheel static meshes (Blender bike build). Evidence: import_bike.py:36-46 (manifest parts, FBX per part under build/yorimichi/bike/assets). Status: **blocked**. Bike.blend, the generator, is not tracked in the donor (git ls-files finds no .blend under the bike build): the FBX has no recorded generator, so it cannot be pinned. M_Bike is owned by adopted/japan/materials/base-materials
+Native read run earlier: the wheels' saved settings and the `M_Bike` slot. The read is `unreal/Scripts/report_meshes.py` with `docs/inventory/small-families-bike-meshes.txt` (`BK_WheelFront`, `BK_WheelRear`), `V2_REPORT_OUT` under `build/yorimichi_v2/reports/`, as an `editor.run` step. It is listed for the same equality check.
+
+- `adopted/japan/assets/bike`: generated wheel static meshes (donor wheel constructors, `build.py` `wheel()`). Evidence: import_bike.py:36-46 (manifest parts, FBX per part under build/yorimichi/bike/assets). Status: **migrated** (BCBIKE). Generator pinned as `generator/bike/wheels`; both wheels imported as `prop/bike/wheel-*`. M_Bike is owned by adopted/japan/materials/base-materials
 
 | Package | Record | Status | Inputs (owner records) | Native read still needed |
 |---|---|---|---|---|
-| `BK_WheelFront` | `japan/assets/bike` | blocked | Japan/Materials/M_Bike, Japan/Materials/M_Bike | no reader in this tree |
-| `BK_WheelRear` | `japan/assets/bike` | blocked | Japan/Materials/M_Bike, Japan/Materials/M_Bike | no reader in this tree |
+| `BK_WheelFront` | `prop/bike/wheel-front` | migrated (BCBIKE) | Japan/Materials/M_Bike, generator/bike/wheels | none: equal to the read |
+| `BK_WheelRear` | `prop/bike/wheel-rear` | migrated (BCBIKE) | Japan/Materials/M_Bike, generator/bike/wheels | none: equal to the read |
 
 ### Sword camp materials (1 record, 2 packages)
 
