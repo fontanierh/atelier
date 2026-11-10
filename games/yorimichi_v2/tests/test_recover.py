@@ -915,6 +915,8 @@ DONOR_PINS = {  # the sha256 of each donor source at the donor commit 7eec0f98dd
     'import_runtime.py': 'faa0eae5b4bede1444e9faa7fac6e4de246683463d3629800df7d72cd5b611b8',
     'SkateRuntimeData.cpp': '16a79f0d9f95d5dd4b5147e5df3b9711411245e27165fad1f06f40fd87a07425',
     'SkateDataLibrary.h': '6a7b27a22d0218cd2fdee5b9dc1a9c392823f0e9738c4c8860fd81725ad8d26f',
+    # Not a donor file: the V2 list of the 3,336 donor Skate/Data files the assembler reads, each with its sha256.
+    'skate_runtime_inputs.sha256': 'd7d4a9faa5a68d083b026d0ae5637c900d35e72211c5254a82eb1752d48ec668',
 }
 
 

@@ -78,8 +78,9 @@ Saved, prepared and packaged totals are kept separate:
   [exceptions](inventory/exceptions.md#current-source-classification). Brine Cove `props1` (13 harbour objects, claim
   `BCPROPS1`, [PR #813](https://github.com/fontanierh/atelier/pull/813)) is merged too. Package `c89f535441be` predates
   both.
-- **Remaining source/detail work:** the `RuntimeData` route (its generator is pinned, its importer is missing; the
-  `MPC_SeeThrough` route is done, claim `SEETHRU`): 1 record / 1 package in
+- **Remaining source/detail work:** no whole-source item is left once #827 merges: `MPC_SeeThrough` (claim
+  `SEETHRU`, the `parameter-collection` importer) and `RuntimeData` (claim `SKATERT`, the `skate-runtime` importer) are
+  imported from their pinned generators (#826 merged); see
   [exceptions](inventory/exceptions.md#current-source-classification).
 
 Remaining construction work:
@@ -90,19 +91,19 @@ Remaining construction work:
 - Retain the current package while the next source batch proceeds. The guard fixes (#805/#807), multiplayer
   manifest (#809) and host/leave check (#810) are merged. The six manual acceptance checks and final owner-led
   gameplay/two-machine playtesting remain open.
-- **Forecast updated 2026-11-10 18:05, Paris** (targets unchanged from 16:00):
-  - The 45-instance batch is done: it was merged in #812, ahead of its 17:30 target.
-  - Whole-source work is the 3 records / 3 packages in
-    [exceptions](inventory/exceptions.md#current-source-classification). That classification is not source closure.
-    Forecast **19:30**, low confidence, for these steps in order:
-    - the Mega Park standalone map's reference check (a native read);
-    - `MPC_SeeThrough` and `RuntimeData`: their generators are pinned as generator records (#822, in review); both stay
-      blocked until an importer for a parameter collection and for the skate runtime data asset exists;
-    - the bike wheels are done (claim `BCBIKE`, #820): `prop/bike/wheel-front` and `wheel-rear` are imported from the
-      pinned generator `generator/bike/wheels` (`build.py` `wheel()`; `Bike.blend` is a review-scene output, not a source).
-  - Useful-object splitting stays at **23:00**, low confidence. Brine Cove `props4` is merged (#818) and `props5` (the
-    cargo re-split into 54 pieces) is applied and checked, in review; the remaining residual fused scenery and patches
-    are unsized.
+- **Forecast updated 2026-11-10 20:45, Paris:**
+  - Done since 16:00: the Mega Park standalone map's reference check (#824) and the bike wheels (#820).
+  - The 19:30 target for the whole-source routes was missed. The capacity broker was in recovery after a failed
+    editor start; it recovered at 20:23 (#828), and the native steps then ran:
+    - `MPC_SeeThrough` (#826): the collection, its three masters and the 8 dependent material-instance records are
+      imported (one warm batch at 20:27); a rerun leaves all 12 unchanged.
+    - `RuntimeData` (#827): imported at 20:40 from its pinned inputs, with the plugin's exhaustive read-back; a rerun
+      is unchanged.
+    - The Brine Cove props5 pier generator (#823): the 3 pier placements are saved again from their carved meshes.
+  - #823 and #826 are merged; #827 is in review. Forecast **21:30**, low confidence, for its merge (review and CI on
+    the exact head).
+  - Useful-object splitting stays at **23:00**, low confidence. Brine Cove `props5` (the cargo re-split into 54 pieces,
+    with the pier generator) is merged (#823); the remaining residual fused scenery and patches are unsized.
 
 ## Runtime and ownership facts
 

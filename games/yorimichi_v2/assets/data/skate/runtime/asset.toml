@@ -1,0 +1,39 @@
+# The skate RuntimeData asset /Game/SkateRuntime/RuntimeData, generated from the tracked Skate/Data tree: the pinned assembler
+# (simulation_package.py --assemble, with motion_text.py and runtime_text.py) builds the simulation package from exactly the
+# 3,336 Data files skate_runtime_inputs.sha256 pins (tools/import/skate_runtime.py), and the editor import runs the Skate
+# plugin's USkateDataLibrary::ImportRuntime on it, then its exhaustive Verify as the read-back (importer skate-runtime@1).
+schema = 1
+id = "data/skate/runtime"
+kind = "data"
+authority = "generated"
+owner = "shared/skateruntime"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+provenance = "Skate plugin tools and data at the donor commit 7eec0f98dd (tracked platform/engine tree, generator/skate/runtime) at the V2 source baseline (docs/DECISIONS.md D01, D02)"
+references = ["generator/skate/runtime"]
+input_dependencies = ["adopted/skatemotion/loose_files"]
+
+[[sources]]
+path = "src/simulation_package.py"
+sha256 = "84f307127502952c546e1e1c2e53e76fcdd9493ba3b1d0635bc205370538a1a9"
+
+[[sources]]
+path = "src/motion_text.py"
+sha256 = "94178096aaa86604ef32cef6a24decf64e34398829a7d9169095d67e2fd16ba5"
+
+[[sources]]
+path = "src/runtime_text.py"
+sha256 = "9a7eb144e23105b04e2599b87f636a830fcf4e129e9c878ffa8031e925ade9f5"
+
+[[sources]]
+path = "src/skate_runtime_inputs.sha256"
+sha256 = "d7d4a9faa5a68d083b026d0ae5637c900d35e72211c5254a82eb1752d48ec668"
+
+[recipe]
+importer = "skate-runtime"
+version = 1
+
+[recipe.settings]
+manifest_sha256 = "add4fc5692861f7f7134da3049030d2030335000b782b38419a79dcf27fe034d"
+
+[[outputs]]
+package = "/Game/SkateRuntime/RuntimeData"
