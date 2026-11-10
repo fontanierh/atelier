@@ -1247,3 +1247,33 @@ Blockers: masters (`M_FX_Additive`, `M_FX_Dust`, `M_FX_Trail`) have no importer;
 | `M_FX_Additive` | `fx` | need-read | FX/Textures/T_FX_Glow | `report_materials` (material list) |
 | `M_FX_Dust` | `fx` | need-read | FX/Textures/T_FX_Dust | `report_materials` (material list) |
 | `M_FX_Trail` | `fx` | need-read | FX/Textures/T_FX_Trail | `report_materials` (material list) |
+
+### Japan plaza and harbour textures (1 record, 4 packages)
+
+Donor evidence: the four textures are imports of two tracked PNGs from the donor's source tree,
+`world/regions/hidamari/textures/paving.png` (sha256 `0cf002e567a081c1e32f…`) and `timber.png` (sha256 `d71b181a3d0df569f0c8…`).
+`unreal/Scripts/arcade_material.py:5-12` imports them as `T_Arcade_<name>` and `unreal/Scripts/harbor_material.py:24-27` as
+`T_Harbor_<name>`, both into `/Game/Japan/Textures`. The two PNGs are tracked in the donor (`git ls-files`), so they are
+authored inputs, not build outputs. The donor's `plaza_material.py:45` only loads `T_Arcade_paving`; it does not make it.
+
+Byte evidence: `T_Arcade_paving` and `T_Harbor_paving` are both 2219461 bytes, and `T_Arcade_timber` and `T_Harbor_timber`
+both 1833653 bytes. Equal sizes fit one import of each PNG with the same settings. The four packages name no other package.
+
+Status: **planned** (`adopted/japan/textures/plaza-harbor`). The texture importer fits: the record would commit the two
+PNGs under `src/` with their sha256, and each `T_*` package would take a texture recipe. Two conditions stand in front
+of it. First, the asset rights of the PNGs must be settled before their bytes are uploaded (`games/yorimichi_v2/CONTRACTS`,
+`yorimichi-v2-portable-records`). Second, a native read must confirm the equal settings, because the sizes are only
+consistent with, not proof of, the same import. Nothing is imported or claimed here.
+
+Native reads still needed (read-only; editor and clean hydrate): the texture settings of the four packages. No texture
+reader is in this tree (the texture report of the residual Belmonte train is in PR #793, not on this branch), so this
+needs that reader first.
+
+- `adopted/japan/textures/plaza-harbor`: textures imported from two tracked donor PNGs. Evidence: arcade_material.py:5-12 (T_Arcade_<name>) and harbor_material.py:24-27 (T_Harbor_<name>), both from world/regions/hidamari/textures/{paving,timber}.png. Status: **planned**. T_Arcade and T_Harbor packages of each name have equal sizes (2219461 and 1833653 bytes), so one import of each PNG is consistent; the PNGs are tracked in the donor source (paving sha256 0cf002e5..., timber d71b181a...)
+
+| Package | Record | Status | Inputs (owner records) | Native read still needed |
+|---|---|---|---|---|
+| `T_Arcade_paving` | `japan/textures/plaza-harbor` | planned | Japan/Textures | no reader in this tree |
+| `T_Arcade_timber` | `japan/textures/plaza-harbor` | planned | Japan/Textures | no reader in this tree |
+| `T_Harbor_paving` | `japan/textures/plaza-harbor` | planned | Japan/Textures | no reader in this tree |
+| `T_Harbor_timber` | `japan/textures/plaza-harbor` | planned | Japan/Textures | no reader in this tree |
