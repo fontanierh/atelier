@@ -9,26 +9,258 @@
 #include "TimerManager.h"
 #include "EngineUtils.h"
 #include "HAL/IConsoleManager.h"
+#include "UObject/StrongObjectPtr.h"
 #if WITH_EDITOR
-#include "AssetCompilingManager.h"
+#include "StaticMeshCompiler.h"
 #endif
 
 static const TCHAR* CityTreeParents[]={TEXT("HD_ArcadeTree"),TEXT("HD_PlazaTreeGold"),TEXT("HD_PlazaTreeOrange")};
 
+namespace
+{
+struct FCityTreeManifestCache
+{
+    bool bLoaded = false;
+    bool bValid = false;
+    TMap<FString,FString> PiecePaths;   // exact child piece name -> original /Game/Experiments/CitySurfaces/v1_128m/... path
+    TSet<FName> AcceptedTags;
+};
+
+const FCityTreeManifestCache& GetCityTreeManifest()
+{
+    static FCityTreeManifestCache Cache;
+    if (!Cache.bLoaded)
+    {
+        Cache.bLoaded = true;
+        TMap<FString,TArray<FString>> CityPieces;
+        if (JapanCityPieces::Read(AtelierReadJson(AtelierDataPath(TEXT("city_surface_tiles/v1_128m/manifest.json"))),CityPieces))
+        {
+            Cache.bValid = true;
+            for (const TCHAR* Parent : CityTreeParents)
+            {
+                const auto* Paths = CityPieces.Find(Parent);
+                if (!Paths || Paths->IsEmpty()) { Cache.bValid = false; Cache.PiecePaths.Reset(); Cache.AcceptedTags.Reset(); break; }
+                for (const FString& Path : *Paths)
+                {
+                    const FString Base = FPaths::GetBaseFilename(Path);
+                    Cache.PiecePaths.Add(Base, Path);
+                    Cache.AcceptedTags.Add(FName(*(TEXT("CityPiece:") + Base)));
+                    Cache.AcceptedTags.Add(FName(*(TEXT("CityPiece:city:") + Base)));
+                    Cache.AcceptedTags.Add(FName(*(TEXT("city:") + Base)));
+                }
+            }
+        }
+    }
+    return Cache;
+}
+
+struct FCityTreeVariantSet
+{
+    TMap<FString,TStrongObjectPtr<UStaticMesh>> Originals;
+    TMap<FString,TStrongObjectPtr<UStaticMesh>> Optimized;
+    bool bValidatedOptimized = false;
+    bool bLoggedOriginal = false;
+};
+
+const FCityTreeVariantSet* PrepareCityTreeVariant(const FString& Tag, bool bOptimizedMesh)
+{
+    const FCityTreeManifestCache& Manifest = GetCityTreeManifest();
+    if (!Manifest.bValid) return nullptr;
+    static TMap<FString,FCityTreeVariantSet> Variants;
+    FCityTreeVariantSet& Set = Variants.FindOrAdd(Tag);
+    if (Set.Originals.Num() != Manifest.PiecePaths.Num())
+    {
+        Set.Originals.Reset();
+        for (const auto& Pair : Manifest.PiecePaths)
+        {
+            UStaticMesh* Original = LoadObject<UStaticMesh>(nullptr, *Pair.Value);
+            if (!Original) return nullptr;
+            Set.Originals.Add(Pair.Key, TStrongObjectPtr<UStaticMesh>(Original));
+        }
+    }
+    if (bOptimizedMesh && Set.Optimized.Num() != Manifest.PiecePaths.Num())
+    {
+        Set.Optimized.Reset();
+        for (const auto& Pair : Manifest.PiecePaths)
+        {
+            const FString Variant = Pair.Key + TEXT("_") + Tag;
+            const FString Path = FString::Printf(TEXT("/Game/Experiments/CityTrees/%s/%s.%s"), *Tag, *Variant, *Variant);
+            UStaticMesh* Mesh = LoadObject<UStaticMesh>(nullptr, *Path);
+            if (!Mesh)
+            {
+                UE_LOG(LogTemp, Error, TEXT("CITY TREE LODS missing %s; keeping current meshes"), *Path);
+                Set.Optimized.Reset();
+                return nullptr;
+            }
+            Set.Optimized.Add(Pair.Key, TStrongObjectPtr<UStaticMesh>(Mesh));
+        }
+    }
+#if WITH_EDITOR
+    // Never call global FAssetCompilingManager::Get().FinishAllCompilation() in -game (which blocks the game thread
+    // on thousands of unrelated streaming world assets). Finish only any still-compiling city-tree mesh itself.
+    {
+        TArray<UStaticMesh*> Compiling;
+        for (const auto& Pair : Set.Originals)
+            if (Pair.Value.IsValid() && Pair.Value->IsCompiling()) Compiling.Add(Pair.Value.Get());
+        if (bOptimizedMesh)
+            for (const auto& Pair : Set.Optimized)
+                if (Pair.Value.IsValid() && Pair.Value->IsCompiling()) Compiling.Add(Pair.Value.Get());
+        if (!Compiling.IsEmpty())
+            FStaticMeshCompilingManager::Get().FinishCompilation(Compiling);
+    }
+#endif
+    if (bOptimizedMesh && !Set.bValidatedOptimized)
+    {
+        for (const auto& Pair : Set.Optimized)
+        {
+            UStaticMesh* Candidate = Pair.Value.Get();
+            UStaticMesh* Original = Set.Originals.FindChecked(Pair.Key).Get();
+#if WITH_EDITORONLY_DATA
+            const bool bNanite = Candidate->IsNaniteEnabled();
+#else
+            const bool bNanite = Candidate->HasValidNaniteData();
+#endif
+            if (bNanite)
+            { UE_LOG(LogTemp,Error,TEXT("CITY TREE LODS require non-Nanite HISM meshes; refusing swap %s"),*Pair.Key); return nullptr; }
+            const auto* Data = Candidate->GetRenderData();
+            if (!Original || !Data || Data->LODResources.Num() != 3) return nullptr;
+            const auto* OriginalData = Original->GetRenderData();
+            if (!OriginalData || OriginalData->LODResources.Num() == 0) return nullptr;
+            const auto& A = OriginalData->LODResources[0]; const auto& B = Data->LODResources[0];
+            const auto& AP = A.VertexBuffers.PositionVertexBuffer; const auto& BP = B.VertexBuffers.PositionVertexBuffer;
+            if (!AP.GetVertexData() || !BP.GetVertexData() ||
+                !A.VertexBuffers.StaticMeshVertexBuffer.GetTangentData() || !B.VertexBuffers.StaticMeshVertexBuffer.GetTangentData() ||
+                AP.GetNumVertices() != BP.GetNumVertices() ||
+                A.GetNumTriangles() != B.GetNumTriangles() || Original->GetMaterial(0) != Candidate->GetMaterial(0))
+            { UE_LOG(LogTemp,Error,TEXT("CITY TREE LODS changed production LOD0; refusing swap %s"),*Pair.Key); return nullptr; }
+            for (uint32 V = 0; V < AP.GetNumVertices(); ++V)
+                if (!AP.VertexPosition(V).Equals(BP.VertexPosition(V), .01f) ||
+                    !A.VertexBuffers.StaticMeshVertexBuffer.VertexTangentZ(V).Equals(B.VertexBuffers.StaticMeshVertexBuffer.VertexTangentZ(V), .001f))
+                { UE_LOG(LogTemp,Error,TEXT("CITY TREE LODS changed production positions/normals; refusing swap %s"),*Pair.Key); return nullptr; }
+            UE_LOG(LogTemp,Display,TEXT("CITY TREE LOD0 VERIFIED %s vertices=%u triangles=%u production_material=1 positions_normals=1"),
+                *Pair.Key, AP.GetNumVertices(), A.GetNumTriangles());
+            const double Expected = Original->GetBounds().BoxExtent.Size();
+            for (const auto& LOD : Data->LODResources)
+            {
+                FBox3f Bounds(ForceInit);
+                const auto& Positions = LOD.VertexBuffers.PositionVertexBuffer;
+                if (!Positions.GetVertexData() || Positions.GetNumVertices() == 0 || Expected <= 0.)
+                { UE_LOG(LogTemp,Error,TEXT("Experiment LOD has no CPU positions for unit validation; refusing swap")); return nullptr; }
+                for (uint32 V = 0; V < Positions.GetNumVertices(); ++V) Bounds += Positions.VertexPosition(V);
+                const double Ratio = Bounds.GetExtent().Size() / Expected;
+                if (!FMath::IsFinite(Ratio) || Ratio < 0.8 || Ratio > 1.15)
+                { UE_LOG(LogTemp,Error,TEXT("CITY TREE LODS invalid LOD scale %s ratio=%.5f; keeping originals"),*Pair.Key,Ratio); return nullptr; }
+            }
+        }
+        for (const auto& Pair : Set.Optimized)
+            if (const auto* Data = Pair.Value->GetRenderData())
+                for (int32 LOD = 0; LOD < Data->LODResources.Num(); ++LOD)
+                    UE_LOG(LogTemp,Display,TEXT("CITY TREE LOD DATA %s lod=%d triangles=%u screen=%.5f"),
+                        *Pair.Value->GetName(), LOD, Data->LODResources[LOD].GetNumTriangles(), Data->ScreenSize[LOD].GetValue());
+        Set.bValidatedOptimized = true;
+    }
+    else if (!bOptimizedMesh && !Set.bLoggedOriginal)
+    {
+        for (const auto& Pair : Set.Originals)
+            if (const auto* Data = Pair.Value->GetRenderData())
+                for (int32 LOD = 0; LOD < Data->LODResources.Num(); ++LOD)
+                    UE_LOG(LogTemp,Display,TEXT("CITY TREE LOD DATA %s lod=%d triangles=%u screen=%.5f"),
+                        *Pair.Value->GetName(), LOD, Data->LODResources[LOD].GetNumTriangles(), Data->ScreenSize[LOD].GetValue());
+        Set.bLoggedOriginal = true;
+    }
+    return &Set;
+}
+
+FString ResolveCityTreePieceForGroup(const UHierarchicalInstancedStaticMeshComponent* Group, const FCityTreeVariantSet& Set)
+{
+    if (!Group || !Group->GetStaticMesh()) return FString();
+    // Exact child piece match by CityPiece: tag (handling optional "city:" prefix) or exact child StaticMesh identity.
+    for (const FName& RawTag : Group->ComponentTags)
+    {
+        FString TagStr = RawTag.ToString();
+        if (TagStr.RemoveFromStart(TEXT("CityPiece:"), ESearchCase::CaseSensitive) ||
+            TagStr.RemoveFromStart(TEXT("city:"), ESearchCase::CaseSensitive))
+        {
+            TagStr.RemoveFromStart(TEXT("city:"), ESearchCase::CaseSensitive);
+            if (Set.Originals.Contains(TagStr)) return TagStr;
+        }
+    }
+    FString GroupObjName = Group->GetName();
+    if (GroupObjName.RemoveFromStart(TEXT("city:"), ESearchCase::CaseSensitive) && Set.Originals.Contains(GroupObjName))
+        return GroupObjName;
+    const UStaticMesh* Current = Group->GetStaticMesh();
+    for (const auto& Pair : Set.Originals)
+        if (Pair.Value.Get() == Current) return Pair.Key;
+    for (const auto& Pair : Set.Optimized)
+        if (Pair.Value.Get() == Current) return Pair.Key;
+    return FString();
+}
+
+bool SwapSingleCityTreeGroup(UHierarchicalInstancedStaticMeshComponent* Group, const FCityTreeVariantSet& Set,
+    bool bEnabled, bool bOptimizedMesh, int32 Forced, float DistanceScale, FString& OutPiece)
+{
+    OutPiece = ResolveCityTreePieceForGroup(Group, Set);
+    if (OutPiece.IsEmpty()) return true;   // Not a city-tree group.
+    UStaticMesh* Target = (bOptimizedMesh ? Set.Optimized.FindChecked(OutPiece) : Set.Originals.FindChecked(OutPiece)).Get();
+    if (!Target) return false;
+    if (Group->GetStaticMesh() != Target)
+    {
+        // Static registered components reject mesh changes after BeginPlay.
+        // Preserve mobility and instances, rebuilding registration around the swap.
+        const bool Registered = Group->IsRegistered();
+        if (Registered) Group->UnregisterComponent();
+        const bool Changed = Group->SetStaticMesh(Target);
+        if (Registered) Group->RegisterComponent();
+        if (!Changed || Group->GetStaticMesh() != Target)
+        {
+            UE_LOG(LogTemp, Error, TEXT("CITY TREE LODS failed mesh swap %s"), *OutPiece);
+            return false;
+        }
+    }
+    // Groups are HISM: positive N selects LOD N. Plain ISM uses N-1 instead, so this mapping must remain HISM-only.
+    Group->SetForcedLodModel(bOptimizedMesh && Forced >= 2 ? Forced - 1 : 0);
+    Group->SetLODDistanceScale(bEnabled ? DistanceScale : 1.f);
+    if (Group->bOverrideMinLOD || Group->MinLOD != 0)
+    {
+        Group->bOverrideMinLOD = false;
+        Group->MinLOD = 0;
+        Group->MarkRenderStateDirty();
+    }
+    return true;
+}
+
+void EnsureStartupSkyRefreshScheduled(AJapanWorld* Landscape, bool bEnabled)
+{
+    const FName Prepared(TEXT("CityTreeLODPrepared"));
+    if (!bEnabled || !Landscape || Landscape->Tags.Contains(Prepared)) return;
+    UWorld* World = Landscape->GetWorld();
+    if (!World) return;
+    Landscape->Tags.Add(Prepared);
+    // Stagger away from the t = 2.0 s skate preload mark so RecaptureSky does not compound frame-114 work.
+    FTimerHandle Refresh;
+    World->GetTimerManager().SetTimer(Refresh, FTimerDelegate::CreateWeakLambda(Landscape, [World]()
+    {
+        for (TActorIterator<ASkyLight> Sky(World); Sky; ++Sky)
+            if (auto* Light = Sky->GetLightComponent(); Light && !Light->IsRealTimeCaptureEnabled()) Light->RecaptureSky();
+        USkyLightComponent::UpdateSkyCaptureContents(World);
+        UE_LOG(LogTemp, Display, TEXT("CITY TREE LODS refreshed startup sky"));
+    }), 2.35f, false);
+}
+}
+
 bool AJapanWorld::IsCityTreePiece(const FName& Tag)
 {
-    // The tree pieces' CityPiece tags, read once: an arriving building piece must not re-run the tree swap.
-    static TSet<FName> Tags;
-    if (Tags.IsEmpty())
+    const FCityTreeManifestCache& Manifest = GetCityTreeManifest();
+    if (!Manifest.bValid) return false;
+    if (Manifest.AcceptedTags.Contains(Tag)) return true;
+    FString Str = Tag.ToString();
+    if (Str.RemoveFromStart(TEXT("CityPiece:"), ESearchCase::CaseSensitive) ||
+        Str.RemoveFromStart(TEXT("city:"), ESearchCase::CaseSensitive))
     {
-        TMap<FString,TArray<FString>> CityPieces;
-        if (!JapanCityPieces::Read(AtelierReadJson(AtelierDataPath(TEXT("city_surface_tiles/v1_128m/manifest.json"))),CityPieces))
-            return false;
-        for (const TCHAR* Parent:CityTreeParents)
-            if (const auto* Paths=CityPieces.Find(Parent))
-                for (const FString& Path:*Paths) Tags.Add(FName(TEXT("CityPiece:")+FPaths::GetBaseFilename(Path)));
+        Str.RemoveFromStart(TEXT("city:"), ESearchCase::CaseSensitive);
+        return Manifest.PiecePaths.Contains(Str);
     }
-    return Tags.Contains(Tag);
+    return false;
 }
 
 // Both the settings menu and the diagnostic command use the same validated swap.
@@ -36,142 +268,46 @@ bool AJapanWorld::IsCityTreePiece(const FName& Tag)
 static bool ApplyCityTreeLODs(AJapanWorld* Landscape,const FString& Tag,bool Enabled,int32 Forced,float DistanceScale=1.5f)
 {
     if (!Landscape || !Landscape->bLoaded) return false;
-    UWorld* World=Landscape->GetWorld();
     Forced=FMath::Clamp(Forced,0,3);
     DistanceScale=FMath::Clamp(DistanceScale,.5f,3.f);
     // UE's HISM renderer treats ForcedLodModel as a zero-based nonzero index.
     // A full-detail comparison uses the original single-LOD mesh, avoiding its
     // ambiguous zero/automatic case and preserving the production leaf geometry.
     const bool OptimizedMesh=Enabled && Forced!=1;
-    TMap<FString,TArray<FString>> CityPieces;
-    if (!JapanCityPieces::Read(AtelierReadJson(AtelierDataPath(TEXT("city_surface_tiles/v1_128m/manifest.json"))),CityPieces))
-        return false;
-    TMap<FString,UStaticMesh*> Replacements,Originals;
-    for (const TCHAR* Parent:CityTreeParents)
-    {
-        const auto* Paths=CityPieces.Find(Parent);
-        if (!Paths || Paths->IsEmpty()) return false;
-        for (const FString& OriginalPath:*Paths)
-        {
-            auto* Original=LoadObject<UStaticMesh>(nullptr,*OriginalPath);
-            if (!Original) return false;
-            const FString Name=Original->GetName(),Variant=Name+TEXT("_")+Tag;
-            const FString Path=OptimizedMesh?FString::Printf(TEXT("/Game/Experiments/CityTrees/%s/%s.%s"),*Tag,*Variant,*Variant):OriginalPath;
-            auto* Mesh=LoadObject<UStaticMesh>(nullptr,*Path);
-            if (!Mesh) { UE_LOG(LogTemp,Error,TEXT("CITY TREE LODS missing %s; keeping current meshes"),*Path); return false; }
-            Originals.Add(Name,Original);Replacements.Add(Name,Mesh);
-        }
-    }
-    // The meshes are validated once per variant: each tree piece arriving with streaming swaps only its own groups.
-    static TSet<FString> Validated;
-    const FString Variant=OptimizedMesh?Tag:TEXT("original");
-    const bool bValidate=!Validated.Contains(Variant);
-#if WITH_EDITOR
-    if (bValidate) FAssetCompilingManager::Get().FinishAllCompilation();
-#endif
-    // Reject stale experiments imported in meters as centimeters. Validate
-    // each LOD's actual vertex extent, not combined bounds containing LOD0.
-    if (OptimizedMesh && bValidate) for (const auto& Pair:Replacements)
-    {
-#if WITH_EDITORONLY_DATA
-        const bool bNanite=Pair.Value->IsNaniteEnabled();
-#else
-        // A cooked build has no Nanite build settings, only what was built: reject meshes cooked with Nanite data.
-        const bool bNanite=Pair.Value->HasValidNaniteData();
-#endif
-        if (bNanite)
-        { UE_LOG(LogTemp,Error,TEXT("CITY TREE LODS require non-Nanite HISM meshes; refusing swap %s"),*Pair.Key); return false; }
-        auto* Original=Originals.FindChecked(Pair.Key);
-        const auto* Data=Pair.Value->GetRenderData();
-        if (!Original || !Data || Data->LODResources.Num()!=3) return false;
-        const auto* OriginalData=Original->GetRenderData();
-        if (!OriginalData || OriginalData->LODResources.Num()==0) return false;
-        const auto& A=OriginalData->LODResources[0];const auto& B=Data->LODResources[0];
-        const auto& AP=A.VertexBuffers.PositionVertexBuffer;const auto& BP=B.VertexBuffers.PositionVertexBuffer;
-        if (!AP.GetVertexData() || !BP.GetVertexData() ||
-            !A.VertexBuffers.StaticMeshVertexBuffer.GetTangentData() || !B.VertexBuffers.StaticMeshVertexBuffer.GetTangentData() ||
-            AP.GetNumVertices()!=BP.GetNumVertices() ||
-            A.GetNumTriangles()!=B.GetNumTriangles() || Original->GetMaterial(0)!=Pair.Value->GetMaterial(0))
-        { UE_LOG(LogTemp,Error,TEXT("CITY TREE LODS changed production LOD0; refusing swap %s"),*Pair.Key);return false; }
-        for (uint32 V=0;V<AP.GetNumVertices();++V)
-            if (!AP.VertexPosition(V).Equals(BP.VertexPosition(V),.01f) ||
-                !A.VertexBuffers.StaticMeshVertexBuffer.VertexTangentZ(V).Equals(B.VertexBuffers.StaticMeshVertexBuffer.VertexTangentZ(V),.001f))
-            { UE_LOG(LogTemp,Error,TEXT("CITY TREE LODS changed production positions/normals; refusing swap %s"),*Pair.Key);return false; }
-        UE_LOG(LogTemp,Display,TEXT("CITY TREE LOD0 VERIFIED %s vertices=%u triangles=%u production_material=1 positions_normals=1"),
-            *Pair.Key,AP.GetNumVertices(),A.GetNumTriangles());
-        const double Expected=Original->GetBounds().BoxExtent.Size();
-        for (const auto& LOD:Data->LODResources)
-        {
-            FBox3f Bounds(ForceInit);
-            const auto& Positions=LOD.VertexBuffers.PositionVertexBuffer;
-            if (!Positions.GetVertexData() || Positions.GetNumVertices()==0 || Expected<=0.)
-            { UE_LOG(LogTemp,Error,TEXT("Experiment LOD has no CPU positions for unit validation; refusing swap")); return false; }
-            for (uint32 V=0;V<Positions.GetNumVertices();++V) Bounds+=Positions.VertexPosition(V);
-            const double Ratio=Bounds.GetExtent().Size()/Expected;
-            if (!FMath::IsFinite(Ratio) || Ratio<0.8 || Ratio>1.15)
-            { UE_LOG(LogTemp,Error,TEXT("CITY TREE LODS invalid LOD scale %s ratio=%.5f; keeping originals"),*Pair.Key,Ratio); return false; }
-        }
-    }
-    if (bValidate) for (const auto& Pair:Replacements)
-        if (const auto* Data=Pair.Value->GetRenderData())
-            for (int32 LOD=0;LOD<Data->LODResources.Num();++LOD)
-                UE_LOG(LogTemp,Display,TEXT("CITY TREE LOD DATA %s lod=%d triangles=%u screen=%.5f"),
-                    *Pair.Value->GetName(),LOD,Data->LODResources[LOD].GetNumTriangles(),Data->ScreenSize[LOD].GetValue());
-    Validated.Add(Variant);
+    const FCityTreeVariantSet* Set = PrepareCityTreeVariant(Tag, OptimizedMesh);
+    if (!Set) return false;
     int32 Groups=0,Instances=0;
     TSet<FString> AppliedPieces;
+    for (auto* Group : Landscape->Groups)
     {
-        for (auto* Group:Landscape->Groups)
-            if (Group && Group->GetStaticMesh())
-                for (const auto& Pair:Replacements)
-                    if (Group->ComponentHasTag(FName(*(TEXT("CityPiece:")+Pair.Key))))
-                    {
-                        if (Group->GetStaticMesh()!=Pair.Value)
-                        {
-                            // Static registered components reject mesh changes
-                            // after BeginPlay. Preserve mobility and instances,
-                            // rebuild their registration around the mesh swap.
-                            const bool Registered=Group->IsRegistered();
-                            if (Registered) Group->UnregisterComponent();
-                            const bool Changed=Group->SetStaticMesh(Pair.Value);
-                            if (Registered) Group->RegisterComponent();
-                            if (!Changed || Group->GetStaticMesh()!=Pair.Value)
-                            { UE_LOG(LogTemp,Error,TEXT("CITY TREE LODS failed mesh swap %s"),*Pair.Key); return false; }
-                        }
-                        // Groups are HISM: positive N selects LOD N. Plain ISM
-                        // uses N-1 instead, so this mapping must remain HISM-only.
-                        Group->SetForcedLodModel(OptimizedMesh && Forced>=2 ? Forced-1 : 0);
-                        Group->SetLODDistanceScale(Enabled ? DistanceScale : 1.f);
-                        // No minimum-LOD override may permanently remove near detail.
-                        if (Group->bOverrideMinLOD || Group->MinLOD!=0)
-                        {
-                            Group->bOverrideMinLOD=false;Group->MinLOD=0;
-                            Group->MarkRenderStateDirty();
-                        }
-                        AppliedPieces.Add(Pair.Key);
-                        ++Groups;Instances+=Group->GetInstanceCount();break;
-                    }
-        // Only the loaded pieces are swapped: a streamed-out piece is swapped when its patch arrives
-        // (AJapanWorld::RegisterScenePatch), so a partial set is not a failure.
-        const FName Prepared(TEXT("CityTreeLODPrepared"));
-        if (Enabled && !Landscape->Tags.Contains(Prepared))
+        if (!Group || !Group->GetStaticMesh()) continue;
+        FString Piece;
+        if (!SwapSingleCityTreeGroup(Group, *Set, Enabled, OptimizedMesh, Forced, DistanceScale, Piece)) return false;
+        if (!Piece.IsEmpty())
         {
-            Landscape->Tags.Add(Prepared);
-            // Same startup capture timing issue as full-detail city tiles:
-            // first-load compilation can capture the sky before its dome.
-            // Refresh once after ticking resumes, never every frame/toggle.
-            FTimerHandle Refresh;
-            World->GetTimerManager().SetTimer(Refresh,FTimerDelegate::CreateWeakLambda(Landscape,[World]()
-            {
-                for (TActorIterator<ASkyLight> Sky(World);Sky;++Sky)
-                    if (auto* Light=Sky->GetLightComponent(); Light && !Light->IsRealTimeCaptureEnabled()) Light->RecaptureSky();
-                USkyLightComponent::UpdateSkyCaptureContents(World);
-                UE_LOG(LogTemp,Display,TEXT("CITY TREE LODS refreshed startup sky"));
-            }),2.f,false);
+            AppliedPieces.Add(Piece);
+            ++Groups;
+            Instances += Group->GetInstanceCount();
         }
     }
+    EnsureStartupSkyRefreshScheduled(Landscape, Enabled);
     UE_LOG(LogTemp,Display,TEXT("CITY TREE LODS tag=%s enabled=%d forced=%d pieces=%d/%d groups=%d instances=%d distance_scale=%.2f"),
-        *Tag,Enabled,Forced,AppliedPieces.Num(),Replacements.Num(),Groups,Instances,DistanceScale);
+        *Tag,Enabled,Forced,AppliedPieces.Num(),Set->Originals.Num(),Groups,Instances,DistanceScale);
+    return true;
+}
+
+bool AJapanWorld::ApplyTreeOptimizationToGroup(UHierarchicalInstancedStaticMeshComponent* Group)
+{
+    if (!Group || !Group->GetStaticMesh() || RequestedTreeOptimization < 0) return true;
+    const bool bEnabled = RequestedTreeOptimization != 0;
+    const int32 Forced = FMath::Clamp(RequestedTreeLODMode, 0, 3);
+    const float DistanceScale = FMath::Clamp(RequestedTreeDistanceScale, .5f, 3.f);
+    const bool bOptimizedMesh = bEnabled && Forced != 1;
+    const FCityTreeVariantSet* Set = PrepareCityTreeVariant(TEXT("v4"), bOptimizedMesh);
+    if (!Set) return false;
+    FString Piece;
+    if (!SwapSingleCityTreeGroup(Group, *Set, bEnabled, bOptimizedMesh, Forced, DistanceScale, Piece)) return false;
+    if (!Piece.IsEmpty()) EnsureStartupSkyRefreshScheduled(this, bEnabled);
     return true;
 }
 

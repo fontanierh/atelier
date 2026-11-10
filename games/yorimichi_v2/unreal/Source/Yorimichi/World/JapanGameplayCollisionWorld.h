@@ -17,6 +17,7 @@ public:
     /** Certify one fixed actor that arrived after Install (a streamed World Partition scene patch is loaded, not
      *  spawned): its authored parts block the gameplay channel and the cached query stops ignoring it. */
     void InstallFixed(AActor* Actor);
+    void RemoveFixed(AActor* Actor);
     FCollisionQueryParams Query(FName Tag, const TStatId& Stat, bool Complex) const;
 protected:
     virtual bool DoesSupportWorldType(const EWorldType::Type Type) const override
@@ -29,6 +30,7 @@ private:
     FDelegateHandle SpawnHandle, DestroyHandle, RemoveHandle;
     TSet<TWeakObjectPtr<AActor>> DynamicOwners;
     TSet<TWeakObjectPtr<AActor>> InstalledOwners;
-    TArray<TWeakObjectPtr<UPrimitiveComponent>> ExcludedParts;
-    FCollisionQueryParams Cached;
+    TSet<TWeakObjectPtr<UPrimitiveComponent>> ExcludedParts;
+    mutable FCollisionQueryParams Cached;
+    mutable bool bDirty = false;
 };

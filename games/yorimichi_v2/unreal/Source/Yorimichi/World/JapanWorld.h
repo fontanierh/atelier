@@ -50,6 +50,7 @@ class YORIMICHI_API AJapanWorld : public AActor
 public:
     AJapanWorld();
     virtual void BeginPlay() override;
+    virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
     static FVector ToUE(double X, double Y, double Z) { return FVector(X * 100.0, -Y * 100.0, Z * 100.0); }
 
@@ -95,6 +96,8 @@ public:
     void ApplyPerformanceSettings(bool bPerformance, float TreeSwayMetres, float ForestDetail, float TreeShadowMetres);
     /** The menu's city-tree optimization: unchanged close trees and collision, lighter distant leaf outlines. */
     bool ApplyTreeOptimization(bool bEnabled, int32 LODMode = 0, float DistanceScale = 1.5f);
+    /** Apply the current requested city-tree optimization directly to one newly streamed HISM group. */
+    bool ApplyTreeOptimizationToGroup(UHierarchicalInstancedStaticMeshComponent* Group);
     /** Whether a component tag names one of the city tree pieces the tree optimization swaps. */
     static bool IsCityTreePiece(const FName& Tag);
     /** Volumetric fog (the settings menu's "fog" and its sliders, docs/VOLUMETRIC_FOG.md): ground mist lit and shadowed
@@ -151,13 +154,20 @@ private:
     float GroundSize = 0.f;
     FString AppliedHideGroups;
     float AppliedBackdropCull = 0.f;
-    float AppliedScreenSizeCull = 0.f;
-    double NextScreenSizeCullScan = 0.;
-    bool bScreenSizeCullDirty = false;
+    float AppliedScreenSizeCull = -1.f;
+    FDelegateHandle ScreenSizeCullSpawnHandle;
     // Per component under japan.ScreenSizeCull: its uncapped cull distances (start and end; a plain mesh has only the
     // end), what the cap last wrote, and its largest instance's mesh radius for the instance count it was measured at.
     struct FScreenSizeCullState { FIntPoint Base; FIntPoint Written; float Radius = 0.f; int32 Instances = 0; };
+    TSet<TWeakObjectPtr<UStaticMeshComponent>> ScreenSizeCullComponents;
     TMap<TWeakObjectPtr<UStaticMeshComponent>, FScreenSizeCullState> ScreenSizeCullStates;
+    void RegisterScreenSizeCullComponent(UStaticMeshComponent* Component);
+    void RegisterActorScreenSizeCull(AActor* Actor);
+    TSet<TWeakObjectPtr<UHierarchicalInstancedStaticMeshComponent>> RegisteredGroups, RegisteredBackdrops, RegisteredTwins, RegisteredSeeThrough;
+    TSet<TWeakObjectPtr<UStaticMeshComponent>> RegisteredSeaPieces;
+    TMap<TWeakObjectPtr<UHierarchicalInstancedStaticMeshComponent>, FBox> ShadowTwinBounds;
+    float ShadowTwinResidencyElapsed = 0.f;
+    void UpdateShadowTwinResidency(bool bForce = false);
     int32 AppliedPerformanceMode = -1;
     float AppliedTreeSway = -1.f;
     float AppliedForestDetail = -1.f;

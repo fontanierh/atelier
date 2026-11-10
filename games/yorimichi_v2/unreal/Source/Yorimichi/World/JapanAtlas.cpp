@@ -51,9 +51,10 @@ void UJapanMap::InitializeAtlas(const TSharedPtr<FJsonObject>& Root, const FStri
         if (O->TryGetArrayField(TEXT("polygon"),Points)) for (const auto& V:*Points)
         { const auto& A=V->AsArray(); if (A.Num()==2) F.Polygon.Add(FVector2D(A[0]->AsNumber(),A[1]->AsNumber())); }
         FString Colour; if (O->TryGetStringField(TEXT("color"),Colour)) F.Colour=FLinearColor(FColor::FromHex(Colour));
-        UTexture2D* Image=FImageUtils::ImportFileAsTexture2D(Dir/Relative);
-        if (!Image) return false;
-        AtlasTextures.Add(Image); F.Brush.SetResourceObject(Image); F.Brush.ImageSize=FVector2D(Image->GetSizeX(),Image->GetSizeY());
+        F.ImagePath = Dir/Relative;
+        FIntPoint Size;
+        if (!ReadPngHeaderSize(F.ImagePath, Size)) return false;
+        F.Brush.ImageSize=FVector2D(Size.X,Size.Y);
         F.Brush.DrawAs=ESlateBrushDrawType::Image; F.Brush.TintColor=FLinearColor::White;
         return true;
     };
@@ -101,15 +102,40 @@ void UJapanMap::InitializeAtlas(const TSharedPtr<FJsonObject>& Root, const FStri
     if (auto* Store=AtlasNameStore()) Store->Load();
 }
 
+UTexture2D* UJapanMap::EnsureFrameTexture(const FJapanAtlasFrame& Frame) const
+{
+    if (UTexture2D* Existing = Cast<UTexture2D>(Frame.Brush.GetResourceObject())) return Existing;
+    if (Frame.ImagePath.IsEmpty()) return nullptr;
+    UTexture2D* Image = FImageUtils::ImportFileAsTexture2D(Frame.ImagePath);
+    if (!Image) return nullptr;
+    AtlasTextures.Add(Image);
+    Frame.Brush.SetResourceObject(Image);
+    Frame.Brush.ImageSize = FVector2D(Image->GetSizeX(), Image->GetSizeY());
+    return Image;
+}
+
 const FJapanAtlasFrame* UJapanMap::GetAtlasFrame(const FString& Key) const
 {
-    if (Key==TEXT("world")) return WorldFrame.Key.IsEmpty() ? nullptr : &WorldFrame;
-    return AtlasRegions.FindByPredicate([&](const FJapanAtlasFrame& R){return R.Key==Key;});
+    if (Key==TEXT("world"))
+    {
+        if (WorldFrame.Key.IsEmpty()) return nullptr;
+        if (IsOpen()) EnsureFrameTexture(WorldFrame);
+        return &WorldFrame;
+    }
+    const FJapanAtlasFrame* Found = AtlasRegions.FindByPredicate([&](const FJapanAtlasFrame& R){return R.Key==Key;});
+    if (Found && IsOpen()) EnsureFrameTexture(*Found);
+    return Found;
 }
 
 const FSlateBrush* UJapanMap::GetAtlasBrush() const
 {
-    const auto* F=GetAtlasFrame(ActiveRegion); return F ? &F->Brush : &Brush;
+    if (const auto* F = GetAtlasFrame(ActiveRegion))
+    {
+        EnsureFrameTexture(*F);
+        return &F->Brush;
+    }
+    EnsureSheetTexture();
+    return &Brush;
 }
 
 FVector2D UJapanMap::ToAtlas(const FVector& Location, const FString& Region) const
@@ -147,7 +173,9 @@ TArray<FString> UJapanMap::GetAtlasRegionKeys() const
 
 bool UJapanMap::SelectAtlasRegion(const FString& Key)
 {
-    if (!GetAtlasFrame(Key)) return false;
+    const FJapanAtlasFrame* Frame = GetAtlasFrame(Key);
+    if (!Frame) return false;
+    if (IsOpen()) EnsureFrameTexture(*Frame);
     ActiveRegion=Key; SelectedStable.Empty(); SearchText.Empty(); ++AtlasRevision; return true;
 }
 

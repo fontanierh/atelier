@@ -76,6 +76,8 @@ void AV2ScenePatch::BeginPlay()
 
 void AV2ScenePatch::EndPlay(const EEndPlayReason::Type Reason)
 {
+    if (auto* Collision = GetWorld() ? GetWorld()->GetSubsystem<UJapanGameplayCollisionWorld>() : nullptr)
+        Collision->RemoveFixed(this);
     for (TActorIterator<AJapanWorld> It(GetWorld()); It; ++It) It->UnregisterScenePatch(this);
     Super::EndPlay(Reason);
 }

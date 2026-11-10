@@ -11,14 +11,14 @@ play_check = "tools/content/check.py"   # play refuses missing, unhydrated or ch
 
 [play.play]
 # The original desktop defaults: native 1440 window, forward renderer (unreal/Config/DefaultEngine.ini).
-args = ["-game", "-windowed", "-resx=2560", "-resy=1440"]
+args = ["-game", "-windowed", "-ForceRes", "-resx=2560", "-resy=1440"]
 
 [play.fullscreen]
 args = ["-game", "-fullscreen", "-ForceRes", "-resx=2560", "-resy=1440"]
 
 [play.slice]
 # The migrated island map; the historical "slice" profile name remains compatible with authoring tools.
-args = ["/Game/V2/Maps/Slice", "-game", "-windowed", "-resx=2560", "-resy=1440"]
+args = ["/Game/V2/Maps/Slice", "-game", "-windowed", "-ForceRes", "-resx=2560", "-resy=1440"]
 
 [play.megapark]
 # Mega Park in its own standalone level (F26), as the original's profile; the island remains the default.

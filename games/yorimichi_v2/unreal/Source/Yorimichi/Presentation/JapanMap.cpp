@@ -19,6 +19,7 @@
 #include "Engine/Engine.h"
 #include "Engine/GameViewportClient.h"
 #include "Engine/Texture2D.h"
+#include "HAL/FileManager.h"
 #include "ImageUtils.h"
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
@@ -173,7 +174,34 @@ void UJapanMap::Initialize(AWandererCharacter* Pawn)
             if (!Zone.Key.IsEmpty()) Zones.Add(Zone);
         }
     // Ropeway stops use their fitted access path's actual ground end.
-    if(const auto Ropeway=AtelierReadJson(AtelierDataPath(TEXT("gondola/runtime.json"))))
+    // Strip the 21 MB "lines" polyline array before deserializing so map init only parses the ~95 KB "stations" metadata.
+    const auto ReadRopewayStations = []() -> TSharedPtr<FJsonObject>
+    {
+        FString Raw;
+        if (!FFileHelper::LoadFileToString(Raw, *AtelierDataPath(TEXT("gondola/runtime.json")))) return nullptr;
+        const int32 KeyPos = Raw.Find(TEXT("\"lines\""), ESearchCase::CaseSensitive);
+        if (KeyPos != INDEX_NONE)
+        {
+            const int32 Colon = Raw.Find(TEXT(":"), ESearchCase::CaseSensitive, ESearchDir::FromStart, KeyPos + 7);
+            const int32 Open = Colon != INDEX_NONE ? Raw.Find(TEXT("["), ESearchCase::CaseSensitive, ESearchDir::FromStart, Colon + 1) : INDEX_NONE;
+            if (Open != INDEX_NONE)
+            {
+                int32 Depth = 1, K = Open + 1;
+                bool bInStr = false;
+                while (K < Raw.Len() && Depth > 0)
+                {
+                    const TCHAR C = Raw[K];
+                    if (bInStr) { if (C == TEXT('\\')) { K += 2; continue; } if (C == TEXT('"')) bInStr = false; }
+                    else { if (C == TEXT('"')) bInStr = true; else if (C == TEXT('[')) ++Depth; else if (C == TEXT(']')) --Depth; }
+                    ++K;
+                }
+                if (Depth == 0) Raw = Raw.Left(Open + 1) + Raw.Mid(K - 1);
+            }
+        }
+        TSharedPtr<FJsonObject> Parsed;
+        return FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Raw), Parsed) ? Parsed : nullptr;
+    };
+    if(const auto Ropeway=ReadRopewayStations())
         for(const auto& V:Ropeway->GetArrayField(TEXT("stations")))
         {
             const auto S=V->AsObject();const auto& Walk=S->GetArrayField(TEXT("walk_cm"));if(Walk.IsEmpty())continue;
@@ -274,18 +302,56 @@ void UJapanMap::Initialize(AWandererCharacter* Pawn)
         }
     }
     ImageFile = Dir/TEXT("map.png");
-    Texture = FImageUtils::ImportFileAsTexture2D(ImageFile);
-    if (Texture)
+    const bool bHasSheet = ReadPngHeaderSize(ImageFile, SheetImageSize);
+    if (bHasSheet)
     {
-        Brush.SetResourceObject(Texture);
-        Brush.ImageSize = FVector2D(Texture->GetSizeX(),Texture->GetSizeY());
+        Brush.ImageSize = FVector2D(SheetImageSize.X, SheetImageSize.Y);
         Brush.DrawAs = ESlateBrushDrawType::Image;
         Brush.TintColor = FLinearColor::White;
     }
     else UE_LOG(LogTemp,Warning,TEXT("world map: %s failed to load"),*ImageFile);
     InitializeAtlas(Root,Dir);
-    bLoaded = Zones.Num() > 0 && Texture != nullptr;
-    UE_LOG(LogTemp,Display,TEXT("world map: %d zones, sheet %s, bounds x %.0f..%.0f y %.0f..%.0f"),Zones.Num(),Texture ? *FString::Printf(TEXT("%dx%d"),Texture->GetSizeX(),Texture->GetSizeY()) : TEXT("missing"),Bounds.Min.X,Bounds.Max.X,Bounds.Min.Y,Bounds.Max.Y);
+    bLoaded = Zones.Num() > 0 && bHasSheet;
+    UE_LOG(LogTemp,Display,TEXT("world map: %d zones, sheet %s, bounds x %.0f..%.0f y %.0f..%.0f"),Zones.Num(),bHasSheet ? *FString::Printf(TEXT("%dx%d"),SheetImageSize.X,SheetImageSize.Y) : TEXT("missing"),Bounds.Min.X,Bounds.Max.X,Bounds.Min.Y,Bounds.Max.Y);
+}
+
+bool UJapanMap::ReadPngHeaderSize(const FString& Path, FIntPoint& OutSize)
+{
+    OutSize = FIntPoint::ZeroValue;
+    TUniquePtr<FArchive> Reader(IFileManager::Get().CreateFileReader(*Path));
+    if (!Reader || Reader->TotalSize() < 24) return false;
+    uint8 Head[24] = {};
+    Reader->Serialize(Head, 24);
+    if (Reader->IsError()) return false;
+    static const uint8 PngSig[8] = {0x89, 'P', 'N', 'G', 0x0D, 0x0A, 0x1A, 0x0A};
+    if (FMemory::Memcmp(Head, PngSig, 8) != 0 ||
+        Head[12] != 'I' || Head[13] != 'H' || Head[14] != 'D' || Head[15] != 'R')
+        return false;
+    const uint32 W = (uint32(Head[16]) << 24) | (uint32(Head[17]) << 16) | (uint32(Head[18]) << 8) | uint32(Head[19]);
+    const uint32 H = (uint32(Head[20]) << 24) | (uint32(Head[21]) << 16) | (uint32(Head[22]) << 8) | uint32(Head[23]);
+    if (W == 0 || H == 0 || W > 16384 || H > 16384) return false;
+    OutSize = FIntPoint(int32(W), int32(H));
+    return true;
+}
+
+UTexture2D* UJapanMap::EnsureSheetTexture() const
+{
+    if (!Texture && !ImageFile.IsEmpty())
+    {
+        Texture = FImageUtils::ImportFileAsTexture2D(ImageFile);
+        if (Texture)
+        {
+            Brush.SetResourceObject(Texture);
+            Brush.ImageSize = FVector2D(Texture->GetSizeX(), Texture->GetSizeY());
+        }
+    }
+    return Texture;
+}
+
+const FSlateBrush* UJapanMap::GetBrush() const
+{
+    EnsureSheetTexture();
+    return &Brush;
 }
 
 FJapanMarkers* UJapanMap::MarkerStore() const
@@ -476,6 +542,9 @@ void UJapanMap::Open()
     if (IsOpen() || !bLoaded || !Owner || !GEngine || !GEngine->GameViewport) return;
     CloseMarkerBar();
     AtlasCurrentRegion();
+    if (!WorldFrame.Key.IsEmpty()) EnsureFrameTexture(WorldFrame);
+    if (const FJapanAtlasFrame* Active = GetAtlasFrame(ActiveRegion)) EnsureFrameTexture(*Active);
+    else EnsureSheetTexture();
     Widget = MakeJapanAtlasWidget(this);
     GEngine->GameViewport->AddViewportWidgetContent(Widget.ToSharedRef(),19);
     Owner->SetMenuOpen(true);

@@ -50,6 +50,7 @@ static FAutoConsoleCommandWithWorldAndArgs ForwardHarborFillCommand(TEXT("japan.
         UE_LOG(LogTemp,Display,TEXT("FORWARD FILL nominal_lux=%.3f lights=%d"),Lux,Count);
     }));
 
+#include "DesktopPreviewViewportClient.h"
 #include "Engine/Engine.h"
 #include "Engine/GameViewportClient.h"
 #include "UnrealClient.h"
@@ -59,8 +60,9 @@ static FAutoConsoleCommandWithWorldAndArgs ForwardHarborFillCommand(TEXT("japan.
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/HUD.h"
 #include "SceneTexturesConfig.h"
+#include "Widgets/SWindow.h"
 static FAutoConsoleCommandWithWorld PreviewInfoCommand(TEXT("japan.PreviewInfo"),
-    TEXT("Report the fullscreen viewport after startup; desktopnative1440 fixes its render height at native window aspect."),
+    TEXT("Report the fullscreen viewport after startup; DesktopPreviewViewportClient fixes its render height at native window aspect."),
     FConsoleCommandWithWorldDelegate::CreateLambda([](UWorld* World)
     {
         if (!World) return;
@@ -69,16 +71,22 @@ static FAutoConsoleCommandWithWorld PreviewInfoCommand(TEXT("japan.PreviewInfo")
         {
             if (!GEngine || !GEngine->GameViewport || !GEngine->GameViewport->Viewport) return;
             auto* Viewport=GEngine->GameViewport->Viewport;
-            const auto WindowSize=Viewport->GetSizeXY();
+            FIntPoint WindowSize=Viewport->GetSizeXY();
+            if (const TSharedPtr<SWindow> Window=GEngine->GameViewport->GetWindow(); Window.IsValid())
+            {
+                const FVector2D Client=Window->GetClientSizeInScreen();
+                if (Client.X>0 && Client.Y>0) WindowSize=FIntPoint(FMath::RoundToInt(Client.X),FMath::RoundToInt(Client.Y));
+            }
             const double Aspect=double(WindowSize.X)/FMath::Max(1,WindowSize.Y);
-            // macOS native fullscreen can replace -resx/-resy with its scaled
-            // desktop dimensions. Fix the game's render size independently of
-            // the OS window, preserving its aspect instead of stretching 16:9.
-            if (FParse::Param(FCommandLine::Get(),TEXT("desktopnative1440")))
+            if (auto* PreviewClient=Cast<UDesktopPreviewViewportClient>(GEngine->GameViewport);
+                PreviewClient && PreviewClient->IsManaging1440Target())
+            {
+                PreviewClient->RefreshNative1440Target(true);
+            }
+            else if (FParse::Param(FCommandLine::Get(),TEXT("desktopnative1440")) &&
+                     !FParse::Param(FCommandLine::Get(),TEXT("RenderOffScreen")))
             {
                 const uint32 Width=FMath::RoundToInt(1440*Aspect/2)*2;
-                // DesktopPreviewViewportClient creates a separate scene target
-                // before startup. The OS drawable keeps its own native size.
                 Viewport->SetFixedViewportSize(Width,1440);
             }
             const auto Size=Viewport->GetSizeXY();
