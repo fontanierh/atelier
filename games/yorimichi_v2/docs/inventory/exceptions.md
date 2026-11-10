@@ -1,6 +1,6 @@
 # Remaining exceptions to independent editing and recoverable sources
 
-Snapshot: **main `3027366ced` (2026-11-09)**. See [INVENTORY](../INVENTORY.md) for the overall port status.
+Audited snapshot: **main `028bc6243b` (2026-11-10, through #802)**. See [INVENTORY](../INVENTORY.md) for the overall port status.
 The earlier "320 remaining records" total came from a preparation branch before source recovery and object saves;
 it is retired. Counts of records, packages, cells and useful objects are not interchangeable.
 
@@ -21,44 +21,70 @@ For imported content, an editor-saved package is not a substitute for the import
 | Area | Landed | Still open |
 |---|---|---|
 | Brine Cove small props | Eleven placements saved, including the corrected crane/fish-shed split, and the two harbour Soft fragments (#787); the signal mast and the whole shipyard slip are saved as their own objects (see the next row) | Finish any remaining useful fused objects; preserve each whole palm |
-| Brine Cove ships | Nightjar, sloop and Adventure hull placements saved with per-instance hull groups | Retire the three emptied ship tiles and obsolete grouped placements after accepted replacement checks |
+| Brine Cove ships | Nightjar, sloop and Adventure hull placements saved with per-instance hull groups; the three emptied ship tiles and obsolete grouped placements retired in #787 | None for that saved/retired batch |
 | Brine Cove market | All 21 stalls saved on main (market1–3, #786 and #787) | None for the stalls themselves |
 | Brine Cove town | All 265 town objects saved on main (#787); the 42 emptied tiles and the three ship tiles are retired | None for the town objects |
 | Other Brine Cove features | Existing fort, lighthouse and other saved units remain | Other useful objects still bundled in residual tiles need a real object boundary, not just a smaller package. **Signal mast and shipyard slip: saved** (claim MASTSLIP: apply, check, import of 9 records, two object saves). Boundaries from the donor GLBs (`tools/migrate/brinecove_mastslip.py plan`, every triangle matched once): mast 508 triangles in Market pieces 113, 131 (Market_3_4) and 002, 020 (Market_4_4); slip whole, 408 triangles (Harbor_5_3 380, Harbor_5_4 28), of which 206 are taken back from `shipyard-yard` (9,558 to 9,352). The yard re-cut keeps every other yard triangle identical and in order; `brinecove_mastslip.py check` passes |
-| Transport groups | Two ferry terminals, nine gondola route objects, thirteen railway route objects, the ten gondola pylons and the twelve railway fittings saved | Pylon groups and the track-fittings group are retired (`gondola_pylons.py`, `railway_fittings.py`; fittings routed by row, `SM_TK_<mesh>#@<i>`). Preserve route data and moving services while splitting their editing boundaries |
+| Transport groups | Two ferry terminal objects, sixteen gondola objects (including ten pylons) and twenty-four railway objects (including twelve fittings) saved | Pylon groups and the track-fittings group are retired (`gondola_pylons.py`, `railway_fittings.py`; fittings routed by row, `SM_TK_<mesh>#@<i>`). Preserve route data and moving services while splitting their editing boundaries |
 | Area patches (G6) | Saved terrain, ground and scatter patches are legitimate scopes | A patch-name tally is only a candidate list. Any patch that still bundles several useful buildings or props remains unfinished until they are independently editable |
 
 The counts above describe saved definitions and known plans, not a full new geometry audit. Use actual object
 membership, not a name pattern, to decide whether a remaining patch is complete. Do not make useful-object splitting
 optional simply because a patch is legal to save.
 
-## Source closure still to classify
+## Current source classification
 
-At this revision 51 open adopted records have no direct `[[sources]]` and no recipe. Three of them are the already
-linked Adventure/animation records. The other **48 records / 676 packages** comprise:
+This table is derived from canonical `record_paths` at the audited main revision, excluding nested donor
+`asset.toml` inputs. Of 824 adopted records without direct sources or a recipe, 800 use restricted-manifest
+routes and three use the 124 Adventure/animation links. The remaining **21 records / 83 packages** below
+have neither direct sources/recipe nor those manifest routes. This is a classification query, not a claim that
+all 83 packages lack originals, nor a complete recovery backlog: generator records with pinned source files
+can still need recoverable inputs and an accepted import. See [sources](sources.md).
 
-| Family | Records | Packages |
-|---|---:|---:|
-| Residual Belmonte train packages | 7 | 459 |
-| Japan materials (41 prepared in seven adopted records; 2 used leaves are recipe records: see below) | 7 | 41 |
-| Brine Cove plants | 9 | 36 |
-| City tree residual packages | 1 | 36 |
-| Mega Park materials and standalone map | 4 | 25 |
-| Hippodrome | 3 | 23 |
-| Tree house surface materials | 5 | 8 |
-| Skatepark board/materials | 2 | 8 |
-| Belmonte shared materials | 2 | 7 |
-| FX residual packages | 1 | 7 |
-| Japan plaza/harbour textures | 1 | 4 |
-| Bike residual packages | 1 | 2 |
-| Sword camp materials | 1 | 2 |
-| Hidamari surface, racing, see-through and skate runtime | 4 | 4 |
+| Main owner(s) | Records / packages | Current disposition |
+|---|---:|---|
+| `adopted/japan/materials/{bark,buildings,foliage,ground,rock-concrete,sky-wind,water}` | 7 / 41 | The adopted owners remain on this main snapshot. Their parent masters are in #803/#804, but these 41 instance packages still need source closure; a recovered parent does not close its instances |
+| `adopted/hippodrome/materials` | 1 / 5 | Five masters imported in #803's saved branch work; that branch retires this old owner |
+| `adopted/hippodrome/meshes` | 1 / 14 | Four Color textures and ten instances on main. Recovery is a saved working-checkout follow-up to #804; integration is still pending |
+| `adopted/japan/hidamari/surface-flat` | 1 / 1 | `MI_HD_flat` remains open; its parent `M_HDCity` is recovered in #803's saved follow-up |
+| `adopted/japan/treehouse/surface-pane` | 1 / 1 | `MI_TH_pane` remains unresolved; the old flat/glass/rope/trunk records are already retired in main |
+| `adopted/megapark/seam` | 1 / 2 | Two seam instances remain; preserve their two-sided base-property overrides |
+| `adopted/megapark/standalone-level` | 1 / 1 | Saved Unreal map; reference check remains. This is not an imported-model source gap |
+| `adopted/skatepark/{board,materials}` | 2 / 8 | Master recovery is in #803's saved follow-up |
+| `adopted/fx`, `adopted/swordcamp/materials` | 2 / 5 | Master recovery is in #803's saved follow-up |
+| `adopted/japan/assets/bike` | 1 / 2 | `BK_WheelFront` and `BK_WheelRear`: the donor reads exist, but the `Bike.blend` generator is not recorded; recovery remains open |
+| `adopted/racing` | 1 / 1 | `M_RacingTv` is recovered in #803's saved master batch |
+| `adopted/seethrough`, `adopted/skateruntime` | 2 / 2 | `MPC_SeeThrough` and `RuntimeData` still need recoverable generator/settings/input routes; the earlier reads do not establish source closure |
 
-This query is a **classification list**, not a claim that every package lacks an original. Follow references and
-verify origin: procedural materials may need generator inputs; genuinely Unreal-authored maps/settings may use
-saved packages; imported files need their original bytes. Do not relabel unknown imports as editor originals.
+The master follow-ups contain 36 records in #803 and 13 additional Japan masters in #804 (49 total); the latter
+leaves only `MPC_Wind` in `adopted/japan/materials/base-materials`. They supersede the old nineteen-master
+planning list. Their review/integration and the next package checkpoint are tracked in [INVENTORY](../INVENTORY.md).
 
-### Residual Belmonte train records (seven, 459 packages): donor evidence
+## Completed source batches formerly listed as open
+
+| Former backlog | Accepted main/package evidence |
+|---|---|
+| Seven residual Belmonte train records / 459 packages | #796 imported 138 texture and 21 material-instance records (321 instances); all read-back settings/values agree. The old seven owners are retired. The fourteen unused standalone LOD packages were already retired in #790 |
+| Brine Cove plants and city tree residuals / 72 packages | Imported and verified in #794; the old adopted owners are retired |
+| Two used Japan leaf instances | Imported in #792; read-back agrees |
+| First small-families batch / 21 records, 48 packages | #797 imported four Hippodrome loose meshes, seven plaza/treehouse textures and 37 instances in ten records; read-back agrees. Old Hippodrome loose-files, Treehouse flat/glass/rope/trunk and Mega Park wood/pavement owners are retired |
+| Brine Cove carved sources | #787 preserves the fused originals and recorded carve selections; accepted remainders and saved placements remain intact |
+
+These batches are included in package `0adbb5ab212e` at `7719234597`. None needs re-importing to resolve the
+historical wording below. The three Mega Park retail masters and five Hippodrome masters are saved on #803,
+not in that package or this audited main revision.
+
+## Historical donor reads and preparation plans
+
+**Everything below records earlier investigation/preparation, not current status or a queue to execute.**
+The old 48-record / 676-package classification and seven-record train ownership were superseded by the
+accepted batches above. “Prepared”, “not imported”, “need-read”, “held” and “on this branch” below describe
+those original investigation checkpoints. Per-package donor facts, recipes and read reports are retained for
+provenance; current ownership comes from canonical records and the tables above. Do not recreate retired
+records or rerun an accepted batch from these instructions. The small-families and master design inventories
+also retain their original scope rather than being silently rewritten into current owner lists.
+
+### Historical: residual Belmonte train records (seven, 459 packages): donor evidence
 
 The records `adopted/belmontetrain/{baggage-van,brake-van,first-class,locomotive,restaurant,second-class,tender}` hold
 71, 76, 71, 49, 73, 82 and 37 packages (459, after the 14 unused LOD meshes were retired). None has `[[sources]]` or a recipe, and **none is closed**. The donor
@@ -82,7 +108,7 @@ Next step, not run here: textures remain prepared,
 for all 138 donor-backed ids, after the generator's own source record is pinned. The planned records and the
 per-package table are in the next section.
 
-### Residual Belmonte train: planned source records (459 packages, read and agreeing, not imported)
+### Historical: residual Belmonte train source-record plan
 
 Planner: `tools/migrate/belmontetrain_materials.py`. Plan mode (the default) reads the donor and the committed bytes and
 writes nothing; `--table` prints the table below; `--paths` lists the claim's paths and scopes. Nothing is claimed or
@@ -596,7 +622,7 @@ Per package (generated by `belmontetrain_materials.py --table`; every row's valu
 | `/Game/BelmonteTrain/Source/SM_BT_Tender/LOD2/M_BT_Parquet` | `material/belmontetrain/tender-lod2` (material-instance) | SM_BT_Tender_LOD2.glb, parent `MI_Default_Opaque_DS` | all checked facts are in the bytes | settled by the read: parent, textures, values, alpha and bHas* switches agree (belmontetrain-read.json) |
 | `/Game/BelmonteTrain/Source/SM_BT_Tender/LOD2/M_BT_Undercarriage` | `material/belmontetrain/tender-lod2` (material-instance) | SM_BT_Tender_LOD2.glb, parent `MI_Default_Opaque_DS` | all checked facts are in the bytes | settled by the read: parent, textures, values, alpha and bHas* switches agree (belmontetrain-read.json) |
 
-### Brine Cove plants and city tree residuals (72 packages): determined, planned, waiting on two importer steps
+### Historical: Brine Cove plants and city tree residuals (72 packages)
 
 Families: the nine `adopted/brinecove/plant-*` records (36 packages, `/Game/Brinecove/Meshes/SM_BC_Plant_*`) and
 `adopted/experiments/citytrees` (36 packages: 12 `HD_*_v4` LOD chains and 24 `lods/` LOD levels). The planner is
@@ -750,7 +776,7 @@ Per package (generated by `plant_sources.py --table`):
 | `/Game/Experiments/CityTrees/v4/lods/HD_PlazaTreeOrange_LOD2_cell_0_0` | `prop/citytrees/hd-plaza-tree-orange-lod2-cell-0-0` | donor FBX level (standalone); src/HD_PlazaTreeOrange_LOD2_cell_0_0.fbx sha256 `2ea57c81e3…` | slot materials are in the bytes; LOD chain and triangles need the read | determined by the read (agrees); ready for the claimed import |
 | `/Game/Experiments/CityTrees/v4/HD_PlazaTreeOrange_cell_0_0_v4` | `prop/citytrees/hd-plaza-tree-orange-cell-0-0-v4` | citysurfaces original FBX and two donor FBX levels; src/HD_PlazaTreeOrange_cell_0_0.fbx sha256 `372286e4ed…` | slot materials are in the bytes; LOD chain and triangles need the read | determined by the read (agrees); waits on the editor run of the FBX chain-level step |
 
-## Japan materials: source closure (leaves imported; the rest read-confirmed)
+## Historical: Japan material reads and source-closure plan
 
 The seven adopted records `adopted/japan/materials/{bark, buildings, foliage, ground, rock-concrete, sky-wind, water}`
 hold 41 packages, all `MI_*` material instances in `/Game/Japan/Materials`, all `authority = "editor"`. They have no
@@ -946,7 +972,7 @@ inside another asset's source folder. A loose filesystem glob can include stale/
 `verified.json` and `objects.saved.json` distinguish imported packages from saved placements. Keep changes to this
 page and the main inventory in the same content PR; do not mark a family complete from a plan or provisional receipt.
 
-## Small families: source closure plan (read; nothing imported)
+## Historical: small-families source-closure plan
 
 The ten smaller families of "Source closure still to classify" (90 packages in 25 adopted records) are classified by
 `tools/migrate/small_families.py`. Its plan mode reads the committed records, the hydrated bytes (each file matches its
@@ -1314,7 +1340,7 @@ Blockers: the `M_HDCity` master (for the instance); the racing and see-through g
 | `MPC_SeeThrough` | `seethrough` | blocked | - | `report_materials` (material list) |
 | `RuntimeData` | `skateruntime` | blocked | - | no reader in this tree |
 
-### Material instances: agreement with the editor reads (planned, claimable)
+### Historical: material-instance agreement with the editor reads
 
 `tools/migrate/small_instances.py` computes what each generator script writes, from the donor, and compares it with the
 committed full read (`docs/inventory/small-families-reads/instances/`). An instance agrees when its parent, every

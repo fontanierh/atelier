@@ -1,6 +1,6 @@
 # Recoverable sources
 
-Current snapshot: **main `3027366ced` (2026-11-09, PR #786)**. [INVENTORY](../INVENTORY.md) is the
+Current snapshot: **main `028bc6243b` (2026-11-10, through PR #802)**. [INVENTORY](../INVENTORY.md) is the
 status index. The former 1,285 source-less-record / 9,069-package total described `adc324851b`; it is not a
 current backlog. The older family-by-family donor commands are retained in Git history, not a queue to rerun.
 
@@ -8,6 +8,10 @@ current backlog. The older family-by-family donor commands are retained in Git h
 
 - The city batch has **1,048** generated records and accepted imports; the train batch has **67**.
 - The ten-family batch has **141 meshes and 29 textures**; the Japan batch has **100 model records**.
+- #792 imported the two Japan leaf instances; #794 recovered 72 Brine Cove plants/city tree residuals.
+- #796 imported the 138 train textures and 321 instances through 159 records, retiring the seven old owners.
+- #797 imported 21 small-family records covering 48 packages: four Hippodrome loose meshes, seven plaza/treehouse
+  textures and 37 instances. These batches are merged and included in package `0adbb5ab212e`.
 - `restricted.originals.json` has **6,086 original pins**, **6,768 restricted package entries**, and
   **124 open Adventure/animation package links**. Both `problems` and `open_problems` are empty at this revision.
   Restricted entries comprise 3,267 imported, 3,324 keyed, 8 embedded and 169 editor-authored packages.
@@ -20,15 +24,18 @@ it retrieves against the current manifest.
 
 ## What a direct-source count means
 
-Reading canonical records from the Git tree at `3027366ced` gives **6,223 records**: 1,433 adopted,
-2,490 placements, 2,267 static meshes, 31 textures and 2 maps. There are 2,298 generated-authority records.
+Reading canonical records at `028bc6243b` gives **7,219 records**: 1,406 adopted, 2,790 placements,
+2,812 static meshes, 176 textures, 33 material-instance records and 2 maps. There are 3,021
+generated-authority records. These are ownership records, not the 2,750 saved definitions in region receipts.
 Nested donor `asset.toml` files inside another record's source tree are excluded, as `record_paths` requires.
 
-**851 adopted records have neither direct `[[sources]]` nor a recipe:** 800 are restricted and 51 are open.
-This is a metadata query, **not 851 missing originals**: the restricted manifest supplies a separate supported
-source route, and three of the open records have the 124 Adventure/animation links above. The remaining
-48 open records cover 678 packages. They include material/settings packages and residual train packages;
-classify their actual origin and follow their source references before declaring a source gap or closing one.
+**824 adopted records have neither direct `[[sources]]` nor a recipe:** 800 use the restricted manifest and
+24 are public records. Three public records have the 124 Adventure/animation links above. The remaining
+**21 records / 83 packages** are a classification query, not 83 missing originals; see the
+[current table](exceptions.md#current-source-classification). The old 48-record residual list included the now
+recovered train, plant and small-family packages. Material masters with pinned donor sources are outside this
+query, so this total is not the complete master backlog either. #803/#804 hold saved follow-ups not yet on this
+main checkpoint; [INVENTORY](../INVENTORY.md) keeps that distinction explicit.
 
 An imported model needs its model, textures and applicable rig/animation inputs. Generated art needs the generator,
 settings and inputs. A package genuinely authored in Unreal can be its own original. A saved package or an
@@ -36,9 +43,9 @@ ownership map alone does not establish the original of an imported asset.
 
 ## Remaining source work
 
-- Finish source closure for the open material, texture, procedural plant and residual package families identified
+- Finish source closure for the current material/settings and Hippodrome residual rows identified
   in [exceptions.md](exceptions.md). Do not rerun completed mesh imports just to change a tally.
-- **Brine Cove carved tiles keep their fused original** ([PR #787](https://github.com/fontanierh/atelier/pull/787)).
+- **Completed: Brine Cove carved tiles keep their fused original** ([PR #787](https://github.com/fontanierh/atelier/pull/787)).
   Each of the 148 carved tile records pins the fused original and a recorded triangle selection; the remainder is
   derived under `build/yorimichi_v2/` during targeted import and reproduces the accepted remainder byte-identically.
   Accepted package bytes and placements were preserved; the two untouched harbour Soft tiles stay as recovered.

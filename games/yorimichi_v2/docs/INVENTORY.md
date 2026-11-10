@@ -9,6 +9,8 @@ The source baseline `7eec0f98dd` is documented separately in [features](inventor
 
 - **Ported** means the implementation and its committed inputs are present in V2. It does not certify every
   gameplay interaction, appearance or source-recovery requirement.
+- **Prepared** means sources/recipes or plans exist; it does not establish an accepted import.
+- **Merged** means the change is on main. Saved working-branch content is not merged or packaged by implication.
 - **Saved** means committed placements/packages have owner records and receipts. A record for a fused tile
   is not proof that every useful object inside it is independently editable.
 - **Packaged** names the revision that was cooked. Unmerged follow-ups are not included in that package.
@@ -20,7 +22,7 @@ The source baseline `7eec0f98dd` is documented separately in [features](inventor
 
 | Scope | Package `0adbb5ab212e` at `7719234597` | Evidence and limits |
 | --- | --- | --- |
-| Whole island | W00–W20 have committed coverage (29 world region scopes); W14 keeps its disabled baseline. The region records contain 2,450 saved object definitions. | [Regions](../world/regions/), `actors.verified.json`, `objects.saved.json`; these counts are not the number of independently split source models. |
+| Whole island | W00–W20 have committed coverage (29 world region scopes); W14 keeps its disabled baseline. The region receipts contain 2,750 saved object definitions. | [Regions](../world/regions/), `actors.verified.json`, `objects.saved.json`; these counts are not the number of independently split source models. |
 | Recovered models | Merged:<br>- 1,048 city records;<br>- 67 train mesh records, plus 159 train texture and material records (459 packages);<br>- ten families with 141 meshes and 29 textures;<br>- 100 Japan props;<br>- 72 Brine Cove plants and city tree residuals;<br>- the two Japan leaf instances.<br>The first small-families batch (21 records, 48 packages) is merged (#797). | [PR #784](https://github.com/fontanierh/atelier/pull/784), [PR #786](https://github.com/fontanierh/atelier/pull/786), [PR #792](https://github.com/fontanierh/atelier/pull/792), [PR #794](https://github.com/fontanierh/atelier/pull/794), [PR #796](https://github.com/fontanierh/atelier/pull/796); the read-back results are below. Source completeness and remaining fused objects are tracked below. |
 | Restricted and Adventure originals | 6,768 restricted package entries and 124 Adventure/animation entries have source routes; the manifest records 6,086 original pins. | [restricted.originals.json](../restricted.originals.json), [PR #785](https://github.com/fontanierh/atelier/pull/785). Private bytes stay on the pinned restricted route. This is not closure of every open source family. |
 | Brine Cove individual objects | All 21 market stalls, all 265 town objects, the two harbour Soft fragments, eleven small props and three ship objects have saved placements in main ([PR #787](https://github.com/fontanierh/atelier/pull/787)). The signal mast and the shipyard slip are saved, merged and packaged ([PR #798](https://github.com/fontanierh/atelier/pull/798), [PR #800](https://github.com/fontanierh/atelier/pull/800)). Other scenery still includes fused models/patches. | [Brine Cove scope](inventory/brinecove-objects.md), [split work](inventory/brinecove-split.md), [remaining exceptions](inventory/exceptions.md). |
@@ -54,19 +56,29 @@ Saved, prepared and packaged totals are kept separate:
 
     The donor meshes carried one convex hull, which the complex-as-simple recipe drops. That trace flag never
     uses a hull, so collision is unchanged.
-- **Still open:** the 19 generator masters, the Hidamari instance, the Mega Park seams that are still held and MI_TH_pane
-  stay open; see [exceptions](inventory/exceptions.md).
+- **Saved follow-ups, not in main or the package at this documentation checkpoint (`028bc6243b`):**
+  [PR #803](https://github.com/fontanierh/atelier/pull/803) contains 36 material-master records, including the Hidamari
+  parent. [PR #804](https://github.com/fontanierh/atelier/pull/804), based on that work, adds
+  13 Japan masters (49 total); its base-materials adopted record retains only `MPC_Wind`. These supersede
+  the old “19 masters still to start” list, but remain subject to review/integration. Their imported receipts
+  do not upgrade the existing package or constitute final visual acceptance.
+- **Remaining source/detail work:** the Hippodrome mesh residuals (14 packages on main: four Color textures
+  and ten instances), the two Mega Park seam instances with two-sided base-property overrides, the standalone
+  Mega Park map's reference check, `MI_TH_pane`, the Hidamari `MI_HD_flat` instance and the 41 Japan
+  material instances. Parent-master recovery alone does not close their instance records. Hippodrome recovery is an active saved working-checkout
+  follow-up to #804, not main content at this checkpoint. The other current material/settings classification
+  rows and their branch dispositions are in [exceptions](inventory/exceptions.md#current-source-classification).
 
 Remaining construction work:
 - Close the other useful-object/source gaps in [exceptions](inventory/exceptions.md) and
   [sources](inventory/sources.md); an imported package with an unknown original stays unfinished.
-- Merged preparation, not source closure: [PR #799](https://github.com/fontanierh/atelier/pull/799) prepares the
-  material-master records and a recovery inventory for the held generator masters, and
-  [PR #801](https://github.com/fontanierh/atelier/pull/801) adds the four plaza masters and the input recovery list.
-  Neither closes source completeness; the masters close as each family is imported through the material-master route.
-- Integrate the accepted follow-ups and produce the next useful package checkpoint. Keep the existing package
-  available while this proceeds. Forecast (Paris time, unconfirmed): the held source set by about 14:00 on
-  2026-11-10, and the remaining useful-object splitting by about 20:00. Final owner-led playtesting follows construction.
+- Review and integrate the saved master follow-ups above. The earlier #799/#801 preparation and
+  [master recovery design](inventory/master-sources.md) explain their provenance; they are not a second backlog.
+- Produce the next package checkpoint from accepted merged work and retain the existing package. The packaging
+  guard fix merged in [PR #805](https://github.com/fontanierh/atelier/pull/805) is separate from a successful native rerun;
+  no replacement package is claimed here. The six remaining manual acceptance checks and final owner-led
+  gameplay/multiplayer playtesting remain unrecorded. Earlier same-day forecasts are superseded by these
+  evidence-based states; they are not completion promises.
 
 ## Runtime and ownership facts
 
