@@ -209,6 +209,11 @@ remains in the Props tiles is loose furniture (the street and pier barrels and c
 The quay wall, promenade paving and water steps belong to no object. Batch 1's cranes, fish shed, net racks and
 shipyard yard, and the signal mast and slip, are taken first.
 
+`plan` subtracts the mast and slip (and the ships) by their actual triangles, because the generator replay cannot name
+them. A part a later batch carved again counts as its carve remainder, not its source. `plan` refuses an earlier part it
+cannot find; before this fix, such a part was skipped. The donor proof in `check` counts earlier parts the same way.
+Without this, `Harbor_5_3` kept the slip's 188 triangles, and the first harbor1 apply was discarded unmerged.
+
 | Tiles touched | Triangles taken | Tiles remade | Tiles emptied | Records |
 |---|---|---|---|---|
 | 10 | 12,984 (piers 3,672 / 2,868 / 3,180; palms 272 each) | `Harbor_2_3`, `3_3`, `4_2`, `4_3`, `5_3` | 5 (`Harbor_3_2` and the 2_3, 3_3, 4_3, 5_3 Soft tiles) | 32 |

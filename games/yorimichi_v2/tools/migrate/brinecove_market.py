@@ -390,10 +390,48 @@ def prior_objects(region: Path, own: str) -> set[str]:
     return names
 
 
-def compute(glb_dir: Path, src: Path, names: list[str], priors: set[str]) -> dict:
+def _tri_key(corners) -> tuple:
+    return tuple(sorted(split._key(p) for p in corners))
+
+
+def drawn_triangles(game: Path, rid: str, part: dict):
+    """The triangles an earlier part's record draws now: its carve remainder when a later batch carved it again (the
+    shipyard yard after the slip), otherwise its source mesh."""
+    apply_ = _apply()
+    toml = game / 'assets' / rid / 'asset.toml'
+    asset = apply_.records.load_asset(toml) if toml.is_file() else None
+    if asset is not None and asset.derive is not None:
+        return list(split.triangles(apply_.carve.remainder_model(asset.folder, asset.derive)))
+    return list(split.triangles(split.read_glb(game / 'assets' / rid / 'src' / f'{part["mesh"]}.glb')))
+
+
+def prior_keys(game: Path, region: Path, own: str, components: set[str]) -> dict[str, set]:
+    """{object: triangle keys} of the earlier parts in these components' tiles that neither batch 1's radius nor this
+    tool's generator replay can find (the signal mast and shipyard slip, the ships): compute subtracts them by their
+    actual triangles."""
+    order = list(BATCHES)
+    mine = own[len('split-'):-len('.json')]
+    later = set(order[order.index(mine) + 1:]) if mine in order else set()
+    keys: dict[str, set] = {}
+    for path in prior_files(region, own):
+        if path.name[len('split-'):-len('.json')] in later:
+            continue
+        for rid, part in json.loads(path.read_text())['parts'].items():
+            obj = part['object']
+            if obj in split.OBJECTS or any(obj.startswith(prefix) for prefix in COMPONENT_OF):
+                continue
+            keys.setdefault(obj, set())
+            if any(t.split('_')[0] in components for t in part['tiles']):    # elsewhere: known, takes nothing here
+                keys[obj].update(_tri_key(c) for _, c in drawn_triangles(game, rid, part))
+    return keys
+
+
+def compute(glb_dir: Path, src: Path, names: list[str], priors: set[str], keys: dict[str, set] | None = None) -> dict:
     """The split in `split.compute`'s shape: owned[tile] = {object: [ordinals], '': [remainder ordinals]}.
     Triangles of objects in `priors` are left out of every list (an earlier batch took them); `prior_count[tile]`
-    counts them, so remainder + parts + prior = the donor tile."""
+    counts them, so remainder + parts + prior = the donor tile. A prior that is neither a radius cut nor generated here
+    is found by its triangles in `keys` (prior_keys); a prior found by none of the three is an error."""
+    keys = keys or {}
     out = {'models': {}, 'tris': {}, 'owned': {}, 'prior': {}, 'problems': []}
     radius = {n: split.OBJECTS[n] for n in priors if n in split.OBJECTS}
     radial = split.compute(glb_dir, radius) if radius else {'owned': {}, 'tris': {}}
@@ -402,11 +440,19 @@ def compute(glb_dir: Path, src: Path, names: list[str], priors: set[str]) -> dic
         for stem, owners in gen['owner'].items():
             tris = gen['tris'][stem]
             taken = set()
+            tri_keys = None
             for obj in priors:
                 if obj in radius:
                     taken |= set(radial['owned'].get(stem, {}).get(obj, ()))
-                else:
+                elif obj in keys:
+                    if tri_keys is None:
+                        tri_keys = [_tri_key(c) for _, c in tris]
+                    taken |= {i for i, k in enumerate(tri_keys) if k in keys[obj]}
+                elif any(obj.startswith(prefix) for prefix in COMPONENT_OF):
                     taken |= {i for i, o in enumerate(owners) if o == obj}
+                else:
+                    out['problems'].append(f'{stem}: no way to find the earlier part {obj} (not a radius cut, not '
+                                           'generated here, no triangles given)')
             owned = {n: [] for n in names}
             owned[''] = []
             for i, o in enumerate(owners):
@@ -446,7 +492,8 @@ def build(game: Path, donor: Path, src: Path, stage: Path, batch: str, names: li
     region = game / 'world' / 'regions' / apply_.REGION
     own = f'split-{batch}.json'
     glb_dir = donor / 'brinecove' / 'glb'
-    done = compute(glb_dir, src, names, prior_objects(region, own))
+    done = compute(glb_dir, src, names, prior_objects(region, own),
+                   prior_keys(game, region, own, {component_of(n) for n in names}))
     if done['problems']:
         raise apply_.SplitError('the partition does not hold: ' + '; '.join(done['problems'][:3]))
     stage.mkdir(parents=True, exist_ok=True)
@@ -569,14 +616,17 @@ def check(game: Path, donor: Path | None, batch: str, retired: bool = False, gro
     for stem in exp['tiles']:
         sources += list(split.triangles(split.read_glb(glb_dir / f'SM_BC_{stem}.glb')))
     files = [game / 'assets' / rid / 'src' / f'{p["mesh"]}.glb' for rid, p in exp['parts'].items()]
-    for other in prior_files(region, f'split-{batch}.json'):          # earlier batches' parts cut from the same tiles
-        old = json.loads(other.read_text())
-        files += [game / 'assets' / rid / 'src' / f'{p["mesh"]}.glb' for rid, p in old['parts'].items()
-                  if set(p['tiles']) & set(exp['tiles'])]
     for f in files:
         if not f.is_file() or records.is_lfs_pointer(f):
             return problems + [f'{f.name}: not hydrated, the donor proof is skipped']
         pieces.append(list(split.triangles(split.read_glb(f))))
+    for other in prior_files(region, f'split-{batch}.json'):          # earlier batches' parts cut from the same tiles
+        for rid, p in json.loads(other.read_text())['parts'].items():
+            if set(p['tiles']) & set(exp['tiles']):
+                try:
+                    pieces.append(drawn_triangles(game, rid, p))   # a part carved again draws its carve remainder
+                except (OSError, ValueError, apply_.carve.CarveError):
+                    return problems + [f'{rid}: not hydrated, the donor proof is skipped']
     for s, t in exp['tiles'].items():                                   # the remainders are derived, never read from src
         if t['remainder']:
             asset = records.load_asset(game / 'assets' / t['record'] / 'asset.toml')

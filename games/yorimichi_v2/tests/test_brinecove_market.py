@@ -572,3 +572,28 @@ def test_donor_harbor1_piers_and_palms_are_whole():
                 counts[name] = counts.get(name, 0) + len(members)
     assert counts['harbor-pier-central'] == 3672 and counts['harbor-pier-east'] == 3180 and counts['harbor-pier-west'] == 2868
     assert {counts[n] for n in market.BATCHES['harbor1'] if 'palm' in n} == {272}
+
+
+def _fake_tile(monkeypatch, owners):
+    """One Harbor tile of len(owners) triangles, owned as given, for compute without the donor."""
+    tris = [('stone', ((i, 0.0, 0.0), (i, 1.0, 0.0), (i, 0.0, 1.0))) for i in range(len(owners))]
+    monkeypatch.setattr(market, 'generated_owners', lambda glb, src, component: {
+        'owner': {'Harbor_1_1': list(owners)}, 'tris': {'Harbor_1_1': tris}, 'models': {'Harbor_1_1': {}}})
+    return tris
+
+
+def test_compute_takes_out_a_non_generated_earlier_part_by_its_triangles(monkeypatch):
+    """An earlier part that is neither a radius cut nor generated here (the shipyard slip) is subtracted by its actual
+    triangles, so the remainder does not draw it a second time."""
+    tris = _fake_tile(monkeypatch, ['harbor-pier-west', None, None, None])
+    slip = {market._tri_key(tris[2][1])}
+    done = market.compute(Path('unused'), Path('unused'), ['harbor-pier-west'], {'shipyard-slip'}, {'shipyard-slip': slip})
+    assert done['problems'] == []
+    assert done['owned']['Harbor_1_1'] == {'harbor-pier-west': [0], '': [1, 3]} and done['prior']['Harbor_1_1'] == 1
+
+
+def test_compute_refuses_an_earlier_part_it_cannot_find(monkeypatch):
+    """Without its triangles, such a part used to be skipped silently (its triangles stayed in the remainder)."""
+    _fake_tile(monkeypatch, ['harbor-pier-west', None])
+    done = market.compute(Path('unused'), Path('unused'), ['harbor-pier-west'], {'shipyard-slip'})
+    assert any('no way to find the earlier part shipyard-slip' in p for p in done['problems'])
