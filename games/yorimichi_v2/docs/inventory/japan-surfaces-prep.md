@@ -7,10 +7,11 @@ Its removal set is exactly `M_Painted`, `M_Foliage`, `M_Grass`, and `M_Village` 
 the native controller must reconcile the family's baseline `keeps` with the adopted record's current outputs after the
 sea and sky families. Keep the remaining packages and their source tree; do not apply a stale kept set.
 
-The builder embeds the donor's atmosphere/sea constants, foliage fade and fresh camera-fade graph. It uses the existing
-one-source material-master mechanism. No donor module is imported at runtime; no builder writes another package or saves
-its own. Village is not camera-fade patched in the donor. Painted stays opaque; its selected instances already enable
-masking. Foliage and grass retain their own cutoffs, and shadow passes retain the silhouette.
+The builder uses the separately pinned `master_haze.py` helper for the donor atmosphere/sea constants and graph.
+The family declares that helper, and the importer loads only its pinned record sources in a private module namespace.
+Foliage and fresh camera-fade graphs remain in the surface builder. No donor module is imported at runtime; no builder
+writes another package or saves its own. Village is not camera-fade patched in the donor. Painted stays opaque; its selected
+instances already enable masking. Foliage and grass retain their own cutoffs, and shadow passes retain the silhouette.
 
 ## Pinned donor sources
 
@@ -29,7 +30,7 @@ All paths below are relative to the donor's `games/yorimichi/`. Existing V2 orig
 | `world/gen_textures.py` | `5b8b93fe242873529e1a781a994fd3be9309a6aa3af56fb3b7d07b971e27aaf6` |
 
 The atmosphere uses `HAZE_CM=900000`, `START_CM=3000`, `HORIZON=(.126,.311,.720)`, `FAR=.74`, and rounded
-`FAR_COLOUR=(.0932,.2301,.5328)`. The embedded HLSL and node-call traces match the donor, including the final
+`FAR_COLOUR=(.0932,.2301,.5328)`. The helper HLSL and complete node-call traces match the donor, including the final
 `see_through.world_materials()` overlay on the three shared parents.
 
 ## Explicit inputs and remaining acceptance
@@ -44,6 +45,9 @@ The atmosphere uses `HAZE_CM=900000`, `START_CM=3000`, `HORIZON=(.126,.311,.720)
 - Grass receives the installed engine material function `/Engine/Functions/Engine_MaterialFunctions02/Utility/DitherTemporalAA`
   through declared reads, as supported by the importer. Its default texture is white, as in the donor; grass instances
   carry their painted grass textures.
+
+Integration must include the declared-helper planner and loader before applying this family. The helper source is copied
+and pinned beside the builder in each generated record; changing it makes those records stale.
 
 Before accepting native imports, the shared digest needs material settings `dithered_lod_transition` and
 `tangent_space_normal`, plus expression properties `collection`, `g`, `b`, `a`, `material_function`,

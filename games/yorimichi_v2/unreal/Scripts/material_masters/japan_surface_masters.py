@@ -1,11 +1,13 @@
 """Four Japan surface masters prepared from donor 7eec0f98dd; no native acceptance is claimed here.
 
 The generator graphs, HLSL, node order and constants come from shared_materials.py (M_Painted,
-M_Foliage, M_Grass) and import_village.py (M_Village). Atmosphere, sea_look, foliage and camera fade helpers
-are embedded in this one pinned builder, as required by the material-master importer. There are no
-runtime donor imports. Reads are supplied by the importer, and only the importer saves packages.
+M_Foliage, M_Grass) and import_village.py (M_Village). The separately pinned master_haze helper owns
+the shared atmosphere/sea constants and graph. Foliage and camera fading remain in this builder.
+There are no runtime donor imports. Reads are supplied by the importer; only the importer saves packages.
 Source hashes and the native comparison requirements are in docs/inventory/japan-surfaces-prep.md.
 """
+from . import master_haze as haze
+
 try:
     import unreal
 except ImportError:
@@ -36,58 +38,6 @@ def _finish(material):
     unreal.MaterialEditingLibrary.recompile_material(material)
     return material
 
-
-# sea_look.py: the constants and literal formatting used by atmosphere.py.
-
-
-def num(x):
-    """HLSL float literal"""
-    return repr(float(x))
-
-def f3(c):
-    """HLSL float3 literal"""
-    return 'float3(%s)' % ','.join(num(x) for x in c)
-
-HORIZON = (0.126, 0.311, 0.720)
-HAZE_CM = 900000.0
-FAR = 0.74
-FAR_COLOUR = tuple(round(c * FAR, 4) for c in HORIZON)
-START_CM = 3000.0
-COLOUR = FAR_COLOUR
-SHARE = f'saturate(1-exp(-max(D-{num(START_CM)},0)/{num(HAZE_CM)}))'
-
-
-def code_base(expr='B'):
-    """HLSL return statement: the base colour expr with the haze's share taken out (needs input D)."""
-    return f'return ({expr})*(1-{SHARE});'
-
-def code_glow(expr='E'):
-    """HLSL return statement: the emissive expr hazed, plus the haze colour (needs input D)."""
-    return f'float h={SHARE}; return ({expr})*(1-h)+{f3(COLOUR)}*h;'
-
-def _custom(m, code, inputs, x, y):
-    MEL = unreal.MaterialEditingLibrary
-    n = MEL.create_material_expression(m, unreal.MaterialExpressionCustom, x, y)
-    n.set_editor_property('code', code)
-    n.set_editor_property('output_type', unreal.CustomMaterialOutputType.CMOT_FLOAT3)
-    args = []
-    for name, _, _ in inputs:
-        a = unreal.CustomInput(); a.set_editor_property('input_name', name); args.append(a)
-    n.set_editor_property('inputs', args)
-    for name, src, out in inputs:
-        assert MEL.connect_material_expressions(src, out, n, name), name
-    return n
-
-def apply(m, base, glow=None, base_out='', glow_out='', x=400, y=0):
-    """Nodes for base colour and emissive with the haze applied; glow None: the material had no emission."""
-    MEL = unreal.MaterialEditingLibrary
-    depth = MEL.create_material_expression(m, unreal.MaterialExpressionPixelDepth, x - 200, y + 300)
-    b = _custom(m, code_base(), [('B', base, base_out), ('D', depth, '')], x, y)
-    if glow is None:
-        g = _custom(m, f'float h={SHARE}; return {f3(COLOUR)}*h;', [('D', depth, '')], x, y + 200)
-    else:
-        g = _custom(m, code_glow(), [('E', glow, glow_out), ('D', depth, '')], x, y + 200)
-    return b, g
 
 def enable_distance_fade(material):
     # HISM only blends LODs when EVERY section opts in, including opaque bark.
@@ -164,8 +114,8 @@ def _shared_material(package, white, *, masked=False, mpc=None):
     mul0 = MEL.create_material_expression(m, U.MaterialExpressionMultiply, -350, 100)
     MEL.connect_material_expressions(tex, 'RGB', mul0, 'A')
     MEL.connect_material_expressions(tint, '', mul0, 'B')
-    mul, haze = apply(m, mul0, x=260, y=300)
-    MEL.connect_material_property(haze, '', U.MaterialProperty.MP_EMISSIVE_COLOR)
+    mul, haze_glow = haze.apply(unreal, m, mul0, x=260, y=300)
+    MEL.connect_material_property(haze_glow, '', U.MaterialProperty.MP_EMISSIVE_COLOR)
     if masked:
         vc = node(m, U.MaterialExpressionVertexColor, -350, -150)
         gg = node(m, U.MaterialExpressionComponentMask, -200, -150, r=False, g=True, b=False, a=False)
@@ -421,7 +371,7 @@ def village_material(package, reads):
     arg=unreal.CustomInput();arg.set_editor_property('input_name','C');fill.set_editor_property('inputs',[arg])
     link(linear,'',fill,'C')
     # aerial perspective shared with the sea and the land (atmosphere.py)
-    base,glow=apply(m,linear,fill,x=420,y=0)
+    base,glow=haze.apply(unreal,m,linear,fill,x=420,y=0)
     assert MEL.connect_material_property(base,'',unreal.MaterialProperty.MP_BASE_COLOR)
     assert MEL.connect_material_property(glow,'',unreal.MaterialProperty.MP_EMISSIVE_COLOR)
     wind=node(unreal.MaterialExpressionCustom,400,850,

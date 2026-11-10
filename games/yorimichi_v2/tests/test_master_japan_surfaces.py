@@ -5,7 +5,6 @@ asset creation/loading/saving/compilation calls are excluded; graph calls and ma
 The port is compared to those traces. Native before/after acceptance is still the controller's work.
 """
 import hashlib
-import importlib.util
 import inspect
 import sys
 from pathlib import Path
@@ -15,14 +14,16 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'tools/content'))
 sys.path.insert(0, str(ROOT / 'tools/migrate'))
+sys.path.insert(0, str(ROOT / 'unreal/Scripts'))
 import records  # noqa: E402
 import master_records as planner  # noqa: E402
+import master_sources  # noqa: E402
 
 FAMILY = planner.load_families()['japan_surfaces']
 MASTERS = {row['builder']: row for row in FAMILY['masters']}
-spec = importlib.util.spec_from_file_location('v2_japan_surfaces', planner.builder_path(FAMILY))
-builders = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(builders)
+sources = planner.builder_sources(FAMILY)
+with master_sources.builder(sources, 'painted_material') as entry:
+    builders = sys.modules[entry.__module__]
 
 
 class Recorder:
@@ -83,6 +84,7 @@ def named(log, method):
 def test_family_names_exactly_the_four_reserved_masters_and_all_reads_have_owners():
     assert {row['package'].rsplit('/', 1)[1] for row in MASTERS.values()} == {
         'M_Painted', 'M_Foliage', 'M_Grass', 'M_Village'}
+    assert FAMILY['helpers'] == ['master_haze.py']
     assert not set(FAMILY['keeps']) & {row['package'] for row in MASTERS.values()}
     for row in MASTERS.values():
         inspect.signature(getattr(builders, row['builder'])).bind(row['package'], {}, **row['arguments'])
@@ -137,8 +139,8 @@ def test_foliage_keeps_the_wind_collection_and_both_parameter_names():
 
 
 def test_haze_keeps_the_donor_depth_and_colours():
-    assert builders.code_base() == 'return (B)*(1-saturate(1-exp(-max(D-3000.0,0)/900000.0)));'
-    assert builders.code_glow() == ('float h=saturate(1-exp(-max(D-3000.0,0)/900000.0)); '
+    assert builders.haze.code_base() == 'return (B)*(1-saturate(1-exp(-max(D-3000.0,0)/900000.0)));'
+    assert builders.haze.code_glow() == ('float h=saturate(1-exp(-max(D-3000.0,0)/900000.0)); '
                                     'return (E)*(1-h)+float3(0.0932,0.2301,0.5328)*h;')
 
 
