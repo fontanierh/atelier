@@ -1308,3 +1308,30 @@ Blockers: the FBX generator inputs are not yet recorded; no static-mesh reader i
 |---|---|---|---|---|
 | `BK_WheelFront` | `japan/assets/bike` | need-read | Japan/Materials/M_Bike, Japan/Materials/M_Bike | no reader in this tree |
 | `BK_WheelRear` | `japan/assets/bike` | need-read | Japan/Materials/M_Bike, Japan/Materials/M_Bike | no reader in this tree |
+
+### Sword camp materials (1 record, 2 packages)
+
+Donor evidence: `unreal/Scripts/import_swordcamp.py` creates `M_SwordCamp` in `/Game/SwordCamp/Materials` (`:47-51`) and
+`M_RoninBody` (`:117-122`), and imports the atlas `T_SwordCampAtlas` (`:29-39`) from the donor build's
+`build/yorimichi/swordcamp/swordcamp_atlas.jpg`. That JPG is made by `world/regions/swordcamp/make_atlas.py` (the donor's
+`world.swordcamp_atlas` step, `build.py:1147-1149`), so the atlas is generated art with its generator recorded.
+
+Byte evidence: `M_SwordCamp` and `M_RoninBody` each reference only `/Game/SwordCamp/Textures/T_SwordCampAtlas`, which
+`texture/swordcamp/atlas` owns. Neither names any other package.
+
+Status per record: **blocked** (`adopted/swordcamp/materials`). Both packages are material masters built by Unreal-script
+graphs, and this tree has no importer for a material master (the same blocker as the skatepark masters). Their one
+texture input is determined and owned, so the only missing piece is the graph, which needs a native read of the saved
+nodes. The atlas is not a blocker.
+
+Native reads still needed (read-only; editor and clean hydrate): a read of the two masters' saved graphs and their atlas
+parameter. No reader for master graphs is in this tree (`report_materials.py` reads material instances only).
+
+Blockers: no importer for material masters; no native graph read.
+
+- `adopted/swordcamp/materials`: generator masters M_SwordCamp and M_RoninBody. Evidence: import_swordcamp.py:47-51 (M_SwordCamp), :117-122 (M_RoninBody); atlas import :29-39. Status: **blocked**. no importer for material masters (as the skatepark masters); the atlas T_SwordCampAtlas is owned by texture/swordcamp/atlas
+
+| Package | Record | Status | Inputs (owner records) | Native read still needed |
+|---|---|---|---|---|
+| `M_RoninBody` | `swordcamp/materials` | blocked | SwordCamp/Textures/T_SwordCampAtlas | `report_materials` (material list) |
+| `M_SwordCamp` | `swordcamp/materials` | blocked | SwordCamp/Textures/T_SwordCampAtlas | `report_materials` (material list) |
