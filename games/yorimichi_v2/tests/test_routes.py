@@ -135,7 +135,7 @@ def test_the_committed_route_objects_hold_every_real_entry_once(region):
 
 
 def whole_groups(held, region):
-    """Railway group rows ("mesh#key@i", railway_fittings.py) folded back into their group: a group is held once, either
+    """Railway group rows ("mesh#key@i", from the retired railway_fittings.py) folded back into their group: a group is held once, either
     whole or as every one of its rows, never both."""
     if region != RAILWAY:
         return held
