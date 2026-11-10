@@ -78,6 +78,36 @@ After a representative small edit, inspect `--changes` to see which named-produc
 stayed identical. Unknown baselines need another comparable successful build before drawing conclusions. Use
 these measured boundaries to choose smaller owners; a report of retired content is not a deletion command.
 
+## Make a model independent before editing it
+
+**An agent or human changing a generated model must first give that model an independent generation route.**
+This is required even when it already has a separate exported GLB/FBX, Unreal mesh or saved placement. Those
+make the result separately editable; they do not prove its source can regenerate independently.
+
+1. Find the model's source, generator, parameters and import owner. Check that the selected route constructs
+   only that model, rather than generating its whole city, region or collection and filtering the result.
+2. If the generator is still broad, first parameterize it with a model selection and explicit inputs, or
+   extract a separate script for the model. Select before constructing geometry. Keep reusable geometry helpers
+   shared, and read declared terrain or other shared query inputs without rebuilding unrelated sibling models.
+3. Preserve the existing appearance and behaviour during the split: geometry, materials, UVs, collision, LODs
+   and placements. Use a focused comparison of the selected output and any affected dependents; reuse existing
+   evidence and do not turn this into a whole-game benchmark or unrelated test run.
+4. Record the targeted generation and import commands and their inputs with the asset or its owning recipe.
+   Then make the requested geometry change through that route and rebuild only the model and real dependents.
+   Preserve original-source bytes, other assets' outputs and the existing ownership and machine protections.
+
+For example, changing one barrel's shape starts with a selected barrel builder and its settings. A shared
+`barrel(settings)` helper is sufficient; a separate copy of the helper per placed barrel is unnecessary.
+Generating the entire harbour and then extracting the barrel is not an independent generation route.
+
+Imported and hand-authored models need an independent editable original and targeted preparation/import route,
+not a fabricated procedural generator. External and AI-generated originals remain pinned source inputs.
+Moving an existing placement does not require regenerating its model.
+
+This is a prerequisite for the model being edited, not a requirement to refactor every untouched model first.
+It applies to V2's explicit authoring work; V2's normal build still validates and compiles without generating
+content. The enforceable rule is `independent-generator-before-model-edit` in [games/CONTRACTS](../games/CONTRACTS).
+
 ## Separate assets from their placement
 
 Keep a reusable library for trees, rocks, street furniture, building kits, vehicles, character parts, materials

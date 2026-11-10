@@ -64,6 +64,21 @@ materials or placements from outside. A ground function MUST serve every consume
 collision and placement). A check MAY recompute independently as an oracle, but MUST NOT replace the
 shared function.
 
+@cc [owner:fontanierh,label:architecture] independent-generator-before-model-edit
+Before an agent or human changes the geometry of a specific generated model, its owning authoring route MUST
+first support generating that model from explicit parameters and recoverable inputs without constructing
+unrelated models. If the existing generator builds a whole city, region or unrelated collection, the first
+change MUST parameterize it to select the model before geometry construction, or extract a separate model
+script. Shared helpers MUST remain shared. Separate exported files, Unreal assets or cutting the model out
+after generating the collection do not satisfy this requirement. The extraction/refactor MUST preserve the
+accepted geometry, materials, UVs, collision, LODs and placements before the requested model change is applied.
+The asset MUST identify its generation inputs and targeted generation/import route; extraction MUST preserve
+pinned originals and other owners' outputs. Declared shared terrain/query inputs MAY be read, and genuine dependents MAY
+be rebuilt, without regenerating unrelated sibling geometry. An imported or hand-authored model instead MUST
+have an independent editable original and targeted preparation/import route; it does not need a new procedural
+generator. This authoring rule applies to Yorimichi V2 as well: its normal build remains validation/compilation
+only, and explicit generation/import retains the existing claims, guards and save checks.
+
 @cc [owner:fontanierh,label:performance] edits-rebuild-locally
 An edit to one region, asset or feature MUST rebuild only the products that actually read it. This rule
 governs generating build graphs; it does not apply to games/yorimichi_v2, whose normal build generates
