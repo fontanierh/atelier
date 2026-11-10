@@ -86,3 +86,8 @@ def test_the_well_formed_settings_load(tmp_path):
         tmp_path, 'srgb = true\ncompression = "TC_NORMALMAP"\nmax_texture_size = 1024\n'
                   'lod_group = "TEXTUREGROUP_WORLD"\naddress = "wrap"\n'))
     assert asset.recipe['settings']['max_texture_size'] == 1024
+
+
+def test_mirror_addressing_is_stated_and_checked(tmp_path):
+    asset = records.load_asset(write_record(tmp_path, 'address = "mirror"\n'))
+    assert asset.recipe['settings']['address'] == 'mirror'
