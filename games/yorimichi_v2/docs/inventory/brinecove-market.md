@@ -1,6 +1,6 @@
-# Brine Cove market stalls and town houses as individual objects (G4a, market and town)
+# Brine Cove stalls, town houses and harbour props as individual objects
 
-Snapshot: **main `028bc6243b` (2026-11-10)**. All 21 market stalls and all 265 town objects are saved and merged
+Historical market/town checkpoint: **main `028bc6243b` (2026-11-10)**. All 21 market stalls and all 265 town objects are saved and merged
 ([PR #787](https://github.com/fontanierh/atelier/pull/787)), and included in package `0adbb5ab212e`.
 Town counts: `town1` 7, `town2` 25, `town3` 31, `town4` 45, `town5` 28, `town6` 33, `town7` 30,
 `town8` 26, `town9` 40. The 42 emptied town tiles are retired. The initial town2 import was reverted after a name
@@ -53,8 +53,9 @@ merged PR #787; the town batches are complete. Do not reapply the older naming r
 ## Ownership after a batch
 
 Same as batch 1. Each part becomes `prop/brinecove/<object>` (`-soft` for a part cut from a Soft tile; no collision),
-render, complex collision and LOD copied from the tile; each touched tile record on this revision keeps its remainder (new source,
-sha256, triangle count and slot list). A new `object/brinecove/<object>` placement (identity transform, same flags as the
+with render, collision and LOD settings copied from the tile. A surviving tile record retains its full pinned donor GLB
+and a pinned carve selection; the derived remainder has its own triangle count and slot list. The source GLB is not
+overwritten with that remainder. A new `object/brinecove/<object>` placement (identity transform, same flags as the
 tile) is added to `objects.toml`; the existing `object/brinecove/market-3-4`, `market-4-4`, `market-3-3`, `market-4-3`
 and `townlower-*` placements keep their groups and now draw the remainders.
 
@@ -63,18 +64,29 @@ replace in-place source mutation, and no accepted package was re-imported.
 
 ## Controller sequence
 
+Choose an unfinished named batch from the current plan; `market1`–`market3`, `town1`–`town9` and `props1` below are
+completed evidence, not a work queue. Replace the placeholders with the selected batch, its changed record IDs and
+its object IDs.
+
+Size the import queue to the prepared, dependency-ready set of one asset kind, within the session's memory ceiling and
+deadline. The former `--batch 8` example was not a limit: `props1` had 26 static-mesh records that could share one
+headless queue. The caller still splits kinds and dependency boundaries, checks each job's claim and saves, and
+preserves completed work for retry. Keep one controller for shared packages; do not change code during its session.
+
 ```
 D=DONOR_BUILD_DIR
+V2_SPLIT_BATCH=UNFINISHED_BATCH_NAME
+V2_IMPORT_BATCH_SIZE=READY_RECORD_COUNT
 bc_market() { uv run python games/yorimichi_v2/tools/migrate/brinecove_market.py "$@"; }
 git lfs pull --include="games/yorimichi_v2/unreal/Content/Data/brinecove/runtime.json"
-bc_market plan  --batch market1 --donor "$D"          # parts, remainders, tile arithmetic
-bc_market paths --batch market1 --donor "$D"          # claim exactly the 'apply' list (--json for the scopes)
-bc_market apply --batch market1 --donor "$D" --claim TASK
+bc_market plan  --batch "$V2_SPLIT_BATCH" --donor "$D"  # parts, remainders, tile arithmetic
+bc_market paths --batch "$V2_SPLIT_BATCH" --donor "$D"  # claim exactly the 'apply' list (--json for the scopes)
+bc_market apply --batch "$V2_SPLIT_BATCH" --donor "$D" --claim TASK
 # Use the explicit changed record IDs from this batch plan.
-uv run python games/yorimichi_v2/tools/import/run.py ID... --claim TASK --batch 8
+uv run python games/yorimichi_v2/tools/import/run.py ID... --claim TASK --batch "$V2_IMPORT_BATCH_SIZE"
 # Repeat --only once for each object ID from the batch plan.
 uv run python games/yorimichi_v2/tools/migrate/objects.py region/w09-brinecove --environment region/w00-island --claim TASK --only OBJECT_ID_1 --only OBJECT_ID_2
-bc_market check --batch market1 --donor "$D"          # counts, bounds, drawn once, and donor tile = parts + remainder + earlier parts
+bc_market check --batch "$V2_SPLIT_BATCH" --donor "$D"  # counts, bounds, drawn once, and donor tile = parts + remainder + earlier parts
 uv run python games/yorimichi_v2/tools/content/check.py
 ```
 
@@ -118,7 +130,7 @@ are both drawn. After accepted imports and `check`, retire them under the same c
    cannot change its groups, so these actors must be saved again.
 3. `records` (after the placements were saved again): deletes the emptied tile records and package files.
 
-The stages take `--batch all` (every market and town batch, in apply order) or a comma list. Each stage runs its batches
+The stages take `--batch all` (every market, town and props batch, in apply order) or a comma list. Each stage runs its batches
 in turn, and the placements stage deletes each placement once for the union, so the same actors are not re-saved per batch.
 Batches with nothing emptied are skipped. The placements are found from their records as well as from objects.toml,
 because the groups stage removes the groups from objects.toml but not from a record. A rerun of the placements stage finds
@@ -145,6 +157,9 @@ Retirements use the authorized journal path/scope set and refuse unrelated or st
 
 ## Harbour props (`props1`)
 
+Saved and merged in [PR #813](https://github.com/fontanierh/atelier/pull/813), main `f651f34e8f`. These objects are not
+in package `c89f535441be` at `da0a41f891`; see [INVENTORY](../INVENTORY.md) for the current packaged checkpoint.
+
 `props1` is the first batch of the fused `Props` component: the 4 rowboats, 3 buoys and 6 potted palms of
 `procedural/props.py`, owned by their placement loops like the stalls and lots (`props-<key>`, for example
 `props-rowboat-w155`, `props-buoy-e190`, `props-potted-palm-w40`). Each loop body owns its whole object. Nothing is
@@ -154,6 +169,7 @@ nobody's in these loops, and batch 1's radius cuts are left alone.
 |---|---|---|---|---|
 | 12 | 2,100 | 7 hard (`Props_2_3`, `2_4`, `3_2`, `3_4`, `4_2`, `4_4`, `5_4`) | 5 (`Props_5_2` and the 2_4, 3_4, 4_4, 5_4 Soft tiles) | 26 |
 
-The emptied tiles are retired with the three stages above (`--batch props1`), and placements `props-2-4`, `3-4`, `4-4`,
-`5-2` and `5-4` are saved again. If an object save fails after it created patches but before the manifest was saved,
+The five emptied tiles were retired with the three stages above (`--batch props1`). Placements `props-2-4`, `3-4`,
+`4-4` and `5-4` were saved again; `props-5-2` contained only an emptied tile, so its placement was retired too.
+If an object save fails after it created patches but before the manifest was saved,
 the rerun refuses with "saved without <key>". Delete that run's untracked patch packages and save again.
