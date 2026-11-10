@@ -1,0 +1,12 @@
+# One saved object of region/w09-brinecove (tools/migrate/objects.py, from its objects.toml): the props buoy e190, cut from its fused tile (100 triangles).
+# Its placement is this actor package; its model is prop/brinecove/props-buoy-e190. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/brinecove/props-buoy-e190"
+kind = "placement"
+authority = "editor"
+owner = "region/w09-brinecove"
+references = ["prop/brinecove/props-buoy-e190"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/E/I1/L3H5CCGMJ0J5JK5ZIAQUHL"

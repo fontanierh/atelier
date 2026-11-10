@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/props-buoy-w90",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_PropsBuoyW90.uasset": "714ef25852dc663d713bc6f13ae5d3444263f77145509cf8907b3ff94e05b4bd"
+  },
+  "input_fingerprint": "c634247c6d0ea6bb0f6fcf151fc69d58ea362734bb20d3430688c4983647a5b9",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_PropsBuoyW90": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

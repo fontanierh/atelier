@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/props-potted-palm-e45",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_PropsPottedPalmE45.uasset": "4ef9768789d6a4236ce55eafadb2636611be34b95f14c0c97a256520e272e00c"
+  },
+  "input_fingerprint": "0e721ea234d50520e77e989e4f24c5b1bf5ee8349348a42dc8f4887f0de04c92",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_PropsPottedPalmE45": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

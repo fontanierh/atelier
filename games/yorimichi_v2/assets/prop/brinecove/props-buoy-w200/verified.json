@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/props-buoy-w200",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_PropsBuoyW200.uasset": "2f34061a5747f8e0fff74a8468df388815e990fe09032210c75ee2d41ff32780"
+  },
+  "input_fingerprint": "96bd868243a24d72ecd1bf683e09d0309d1a0af797c5d5dae333441071fa6854",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_PropsBuoyW200": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

@@ -1,0 +1,13 @@
+{
+  "asset": "object/brinecove/props-potted-palm-e280",
+  "dependencies": {
+    "prop/brinecove/props-potted-palm-e280": "492e3aef9078b2e37c105911bc97d4b7e7475f451cf7c3e1e5bde14264219f09",
+    "prop/brinecove/props-potted-palm-e280-soft": "1fb51f302fe96d53e194a16a242d11fbd152fd1ef44076a0ae32f4ccc18191c1"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/C/RY/35GISZWS1YTUI12KS62OK9.uasset": "76f3a2cc9d6256eb6593441949f25e2710bd05ebe218259ee2bfaa62889d3316"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

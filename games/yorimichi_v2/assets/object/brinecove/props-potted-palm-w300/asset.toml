@@ -1,0 +1,12 @@
+# One saved object of region/w09-brinecove (tools/migrate/objects.py, from its objects.toml): the props potted palm w300, cut from its fused tile (206 triangles).
+# Its placement is this actor package; its model is prop/brinecove/props-potted-palm-w300, prop/brinecove/props-potted-palm-w300-soft. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/brinecove/props-potted-palm-w300"
+kind = "placement"
+authority = "editor"
+owner = "region/w09-brinecove"
+references = ["prop/brinecove/props-potted-palm-w300", "prop/brinecove/props-potted-palm-w300-soft"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/1/WJ/FDBCH62XPZ6HALXXT4RCL2"

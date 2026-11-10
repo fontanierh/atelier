@@ -1,12 +1,12 @@
 # One saved object of region/w09-brinecove (tools/migrate/objects.py, from its objects.toml): Brine Cove props-4-4 (2 groups).
-# Its placement is this actor package; its models are prop/brinecove/props-4-4, prop/brinecove/props-4-4-soft. Edit it in the editor and save-validate
+# Its placement is this actor package; its model is prop/brinecove/props-4-4. Edit it in the editor and save-validate
 # this record: the region's other objects and actors are not part of it.
 schema = 1
 id = "object/brinecove/props-4-4"
 kind = "placement"
 authority = "editor"
 owner = "region/w09-brinecove"
-references = ["prop/brinecove/props-4-4", "prop/brinecove/props-4-4-soft"]
+references = ["prop/brinecove/props-4-4"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/B/T7/W9E1TCFIXKIUBPSN6AKPV3"

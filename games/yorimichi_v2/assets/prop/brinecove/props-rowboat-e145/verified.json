@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/props-rowboat-e145",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_PropsRowboatE145.uasset": "ea887e72a0fa87e8efb97be06f42b5d9f2372e74f441bab24da4431a38678e99"
+  },
+  "input_fingerprint": "838dffd5f64f3cfeb5c29c48eae1c19dbca93f9481858450f0da5712e22d7f81",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_PropsRowboatE145": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

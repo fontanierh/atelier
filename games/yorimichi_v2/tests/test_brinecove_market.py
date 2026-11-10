@@ -253,6 +253,20 @@ def test_drop_saved_group():
     assert market.drop_saved_group(out, 'x') == out
 
 
+def test_drop_group_also_drops_the_emptied_tile_record_from_a_model_list():
+    toml = TOML.replace('model = "adopted/a"', 'model = ["adopted/a", "adopted/t1"]')
+    out = market.drop_group(toml, 'SM_BC_T_1', 'adopted/t1')
+    assert 'groups = ["SM_BC_T_2"]\nmodel = "adopted/a"\n' in out and 'adopted/t1' not in out
+    # the group already gone (an earlier groups stage) still drops the record, and a rerun changes nothing
+    assert market.drop_group(market.drop_group(toml, 'SM_BC_T_1'), 'SM_BC_T_1', 'adopted/t1') == out
+    assert market.drop_group(out, 'SM_BC_T_1', 'adopted/t1') == out
+    assert market.drop_group(TOML, 'SM_BC_T_9', 'adopted/c') == TOML              # a single model is kept
+    body = {'objects': {'a': {'groups': ['x', 'y'], 'model': ['m', 't'], 'models': ['m', 't']}, 'c': {'model': 't'}}}
+    saved = market.drop_saved_group(body, 'x', 't')
+    assert saved['objects'] == {'a': {'groups': ['y'], 'model': 'm'}, 'c': {'model': 't'}}
+    assert market.drop_saved_group(saved, 'x', 't') == saved
+
+
 def test_emptied_lists_tiles_with_no_remainder():
     assert market.emptied({'remainders': {'B': None, 'A': {'triangles': 3}, 'C': None}}) == ['B', 'C']
 
@@ -444,7 +458,36 @@ def test_check_for_the_groups_stage_allows_the_tile_record_to_remain(monkeypatch
 
 def test_batch_names_all_lists_and_checks_names():
     names = market.batch_names('all')
-    assert names[:4] == ['market1', 'market2', 'market3', 'town1'] and names[-1] == 'town9' and len(names) == 12
+    assert names[:4] == ['market1', 'market2', 'market3', 'town1'] and names[-2:] == ['town9', 'props1'] and len(names) == 13
     assert market.batch_names('town2, market1,town2') == ['town2', 'market1']
     with pytest.raises(market.MarketError, match='unknown batch town99'):
         market.batch_names('town99')
+
+
+def test_the_props1_batch_names_each_harbour_prop_once():
+    """The props1 objects are the rowboat, buoy and potted-palm loop bodies of procedural/props.py, named by side and |x|."""
+    names = market.BATCHES['props1']
+    assert len(names) == len(set(names)) == 13
+    assert all(market.component_of(n) == 'Props' for n in names)
+    assert market.object_name('Props', 'rowboat-w155') == 'props-rowboat-w155'
+    assert sum(n.startswith('props-rowboat-') for n in names) == 4
+    assert sum(n.startswith('props-buoy-') for n in names) == 3
+    assert sum(n.startswith('props-potted-palm-') for n in names) == 6
+
+
+@pytest.mark.skipif(not DONOR or not Path(DONOR).is_dir(), reason='needs the donor export (YV2_DONOR_BUILD)')
+def test_donor_props1_parts_are_whole_and_leave_the_batch1_cuts_alone():
+    """Every props1 object is matched in the donor tiles (each palm a hard part and its fronds' Soft part) and the tiles
+    still partition with batch 1's cannon, anchor and net-rack cuts taken first."""
+    donor = Path(DONOR)
+    src = market.donor_source(donor)
+    prior = {'cannon-west', 'cannon-east', 'quay-anchor', 'net-rack-west', 'net-rack-east'}
+    done = market.compute(donor / 'brinecove' / 'glb', src, list(market.BATCHES['props1']), prior)
+    assert done['problems'] == []
+    counts = {}
+    for owned in done['owned'].values():
+        for name, members in owned.items():
+            if name:
+                counts[name] = counts.get(name, 0) + len(members)
+    assert counts['props-rowboat-w155'] == 96 and counts['props-buoy-w90'] == 100
+    assert counts['props-potted-palm-w300'] == 206 + 30

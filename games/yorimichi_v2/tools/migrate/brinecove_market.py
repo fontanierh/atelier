@@ -56,6 +56,14 @@ SCOPES = (
     dict(component='TownLower', module='lower_town', loop='for spec in L.SHORE_BUILDINGS:', key='key'),
     dict(component='TownUpper', module='upper_town', loop='for spec in L.DENSE_LOTS:', key='spec[0]'),
     dict(component='TownUpper', module='upper_town', loop='for spec in L.HILLSIDE_BUILDINGS:', key='key'),
+    # Harbour props at fixed layout positions (procedural/props.py): each rowboat, each buoy (float and pole) and each
+    # potted palm (pot, trunk and fronds) is its loop body. Named by side and |x| (all x differ within a loop).
+    dict(component='Props', module='props', loop='for x, y, z, yaw, scale in [(-155, -205, 0.0, 20, 1.0), (145, -228, 0.0, -14, 0.9),',
+         key="'rowboat-%s%d' % ('w' if x < 0 else 'e', abs(x))"),
+    dict(component='Props', module='props', loop='for x, y in [(-200, -160), (190, -190), (-90, -210)]:',
+         key="'buoy-%s%d' % ('w' if x < 0 else 'e', abs(x))"),
+    dict(component='Props', module='props', loop='for x, y in [(-300, 300), (-170, 300), (120, 300), (280, 300), (-40, 236), (45, 236)]:',
+         key="'potted-palm-%s%d' % ('w' if x < 0 else 'e', abs(x))"),
 )
 
 
@@ -191,6 +199,8 @@ def object_name(component: str, key: str) -> str:
         return 'market-' + (key if key.startswith('stall') else 'stall-' + key)
     if component in ('TownLower', 'TownUpper'):
         return 'town-' + component[4:].lower() + '-' + key.lower().replace('_', '-')
+    if component == 'Props':
+        return 'props-' + key
     raise MarketError(f'no naming for component {component}')
 
 
@@ -268,7 +278,13 @@ TOWN_LOTS = {
 }
 BATCHES.update({name: tuple(prefix + lot for lot in lots) for name, (prefix, lots) in TOWN_LOTS.items()})
 
-COMPONENT_OF = {'market-': 'Market', 'town-lower-': 'TownLower', 'town-upper-': 'TownUpper'}
+# The harbour props: four rowboats and three buoys in the water, six potted palms on the upper terrace and by the tavern doors.
+BATCHES['props1'] = ('props-rowboat-w155', 'props-rowboat-e145', 'props-rowboat-w270', 'props-rowboat-e270',
+                     'props-buoy-w200', 'props-buoy-e190', 'props-buoy-w90',
+                     'props-potted-palm-w300', 'props-potted-palm-w170', 'props-potted-palm-e120', 'props-potted-palm-e280',
+                     'props-potted-palm-w40', 'props-potted-palm-e45')
+
+COMPONENT_OF = {'market-': 'Market', 'town-lower-': 'TownLower', 'town-upper-': 'TownUpper', 'props-': 'Props'}
 ALL_OBJECTS = frozenset(o for names in BATCHES.values() for o in names)
 
 
@@ -564,12 +580,14 @@ def summary(plan: dict) -> dict:
 # Town lots can take every triangle of a tile. `apply` keeps such a tile's record, package and runtime group until the
 # parts are imported and checked (otherwise the old tile would be drawn twice); `retire` then removes them.
 
-def drop_group(text: str, mesh: str) -> str:
-    """objects.toml text without the group `mesh`: removed from `groups = [...]`; an object left with no group is dropped."""
+def drop_group(text: str, mesh: str, record: str | None = None) -> str:
+    """objects.toml text without the group `mesh`: removed from `groups = [...]`; an object left with no group is dropped.
+    The tile's `record` is also removed from a model list, so a placement saved again no longer references it (the
+    records stage refuses while it does). A model that would be left empty is kept."""
     blocks = re.split(r'(?m)^(?=\[\[objects\]\]\n)', text)
     out = []
     for block in blocks:
-        if f'"{mesh}"' not in block or not block.startswith('[[objects]]'):
+        if not block.startswith('[[objects]]') or (f'"{mesh}"' not in block and not (record and f'"{record}"' in block)):
             out.append(block)
             continue
         lines, keep = block.split('\n'), True
@@ -580,13 +598,19 @@ def drop_group(text: str, mesh: str) -> str:
                 groups = [g for g in json.loads(line[len('groups = '):]) if g != mesh]
                 keep = bool(groups)
                 lines[n] = 'groups = ' + json.dumps(groups)
+            elif record and line.startswith('model = ['):
+                models = [m for m in json.loads(line[len('model = '):]) if m != record]
+                if models:
+                    lines[n] = 'model = ' + (json.dumps(models[0]) if len(models) == 1 else
+                                             '[' + ', '.join(json.dumps(m) for m in models) + ']')
         if keep:
             out.append('\n'.join(lines))
     return ''.join(out)
 
 
-def drop_saved_group(body: dict, mesh: str) -> dict:
-    """objects.saved.json body without the group `mesh`; an object left with no group is removed."""
+def drop_saved_group(body: dict, mesh: str, record: str | None = None) -> dict:
+    """objects.saved.json body without the group `mesh` (and the tile's `record` in a model list, as drop_group); an
+    object left with no group is removed."""
     objects = {}
     for oid, item in body.get('objects', {}).items():
         groups = item.get('groups')
@@ -595,6 +619,13 @@ def drop_saved_group(body: dict, mesh: str) -> dict:
             if not groups:
                 continue
             item = {**item, 'groups': groups}
+        model = item.get('model')
+        if record and isinstance(model, list) and record in model and len(model) > 1:
+            models = [m for m in model if m != record]
+            item = {k: v for k, v in item.items() if k != 'models'}   # a list model became one: no stale `models`
+            item['model'] = models[0] if len(models) == 1 else models
+            if len(models) > 1 and 'models' in body['objects'][oid]:
+                item['models'] = models
         objects[oid] = item
     return {**body, 'objects': objects}
 
@@ -635,12 +666,12 @@ def groups_retired(game: Path, plan: dict) -> bool:
     or the runtime file (the tile records may still exist)."""
     apply_ = _apply()
     region = game / 'world' / 'regions' / apply_.REGION
-    meshes = {f'SM_BC_{s}' for s in emptied(plan)}
+    meshes = {f'SM_BC_{s}': plan['tiles'][s]['record'] for s in emptied(plan)}
     text = (region / 'objects.toml').read_text()
     saved = json.loads((region / 'objects.saved.json').read_text()) if (region / 'objects.saved.json').is_file() else None
     names = apply_.group_names(json.loads((game / 'unreal' / 'Content' / apply_.RUNTIME).read_text()))
-    return not any(drop_group(text, m) != text or (saved is not None and drop_saved_group(saved, m) != saved) or m in names
-                   for m in meshes)
+    return not any(drop_group(text, m, r) != text or (saved is not None and drop_saved_group(saved, m, r) != saved)
+                   or m in names for m, r in meshes.items())
 
 
 def placements_touched(game: Path, ids: list[str]) -> dict:
@@ -714,9 +745,10 @@ def retire_compute(game: Path, plan: dict, stage: str = 'groups') -> dict:
     text = (region / 'objects.toml').read_text()
     saved = json.loads((region / 'objects.saved.json').read_text()) if (region / 'objects.saved.json').is_file() else None
     for stem in stems:
-        text = drop_group(text, f'SM_BC_{stem}')
+        record = plan['tiles'][stem]['record']
+        text = drop_group(text, f'SM_BC_{stem}', record)
         if saved is not None:
-            saved = drop_saved_group(saved, f'SM_BC_{stem}')
+            saved = drop_saved_group(saved, f'SM_BC_{stem}', record)
     new = {f'world/regions/{apply_.REGION}/objects.toml': text.encode()}
     if saved is not None:
         new[f'world/regions/{apply_.REGION}/objects.saved.json'] = (json.dumps(saved, indent=2, sort_keys=True) + '\n').encode()
@@ -733,7 +765,12 @@ def retire(game: Path, plan: dict, claim: str | None, batch: str, stage: str = '
     `groups` drops their groups from the placements and the runtime file; after the affected placements were deleted and
     saved again, `records` deletes the tile records and packages."""
     apply_ = _apply()
-    problems = check(game, donor, batch, groups=(stage == 'records'))   # records: the groups stage is done, the tiles not yet
+    # records: the groups stage is done, the tiles not yet. A groups rerun (its runtime part already done) checks the same.
+    runtime, rerun = game / 'unreal' / 'Content' / apply_.RUNTIME, False
+    if stage == 'groups' and runtime.is_file() and emptied(plan):
+        names = apply_.group_names(json.loads(runtime.read_text()))
+        rerun = not any(f'SM_BC_{s}' in names for s in emptied(plan))
+    problems = check(game, donor, batch, groups=(stage == 'records' or rerun))
     if problems:
         raise apply_.SplitError('refusing to retire before the import and check pass: ' + '; '.join(problems[:3]))
     set_batch(batch).require_applied_plan(game, plan)   # the checked batch, not a fresh selection under its name
@@ -786,7 +823,7 @@ def placements_compute(game: Path, info: dict) -> dict:
 
 
 def batch_names(arg: str) -> list[str]:
-    """`all` (every market and town batch in apply order) or a comma list of batch names, each once."""
+    """`all` (every market, town and props batch in apply order) or a comma list of batch names, each once."""
     names = list(BATCHES) if arg == 'all' else list(dict.fromkeys(b.strip() for b in arg.split(',') if b.strip()))
     unknown = [b for b in names if b not in BATCHES]
     if not names or unknown:

@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_PropsBuoyW200: the props buoy w200, cut from the fused tile(s) Props_3_2 (100 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/brinecove/props-buoy-w200"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/brinecove/props-buoy-w200"
+references = ["adopted/brinecove/materials"]
+
+[[sources]]
+path = "src/SM_BC_PropsBuoyW200.glb"
+sha256 = "778cf2f6e9be124eede21f1dec18eb533fdeb4be430749508994d4c2559ec129"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Brinecove/Materials/MI_BC_flag_red", "/Game/Brinecove/Materials/MI_BC_metal"]
+triangles = 100
+collision = "complex"
+full_precision_uvs = true
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_PropsBuoyW200"

@@ -3189,17 +3189,12 @@
     },
     "object/brinecove/props-2-4": {
       "groups": [
-        "SM_BC_Props_2_4",
-        "SM_BC_Props_2_4_Soft"
+        "SM_BC_Props_2_4"
       ],
       "id": "object/brinecove/props-2-4",
-      "model": [
-        "prop/brinecove/props-2-4",
-        "prop/brinecove/props-2-4-soft"
-      ],
+      "model": "prop/brinecove/props-2-4",
       "models": [
-        "prop/brinecove/props-2-4",
-        "prop/brinecove/props-2-4-soft"
+        "prop/brinecove/props-2-4"
       ]
     },
     "object/brinecove/props-3-2": {
@@ -3224,17 +3219,12 @@
     },
     "object/brinecove/props-3-4": {
       "groups": [
-        "SM_BC_Props_3_4",
-        "SM_BC_Props_3_4_Soft"
+        "SM_BC_Props_3_4"
       ],
       "id": "object/brinecove/props-3-4",
-      "model": [
-        "prop/brinecove/props-3-4",
-        "prop/brinecove/props-3-4-soft"
-      ],
+      "model": "prop/brinecove/props-3-4",
       "models": [
-        "prop/brinecove/props-3-4",
-        "prop/brinecove/props-3-4-soft"
+        "prop/brinecove/props-3-4"
       ]
     },
     "object/brinecove/props-3-5": {
@@ -3269,17 +3259,12 @@
     },
     "object/brinecove/props-4-4": {
       "groups": [
-        "SM_BC_Props_4_4",
-        "SM_BC_Props_4_4_Soft"
+        "SM_BC_Props_4_4"
       ],
       "id": "object/brinecove/props-4-4",
-      "model": [
-        "prop/brinecove/props-4-4",
-        "prop/brinecove/props-4-4-soft"
-      ],
+      "model": "prop/brinecove/props-4-4",
       "models": [
-        "prop/brinecove/props-4-4",
-        "prop/brinecove/props-4-4-soft"
+        "prop/brinecove/props-4-4"
       ]
     },
     "object/brinecove/props-4-5": {
@@ -3290,16 +3275,6 @@
       "model": "prop/brinecove/props-4-5",
       "models": [
         "prop/brinecove/props-4-5"
-      ]
-    },
-    "object/brinecove/props-5-2": {
-      "groups": [
-        "SM_BC_Props_5_2"
-      ],
-      "id": "object/brinecove/props-5-2",
-      "model": "prop/brinecove/props-5-2",
-      "models": [
-        "prop/brinecove/props-5-2"
       ]
     },
     "object/brinecove/props-5-3": {
@@ -3314,17 +3289,172 @@
     },
     "object/brinecove/props-5-4": {
       "groups": [
-        "SM_BC_Props_5_4",
-        "SM_BC_Props_5_4_Soft"
+        "SM_BC_Props_5_4"
       ],
       "id": "object/brinecove/props-5-4",
+      "model": "prop/brinecove/props-5-4",
+      "models": [
+        "prop/brinecove/props-5-4"
+      ]
+    },
+    "object/brinecove/props-buoy-e190": {
+      "groups": [
+        "SM_BC_PropsBuoyE190"
+      ],
+      "id": "object/brinecove/props-buoy-e190",
+      "model": "prop/brinecove/props-buoy-e190",
+      "models": [
+        "prop/brinecove/props-buoy-e190"
+      ]
+    },
+    "object/brinecove/props-buoy-w200": {
+      "groups": [
+        "SM_BC_PropsBuoyW200"
+      ],
+      "id": "object/brinecove/props-buoy-w200",
+      "model": "prop/brinecove/props-buoy-w200",
+      "models": [
+        "prop/brinecove/props-buoy-w200"
+      ]
+    },
+    "object/brinecove/props-buoy-w90": {
+      "groups": [
+        "SM_BC_PropsBuoyW90"
+      ],
+      "id": "object/brinecove/props-buoy-w90",
+      "model": "prop/brinecove/props-buoy-w90",
+      "models": [
+        "prop/brinecove/props-buoy-w90"
+      ]
+    },
+    "object/brinecove/props-potted-palm-e120": {
+      "groups": [
+        "SM_BC_PropsPottedPalmE120",
+        "SM_BC_PropsPottedPalmE120_Soft"
+      ],
+      "id": "object/brinecove/props-potted-palm-e120",
       "model": [
-        "prop/brinecove/props-5-4",
-        "prop/brinecove/props-5-4-soft"
+        "prop/brinecove/props-potted-palm-e120",
+        "prop/brinecove/props-potted-palm-e120-soft"
       ],
       "models": [
-        "prop/brinecove/props-5-4",
-        "prop/brinecove/props-5-4-soft"
+        "prop/brinecove/props-potted-palm-e120",
+        "prop/brinecove/props-potted-palm-e120-soft"
+      ]
+    },
+    "object/brinecove/props-potted-palm-e280": {
+      "groups": [
+        "SM_BC_PropsPottedPalmE280",
+        "SM_BC_PropsPottedPalmE280_Soft"
+      ],
+      "id": "object/brinecove/props-potted-palm-e280",
+      "model": [
+        "prop/brinecove/props-potted-palm-e280",
+        "prop/brinecove/props-potted-palm-e280-soft"
+      ],
+      "models": [
+        "prop/brinecove/props-potted-palm-e280",
+        "prop/brinecove/props-potted-palm-e280-soft"
+      ]
+    },
+    "object/brinecove/props-potted-palm-e45": {
+      "groups": [
+        "SM_BC_PropsPottedPalmE45",
+        "SM_BC_PropsPottedPalmE45_Soft"
+      ],
+      "id": "object/brinecove/props-potted-palm-e45",
+      "model": [
+        "prop/brinecove/props-potted-palm-e45",
+        "prop/brinecove/props-potted-palm-e45-soft"
+      ],
+      "models": [
+        "prop/brinecove/props-potted-palm-e45",
+        "prop/brinecove/props-potted-palm-e45-soft"
+      ]
+    },
+    "object/brinecove/props-potted-palm-w170": {
+      "groups": [
+        "SM_BC_PropsPottedPalmW170",
+        "SM_BC_PropsPottedPalmW170_Soft"
+      ],
+      "id": "object/brinecove/props-potted-palm-w170",
+      "model": [
+        "prop/brinecove/props-potted-palm-w170",
+        "prop/brinecove/props-potted-palm-w170-soft"
+      ],
+      "models": [
+        "prop/brinecove/props-potted-palm-w170",
+        "prop/brinecove/props-potted-palm-w170-soft"
+      ]
+    },
+    "object/brinecove/props-potted-palm-w300": {
+      "groups": [
+        "SM_BC_PropsPottedPalmW300",
+        "SM_BC_PropsPottedPalmW300_Soft"
+      ],
+      "id": "object/brinecove/props-potted-palm-w300",
+      "model": [
+        "prop/brinecove/props-potted-palm-w300",
+        "prop/brinecove/props-potted-palm-w300-soft"
+      ],
+      "models": [
+        "prop/brinecove/props-potted-palm-w300",
+        "prop/brinecove/props-potted-palm-w300-soft"
+      ]
+    },
+    "object/brinecove/props-potted-palm-w40": {
+      "groups": [
+        "SM_BC_PropsPottedPalmW40",
+        "SM_BC_PropsPottedPalmW40_Soft"
+      ],
+      "id": "object/brinecove/props-potted-palm-w40",
+      "model": [
+        "prop/brinecove/props-potted-palm-w40",
+        "prop/brinecove/props-potted-palm-w40-soft"
+      ],
+      "models": [
+        "prop/brinecove/props-potted-palm-w40",
+        "prop/brinecove/props-potted-palm-w40-soft"
+      ]
+    },
+    "object/brinecove/props-rowboat-e145": {
+      "groups": [
+        "SM_BC_PropsRowboatE145"
+      ],
+      "id": "object/brinecove/props-rowboat-e145",
+      "model": "prop/brinecove/props-rowboat-e145",
+      "models": [
+        "prop/brinecove/props-rowboat-e145"
+      ]
+    },
+    "object/brinecove/props-rowboat-e270": {
+      "groups": [
+        "SM_BC_PropsRowboatE270"
+      ],
+      "id": "object/brinecove/props-rowboat-e270",
+      "model": "prop/brinecove/props-rowboat-e270",
+      "models": [
+        "prop/brinecove/props-rowboat-e270"
+      ]
+    },
+    "object/brinecove/props-rowboat-w155": {
+      "groups": [
+        "SM_BC_PropsRowboatW155"
+      ],
+      "id": "object/brinecove/props-rowboat-w155",
+      "model": "prop/brinecove/props-rowboat-w155",
+      "models": [
+        "prop/brinecove/props-rowboat-w155"
+      ]
+    },
+    "object/brinecove/props-rowboat-w270": {
+      "groups": [
+        "SM_BC_PropsRowboatW270"
+      ],
+      "id": "object/brinecove/props-rowboat-w270",
+      "model": "prop/brinecove/props-rowboat-w270",
+      "models": [
+        "prop/brinecove/props-rowboat-w270"
       ]
     },
     "object/brinecove/quay-anchor": {

@@ -1,12 +1,11 @@
 {
   "asset": "object/brinecove/props-2-4",
   "dependencies": {
-    "prop/brinecove/props-2-4": "1cf6ce37257b6d2027e18a6876a47ae5206bb4408573771192e5d4b41746ea49",
-    "prop/brinecove/props-2-4-soft": "80fa4994f2e5c5605d44b7420ba3e4e31303cb52edd5e46bebaf364867a21ea7"
+    "prop/brinecove/props-2-4": "b18f7baac285417b2ee8a38fc2f85f1fd416c66793898a49f36cf8d1086af1af"
   },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/__ExternalActors__/V2/Maps/Slice/6/0B/01HZP95X6O0R0IM1IPEUDG.uasset": "a4e41acfe964b401131563d96a10f1dce59dd0e63963db4118c9d347da990334"
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/6/0B/01HZP95X6O0R0IM1IPEUDG.uasset": "2763eb7799a655665921b458485ad15efcb4aebab3c58c173e914aabdf0125f2"
   },
   "kind": "editor-saved",
   "schema": 1
