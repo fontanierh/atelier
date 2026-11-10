@@ -207,6 +207,28 @@ def _apply_texture_settings(asset, settings):
             raise RuntimeError(f'unknown texture address {settings["address"]!r}')
         asset.set_editor_property('address_x', U.TextureAddress.TA_WRAP)
         asset.set_editor_property('address_y', U.TextureAddress.TA_WRAP)
+    _read_back_texture_settings(asset, settings)
+
+
+def _read_back_texture_settings(asset, settings):
+    """Read each stated setting back before the save: UE 5.8's setters can report success and keep the old value
+    (tint_material.py), so only the read proves what the package will contain. An unstated setting is not read."""
+    name = asset.get_path_name()
+    checks = []
+    if 'srgb' in settings:
+        checks.append(('srgb', bool(settings['srgb'])))
+    if 'compression' in settings:
+        checks.append(('compression_settings', getattr(U.TextureCompressionSettings, settings['compression'])))
+    if import_settings.max_texture_size(settings) is not None:
+        checks.append(('max_texture_size', import_settings.max_texture_size(settings)))
+    if import_settings.lod_group(settings) is not None:
+        checks.append(('lod_group', getattr(U.TextureGroup, import_settings.lod_group(settings))))
+    if 'address' in settings:
+        checks += [('address_x', U.TextureAddress.TA_WRAP), ('address_y', U.TextureAddress.TA_WRAP)]
+    for prop, want in checks:
+        got = asset.get_editor_property(prop)
+        if got != want:
+            raise RuntimeError(f'{name}: {prop} reads back {got!r}, not {want!r}; nothing is saved')
 
 
 def _apply_material_slots(asset, plan):
