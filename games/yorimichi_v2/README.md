@@ -195,6 +195,10 @@ on 2026-11-07: `governance.toml` has `closed = true`, and every writer now needs
 create new actor packages in its claimed regions; they are bound to the claim with their LFS locks before they
 are recorded.
 
+For an interrupted object save, follow the [object claim recovery steps](docs/inventory/transport-objects.md#recovering-object-package-claims).
+`objects.py --claim-paths` includes existing selected placement records' package files and companions, even when
+save validation has not yet written their receipts. Listing paths does not validate or accept the save.
+
 The normal build and play never generate, import, resave or cook. Packaging is explicit and runs a full-hash
 content check first.
 

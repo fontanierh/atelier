@@ -84,6 +84,30 @@ gp --retire --claim TASK       # 3. refused until "saved"; then done; a rerun pr
 If the save fails, stop there. Re-run `objects.py` with the same claim; prepare and `--check` remain safe to repeat, and
 retire is refused until the replacements have receipts.
 
+## Recovering object package claims
+
+An editor can save new actors and then fail during shutdown. Its completion log alone does not accept the save.
+After the editor and its caller have stopped, the normal guarded `objects.py` retry keeps those actors and identifies
+their packages. If that retry writes their `asset.toml` records but stops because save validation needs exact package
+claims, list the same region and object selection with `--claim-paths`:
+
+```sh
+uv run python games/yorimichi_v2/tools/migrate/objects.py REGION --environment region/w00-island \
+    --only OBJECT_ID --claim-paths
+```
+
+Repeat `--only` for every object in the batch. The JSON `lock` list includes the selected records' existing package
+files and companions, along with the split-area packages and environment manifest; `path` lists the record files.
+Extend and acquire the existing task's claims for those exact paths, respecting any other owner's refusal, then rerun
+the same guarded save with `--claim TASK`. A missing `verified.json` is expected at this stage: the successful retry
+must still complete save validation and write the saved-definition receipts before the work is accepted.
+
+This offline list uses canonical placement records with matching object, region and model references. It refuses
+known saved-definition changes and does not infer ownership from logs, stale plans or nearby actor files. If the
+editor failed before any object records were written, the list cannot identify the unknown actors; the normal guarded
+retry must identify them first. A pending created-file bind still follows `tools/migrate/run.py --resume`, as directed
+by the migration guard, before another migration can run.
+
 ## Recorded gameplay evidence
 
 These are **historical revision-bound results**, not new tests on the latest package. On 2026-11-08, the guarded

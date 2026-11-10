@@ -236,9 +236,16 @@ def record_text(item: dict, region: str, package) -> str:
 
 
 def claim_paths(game: Path, region_ids: list[str], *, only=None, environment=None) -> dict[str, list[str]]:
-    """What a claim for these regions' objects locks and lists: {"lock": the area patch packages their split
-    objects leave (every patch of each split key in patches.json) and the environment's manifest actor (MANIFEST),
-    "path": each object record's two files}."""
+    """@cc [owner:fontanierh,label:correctness] object-claim-discovery-is-not-acceptance
+    Existing object package paths MUST come from the selected object's canonical editor-placement record with
+    the matching region and model references, never from a migration log or plan. Saved-definition mismatches
+    MUST fail. Listing paths MUST NOT write records, acquire claims or accept an interrupted save; normal claimed
+    migration and save validation remain required.
+
+    Returns {"lock": the area patch packages their split objects leave (every patch of each split key in
+    patches.json), the environment's manifest actor (MANIFEST), and existing selected object outputs and
+    companions; "path": each object record's two files and saved list}.
+    """
     _, regions = records.discover(game)
     by_id = {r.id: r for r in regions}
     lock, path = set(), set()
@@ -247,7 +254,24 @@ def claim_paths(game: Path, region_ids: list[str], *, only=None, environment=Non
             raise ObjectError(f'{environment} owns no map manifest (MANIFEST)')
         lock.add(f'games/yorimichi_v2/{MANIFEST[environment]}')
     for rid in region_ids:
-        items = [i for i in load_objects(by_id[rid])['objects'] if only is None or i['id'] in set(only)]
+        listed = load_objects(by_id[rid])
+        items = [i for i in listed['objects'] if only is None or i['id'] in set(only)]
+        check_saved(game, by_id, {saved_key(listed['tag'], i): (rid, i) for i in items})
+        for item in items:
+            record = game / 'assets' / item['id'] / 'asset.toml'
+            if not record.is_file():
+                continue
+            asset = records.load_asset(record)
+            if (asset.id != item['id'] or asset.owner != rid or asset.kind != 'placement'
+                    or asset.authority != 'editor' or set(asset.references) != set(models(item))):
+                raise ObjectError(f'{item["id"]}: its placement record does not match its region and object definition')
+            # A successful retry can write asset.toml before missing exact package claims stop save validation.
+            # Those outputs are discoverable even without verified.json; this does not validate their bytes.
+            for output in asset.outputs:
+                stem = records.package_files(game, output.package)[0].with_suffix('')
+                lock |= {f'games/yorimichi_v2/{records.content_relative(game, stem.with_suffix(ext))}'
+                         for ext in records.PACKAGE_EXTENSIONS + records.COMPANION_EXTENSIONS
+                         if stem.with_suffix(ext).is_file()}
         keys = {i['split']['key'] for i in items if 'split' in i}
         roster = by_id[rid].folder / 'patches.json'
         patches = json.loads(roster.read_text()).get('patches', {}) if roster.is_file() else {}
