@@ -7,7 +7,8 @@ receipts go to a folder inside the app's sandbox container, the only place the s
 covers the host's own session lifecycle; a second player joining from another machine is not part of it.
 
     uv run python games/yorimichi_v2/tools/package/host_leave.py run --app APP      # guarded launch, then verify
-    uv run python games/yorimichi_v2/tools/package/host_leave.py verify DIR         # judge saved receipts
+    uv run python games/yorimichi_v2/tools/package/host_leave.py verify DIR         # re-judge saved receipts and the
+                                                                                    # exit code `run` recorded
 """
 from __future__ import annotations
 
@@ -70,6 +71,16 @@ def run(app: Path, memory_gib: float) -> int:
     return report(folder, code)
 
 
+def recorded_exit(folder: Path) -> int | None:
+    """The guarded process's exit code that `run` saved with its verdict; None (a failed `exit` check) when none was."""
+    path = folder / 'checks.json'
+    try:
+        code = json.loads(path.read_text()).get('exit') if path.is_file() else None
+    except ValueError:
+        return None
+    return code if isinstance(code, int) and not isinstance(code, bool) else None
+
+
 def report(folder: Path, exit_code: int | None) -> int:
     result = checks(folder, exit_code)
     for name, ok in result.items():
@@ -91,7 +102,7 @@ def main(argv=None) -> int:
     args = parser.parse_args(argv)
     if args.command == 'run':
         return run(args.app, args.memory_gib)
-    return report(args.folder, 0)
+    return report(args.folder, recorded_exit(args.folder))
 
 
 if __name__ == '__main__':

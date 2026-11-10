@@ -67,3 +67,14 @@ def test_the_native_role_hosts_through_the_menu_path_and_leaves():
                                     'WriteNetworkQA(TEXT("complete"))')]
     assert order == sorted(order)
     assert 'NetworkQARole != TEXT("host-leave")' in source
+
+
+def test_verify_uses_the_recorded_exit_and_fails_without_one(tmp_path):
+    """`verify` never assumes a clean exit: it reads the code `run` saved, and a folder without one fails `exit`."""
+    _receipts(tmp_path)
+    assert hl.recorded_exit(tmp_path) is None
+    assert hl.main(['verify', str(tmp_path)]) == 1
+    assert hl.report(tmp_path, 0) == 0                 # what `run` writes after a clean exit
+    assert hl.recorded_exit(tmp_path) == 0 and hl.main(['verify', str(tmp_path)]) == 0
+    hl.report(tmp_path, 3)
+    assert hl.main(['verify', str(tmp_path)]) == 1
