@@ -1,0 +1,1610 @@
+{
+  "about": "Expected result of tools/migrate/brinecove_split_apply.py (docs/inventory/brinecove-split.md): each part mesh, each tile remainder, and the donor tile each was cut from.",
+  "parts": {
+    "prop/brinecove/props-barrel-pier-central-sea": {
+      "materials": [
+        "BC_metal",
+        "BC_wood"
+      ],
+      "max": [
+        6.3721,
+        6.195,
+        166.39
+      ],
+      "mesh": "SM_BC_PropsBarrelPierCentralSea",
+      "min": [
+        5.604,
+        5.25,
+        165.61
+      ],
+      "object": "props-barrel-pier-central-sea",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsBarrelPierCentralSea",
+      "sha256": "c541f29e4dc3079d5388ee6efaf0e35fcd1be9a5109dd2d9307084f0560cf49c",
+      "soft": false,
+      "tiles": [
+        "Props_4_2"
+      ],
+      "triangles": 128
+    },
+    "prop/brinecove/props-barrel-pier-central-shore": {
+      "materials": [
+        "BC_metal",
+        "BC_wood"
+      ],
+      "max": [
+        6.3721,
+        6.195,
+        -35.61
+      ],
+      "mesh": "SM_BC_PropsBarrelPierCentralShore",
+      "min": [
+        5.604,
+        5.25,
+        -36.39
+      ],
+      "object": "props-barrel-pier-central-shore",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsBarrelPierCentralShore",
+      "sha256": "978090ea05d5e814e696b94f4a50f1c0648aab2bb3563ce73025d017dc3f9fea",
+      "soft": false,
+      "tiles": [
+        "Props_4_3"
+      ],
+      "triangles": 128
+    },
+    "prop/brinecove/props-barrel-pier-east-sea": {
+      "materials": [
+        "BC_metal",
+        "BC_wood"
+      ],
+      "max": [
+        242.3721,
+        6.195,
+        120.39
+      ],
+      "mesh": "SM_BC_PropsBarrelPierEastSea",
+      "min": [
+        241.604,
+        5.25,
+        119.61
+      ],
+      "object": "props-barrel-pier-east-sea",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsBarrelPierEastSea",
+      "sha256": "4f71b3b6d83836203ca39602771b5f662200506a45bf74a6e117b7fe86e5024c",
+      "soft": false,
+      "tiles": [
+        "Props_4_3"
+      ],
+      "triangles": 128
+    },
+    "prop/brinecove/props-barrel-pier-east-shore": {
+      "materials": [
+        "BC_metal",
+        "BC_wood"
+      ],
+      "max": [
+        242.3721,
+        6.195,
+        -35.61
+      ],
+      "mesh": "SM_BC_PropsBarrelPierEastShore",
+      "min": [
+        241.604,
+        5.25,
+        -36.39
+      ],
+      "object": "props-barrel-pier-east-shore",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsBarrelPierEastShore",
+      "sha256": "a1eaa2d8cdd1bf6a15a4bbe50dff3fe1e221e95b843378926cb920219f89f13d",
+      "soft": false,
+      "tiles": [
+        "Props_4_3"
+      ],
+      "triangles": 128
+    },
+    "prop/brinecove/props-barrel-pier-west-sea": {
+      "materials": [
+        "BC_metal",
+        "BC_wood"
+      ],
+      "max": [
+        -234.3779,
+        6.195,
+        94.39
+      ],
+      "mesh": "SM_BC_PropsBarrelPierWestSea",
+      "min": [
+        -235.146,
+        5.25,
+        93.61
+      ],
+      "object": "props-barrel-pier-west-sea",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsBarrelPierWestSea",
+      "sha256": "1945355fecbd03d3c75ecdb5f171292af30b7df4fccce9869181a478a7f21e8c",
+      "soft": false,
+      "tiles": [
+        "Props_3_3"
+      ],
+      "triangles": 128
+    },
+    "prop/brinecove/props-barrel-pier-west-shore": {
+      "materials": [
+        "BC_metal",
+        "BC_wood"
+      ],
+      "max": [
+        -234.3779,
+        6.195,
+        -35.61
+      ],
+      "mesh": "SM_BC_PropsBarrelPierWestShore",
+      "min": [
+        -235.146,
+        5.25,
+        -36.39
+      ],
+      "object": "props-barrel-pier-west-shore",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsBarrelPierWestShore",
+      "sha256": "4d76fa2eaf509ebb26c25c0c5307545eb91a45516e7669616bf6859ffe86f3bd",
+      "soft": false,
+      "tiles": [
+        "Props_3_3"
+      ],
+      "triangles": 128
+    },
+    "prop/brinecove/props-barrel-quay-e150-146": {
+      "materials": [
+        "BC_metal",
+        "BC_wood"
+      ],
+      "max": [
+        151.8399,
+        5.713,
+        -144.6712
+      ],
+      "mesh": "SM_BC_PropsBarrelQuayE150146",
+      "min": [
+        151.0166,
+        4.7,
+        -145.5072
+      ],
+      "object": "props-barrel-quay-e150-146",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsBarrelQuayE150146",
+      "sha256": "7ba3e95698c125c6da6acaf5b2ce0360535d4d450365d45bfbc4c0ac990c701a",
+      "soft": false,
+      "tiles": [
+        "Props_4_4"
+      ],
+      "triangles": 128
+    },
+    "prop/brinecove/props-barrel-quay-e150-184": {
+      "materials": [
+        "BC_metal",
+        "BC_wood"
+      ],
+      "max": [
+        151.1398,
+        5.7803,
+        -183.1813
+      ],
+      "mesh": "SM_BC_PropsBarrelQuayE150184",
+      "min": [
+        150.2617,
+        4.7,
+        -184.073
+      ],
+      "object": "props-barrel-quay-e150-184",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsBarrelQuayE150184",
+      "sha256": "486156e5604ed2a8eb6a223feb11a491e894f9e3bdb2a82e703694ee9431bc02",
+      "soft": false,
+      "tiles": [
+        "Props_4_4"
+      ],
+      "triangles": 128
+    },
+    "prop/brinecove/props-barrel-quay-e205-146": {
+      "materials": [
+        "BC_metal",
+        "BC_wood"
+      ],
+      "max": [
+        206.8405,
+        5.6002,
+        -145.1632
+      ],
+      "mesh": "SM_BC_PropsBarrelQuayE205146",
+      "min": [
+        206.1088,
+        4.7,
+        -145.9062
+      ],
+      "object": "props-barrel-quay-e205-146",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsBarrelQuayE205146",
+      "sha256": "f5953ef4af3e3957ec4552a30456abba0fd00a457f91e0f30a5804c5b01b6e96",
+      "soft": false,
+      "tiles": [
+        "Props_4_4"
+      ],
+      "triangles": 128
+    },
+    "prop/brinecove/props-barrel-quay-e205-184": {
+      "materials": [
+        "BC_metal",
+        "BC_wood"
+      ],
+      "max": [
+        204.3709,
+        5.7105,
+        -183.7472
+      ],
+      "mesh": "SM_BC_PropsBarrelQuayE205184",
+      "min": [
+        203.5496,
+        4.7,
+        -184.5812
+      ],
+      "object": "props-barrel-quay-e205-184",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsBarrelQuayE205184",
+      "sha256": "886e9d2f8532d37ba3451d2d28fe36626ef7cc57f58222d304e229f99302b8bf",
+      "soft": false,
+      "tiles": [
+        "Props_4_4"
+      ],
+      "triangles": 128
+    },
+    "prop/brinecove/props-barrel-quay-e270-146": {
+      "materials": [
+        "BC_metal",
+        "BC_wood"
+      ],
+      "max": [
+        270.321,
+        5.6009,
+        -144.9351
+      ],
+      "mesh": "SM_BC_PropsBarrelQuayE270146",
+      "min": [
+        269.5887,
+        4.7,
+        -145.6787
+      ],
+      "object": "props-barrel-quay-e270-146",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsBarrelQuayE270146",
+      "sha256": "378e0c98f01bac9d713da54a409f31096c742081adb55e9b15834b7bf80214af",
+      "soft": false,
+      "tiles": [
+        "Props_5_4"
+      ],
+      "triangles": 128
+    },
+    "prop/brinecove/props-barrel-quay-e270-184": {
+      "materials": [
+        "BC_metal",
+        "BC_wood"
+      ],
+      "max": [
+        270.3262,
+        5.7986,
+        -183.4688
+      ],
+      "mesh": "SM_BC_PropsBarrelQuayE270184",
+      "min": [
+        269.4332,
+        4.7,
+        -184.3755
+      ],
+      "object": "props-barrel-quay-e270-184",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsBarrelQuayE270184",
+      "sha256": "dfd2b92ca5324431d33dedd68b521987a5bdf06066bb4622259ad58aaa8a31d9",
+      "soft": false,
+      "tiles": [
+        "Props_5_4"
+      ],
+      "triangles": 128
+    },
+    "prop/brinecove/props-barrel-quay-e320-146": {
+      "materials": [
+        "BC_metal",
+        "BC_wood"
+      ],
+      "max": [
+        321.9226,
+        5.8412,
+        -145.7127
+      ],
+      "mesh": "SM_BC_PropsBarrelQuayE320146",
+      "min": [
+        320.995,
+        4.7,
+        -146.6546
+      ],
+      "object": "props-barrel-quay-e320-146",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsBarrelQuayE320146",
+      "sha256": "68f2bbee88910316e2529211f3feee984e44a9c8554705fc41ac77e81c006430",
+      "soft": false,
+      "tiles": [
+        "Props_5_4"
+      ],
+      "triangles": 128
+    },
+    "prop/brinecove/props-barrel-quay-e320-184": {
+      "materials": [
+        "BC_metal",
+        "BC_wood"
+      ],
+      "max": [
+        319.7507,
+        5.8292,
+        -184.002
+      ],
+      "mesh": "SM_BC_PropsBarrelQuayE320184",
+      "min": [
+        318.8328,
+        4.7,
+        -184.9341
+      ],
+      "object": "props-barrel-quay-e320-184",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsBarrelQuayE320184",
+      "sha256": "efc9dd7c6860619fbfba49f1689e441f1d9d234a1bff716f7d5dbbb7e359b916",
+      "soft": false,
+      "tiles": [
+        "Props_5_4"
+      ],
+      "triangles": 128
+    },
+    "prop/brinecove/props-barrel-quay-w210-146": {
+      "materials": [
+        "BC_metal",
+        "BC_wood"
+      ],
+      "max": [
+        -209.7327,
+        5.8049,
+        -146.2132
+      ],
+      "mesh": "SM_BC_PropsBarrelQuayW210146",
+      "min": [
+        -210.6308,
+        4.7,
+        -147.1252
+      ],
+      "object": "props-barrel-quay-w210-146",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsBarrelQuayW210146",
+      "sha256": "a023c84c68130a623094a6ee9260d16f73c9d80c4bf17dfa7650e486e56e3de3",
+      "soft": false,
+      "tiles": [
+        "Props_3_4"
+      ],
+      "triangles": 128
+    },
+    "prop/brinecove/props-barrel-quay-w210-184": {
+      "materials": [
+        "BC_metal",
+        "BC_wood"
+      ],
+      "max": [
+        -211.0514,
+        5.573,
+        -184.2405
+      ],
+      "mesh": "SM_BC_PropsBarrelQuayW210184",
+      "min": [
+        -211.761,
+        4.7,
+        -184.9611
+      ],
+      "object": "props-barrel-quay-w210-184",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsBarrelQuayW210184",
+      "sha256": "7e624cfee43c1e0ab851e7e5c61190019773342527157ea52a0ae564769ec1b4",
+      "soft": false,
+      "tiles": [
+        "Props_3_4"
+      ],
+      "triangles": 128
+    },
+    "prop/brinecove/props-barrel-quay-w270-146": {
+      "materials": [
+        "BC_metal",
+        "BC_wood"
+      ],
+      "max": [
+        -269.5757,
+        5.5615,
+        -144.7166
+      ],
+      "mesh": "SM_BC_PropsBarrelQuayW270146",
+      "min": [
+        -270.2759,
+        4.7,
+        -145.4276
+      ],
+      "object": "props-barrel-quay-w270-146",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsBarrelQuayW270146",
+      "sha256": "2f775237959d786cf262ccb8f254d8f4042eee749c10a1237cb155f8de6a9185",
+      "soft": false,
+      "tiles": [
+        "Props_2_4"
+      ],
+      "triangles": 128
+    },
+    "prop/brinecove/props-barrel-quay-w270-184": {
+      "materials": [
+        "BC_metal",
+        "BC_wood"
+      ],
+      "max": [
+        -269.1926,
+        5.7516,
+        -182.619
+      ],
+      "mesh": "SM_BC_PropsBarrelQuayW270184",
+      "min": [
+        -270.0473,
+        4.7,
+        -183.4869
+      ],
+      "object": "props-barrel-quay-w270-184",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsBarrelQuayW270184",
+      "sha256": "46fe814301fae391c288c4f11042a0606fd731955b96aabe64d3fa42f707b0d4",
+      "soft": false,
+      "tiles": [
+        "Props_2_4"
+      ],
+      "triangles": 128
+    },
+    "prop/brinecove/props-barrel-quay-w320-146": {
+      "materials": [
+        "BC_metal",
+        "BC_wood"
+      ],
+      "max": [
+        -320.7507,
+        5.8245,
+        -145.8509
+      ],
+      "mesh": "SM_BC_PropsBarrelQuayW320146",
+      "min": [
+        -321.6647,
+        4.7,
+        -146.779
+      ],
+      "object": "props-barrel-quay-w320-146",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsBarrelQuayW320146",
+      "sha256": "315ca35140b6e9e5715060e50088ae9e0500d19cfe62b7e47a05ba1ab2a9532d",
+      "soft": false,
+      "tiles": [
+        "Props_2_4"
+      ],
+      "triangles": 128
+    },
+    "prop/brinecove/props-barrel-quay-w320-184": {
+      "materials": [
+        "BC_metal",
+        "BC_wood"
+      ],
+      "max": [
+        -318.5543,
+        5.7965,
+        -183.3004
+      ],
+      "mesh": "SM_BC_PropsBarrelQuayW320184",
+      "min": [
+        -319.4455,
+        4.7,
+        -184.2054
+      ],
+      "object": "props-barrel-quay-w320-184",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsBarrelQuayW320184",
+      "sha256": "928b6642380dd66c5b33b38b7c72bccca629e76200437a3ec552b939fdfc5b3e",
+      "soft": false,
+      "tiles": [
+        "Props_2_4"
+      ],
+      "triangles": 128
+    },
+    "prop/brinecove/props-barrel-upper-e130": {
+      "materials": [
+        "BC_metal",
+        "BC_wood"
+      ],
+      "max": [
+        130.3721,
+        30.945,
+        -369.61
+      ],
+      "mesh": "SM_BC_PropsBarrelUpperE130",
+      "min": [
+        129.604,
+        30.0,
+        -370.39
+      ],
+      "object": "props-barrel-upper-e130",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsBarrelUpperE130",
+      "sha256": "8073be1da09eb0c2af47b7af17b9b8699bbe4660b5fffada7a09ed62d9a293d5",
+      "soft": false,
+      "tiles": [
+        "Props_4_5"
+      ],
+      "triangles": 128
+    },
+    "prop/brinecove/props-barrel-upper-e190": {
+      "materials": [
+        "BC_metal",
+        "BC_wood"
+      ],
+      "max": [
+        190.3721,
+        30.945,
+        -369.61
+      ],
+      "mesh": "SM_BC_PropsBarrelUpperE190",
+      "min": [
+        189.604,
+        30.0,
+        -370.39
+      ],
+      "object": "props-barrel-upper-e190",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsBarrelUpperE190",
+      "sha256": "b9ec61107942c1cf67ad7fd296b0fa628762bc0b93ebb8cee6792bfa986bda73",
+      "soft": false,
+      "tiles": [
+        "Props_4_5"
+      ],
+      "triangles": 128
+    },
+    "prop/brinecove/props-barrel-upper-e250": {
+      "materials": [
+        "BC_metal",
+        "BC_wood"
+      ],
+      "max": [
+        250.3721,
+        30.945,
+        -369.61
+      ],
+      "mesh": "SM_BC_PropsBarrelUpperE250",
+      "min": [
+        249.604,
+        30.0,
+        -370.39
+      ],
+      "object": "props-barrel-upper-e250",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsBarrelUpperE250",
+      "sha256": "d7eb3f3f87cbeedf835bfdc5b22a572ab36c185b6a4161f8894fa9cba2c7dda9",
+      "soft": false,
+      "tiles": [
+        "Props_4_5"
+      ],
+      "triangles": 128
+    },
+    "prop/brinecove/props-barrel-upper-e70": {
+      "materials": [
+        "BC_metal",
+        "BC_wood"
+      ],
+      "max": [
+        70.3721,
+        30.945,
+        -369.61
+      ],
+      "mesh": "SM_BC_PropsBarrelUpperE70",
+      "min": [
+        69.604,
+        30.0,
+        -370.39
+      ],
+      "object": "props-barrel-upper-e70",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsBarrelUpperE70",
+      "sha256": "59e9acf615755f526e377691e6ec1c9559bed382128909fcef0b4dde37c41fb0",
+      "soft": false,
+      "tiles": [
+        "Props_4_5"
+      ],
+      "triangles": 128
+    },
+    "prop/brinecove/props-barrel-upper-w190": {
+      "materials": [
+        "BC_metal",
+        "BC_wood"
+      ],
+      "max": [
+        -189.6279,
+        30.945,
+        -369.61
+      ],
+      "mesh": "SM_BC_PropsBarrelUpperW190",
+      "min": [
+        -190.396,
+        30.0,
+        -370.39
+      ],
+      "object": "props-barrel-upper-w190",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsBarrelUpperW190",
+      "sha256": "3a4360b71bf4ecf730b2906e25a3c42c07248bbe00b9ad7fec58c44ec9dde61e",
+      "soft": false,
+      "tiles": [
+        "Props_3_5"
+      ],
+      "triangles": 128
+    },
+    "prop/brinecove/props-barrel-upper-w250": {
+      "materials": [
+        "BC_metal",
+        "BC_wood"
+      ],
+      "max": [
+        -249.6279,
+        30.945,
+        -369.61
+      ],
+      "mesh": "SM_BC_PropsBarrelUpperW250",
+      "min": [
+        -250.396,
+        30.0,
+        -370.39
+      ],
+      "object": "props-barrel-upper-w250",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsBarrelUpperW250",
+      "sha256": "ef76149048f82199a76023114f2f417adc8463be33128a98ffc9a549da12f27e",
+      "soft": false,
+      "tiles": [
+        "Props_3_5"
+      ],
+      "triangles": 128
+    },
+    "prop/brinecove/props-crate-pier-central-sea": {
+      "materials": [
+        "BC_wood_dark",
+        "BC_wood_light"
+      ],
+      "max": [
+        -5.3506,
+        6.25,
+        169.6195
+      ],
+      "mesh": "SM_BC_PropsCratePierCentralSea",
+      "min": [
+        -6.6494,
+        5.25,
+        168.3805
+      ],
+      "object": "props-crate-pier-central-sea",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsCratePierCentralSea",
+      "sha256": "14b6a55be2248f9d2c17b41bd53505c02fb312e961d31ffc411543b816cff2fd",
+      "soft": false,
+      "tiles": [
+        "Props_3_2"
+      ],
+      "triangles": 36
+    },
+    "prop/brinecove/props-crate-pier-central-shore": {
+      "materials": [
+        "BC_wood_dark",
+        "BC_wood_light"
+      ],
+      "max": [
+        -5.3506,
+        6.25,
+        -32.3805
+      ],
+      "mesh": "SM_BC_PropsCratePierCentralShore",
+      "min": [
+        -6.6494,
+        5.25,
+        -33.6195
+      ],
+      "object": "props-crate-pier-central-shore",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsCratePierCentralShore",
+      "sha256": "9a9b848dad3bbbe6b587d6afc8ac514173a084997ce318385835bcadae6c1975",
+      "soft": false,
+      "tiles": [
+        "Props_3_3"
+      ],
+      "triangles": 36
+    },
+    "prop/brinecove/props-crate-pier-east-sea": {
+      "materials": [
+        "BC_wood_dark",
+        "BC_wood_light"
+      ],
+      "max": [
+        234.6494,
+        6.25,
+        123.6195
+      ],
+      "mesh": "SM_BC_PropsCratePierEastSea",
+      "min": [
+        233.3506,
+        5.25,
+        122.3805
+      ],
+      "object": "props-crate-pier-east-sea",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsCratePierEastSea",
+      "sha256": "e770ddcfc4ec2993a13c1c0cb455dae0f1ec6f14ca6fb375833f0b950f2434ff",
+      "soft": false,
+      "tiles": [
+        "Props_4_3"
+      ],
+      "triangles": 36
+    },
+    "prop/brinecove/props-crate-pier-east-shore": {
+      "materials": [
+        "BC_wood_dark",
+        "BC_wood_light"
+      ],
+      "max": [
+        234.6494,
+        6.25,
+        -32.3805
+      ],
+      "mesh": "SM_BC_PropsCratePierEastShore",
+      "min": [
+        233.3506,
+        5.25,
+        -33.6195
+      ],
+      "object": "props-crate-pier-east-shore",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsCratePierEastShore",
+      "sha256": "b1bb018e4cadf593ca24665dfa35451af06932e472bf730c077db759bd27070e",
+      "soft": false,
+      "tiles": [
+        "Props_4_3"
+      ],
+      "triangles": 36
+    },
+    "prop/brinecove/props-crate-pier-west-sea": {
+      "materials": [
+        "BC_wood_dark",
+        "BC_wood_light"
+      ],
+      "max": [
+        -240.6006,
+        6.25,
+        97.6195
+      ],
+      "mesh": "SM_BC_PropsCratePierWestSea",
+      "min": [
+        -241.8994,
+        5.25,
+        96.3805
+      ],
+      "object": "props-crate-pier-west-sea",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsCratePierWestSea",
+      "sha256": "481770aee2f9b5ea4299130cd7f7f895cdb09674d3ac653e2350cbbafb271f39",
+      "soft": false,
+      "tiles": [
+        "Props_3_3"
+      ],
+      "triangles": 36
+    },
+    "prop/brinecove/props-crate-pier-west-shore": {
+      "materials": [
+        "BC_wood_dark",
+        "BC_wood_light"
+      ],
+      "max": [
+        -240.6006,
+        6.25,
+        -32.3805
+      ],
+      "mesh": "SM_BC_PropsCratePierWestShore",
+      "min": [
+        -241.8994,
+        5.25,
+        -33.6195
+      ],
+      "object": "props-crate-pier-west-shore",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsCratePierWestShore",
+      "sha256": "404582fff4dc045153cddb1cb87e0cff2a581682198909469c3679ac1a87481b",
+      "soft": false,
+      "tiles": [
+        "Props_3_3"
+      ],
+      "triangles": 36
+    },
+    "prop/brinecove/props-crate-quay-e150": {
+      "materials": [
+        "BC_wood_dark",
+        "BC_wood_light"
+      ],
+      "max": [
+        150.6955,
+        5.61,
+        -175.6623
+      ],
+      "mesh": "SM_BC_PropsCrateQuayE150",
+      "min": [
+        149.4288,
+        4.7,
+        -176.9037
+      ],
+      "object": "props-crate-quay-e150",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsCrateQuayE150",
+      "sha256": "70eac0f1b0a1945290dfceb49f5b1963f80697894cf5aeef968bcfb83aab2535",
+      "soft": false,
+      "tiles": [
+        "Props_4_4"
+      ],
+      "triangles": 36
+    },
+    "prop/brinecove/props-crate-quay-e205": {
+      "materials": [
+        "BC_wood_dark",
+        "BC_wood_light"
+      ],
+      "max": [
+        204.5486,
+        5.8944,
+        -174.9938
+      ],
+      "mesh": "SM_BC_PropsCrateQuayE205",
+      "min": [
+        202.9595,
+        4.7,
+        -176.5249
+      ],
+      "object": "props-crate-quay-e205",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsCrateQuayE205",
+      "sha256": "fbf3014f9630713114d4c940fe5aa6755a94529613155ab6065fcf95c12f67ca",
+      "soft": false,
+      "tiles": [
+        "Props_4_4"
+      ],
+      "triangles": 36
+    },
+    "prop/brinecove/props-crate-quay-e270": {
+      "materials": [
+        "BC_wood_dark",
+        "BC_wood_light"
+      ],
+      "max": [
+        272.424,
+        5.8734,
+        -174.6859
+      ],
+      "mesh": "SM_BC_PropsCrateQuayE270",
+      "min": [
+        271.061,
+        4.7,
+        -175.9503
+      ],
+      "object": "props-crate-quay-e270",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsCrateQuayE270",
+      "sha256": "9bc1d3b7e3019a5f8a91572a55482dad89077114475d7d9419adc140540a2f08",
+      "soft": false,
+      "tiles": [
+        "Props_5_4"
+      ],
+      "triangles": 36
+    },
+    "prop/brinecove/props-crate-quay-e320": {
+      "materials": [
+        "BC_wood_dark",
+        "BC_wood_light"
+      ],
+      "max": [
+        320.2527,
+        5.443,
+        -175.5772
+      ],
+      "mesh": "SM_BC_PropsCrateQuayE320",
+      "min": [
+        319.2469,
+        4.7,
+        -176.61
+      ],
+      "object": "props-crate-quay-e320",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsCrateQuayE320",
+      "sha256": "89936dcea52422714021ae50a183d652a26169b279c1362638c7260e67408b30",
+      "soft": false,
+      "tiles": [
+        "Props_5_4"
+      ],
+      "triangles": 36
+    },
+    "prop/brinecove/props-crate-quay-w210": {
+      "materials": [
+        "BC_wood_dark",
+        "BC_wood_light"
+      ],
+      "max": [
+        -208.9953,
+        5.6161,
+        -176.1659
+      ],
+      "mesh": "SM_BC_PropsCrateQuayW210",
+      "min": [
+        -210.2461,
+        4.7,
+        -177.4416
+      ],
+      "object": "props-crate-quay-w210",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsCrateQuayW210",
+      "sha256": "57ceab1270969454894f18e7a6aaf084d7d483e82360c3892d0f3d7cc8836d1a",
+      "soft": false,
+      "tiles": [
+        "Props_3_4"
+      ],
+      "triangles": 36
+    },
+    "prop/brinecove/props-crate-quay-w270": {
+      "materials": [
+        "BC_wood_dark",
+        "BC_wood_light"
+      ],
+      "max": [
+        -269.4837,
+        5.4677,
+        -175.7626
+      ],
+      "mesh": "SM_BC_PropsCrateQuayW270",
+      "min": [
+        -270.4452,
+        4.7,
+        -176.6684
+      ],
+      "object": "props-crate-quay-w270",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsCrateQuayW270",
+      "sha256": "170028926e5ea98b9b2d2933b92cef9b2118cd937cc1c1227dfaf70da1c75da2",
+      "soft": false,
+      "tiles": [
+        "Props_2_4"
+      ],
+      "triangles": 36
+    },
+    "prop/brinecove/props-crate-quay-w320": {
+      "materials": [
+        "BC_wood_dark",
+        "BC_wood_light"
+      ],
+      "max": [
+        -317.5324,
+        5.7632,
+        -175.2407
+      ],
+      "mesh": "SM_BC_PropsCrateQuayW320",
+      "min": [
+        -318.9894,
+        4.7,
+        -176.7203
+      ],
+      "object": "props-crate-quay-w320",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsCrateQuayW320",
+      "sha256": "a1fa8113ad08dc13ee672d95c1b52438ec7e9bc41c69de2ca466be9f81eddf48",
+      "soft": false,
+      "tiles": [
+        "Props_2_4"
+      ],
+      "triangles": 36
+    },
+    "prop/brinecove/props-crate-upper-e130": {
+      "materials": [
+        "BC_wood_dark",
+        "BC_wood_light"
+      ],
+      "max": [
+        133.4898,
+        30.8,
+        -365.541
+      ],
+      "mesh": "SM_BC_PropsCrateUpperE130",
+      "min": [
+        132.5102,
+        30.0,
+        -366.459
+      ],
+      "object": "props-crate-upper-e130",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsCrateUpperE130",
+      "sha256": "c90decb8f73153ba1f9b43ee68f1f4fe96c69971fb2eb1e2df911812a09768ac",
+      "soft": false,
+      "tiles": [
+        "Props_4_5"
+      ],
+      "triangles": 36
+    },
+    "prop/brinecove/props-crate-upper-e190": {
+      "materials": [
+        "BC_wood_dark",
+        "BC_wood_light"
+      ],
+      "max": [
+        193.4898,
+        30.8,
+        -365.541
+      ],
+      "mesh": "SM_BC_PropsCrateUpperE190",
+      "min": [
+        192.5102,
+        30.0,
+        -366.459
+      ],
+      "object": "props-crate-upper-e190",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsCrateUpperE190",
+      "sha256": "e970702dc9a9aa836bb32ed3f4f5073926638cba0057597ec6d77ae48cdbbc1b",
+      "soft": false,
+      "tiles": [
+        "Props_4_5"
+      ],
+      "triangles": 36
+    },
+    "prop/brinecove/props-crate-upper-e250": {
+      "materials": [
+        "BC_wood_dark",
+        "BC_wood_light"
+      ],
+      "max": [
+        253.4898,
+        30.8,
+        -365.541
+      ],
+      "mesh": "SM_BC_PropsCrateUpperE250",
+      "min": [
+        252.5102,
+        30.0,
+        -366.459
+      ],
+      "object": "props-crate-upper-e250",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsCrateUpperE250",
+      "sha256": "4afa7007994fb113114572f48a3f450bb93aaae0bb1c2f2ea2748a7b9109335a",
+      "soft": false,
+      "tiles": [
+        "Props_4_5"
+      ],
+      "triangles": 36
+    },
+    "prop/brinecove/props-crate-upper-e70": {
+      "materials": [
+        "BC_wood_dark",
+        "BC_wood_light"
+      ],
+      "max": [
+        73.4898,
+        30.8,
+        -365.541
+      ],
+      "mesh": "SM_BC_PropsCrateUpperE70",
+      "min": [
+        72.5102,
+        30.0,
+        -366.459
+      ],
+      "object": "props-crate-upper-e70",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsCrateUpperE70",
+      "sha256": "3dafd43c583b959f755c395e18807042528af9f2123e1dd6325448b5e44cb029",
+      "soft": false,
+      "tiles": [
+        "Props_4_5"
+      ],
+      "triangles": 36
+    },
+    "prop/brinecove/props-crate-upper-w190": {
+      "materials": [
+        "BC_wood_dark",
+        "BC_wood_light"
+      ],
+      "max": [
+        -186.5102,
+        30.8,
+        -365.541
+      ],
+      "mesh": "SM_BC_PropsCrateUpperW190",
+      "min": [
+        -187.4898,
+        30.0,
+        -366.459
+      ],
+      "object": "props-crate-upper-w190",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsCrateUpperW190",
+      "sha256": "9ff169db3cbbc9f726ae010395be5422bbfb2cbd32743c730bae27683eba9d44",
+      "soft": false,
+      "tiles": [
+        "Props_3_5"
+      ],
+      "triangles": 36
+    },
+    "prop/brinecove/props-crate-upper-w250": {
+      "materials": [
+        "BC_wood_dark",
+        "BC_wood_light"
+      ],
+      "max": [
+        -246.5102,
+        30.8,
+        -365.541
+      ],
+      "mesh": "SM_BC_PropsCrateUpperW250",
+      "min": [
+        -247.4898,
+        30.0,
+        -366.459
+      ],
+      "object": "props-crate-upper-w250",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsCrateUpperW250",
+      "sha256": "ffb628e57d501813528d683fe4d679f3dba5c4b38352b7c09048af9aa3f07591",
+      "soft": false,
+      "tiles": [
+        "Props_3_5"
+      ],
+      "triangles": 36
+    }
+  },
+  "pending": {
+    "resave": [],
+    "stale": []
+  },
+  "retired": false,
+  "schema": 1,
+  "selection": [
+    "props-barrel-pier-central-sea",
+    "props-barrel-pier-central-shore",
+    "props-barrel-pier-east-sea",
+    "props-barrel-pier-east-shore",
+    "props-barrel-pier-west-sea",
+    "props-barrel-pier-west-shore",
+    "props-barrel-quay-e150-146",
+    "props-barrel-quay-e150-184",
+    "props-barrel-quay-e205-146",
+    "props-barrel-quay-e205-184",
+    "props-barrel-quay-e270-146",
+    "props-barrel-quay-e270-184",
+    "props-barrel-quay-e320-146",
+    "props-barrel-quay-e320-184",
+    "props-barrel-quay-w210-146",
+    "props-barrel-quay-w210-184",
+    "props-barrel-quay-w270-146",
+    "props-barrel-quay-w270-184",
+    "props-barrel-quay-w320-146",
+    "props-barrel-quay-w320-184",
+    "props-barrel-upper-e130",
+    "props-barrel-upper-e190",
+    "props-barrel-upper-e250",
+    "props-barrel-upper-e70",
+    "props-barrel-upper-w190",
+    "props-barrel-upper-w250",
+    "props-crate-pier-central-sea",
+    "props-crate-pier-central-shore",
+    "props-crate-pier-east-sea",
+    "props-crate-pier-east-shore",
+    "props-crate-pier-west-sea",
+    "props-crate-pier-west-shore",
+    "props-crate-quay-e150",
+    "props-crate-quay-e205",
+    "props-crate-quay-e270",
+    "props-crate-quay-e320",
+    "props-crate-quay-w210",
+    "props-crate-quay-w270",
+    "props-crate-quay-w320",
+    "props-crate-upper-e130",
+    "props-crate-upper-e190",
+    "props-crate-upper-e250",
+    "props-crate-upper-e70",
+    "props-crate-upper-w190",
+    "props-crate-upper-w250"
+  ],
+  "shares": {
+    "Props_2_4": {
+      "prop/brinecove/props-barrel-quay-w270-146": 128,
+      "prop/brinecove/props-barrel-quay-w270-184": 128,
+      "prop/brinecove/props-barrel-quay-w320-146": 128,
+      "prop/brinecove/props-barrel-quay-w320-184": 128,
+      "prop/brinecove/props-crate-quay-w270": 36,
+      "prop/brinecove/props-crate-quay-w320": 36
+    },
+    "Props_3_2": {
+      "prop/brinecove/props-crate-pier-central-sea": 36
+    },
+    "Props_3_3": {
+      "prop/brinecove/props-barrel-pier-west-sea": 128,
+      "prop/brinecove/props-barrel-pier-west-shore": 128,
+      "prop/brinecove/props-crate-pier-central-shore": 36,
+      "prop/brinecove/props-crate-pier-west-sea": 36,
+      "prop/brinecove/props-crate-pier-west-shore": 36
+    },
+    "Props_3_4": {
+      "prop/brinecove/props-barrel-quay-w210-146": 128,
+      "prop/brinecove/props-barrel-quay-w210-184": 128,
+      "prop/brinecove/props-crate-quay-w210": 36
+    },
+    "Props_3_5": {
+      "prop/brinecove/props-barrel-upper-w190": 128,
+      "prop/brinecove/props-barrel-upper-w250": 128,
+      "prop/brinecove/props-crate-upper-w190": 36,
+      "prop/brinecove/props-crate-upper-w250": 36
+    },
+    "Props_4_2": {
+      "prop/brinecove/props-barrel-pier-central-sea": 128
+    },
+    "Props_4_3": {
+      "prop/brinecove/props-barrel-pier-central-shore": 128,
+      "prop/brinecove/props-barrel-pier-east-sea": 128,
+      "prop/brinecove/props-barrel-pier-east-shore": 128,
+      "prop/brinecove/props-crate-pier-east-sea": 36,
+      "prop/brinecove/props-crate-pier-east-shore": 36
+    },
+    "Props_4_4": {
+      "prop/brinecove/props-barrel-quay-e150-146": 128,
+      "prop/brinecove/props-barrel-quay-e150-184": 128,
+      "prop/brinecove/props-barrel-quay-e205-146": 128,
+      "prop/brinecove/props-barrel-quay-e205-184": 128,
+      "prop/brinecove/props-crate-quay-e150": 36,
+      "prop/brinecove/props-crate-quay-e205": 36
+    },
+    "Props_4_5": {
+      "prop/brinecove/props-barrel-upper-e130": 128,
+      "prop/brinecove/props-barrel-upper-e190": 128,
+      "prop/brinecove/props-barrel-upper-e250": 128,
+      "prop/brinecove/props-barrel-upper-e70": 128,
+      "prop/brinecove/props-crate-upper-e130": 36,
+      "prop/brinecove/props-crate-upper-e190": 36,
+      "prop/brinecove/props-crate-upper-e250": 36,
+      "prop/brinecove/props-crate-upper-e70": 36
+    },
+    "Props_5_4": {
+      "prop/brinecove/props-barrel-quay-e270-146": 128,
+      "prop/brinecove/props-barrel-quay-e270-184": 128,
+      "prop/brinecove/props-barrel-quay-e320-146": 128,
+      "prop/brinecove/props-barrel-quay-e320-184": 128,
+      "prop/brinecove/props-crate-quay-e270": 36,
+      "prop/brinecove/props-crate-quay-e320": 36
+    }
+  },
+  "tiles": {
+    "Props_2_4": {
+      "original": {
+        "material_package": {
+          "BC_autumn_olive": "/Game/Brinecove/Materials/MI_BC_autumn_olive",
+          "BC_clay": "/Game/Brinecove/Materials/MI_BC_clay",
+          "BC_lantern": "/Game/Brinecove/Materials/MI_BC_lantern",
+          "BC_metal": "/Game/Brinecove/Materials/MI_BC_metal",
+          "BC_wood": "/Game/Brinecove/Materials/MI_BC_wood",
+          "BC_wood_dark": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+          "BC_wood_light": "/Game/Brinecove/Materials/MI_BC_wood_light"
+        },
+        "owner": "shared/brinecove/props-2-4",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "collision": "complex",
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_autumn_olive",
+            "/Game/Brinecove/Materials/MI_BC_clay",
+            "/Game/Brinecove/Materials/MI_BC_lantern",
+            "/Game/Brinecove/Materials/MI_BC_metal",
+            "/Game/Brinecove/Materials/MI_BC_wood",
+            "/Game/Brinecove/Materials/MI_BC_wood_dark",
+            "/Game/Brinecove/Materials/MI_BC_wood_light"
+          ],
+          "triangles": 1010
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_Props_2_4",
+      "record": "prop/brinecove/props-2-4",
+      "remainder": null,
+      "source_triangles": 584
+    },
+    "Props_3_2": {
+      "original": {
+        "material_package": {
+          "BC_flag_red": "/Game/Brinecove/Materials/MI_BC_flag_red",
+          "BC_metal": "/Game/Brinecove/Materials/MI_BC_metal",
+          "BC_sail": "/Game/Brinecove/Materials/MI_BC_sail",
+          "BC_wood": "/Game/Brinecove/Materials/MI_BC_wood",
+          "BC_wood_dark": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+          "BC_wood_light": "/Game/Brinecove/Materials/MI_BC_wood_light"
+        },
+        "owner": "shared/brinecove/props-3-2",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "collision": "complex",
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_flag_red",
+            "/Game/Brinecove/Materials/MI_BC_metal",
+            "/Game/Brinecove/Materials/MI_BC_sail",
+            "/Game/Brinecove/Materials/MI_BC_wood",
+            "/Game/Brinecove/Materials/MI_BC_wood_dark",
+            "/Game/Brinecove/Materials/MI_BC_wood_light"
+          ],
+          "triangles": 428
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_Props_3_2",
+      "record": "prop/brinecove/props-3-2",
+      "remainder": {
+        "materials": [
+          "BC_sail"
+        ],
+        "sha256": "72a6c8fddd0016f30f97bb71549bad8dbadb5b51ef5a1dc3e0fd34861f884595",
+        "triangles": 96
+      },
+      "source_triangles": 132
+    },
+    "Props_3_3": {
+      "original": {
+        "material_package": {
+          "BC_flag_black": "/Game/Brinecove/Materials/MI_BC_flag_black",
+          "BC_metal": "/Game/Brinecove/Materials/MI_BC_metal",
+          "BC_rope": "/Game/Brinecove/Materials/MI_BC_rope",
+          "BC_sail": "/Game/Brinecove/Materials/MI_BC_sail",
+          "BC_wood": "/Game/Brinecove/Materials/MI_BC_wood",
+          "BC_wood_dark": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+          "BC_wood_light": "/Game/Brinecove/Materials/MI_BC_wood_light"
+        },
+        "owner": "shared/brinecove/props-3-3",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "collision": "complex",
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_flag_black",
+            "/Game/Brinecove/Materials/MI_BC_metal",
+            "/Game/Brinecove/Materials/MI_BC_rope",
+            "/Game/Brinecove/Materials/MI_BC_sail",
+            "/Game/Brinecove/Materials/MI_BC_wood",
+            "/Game/Brinecove/Materials/MI_BC_wood_dark",
+            "/Game/Brinecove/Materials/MI_BC_wood_light"
+          ],
+          "triangles": 4600
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_Props_3_3",
+      "record": "prop/brinecove/props-3-3",
+      "remainder": {
+        "materials": [
+          "BC_sail"
+        ],
+        "sha256": "fe9c5dd1775114ab0eb34ae657d0d0feb7ef3687f9a1acdf4d8e9b67c60446e9",
+        "triangles": 88
+      },
+      "source_triangles": 452
+    },
+    "Props_3_4": {
+      "original": {
+        "material_package": {
+          "BC_autumn_olive": "/Game/Brinecove/Materials/MI_BC_autumn_olive",
+          "BC_clay": "/Game/Brinecove/Materials/MI_BC_clay",
+          "BC_lantern": "/Game/Brinecove/Materials/MI_BC_lantern",
+          "BC_metal": "/Game/Brinecove/Materials/MI_BC_metal",
+          "BC_wood": "/Game/Brinecove/Materials/MI_BC_wood",
+          "BC_wood_dark": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+          "BC_wood_light": "/Game/Brinecove/Materials/MI_BC_wood_light"
+        },
+        "owner": "shared/brinecove/props-3-4",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "collision": "complex",
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_autumn_olive",
+            "/Game/Brinecove/Materials/MI_BC_clay",
+            "/Game/Brinecove/Materials/MI_BC_lantern",
+            "/Game/Brinecove/Materials/MI_BC_metal",
+            "/Game/Brinecove/Materials/MI_BC_wood",
+            "/Game/Brinecove/Materials/MI_BC_wood_dark",
+            "/Game/Brinecove/Materials/MI_BC_wood_light"
+          ],
+          "triangles": 1188
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_Props_3_4",
+      "record": "prop/brinecove/props-3-4",
+      "remainder": null,
+      "source_triangles": 292
+    },
+    "Props_3_5": {
+      "original": {
+        "material_package": {
+          "BC_metal": "/Game/Brinecove/Materials/MI_BC_metal",
+          "BC_wood": "/Game/Brinecove/Materials/MI_BC_wood",
+          "BC_wood_dark": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+          "BC_wood_light": "/Game/Brinecove/Materials/MI_BC_wood_light"
+        },
+        "owner": "shared/brinecove/props-3-5",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "collision": "complex",
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_metal",
+            "/Game/Brinecove/Materials/MI_BC_wood",
+            "/Game/Brinecove/Materials/MI_BC_wood_dark",
+            "/Game/Brinecove/Materials/MI_BC_wood_light"
+          ],
+          "triangles": 328
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_Props_3_5",
+      "record": "prop/brinecove/props-3-5",
+      "remainder": null,
+      "source_triangles": 328
+    },
+    "Props_4_2": {
+      "original": {
+        "material_package": {
+          "BC_flag_red": "/Game/Brinecove/Materials/MI_BC_flag_red",
+          "BC_metal": "/Game/Brinecove/Materials/MI_BC_metal",
+          "BC_sail": "/Game/Brinecove/Materials/MI_BC_sail",
+          "BC_wood": "/Game/Brinecove/Materials/MI_BC_wood",
+          "BC_wood_dark": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+          "BC_wood_light": "/Game/Brinecove/Materials/MI_BC_wood_light"
+        },
+        "owner": "shared/brinecove/props-4-2",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "collision": "complex",
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_flag_red",
+            "/Game/Brinecove/Materials/MI_BC_metal",
+            "/Game/Brinecove/Materials/MI_BC_sail",
+            "/Game/Brinecove/Materials/MI_BC_wood",
+            "/Game/Brinecove/Materials/MI_BC_wood_dark",
+            "/Game/Brinecove/Materials/MI_BC_wood_light"
+          ],
+          "triangles": 382
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_Props_4_2",
+      "record": "prop/brinecove/props-4-2",
+      "remainder": {
+        "materials": [
+          "BC_sail"
+        ],
+        "sha256": "965e4fe39b5c9687ffc88db7028b66ad3251e17d94021b518a2f0b9c140ee5a3",
+        "triangles": 58
+      },
+      "source_triangles": 186
+    },
+    "Props_4_3": {
+      "original": {
+        "material_package": {
+          "BC_flag_black": "/Game/Brinecove/Materials/MI_BC_flag_black",
+          "BC_metal": "/Game/Brinecove/Materials/MI_BC_metal",
+          "BC_rope": "/Game/Brinecove/Materials/MI_BC_rope",
+          "BC_sail": "/Game/Brinecove/Materials/MI_BC_sail",
+          "BC_wood": "/Game/Brinecove/Materials/MI_BC_wood",
+          "BC_wood_dark": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+          "BC_wood_light": "/Game/Brinecove/Materials/MI_BC_wood_light"
+        },
+        "owner": "shared/brinecove/props-4-3",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "collision": "complex",
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_flag_black",
+            "/Game/Brinecove/Materials/MI_BC_metal",
+            "/Game/Brinecove/Materials/MI_BC_rope",
+            "/Game/Brinecove/Materials/MI_BC_sail",
+            "/Game/Brinecove/Materials/MI_BC_wood",
+            "/Game/Brinecove/Materials/MI_BC_wood_dark",
+            "/Game/Brinecove/Materials/MI_BC_wood_light"
+          ],
+          "triangles": 4198
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_Props_4_3",
+      "record": "prop/brinecove/props-4-3",
+      "remainder": {
+        "materials": [
+          "BC_sail"
+        ],
+        "sha256": "ebe112149d8ee934ac704fb35a3f06123eb7ce16f6af177a97c05e030c0bfa1c",
+        "triangles": 66
+      },
+      "source_triangles": 522
+    },
+    "Props_4_4": {
+      "original": {
+        "material_package": {
+          "BC_autumn_olive": "/Game/Brinecove/Materials/MI_BC_autumn_olive",
+          "BC_clay": "/Game/Brinecove/Materials/MI_BC_clay",
+          "BC_lantern": "/Game/Brinecove/Materials/MI_BC_lantern",
+          "BC_metal": "/Game/Brinecove/Materials/MI_BC_metal",
+          "BC_wood": "/Game/Brinecove/Materials/MI_BC_wood",
+          "BC_wood_dark": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+          "BC_wood_light": "/Game/Brinecove/Materials/MI_BC_wood_light"
+        },
+        "owner": "shared/brinecove/props-4-4",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "collision": "complex",
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_autumn_olive",
+            "/Game/Brinecove/Materials/MI_BC_clay",
+            "/Game/Brinecove/Materials/MI_BC_lantern",
+            "/Game/Brinecove/Materials/MI_BC_metal",
+            "/Game/Brinecove/Materials/MI_BC_wood",
+            "/Game/Brinecove/Materials/MI_BC_wood_dark",
+            "/Game/Brinecove/Materials/MI_BC_wood_light"
+          ],
+          "triangles": 1480
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_Props_4_4",
+      "record": "prop/brinecove/props-4-4",
+      "remainder": null,
+      "source_triangles": 584
+    },
+    "Props_4_5": {
+      "original": {
+        "material_package": {
+          "BC_metal": "/Game/Brinecove/Materials/MI_BC_metal",
+          "BC_wood": "/Game/Brinecove/Materials/MI_BC_wood",
+          "BC_wood_dark": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+          "BC_wood_light": "/Game/Brinecove/Materials/MI_BC_wood_light"
+        },
+        "owner": "shared/brinecove/props-4-5",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "collision": "complex",
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_metal",
+            "/Game/Brinecove/Materials/MI_BC_wood",
+            "/Game/Brinecove/Materials/MI_BC_wood_dark",
+            "/Game/Brinecove/Materials/MI_BC_wood_light"
+          ],
+          "triangles": 656
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_Props_4_5",
+      "record": "prop/brinecove/props-4-5",
+      "remainder": null,
+      "source_triangles": 656
+    },
+    "Props_5_4": {
+      "original": {
+        "material_package": {
+          "BC_autumn_olive": "/Game/Brinecove/Materials/MI_BC_autumn_olive",
+          "BC_clay": "/Game/Brinecove/Materials/MI_BC_clay",
+          "BC_lantern": "/Game/Brinecove/Materials/MI_BC_lantern",
+          "BC_metal": "/Game/Brinecove/Materials/MI_BC_metal",
+          "BC_wood": "/Game/Brinecove/Materials/MI_BC_wood",
+          "BC_wood_dark": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+          "BC_wood_light": "/Game/Brinecove/Materials/MI_BC_wood_light"
+        },
+        "owner": "shared/brinecove/props-5-4",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "collision": "complex",
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_autumn_olive",
+            "/Game/Brinecove/Materials/MI_BC_clay",
+            "/Game/Brinecove/Materials/MI_BC_lantern",
+            "/Game/Brinecove/Materials/MI_BC_metal",
+            "/Game/Brinecove/Materials/MI_BC_wood",
+            "/Game/Brinecove/Materials/MI_BC_wood_dark",
+            "/Game/Brinecove/Materials/MI_BC_wood_light"
+          ],
+          "triangles": 1010
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_Props_5_4",
+      "record": "prop/brinecove/props-5-4",
+      "remainder": null,
+      "source_triangles": 584
+    }
+  }
+}

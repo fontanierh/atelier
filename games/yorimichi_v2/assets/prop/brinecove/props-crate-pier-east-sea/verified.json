@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/props-crate-pier-east-sea",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_PropsCratePierEastSea.uasset": "6e4e89cdbde37109a8bb3cd1a183eecf0797b7f4a25dc6cdfe33aa248797bce8"
+  },
+  "input_fingerprint": "5858e22baae40e6629ce9055bc914159854f172578fa384fd167b84606ce72ee",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_PropsCratePierEastSea": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_PropsCrateQuayW270: the props crate quay w270, cut from the fused tile(s) Props_2_4 (36 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/brinecove/props-crate-quay-w270"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/brinecove/props-crate-quay-w270"
+references = ["adopted/brinecove/materials"]
+
+[[sources]]
+path = "src/SM_BC_PropsCrateQuayW270.glb"
+sha256 = "170028926e5ea98b9b2d2933b92cef9b2118cd937cc1c1227dfaf70da1c75da2"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Brinecove/Materials/MI_BC_wood_dark", "/Game/Brinecove/Materials/MI_BC_wood_light"]
+triangles = 36
+collision = "complex"
+full_precision_uvs = true
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_PropsCrateQuayW270"

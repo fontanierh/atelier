@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/props-crate-pier-central-sea",
+  "dependencies": {
+    "prop/brinecove/props-crate-pier-central-sea": "e7ac36f5ba7508195ba74a8ebfc6b6f9f8906d13a8bcdf3c2f822494bffa44e7"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/A/CN/6CZ3CT072KJVRGD456OGGX.uasset": "b1e8c501daaf4b3375809a18c2230e5a8778e52e34766a557e73eb884c7daccc"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

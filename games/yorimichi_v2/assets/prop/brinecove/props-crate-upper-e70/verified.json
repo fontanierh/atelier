@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/props-crate-upper-e70",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_PropsCrateUpperE70.uasset": "76f5b45a35bb434c3913d1f482b602e54eb0dd1220bb329f013ea013b4b10099"
+  },
+  "input_fingerprint": "7a9d2dc0e13c0cf46d2c7fb58599a486ded70be5087375705c4ed4445a111fb6",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_PropsCrateUpperE70": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

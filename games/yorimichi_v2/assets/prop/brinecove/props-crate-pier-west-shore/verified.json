@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/props-crate-pier-west-shore",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_PropsCratePierWestShore.uasset": "028ff4a2ce41cfa58bf0a44396a1c2e1860867a8cf04858bb2cfca17460efed0"
+  },
+  "input_fingerprint": "ad99cfc423df60f041437b889774a1d599a3061f7d866dca6222b68646b0171b",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_PropsCratePierWestShore": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

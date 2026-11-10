@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/props-crate-upper-w190",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_PropsCrateUpperW190.uasset": "5a85762bf947a0557a37c11ef652a9461ff14703f211b633bc10c28e88925fb3"
+  },
+  "input_fingerprint": "7b598e114da598ef402015e09742b14c7ac6c4110b4d9df061567042617c1c49",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_PropsCrateUpperW190": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/props-barrel-upper-e130",
+  "dependencies": {
+    "prop/brinecove/props-barrel-upper-e130": "30e97628383ef799706f57194eab3ed41bcfbff3573be6d265b33c644bfe0e9b"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/D/C2/5ND2563CC3T5YZRY38GX57.uasset": "cc46db15457126d55e964222ff739736f994ad16583dc9d4dcc10d9f29a9780e"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

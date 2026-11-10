@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_PropsBarrelPierCentralSea: the props barrel pier central sea, cut from the fused tile(s) Props_4_2 (128 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/brinecove/props-barrel-pier-central-sea"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/brinecove/props-barrel-pier-central-sea"
+references = ["adopted/brinecove/materials"]
+
+[[sources]]
+path = "src/SM_BC_PropsBarrelPierCentralSea.glb"
+sha256 = "c541f29e4dc3079d5388ee6efaf0e35fcd1be9a5109dd2d9307084f0560cf49c"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Brinecove/Materials/MI_BC_metal", "/Game/Brinecove/Materials/MI_BC_wood"]
+triangles = 128
+collision = "complex"
+full_precision_uvs = true
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_PropsBarrelPierCentralSea"

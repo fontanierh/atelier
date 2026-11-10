@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/props-barrel-pier-west-sea",
+  "dependencies": {
+    "prop/brinecove/props-barrel-pier-west-sea": "f1a3751b55e0fb8d4d738ab155a06899467afcb8faf58cedb017e1f7e1be1296"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/E/77/NQ52WVDWT9SPTVWYGK2WH7.uasset": "033dcb75bffd27e4023d1dce020d6724264367a2f198226f53775625d7c92b40"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

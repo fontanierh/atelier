@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/props-barrel-upper-e130",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_PropsBarrelUpperE130.uasset": "a1e75f0dd4622b701c7342da8de775ae6ac2fd74bd5c0fac1f2353b0858332fa"
+  },
+  "input_fingerprint": "9780356be15d10c90c309d4a250a77308cab8741245d93555b4faa402b1d4374",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_PropsBarrelUpperE130": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

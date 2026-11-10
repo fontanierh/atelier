@@ -3,9 +3,9 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Brinecove/Meshes/SM_BC_Props_3_3.uasset": "0e2366d33c57d1733f28c130ca1a6f2ba8f21c6e57d63a1ac531308f8a2d69a2"
+    "unreal/Content/Brinecove/Meshes/SM_BC_Props_3_3.uasset": "686f84d7ee1eb9a4bcf122774b5a3b3c934b44fbfb763222f5fa29b15b05fe83"
   },
-  "input_fingerprint": "dd4b5b02b24d08dd1fd12587476ac64c021bff3d758ce7b984238201cd516b7f",
+  "input_fingerprint": "ea84766c998567c879a6d828384240f9d5ff0a82b134cb7001d272e628015e87",
   "kind": "imported",
   "lods": {
     "/Game/Brinecove/Meshes/SM_BC_Props_3_3": {

@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/props-barrel-quay-w320-184",
+  "dependencies": {
+    "prop/brinecove/props-barrel-quay-w320-184": "d363b4231e789a1191b50298e87b7e75db63d60542f57737d26c19f316ae5ea2"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/A/VJ/WB2COPQEB3WX69CQJHMIJ2.uasset": "c3d2a3fb0076bcc1788cc353e5d91f77f625ae842629cfd6ed08c000d4488f37"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

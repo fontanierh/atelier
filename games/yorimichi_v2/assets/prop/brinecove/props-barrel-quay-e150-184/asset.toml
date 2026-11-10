@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_PropsBarrelQuayE150184: the props barrel quay e150 184, cut from the fused tile(s) Props_4_4 (128 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/brinecove/props-barrel-quay-e150-184"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/brinecove/props-barrel-quay-e150-184"
+references = ["adopted/brinecove/materials"]
+
+[[sources]]
+path = "src/SM_BC_PropsBarrelQuayE150184.glb"
+sha256 = "486156e5604ed2a8eb6a223feb11a491e894f9e3bdb2a82e703694ee9431bc02"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Brinecove/Materials/MI_BC_metal", "/Game/Brinecove/Materials/MI_BC_wood"]
+triangles = 128
+collision = "complex"
+full_precision_uvs = true
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_PropsBarrelQuayE150184"
