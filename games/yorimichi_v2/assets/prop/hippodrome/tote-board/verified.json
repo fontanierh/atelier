@@ -1,0 +1,36 @@
+{
+  "asset": "prop/hippodrome/tote-board",
+  "dependencies": {
+    "adopted/hippodrome/meshes": "1dc4e8a62fa069424357490bd2e10b0e803546989b468f19d5034a2d3419bf0c"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Hippodrome/SM_HD_ToteBoard.uasset": "374fb1b0b074b5a8a18206a64de9c64ab2ec542d0baa74a252d30d15c3b21acb"
+  },
+  "input_fingerprint": "9b926082711b63848ce099274cff8956740e9a367814b122a84800703b67d1ef",
+  "kind": "imported",
+  "lods": {
+    "/Game/Hippodrome/SM_HD_ToteBoard": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

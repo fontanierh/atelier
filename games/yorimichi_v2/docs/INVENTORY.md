@@ -32,10 +32,30 @@ The source baseline `7eec0f98dd` is documented separately in [features](inventor
 
 Saved, prepared and packaged totals are kept separate:
 - **Saved and packaged:** everything in the table above is in main and in the `f5947da8e8c2` package.
-- **Imported after the package:** the two used Japan leaf instances (MI_LeafAmber, MI_LeafCrimson) are
-  material-instance records imported from their recipe; they read identical to the packaged ones.
-- **Prepared on a branch, not yet in main or saved:** the residual Belmonte train batch (138 texture and 21 material-instance records
-  covering 459 packages). It waits on two read-only editor reads and a claimed import; see [exceptions](inventory/exceptions.md).
+- **Imported in main after the package, not yet packaged:**
+  - The two used Japan leaf instances (MI_LeafAmber, MI_LeafCrimson) are material-instance records imported
+    from their recipe ([PR #792](https://github.com/fontanierh/atelier/pull/792)). They read identical to the
+    packaged ones.
+  - 72 Brine Cove plants and city tree residuals are source records, imported and verified
+    ([PR #794](https://github.com/fontanierh/atelier/pull/794)).
+  - The residual Belmonte train batch has 138 texture and 21 material-instance records covering 459 packages
+    ([PR #796](https://github.com/fontanierh/atelier/pull/796)). A read-only read-back matches the donor in
+    parent, switches and effective values for all 321 instances, and in every setting for the 138 textures.
+- **Imported on this branch:** the first small-families batch has 21 records covering 48 packages:
+  - 4 Hippodrome loose meshes;
+  - 4 plaza textures and 3 tree house textures;
+  - 10 material-instance records (37 instances).
+
+  All 21 are imported under claim SMALLFAM. The read-back matches the editor reads of the original packages:
+  - the 37 instances in parent, switches, overrides and effective values;
+  - the 7 textures in every setting;
+  - the 4 meshes in LODs, triangles, slots and trace.
+
+  The donor meshes carried one convex hull, which the complex-as-simple recipe drops. That trace flag never uses
+  a hull, so collision is unchanged.
+
+  The 19 generator masters, the Hidamari instance, the Mega Park seams that are still held and MI_TH_pane
+  stay open; see [exceptions](inventory/exceptions.md).
 
 Remaining construction work:
 - Close the other useful-object/source gaps in [exceptions](inventory/exceptions.md) and
@@ -73,7 +93,7 @@ Remaining construction work:
 | F11 | Zeppelin: **four** stations (Woodland, Hidamari, Mega Park, Belmonte) | Travel | implemented | W19 | Ported: [ZeppelinService](../unreal/Source/Yorimichi/Travel/ZeppelinService.cpp), four stations and saved station scenery. Ride playtest remains. |
 | F12 | Belmonte train, stations, interior, seats | Travel | implemented | W16, W20 | Ported: [BelmonteTrainService](../unreal/Source/Yorimichi/Travel/BelmonteTrainService.cpp), 67 recovered train records, saved W20 stations/track. Boarding/seats playtest remains. |
 | F13 | Ferry | Travel | implemented | W17 | Ported: [FerryService](../unreal/Source/Yorimichi/Travel/FerryService.cpp); terminals saved in W17. Ride playtest remains. |
-| F14 | Gondola | Travel | implemented | W18 | Ported: [GondolaService](../unreal/Source/Yorimichi/Travel/GondolaService.cpp); fixed stations saved in W18; pylons prepared as ten per-tower objects, not yet saved (see [transport-objects](inventory/transport-objects.md)). Ride playtest remains. |
+| F14 | Gondola | Travel | implemented | W18 | Ported: [GondolaService](../unreal/Source/Yorimichi/Travel/GondolaService.cpp); fixed stations and the ten per-tower pylon objects saved in W18 ([PR #790](https://github.com/fontanierh/atelier/pull/790), [transport-objects](inventory/transport-objects.md)). Ride playtest remains. |
 | F15 | Horse racing, calendar, broadcasts, saves | Racing | implemented | F10, W15, W16 | Ported: [Racing](../unreal/Source/Yorimichi/Racing/) and [HorseRacing](../unreal/Plugins/HorseRacing/). Race/save playtest remains; proposed betting/stables are not added. |
 | F16 | Villagers and ambient actors | Player and characters | implemented: movement only, no interactions found | W02, W07 | Ported: [VillageLife](../unreal/Source/Yorimichi/World/VillageLife.cpp). Baseline movement retained; new villager interactions are not claimed. |
 | F17 | Desktop menus, English text, hints, settings | Presentation | implemented: the phone profile must be removed | — | Ported: [Presentation](../unreal/Source/Yorimichi/Presentation/); phone profile removed. Human menu/settings checks remain. |
@@ -122,7 +142,7 @@ W10 shares W06's region scope; W19's stations belong to their host regions, so t
 | W15 | Hippodrome | Saved [hippodrome](../world/regions/w15-hippodrome/) scenery/objects; racing service stays dynamic. |
 | W16 | Belmonte | Saved [town/estates/courses](../world/regions/w16-belmonte/) and object placements; broader useful-object/source exceptions still tracked. |
 | W17 | Ferry route | Saved [terminals](../world/regions/w17-ferry/); ships remain dynamic. |
-| W18 | Gondola route | Saved [stations](../world/regions/w18-gondola/) (nine saved objects incl. three pylon groups); ten per-tower pylon objects prepared, not saved; cabins/ropes remain dynamic. |
+| W18 | Gondola route | Saved [stations](../world/regions/w18-gondola/) and the ten per-tower pylon objects ([PR #790](https://github.com/fontanierh/atelier/pull/790)); cabins/ropes remain dynamic. |
 | W19 | Zeppelin route (four stations) | Saved station scenery in Woodland/W06, Hidamari/W07, Mega Park/W11 and Belmonte/W16; moving service remains dynamic. |
 | W20 | Railway and cross-region routes | Saved [railway](../world/regions/w20-railway/); 67 train source records recovered, moving train retained. |
 

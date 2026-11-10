@@ -1,0 +1,12 @@
+{
+  "asset": "texture/japan/arcade-timber",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Textures/T_Arcade_timber.uasset": "5568595cecfc54bd9ebb26f85534e197da926e7127a7a5effd07c9dbef4915c1"
+  },
+  "input_fingerprint": "9d66d950e209f4447e07f339f7e33b276ae1ada61203a7eaad24754c24905e44",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}
