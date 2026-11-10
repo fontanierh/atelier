@@ -8,7 +8,7 @@ authority = "generated"
 owner = "shared/japan/materials/base-materials"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
 provenance = "donor generator games/yorimichi/unreal/Scripts at 7eec0f98dd (pins in docs/inventory/japan-surfaces-prep.md) at the V2 source baseline (docs/DECISIONS.md D01, D02), foliage_material lines shared_materials.py 37-81, 169-221; foliage_material.py 5-17; see_through.py 381-435, 509-516"
-input_dependencies = ["texture/japan/white", "adopted/japan/materials/base-materials", "adopted/seethrough"]
+input_dependencies = ["texture/japan/white", "adopted/japan/materials/base-materials", "material/seethrough/collection"]
 
 [[sources]]
 path = "src/japan_surface_masters.py"

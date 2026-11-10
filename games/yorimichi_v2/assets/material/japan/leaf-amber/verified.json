@@ -2,13 +2,13 @@
   "asset": "material/japan/leaf-amber",
   "dependencies": {
     "adopted/japan/textures/leaf-atlases": "04ea94eb263c608ac9ca5731764af2809c0060fa66d9969e1ac27e0bb17767a5",
-    "master/japan/surfaces/foliage": "50b2af398b930c11068973fac7e808d6806519ce1b712fe07fc4601a30624e88"
+    "master/japan/surfaces/foliage": "1eb7d5174ac79ab981be5136fa92a580c45cb15a8a02f810f46a76495f240c00"
   },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Materials/MI_LeafAmber.uasset": "92bd7082d7b2bf703117a0701178bd3501aa8816999b0d4db54e445583839f77"
+    "unreal/Content/Japan/Materials/MI_LeafAmber.uasset": "116decad783117cf49eb0e8b6155ce83df0cec5beedac77e6a924f443d757038"
   },
-  "input_fingerprint": "be47d6456cce3f1ccd90f80c937294d9d83b14ca1227953f97267250b94885a0",
+  "input_fingerprint": "422e152dce9b2253c935413e35ba1b5ffccc5a663f14d195ab3435293256119b",
   "kind": "imported",
   "schema": 1,
   "tool": "material-instance@2"

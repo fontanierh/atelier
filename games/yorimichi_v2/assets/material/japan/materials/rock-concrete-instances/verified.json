@@ -2,7 +2,7 @@
   "asset": "material/japan/materials/rock-concrete-instances",
   "dependencies": {
     "adopted/japan/textures/rock": "e13de1a26d0e34c21956b25b98b10f48aa3c4b18d29e627e521fb1531d668038",
-    "master/japan/surfaces/painted": "10657a1e86c5795172a095638c682bd6d6f4cc2c5e11d6733b8f8508a981def0",
+    "master/japan/surfaces/painted": "ce300fefabdcfdec5f353acae9b47e758c90abcfe840189385caf845bcf9f80f",
     "master/japan/terrain/coast-rock": "4de8c1f082ac27546959ab22ad5bb09bc99672d8e2ff922558deace2a8f57af4",
     "master/japan/terrain/forest-ground": "aeb5e7611f0e29c728117572cf8351b4f7332bebc4bce9312bd3d8ee69438a90",
     "master/japan/terrain/north-mountains": "e0152134f71245daa7c411d08e156269593a982a4b6007f89b594d83382d3a72",
@@ -10,14 +10,14 @@
   },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Materials/MI_Coast.uasset": "707d87b18309edf97667bc0283e78d71a37edd6b771aab430068c22f27cc2a35",
-    "unreal/Content/Japan/Materials/MI_CoastRock.uasset": "6a229d35dc8c3a6d8cc2d9de82af4c7faff28f3ac3f3c7cd5bf4bb26ec929259",
-    "unreal/Content/Japan/Materials/MI_Concrete.uasset": "7962812d8be86a4623f725d0ebb16a4a1e2891921c11f75d3347375f8da60ed6",
-    "unreal/Content/Japan/Materials/MI_NorthRockCaps.uasset": "03352cdbab06135d351ebdfb12d3818178c3ef7dfa25b52e785168b8800eba6a",
-    "unreal/Content/Japan/Materials/MI_Rock.uasset": "7a26d948a27b9731e3a69b9c02d973a6cb3a331885a491f4a53c848e9378e95a",
-    "unreal/Content/Japan/Materials/MI_Stone.uasset": "96da378840ce8853d8333b067e07f1fa9111e8faaffd230d0027640fb99fe305"
+    "unreal/Content/Japan/Materials/MI_Coast.uasset": "cdaacf13b2fe35054509b661f9d4b19b83228d111734966a3676c113c0b73948",
+    "unreal/Content/Japan/Materials/MI_CoastRock.uasset": "1241e1c5d96043bc7e5e98583601b05dd316d4d1a2d2ff53776cc34e1dc2cbd9",
+    "unreal/Content/Japan/Materials/MI_Concrete.uasset": "ec5d5f8ce3034b00c7bd0fe05886d738f9153d9d06fa0a97d00f7bc4021e2557",
+    "unreal/Content/Japan/Materials/MI_NorthRockCaps.uasset": "2b0da2d85c23df2678aa0c1864d76ab38324ecfd4bb6d2ad01b4311b8c6da674",
+    "unreal/Content/Japan/Materials/MI_Rock.uasset": "f2c7e10a911e5d3a05b10c00a991822fd732eda1d324f879b41c8165399238d4",
+    "unreal/Content/Japan/Materials/MI_Stone.uasset": "060ac94203b3cf31d00ba947f902bbb02e397cab3eccfe361837d095aef73441"
   },
-  "input_fingerprint": "8f29aa11acb6a3a8b97c29cdd4a61de9bda1d1c2d91dd903a1c8fc565e2775a1",
+  "input_fingerprint": "e9dec354992e867bf392442eedac5088675ec0cfd0555377e30be6dc35a461ee",
   "kind": "imported",
   "schema": 1,
   "tool": "material-instance@2"

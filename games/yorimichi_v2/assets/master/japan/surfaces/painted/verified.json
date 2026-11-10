@@ -1,14 +1,14 @@
 {
   "asset": "master/japan/surfaces/painted",
   "dependencies": {
-    "adopted/seethrough": "5d874079698cfb138f83a1eb8b24e3b96ca62a422d00c359aa64f0506ab79897",
+    "material/seethrough/collection": "5d874079698cfb138f83a1eb8b24e3b96ca62a422d00c359aa64f0506ab79897",
     "texture/japan/white": "5d52155722629ce5afa73ac696017dd3c663ebb3e376a74037b961092e3b6349"
   },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Materials/M_Painted.uasset": "1094b994eea8b15796b76ee78977ca60ac74de9f5c1ef8484fa08e76b061d85a"
+    "unreal/Content/Japan/Materials/M_Painted.uasset": "8ec08f3e33b845b8d2d87018dd43e8796acb50174f9a708daa075ec9e03aa9c1"
   },
-  "input_fingerprint": "5c6f1d7f4d81c13c31a1aec1d9c48c5c0fa323830ab6e470110e840dea7fb0a4",
+  "input_fingerprint": "d3661c3df9dd2bd51a2ddce0b464f5d3aade698d99f90af5bb1a97cf2579e3d6",
   "kind": "imported",
   "schema": 1,
   "tool": "material-master@1"

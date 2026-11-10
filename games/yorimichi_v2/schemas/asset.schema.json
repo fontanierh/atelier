@@ -39,7 +39,8 @@
         "physics",
         "adopted",
         "placement",
-        "generator"
+        "generator",
+        "parameter-collection"
       ]
     },
     "authority": {

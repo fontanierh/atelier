@@ -323,7 +323,7 @@ def _authorize_import(ctx, log):
             or plan.get('version') != asset.recipe.get('version')):
         raise RuntimeError(f"import plan for {asset.id} does not match its record (packages {expected}, "
                            f"importer {asset.recipe.get('importer')!r})")
-    if asset.kind == 'material-master':
+    if asset.kind in ('material-master', 'parameter-collection'):
         sys.path.insert(0, str(UNREAL / 'Scripts'))
         from master_sources import checked_sources
         checked_sources(GAME, asset, plan)

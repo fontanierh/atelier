@@ -31,7 +31,9 @@ KINDS = ('static-mesh', 'skeletal-mesh', 'skeleton', 'animation', 'material', 'm
          'placement',
          # A region generator's pinned code and data, with no package of its own: what its records were generated from,
          # kept recoverable after the packages it once owned moved to their own records (tools/migrate/master_records.py).
-         'generator')
+         'generator',
+         # A material parameter collection its pinned generator writes: only appended to, so its parameter ids stay.
+         'parameter-collection')
 VERIFIED_KINDS = ('imported', 'editor-saved')
 LFS_POINTER = b'version https://git-lfs.github.com/spec/v1'
 ID = re.compile(r'^[a-z0-9][a-z0-9-]*(/[a-z0-9][a-z0-9._-]*)+$')
@@ -363,6 +365,42 @@ def material_master_settings(recipe: dict, where: Path, authority: str, sources:
     return settings
 
 
+COLLECTION_IMPORTER = ('parameter-collection', 1)
+COLLECTION_SETTINGS = {'builder', 'arguments'}
+
+
+def parameter_collection_settings(recipe: dict, where: Path, authority: str, sources: list, outputs: list[str]) -> dict:
+    """@cc [owner:fontanierh,label:correctness] parameter-collection-generator-pinned
+    Validate a parameter-collection [recipe]: `importer = "parameter-collection"`, version 1, and [recipe.settings] with
+    `builder` (the lower-case name of the generator function that creates or completes the collection) and `arguments`
+    (optional: one plain scalar or string per builder argument). Like a master, a collection is generator-built: its
+    authority is generated and its generator is one or more pinned .py [[sources]], the first holding the builder and the
+    parameters it makes. It is one output, a /Game package named MPC_<name>."""
+    _known(recipe, MATERIAL_RECIPE_KEYS, where, '[recipe]')
+    if (recipe.get('importer'), recipe.get('version')) != COLLECTION_IMPORTER:
+        raise RecordError(f'{where}: a parameter-collection recipe is importer "parameter-collection" version 1')
+    if authority != 'generated':
+        raise RecordError(f'{where}: a parameter-collection is generator-built, so its authority is generated, not {authority!r}')
+    if not sources or any(not source.path.endswith('.py') for source in sources):
+        raise RecordError(f'{where}: a parameter-collection names its generator as [[sources]] .py files, each pinned by sha256')
+    settings = recipe.get('settings')
+    if not isinstance(settings, dict):
+        raise RecordError(f'{where}: a parameter-collection needs [recipe.settings]')
+    _known(settings, COLLECTION_SETTINGS, where, '[recipe.settings]')
+    builder = _need(settings, 'builder', where)
+    if not MASTER_BUILDER.match(builder):
+        raise RecordError(f'{where}: builder {builder!r} must be a lower-case function name')
+    arguments = settings.get('arguments', {})
+    if not isinstance(arguments, dict):
+        raise RecordError(f'{where}: arguments must be a table of name = value')
+    for name, value in arguments.items():
+        if not PARAMETER_NAME.match(name) or isinstance(value, (list, dict)):
+            raise RecordError(f'{where}: argument {name!r} must be a name with a plain scalar or string value')
+    if len(outputs) != 1 or not outputs[0].rsplit('/', 1)[-1].startswith('MPC_'):
+        raise RecordError(f'{where}: a parameter-collection is one output package named MPC_<name>')
+    return settings
+
+
 def material_master_reads(asset: 'Asset') -> list[str]:
     """The /Game and /Engine packages a material master's graph samples, in the order its record states them."""
     return list((asset.recipe or {}).get('settings', {}).get('reads', []))
@@ -440,9 +478,9 @@ def load_asset(path: Path) -> Asset:
         if authority != 'generated' or [s.path for s in sources] != names:
             raise RecordError(f'{path}: [derive] needs generated authority and sources exactly {names}')
         derive = dict(derive)
-    if kind == 'material-master' and authority != 'generated':
-        # A master stays generator-built until its generator is recoverable; it is never converted by omission.
-        raise RecordError(f'{path}: a material-master is generator-built, so its authority is generated, not {authority!r}')
+    if kind in ('material-master', 'parameter-collection') and authority != 'generated':
+        # A master or collection stays generator-built until its generator is recoverable; it is never converted by omission.
+        raise RecordError(f'{path}: a {kind} is generator-built, so its authority is generated, not {authority!r}')
     recipe = data.get('recipe')
     inputs = list(data.get('input_dependencies', []))
     if authority in ('generated', 'split'):
@@ -457,6 +495,9 @@ def load_asset(path: Path) -> Asset:
             # A master's generator is its pinned .py source; its reads are checked against input_dependencies later
             # (material_input_problems), once every record's outputs are known.
             material_master_settings(recipe, path, authority, sources, [entry.get('package', '') for entry in data.get('outputs', [])])
+        elif kind == 'parameter-collection':
+            parameter_collection_settings(recipe, path, authority, sources,
+                                          [entry.get('package', '') for entry in data.get('outputs', [])])
         else:
             if not sources:
                 raise RecordError(f'{path}: generated content needs at least one source')

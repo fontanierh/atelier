@@ -1,0 +1,12 @@
+{
+  "asset": "material/seethrough/collection",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SeeThrough/MPC_SeeThrough.uasset": "b29cbd686f4ced7c465b3b45c8a69a709e59727e6551c8560e8d655f38b1886a"
+  },
+  "input_fingerprint": "3c627853835c42e846257bc384f2970d03988b44bf96b7f34f179f9fcbb127fb",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "parameter-collection@1"
+}
