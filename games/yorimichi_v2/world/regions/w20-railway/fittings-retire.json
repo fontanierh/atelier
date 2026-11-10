@@ -1,0 +1,28 @@
+{
+  "groups": {
+    "object/railway/track-fittings": {
+      "files": [
+        "assets/object/railway/track-fittings/asset.toml",
+        "assets/object/railway/track-fittings/verified.json"
+      ],
+      "packages": [
+        "unreal/Content/__ExternalActors__/V2/Maps/Slice/5/KG/2B0AA6CNRKNUL7W5Q99V5R.uasset"
+      ]
+    }
+  },
+  "replacements": [
+    "object/railway/buffer-stop-0",
+    "object/railway/buffer-stop-1",
+    "object/railway/stop-board-0",
+    "object/railway/stop-board-1",
+    "object/railway/tunnel-portal-0",
+    "object/railway/tunnel-portal-1",
+    "object/railway/tunnel-portal-2",
+    "object/railway/tunnel-portal-3",
+    "object/railway/tunnel-portal-4",
+    "object/railway/tunnel-portal-5",
+    "object/railway/turnout-0",
+    "object/railway/turnout-1"
+  ],
+  "schema": 1
+}

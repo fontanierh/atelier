@@ -5,13 +5,6 @@ schema = 1
 tag = "railway"
 data = "belmonte_track/track.json"
 
-
-[[objects]]
-id = "object/railway/track-fittings"
-route = ["SM_TK_BufferStop#", "SM_TK_StopBoard#", "SM_TK_Turnout#", "SM_TK_Portal#"]
-model = "adopted/belmontetrack/track-small"
-about = "the track fittings: buffer stops, stop boards, the turnouts and the tunnel portals (their repeated small parts)"
-
 [[objects]]
 id = "object/railway/station-belmonte"
 route = ["SM_ST_Headhouse", "SM_ST_Sheds", "SM_ST_Coaches", "SM_ST_Forecourt"]
@@ -139,3 +132,75 @@ route = [
 ]
 model = ["adopted/belmontetrack/tunnel-spiral", "adopted/belmontetrack/track-small"]
 about = "the spiral tunnel linings and its lamps"
+
+[[objects]]
+id = "object/railway/buffer-stop-0"
+route = ["SM_TK_BufferStop#@0"]
+model = "adopted/belmontetrack/track-small"
+about = "a buffer stop at one end of the track, 1 of 2, saved on their own"
+
+[[objects]]
+id = "object/railway/buffer-stop-1"
+route = ["SM_TK_BufferStop#@1"]
+model = "adopted/belmontetrack/track-small"
+about = "a buffer stop at one end of the track, 2 of 2, saved on their own"
+
+[[objects]]
+id = "object/railway/stop-board-0"
+route = ["SM_TK_StopBoard#@0"]
+model = "adopted/belmontetrack/track-small"
+about = "a stop board beside a buffer stop or platform, 1 of 2, saved on their own"
+
+[[objects]]
+id = "object/railway/stop-board-1"
+route = ["SM_TK_StopBoard#@1"]
+model = "adopted/belmontetrack/track-small"
+about = "a stop board beside a buffer stop or platform, 2 of 2, saved on their own"
+
+[[objects]]
+id = "object/railway/turnout-0"
+route = ["SM_TK_Turnout#@0"]
+model = "adopted/belmontetrack/track-small"
+about = "a track turnout (points) of the line, 1 of 2, saved on their own"
+
+[[objects]]
+id = "object/railway/turnout-1"
+route = ["SM_TK_Turnout#@1"]
+model = "adopted/belmontetrack/track-small"
+about = "a track turnout (points) of the line, 2 of 2, saved on their own"
+
+[[objects]]
+id = "object/railway/tunnel-portal-0"
+route = ["SM_TK_Portal#@0"]
+model = "adopted/belmontetrack/track-small"
+about = "a tunnel portal, the face of a tunnel mouth, 1 of 6, saved on their own"
+
+[[objects]]
+id = "object/railway/tunnel-portal-1"
+route = ["SM_TK_Portal#@1"]
+model = "adopted/belmontetrack/track-small"
+about = "a tunnel portal, the face of a tunnel mouth, 2 of 6, saved on their own"
+
+[[objects]]
+id = "object/railway/tunnel-portal-2"
+route = ["SM_TK_Portal#@2"]
+model = "adopted/belmontetrack/track-small"
+about = "a tunnel portal, the face of a tunnel mouth, 3 of 6, saved on their own"
+
+[[objects]]
+id = "object/railway/tunnel-portal-3"
+route = ["SM_TK_Portal#@3"]
+model = "adopted/belmontetrack/track-small"
+about = "a tunnel portal, the face of a tunnel mouth, 4 of 6, saved on their own"
+
+[[objects]]
+id = "object/railway/tunnel-portal-4"
+route = ["SM_TK_Portal#@4"]
+model = "adopted/belmontetrack/track-small"
+about = "a tunnel portal, the face of a tunnel mouth, 5 of 6, saved on their own"
+
+[[objects]]
+id = "object/railway/tunnel-portal-5"
+route = ["SM_TK_Portal#@5"]
+model = "adopted/belmontetrack/track-small"
+about = "a tunnel portal, the face of a tunnel mouth, 6 of 6, saved on their own"
