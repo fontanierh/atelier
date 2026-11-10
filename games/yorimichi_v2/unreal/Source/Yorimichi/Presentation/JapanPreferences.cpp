@@ -30,6 +30,8 @@
 #include "Misc/FileHelper.h"
 #include "HAL/IConsoleManager.h"
 #include "HAL/PlatformMisc.h"
+#include "RHI.h"
+#include "DynamicRHI.h"
 #include "Framework/Application/SlateApplication.h"
 #include "Widgets/Layout/SBorder.h"
 #include "Widgets/Layout/SBox.h"
@@ -200,7 +202,7 @@ const TArray<TPair<const TCHAR*, float>>& JapanReleaseDefaults()
         {TEXT("soften_skate"), 1.f}, {TEXT("stamina_rings"), 5.f}, {TEXT("sun_height"), 26.f},
         {TEXT("sun_strength"), 11.f}, {TEXT("sun_warmth"), .9f}, {TEXT("sun_yaw"), -30.f}, {TEXT("toon"), 0.f},
         {TEXT("toon_bands"), 7.f}, {TEXT("toon_soft"), .45f}, {TEXT("tree_lod_distance"), 1.5f},
-        {TEXT("tree_lod_mode"), 2.f}, {TEXT("tree_optimization"), 1.f}, {TEXT("tree_shadow"), 80.f},
+        {TEXT("tree_lod_mode"), 0.f}, {TEXT("tree_optimization"), 1.f}, {TEXT("tree_shadow"), 80.f},
         {TEXT("tree_sway"), 60.f}, {TEXT("volume"), .3f}, {TEXT("wind"), 3.5f}
     };
     return Preset;
@@ -315,6 +317,19 @@ TMap<FString,FString> JapanValuesToSave(const TMap<FString,FString>& Saved, cons
     return Next;
 }
 
+static bool ShouldAutoDefaultLaptopMode()
+{
+    // Base Apple Silicon GPUs (M1/M2/M3/M4/M5 without Pro/Max/Ultra) have <= 10 GPU cores.
+    FString Adapter = !GRHIAdapterName.IsEmpty() ? GRHIAdapterName : FPlatformMisc::GetPrimaryGPUBrand();
+    Adapter.TrimStartAndEndInline();
+    if (!Adapter.StartsWith(TEXT("Apple M"), ESearchCase::IgnoreCase) &&
+        !Adapter.StartsWith(TEXT("Apple A"), ESearchCase::IgnoreCase))
+        return false;
+    return !Adapter.Contains(TEXT("Pro"), ESearchCase::IgnoreCase) &&
+           !Adapter.Contains(TEXT("Max"), ESearchCase::IgnoreCase) &&
+           !Adapter.Contains(TEXT("Ultra"), ESearchCase::IgnoreCase);
+}
+
 void UJapanPreferences::Initialize(AWandererCharacter* Pawn)
 {
     Owner = Pawn;
@@ -324,6 +339,11 @@ void UJapanPreferences::Initialize(AWandererCharacter* Pawn)
     SettingsFile=FilePath();
     UE_LOG(LogTemp,Display,TEXT("PREFERENCES file=%s"),*SettingsFile);
     SavedValues=ReadSaved();
+    if (!SavedValues.Contains(TEXT("laptop")) && ShouldAutoDefaultLaptopMode())
+    {
+        for (FJapanPreference& V : Values) if (V.Key == TEXT("laptop")) V.Value = 1.f;
+        UE_LOG(LogTemp,Display,TEXT("PREFERENCES auto laptop=1 on <=10-core Apple GPU"));
+    }
     JapanApplySaved(Values,SavedValues);
     // A skating engine saved by an older menu no longer applies.
     SavedValues.Remove(TEXT("skate_engine"));
@@ -527,21 +547,29 @@ void UJapanPreferences::Apply()
     // paired uncapped captures save a further 0.25 ms over the lighter input
     // filter (3), which itself saved ~0.3 ms at native 1440p over 2.
     Set(TEXT("r.TemporalAA.Quality"),LightFrame ? 1.f : 2.f);
-    const int32 ShadowProfile = PerformanceMode + (Laptop ? 1 : 0);
+    const bool bForward = CurrentRenderer() == 0;
+    if (bForward)
+    {
+        static bool bDisabledGPUCapture = false;
+        if (!bDisabledGPUCapture) { bDisabledGPUCapture = true; FDynamicRHI::EnableIdealGPUCaptureOptions(false); }
+    }
+    const int32 ShadowProfile = PerformanceMode + (Laptop ? 1 : 0) + (bForward ? 4 : 0);
     if (AppliedPerformanceMode != ShadowProfile)
     {
         // Use the engine's original medium irradiance-volume lighting in the
         // performance profile. The user reverted the screen-probe lighting change.
         Set(TEXT("sg.GlobalIlluminationQuality"),PerformanceMode ? 1.f : 3.f);
-        // One cascade over the performance profile's halved shadow distance: 0.5 ms at the operator view.
-        // Laptops keep their single cascade in every profile.
-        Set(TEXT("r.Shadow.CSM.MaxCascades"),Laptop || PerformanceMode ? 1.f : 10.f);
-        Set(TEXT("r.Shadow.MaxCSMResolution"),PerformanceMode ? 1024.f : 2048.f);
-        Set(TEXT("r.Shadow.DistanceScale"),PerformanceMode ? .5f : 1.5f);
-        Set(TEXT("r.DistanceFieldShadowing"),PerformanceMode ? 0.f : 1.f);
+        // Laptop stays ultra-lean (1x1024, 0.5x distance); Desktop Performance uses 2x2048 cascades at 0.85x distance
+        // to eliminate the 35 m shadow cutoff; Forward Quality caps MaxCascades at 4 instead of 10.
+        Set(TEXT("r.Shadow.CSM.MaxCascades"),Laptop ? 1.f : PerformanceMode ? 2.f : (bForward ? 4.f : 10.f));
+        Set(TEXT("r.Shadow.MaxCSMResolution"),Laptop ? 1024.f : 2048.f);
+        Set(TEXT("r.Shadow.DistanceScale"),Laptop ? .5f : PerformanceMode ? .85f : 1.5f);
+        Set(TEXT("r.Shadow.CSM.TransitionScale"),Laptop ? .25f : 1.f);
+        Set(TEXT("r.DistanceFieldShadowing"),bForward || PerformanceMode ? 0.f : 1.f);
         Set(TEXT("foliage.LODDistanceScale"),PerformanceMode ? .75f : 1.f);
         AppliedPerformanceMode = ShadowProfile;
     }
+    Set(TEXT("r.ContactShadows"),1.f);
     // Keep character edges near native resolution. The cheaper grass LODs leave
     // room for a higher floor; still respect a manually chosen lower ceiling.
     // The desktop performance profile may drop to 75% (1.4 ms at the operator view) before missing 60 fps.
@@ -554,7 +582,6 @@ void UJapanPreferences::Apply()
     // game's own: forward has no Lumen bounce, so the full sky light washed out the ambient and the water. A third of it,
     // no distance-field sky occlusion (the original generated no distance fields in forward) and a warm 3 lux harbor
     // fill standing in for the second directional light forward cannot render. Lumen keeps the full sky light.
-    const bool bForward = CurrentRenderer() == 0;
     Set(TEXT("r.SkylightIntensityMultiplier"), bForward ? .33f : 1.f);
     Set(TEXT("r.DistanceFieldAO"), bForward ? 0.f : 1.f);
     if (GEngine) GEngine->Exec(Owner->GetWorld(), bForward ? TEXT("japan.ForwardHarborFill 3") : TEXT("japan.ForwardHarborFill 0"));
@@ -618,6 +645,13 @@ void UJapanPreferences::Apply()
         {
             Light->SetIntensity(Get(TEXT("sun_strength")));
             Light->SetLightColor(SunColour);
+            const float WantedContact = bForward && !Laptop ? .03f : 0.f;
+            if (!FMath::IsNearlyEqual(Light->ContactShadowLength, WantedContact) || Light->ContactShadowLengthInWS)
+            {
+                Light->ContactShadowLength = WantedContact;
+                Light->ContactShadowLengthInWS = false;
+                Light->MarkRenderStateDirty();
+            }
         }
     }
     // The shadows' fill: the sky light, bluer as the sun warms (the map's (.95, .96, 1) at warmth .5 and below),

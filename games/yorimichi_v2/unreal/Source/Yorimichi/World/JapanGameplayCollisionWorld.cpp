@@ -17,7 +17,8 @@ void UJapanGameplayCollisionWorld::Deinitialize()
     GetWorld()->RemoveOnActorSpawnedHandler(SpawnHandle);
     GetWorld()->RemoveOnActorDestroyedHandler(DestroyHandle);
     GetWorld()->RemoveOnActorRemovedFromWorldHandler(RemoveHandle);
-    DynamicOwners.Reset(); InstalledOwners.Reset(); ExcludedParts.Reset(); Cached = FCollisionQueryParams();
+    DynamicOwners.Reset(); InstalledOwners.Reset(); ExcludedParts.Reset();
+    Cached = FCollisionQueryParams(); bDirty = false;
     Super::Deinitialize();
 }
 void UJapanGameplayCollisionWorld::Spawned(AActor* Actor)
@@ -28,22 +29,30 @@ void UJapanGameplayCollisionWorld::Spawned(AActor* Actor)
     if (InstalledOwners.Contains(Actor)) return;
     // A newly spawned actor is dynamic until static-world Install certifies its
     // final authored class/mobility. Deferred constructors may add parts later.
-    DynamicOwners.Add(Actor); Cached.AddIgnoredActor(Actor);
+    DynamicOwners.Add(Actor);
+    if (!bDirty) Cached.AddIgnoredActor(Actor);
     TArray<UPrimitiveComponent*> Parts; Actor->GetComponents(Parts);
     for (auto* Part : Parts) Part->SetCollisionResponseToChannel(JapanGameplayCollision::Channel, ECR_Ignore);
 }
 void UJapanGameplayCollisionWorld::Removed(AActor* Actor)
 {
-    InstalledOwners.Remove(Actor);
-    if (DynamicOwners.Remove(Actor)) Rebuild();
+    if (!Actor) return;
+    const bool bWasInstalled = InstalledOwners.Remove(Actor) > 0;
+    const bool bWasDynamic = DynamicOwners.Remove(Actor) > 0;
+    if (bWasDynamic || (bWasInstalled && !ExcludedParts.IsEmpty())) bDirty = true;
+}
+void UJapanGameplayCollisionWorld::RemoveFixed(AActor* Actor)
+{
+    Removed(Actor);
 }
 void UJapanGameplayCollisionWorld::Rebuild()
 {
     Cached = FCollisionQueryParams();
     for (auto It = DynamicOwners.CreateIterator(); It; ++It)
         if (It->IsValid()) Cached.AddIgnoredActor(It->Get()); else It.RemoveCurrent();
-    ExcludedParts.RemoveAll([](const auto& Part) { return !Part.IsValid(); });
-    for (const auto& Part : ExcludedParts) Cached.AddIgnoredComponent(Part.Get());
+    for (auto It = ExcludedParts.CreateIterator(); It; ++It)
+        if (It->IsValid()) Cached.AddIgnoredComponent(It->Get()); else It.RemoveCurrent();
+    bDirty = false;
 }
 void UJapanGameplayCollisionWorld::Install()
 {
@@ -67,19 +76,25 @@ void UJapanGameplayCollisionWorld::Install()
 void UJapanGameplayCollisionWorld::InstallFixed(AActor* Actor)
 {
     if (!Actor || !JapanGameplayCollision::IsFixed(Actor)) return;
-    InstalledOwners.Add(Actor); DynamicOwners.Remove(Actor);
+    InstalledOwners.Add(Actor);
+    if (DynamicOwners.Remove(Actor) > 0) bDirty = true;
     TArray<UPrimitiveComponent*> Parts; Actor->GetComponents(Parts);
     for (auto* Part : Parts)
     {
         const bool Fixed = JapanGameplayCollision::IsFixed(Part);
-        if (!Fixed) ExcludedParts.AddUnique(Part);
+        if (!Fixed)
+        {
+            bool bAlready = false;
+            ExcludedParts.Add(Part, &bAlready);
+            if (!bAlready) bDirty = true;
+        }
         Part->SetCollisionResponseToChannel(JapanGameplayCollision::Channel,
             Fixed && Part->GetCollisionResponseToChannel(ECC_Visibility) == ECR_Block ? ECR_Block : ECR_Ignore);
     }
-    Rebuild();
 }
 FCollisionQueryParams UJapanGameplayCollisionWorld::Query(FName Tag, const TStatId& Stat, bool Complex) const
 {
+    if (bDirty) const_cast<UJapanGameplayCollisionWorld*>(this)->Rebuild();
     FCollisionQueryParams Result = Cached;
     Result.TraceTag = Tag; Result.StatId = Stat; Result.bTraceComplex = Complex;
     return Result;

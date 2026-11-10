@@ -14,12 +14,12 @@ class FJsonObject;
 
 struct FJapanAtlasFrame
 {
-    FString Key, Name;
+    FString Key, Name, ImagePath;
     FBox2D Bounds;
     FVector2D LabelPosition = FVector2D::ZeroVector;
     TArray<FVector2D> Polygon;
     FLinearColor Colour = FLinearColor(.65f,.6f,.4f);
-    FSlateBrush Brush;
+    mutable FSlateBrush Brush;
 };
 
 struct FJapanAtlasLandmark
@@ -124,7 +124,7 @@ public:
     FVector2D ToSheet(const FVector& Location) const;
     /** Unreal yaw -> screen angle in degrees, clockwise from east, on the north-up sheet. */
     static float SheetHeading(float UEYaw) { return UEYaw; }
-    const FSlateBrush* GetBrush() const { return &Brush; }
+    const FSlateBrush* GetBrush() const;
     AWandererCharacter* GetOwnerPawn() const { return Owner; }
     FString GetImageFile() const { return ImageFile; }
     const TArray<FVector2D>& GetProjectionX() const { return ProjectionX; }
@@ -161,25 +161,29 @@ private:
     friend class FRemoteVehiclePresentationTest;
     void RefreshPlayerZones() const;
     UPROPERTY() TObjectPtr<AWandererCharacter> Owner;
-    UPROPERTY() TObjectPtr<UTexture2D> Texture;
-    UPROPERTY() TArray<TObjectPtr<UTexture2D>> AtlasTextures;
+    UPROPERTY() mutable TObjectPtr<UTexture2D> Texture;
+    UPROPERTY() mutable TArray<TObjectPtr<UTexture2D>> AtlasTextures;
     TArray<FJapanAtlasFrame> AtlasRegions;
     FJapanAtlasFrame WorldFrame;
     TArray<FJapanAtlasLandmark> AtlasLandmarks;
     FJapanAtlasAirRoute AirRoute;
     TSharedPtr<FJsonObject> AtlasData;
     FString ActiveRegion = TEXT("world"), SelectedStable;
-    FSlateBrush Brush;
+    mutable FSlateBrush Brush;
     mutable TArray<FJapanMapZone> Zones;
     TArray<FVector2D> ProjectionX,ProjectionY;
     FBox2D Bounds = FBox2D(FVector2D(-300, -300), FVector2D(300, 300));
     TSharedPtr<SWidget> Widget, MarkerBar;
     FString ImageFile;
+    FIntPoint SheetImageSize = FIntPoint::ZeroValue;
     TSharedPtr<SEditableTextBox> MarkerName;
     TSharedPtr<SEditableTextBox> AtlasSearch, StableName;
     FJapanMarkers* MarkerStore() const;
     FJapanAtlasNames* AtlasNameStore() const;
     void InitializeAtlas(const TSharedPtr<FJsonObject>& Root, const FString& Dir);
+    UTexture2D* EnsureSheetTexture() const;
+    UTexture2D* EnsureFrameTexture(const FJapanAtlasFrame& Frame) const;
     bool MarkerResult(bool Result);
+    static bool ReadPngHeaderSize(const FString& Path, FIntPoint& OutSize);
     bool bLoaded = false;
 };

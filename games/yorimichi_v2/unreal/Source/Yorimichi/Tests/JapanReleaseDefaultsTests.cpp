@@ -33,7 +33,7 @@ bool FJapanReleaseDefaultsTest::RunTest(const FString&)
     // A few of the changed defaults, spelled out.
     const TPair<const TCHAR*, float> Spot[] = {{TEXT("volume"), .3f}, {TEXT("skate_volume"), .5f}, {TEXT("soften_skate"), 1.f},
         {TEXT("soften_footsteps"), 1.f}, {TEXT("goofy"), 1.f}, {TEXT("stamina_rings"), 5.f}, {TEXT("fog_density"), .03f},
-        {TEXT("tree_lod_mode"), 2.f}, {TEXT("skate_mode"), 3.f}, {TEXT("skate_grind_friction"), .55f}};
+        {TEXT("tree_lod_mode"), 0.f}, {TEXT("skate_mode"), 3.f}, {TEXT("skate_grind_friction"), .55f}};
     for (const TPair<const TCHAR*, float>& S : Spot)
         if (const FJapanPreference* V = Find(S.Key)) TestEqual(FString::Printf(TEXT("%s default"), S.Key), V->Value, S.Value);
     return true;

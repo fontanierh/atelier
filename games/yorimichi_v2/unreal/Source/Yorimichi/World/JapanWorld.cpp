@@ -21,7 +21,6 @@
 #include "Engine/DirectionalLight.h"
 #include "Components/LightComponent.h"
 #include "EngineUtils.h"
-#include "UObject/UObjectIterator.h"
 #include "Engine/StaticMesh.h"
 #if WITH_EDITOR
 #include "StaticMeshCompiler.h"
@@ -69,11 +68,107 @@ void AJapanWorld::BeginPlay()
     Load();
 }
 
+void AJapanWorld::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+    if (ScreenSizeCullSpawnHandle.IsValid() && GetWorld())
+    {
+        GetWorld()->RemoveOnActorSpawnedHandler(ScreenSizeCullSpawnHandle);
+        ScreenSizeCullSpawnHandle.Reset();
+    }
+    Super::EndPlay(EndPlayReason);
+}
+
 static UStaticMesh* LoadMesh(const FString& Name)
 {
     const FString Path = Name.StartsWith(TEXT("/Game/"))?Name:
         FString::Printf(TEXT("/Game/Japan/Assets/%s.%s"), *Name, *Name);
     return LoadObject<UStaticMesh>(nullptr, *Path);
+}
+
+static TAutoConsoleVariable<float> CVarScreenSizeCull(TEXT("japan.ScreenSizeCull"), 1000.f,
+    TEXT("Cull static meshes beyond this multiple of their bounds radius (0 = off)."), ECVF_Default);
+
+// Replace a top-level JSON object/array field with {} or [] before FJsonSerializer::Deserialize
+// so bOnlyMigrated maps do not allocate millions of FJsonValue nodes for covered static instances.
+static FString StripTopLevelJsonField(const FString& Text, const TCHAR* FieldName)
+{
+    FString Out;
+    Out.Reserve(FMath::Min(Text.Len(), 524288));
+    const int32 Len = Text.Len();
+    int32 I = 0, Depth = 0;
+    while (I < Len)
+    {
+        const TCHAR Ch = Text[I];
+        if (Ch == TEXT('"'))
+        {
+            const int32 Start = I++;
+            while (I < Len)
+            {
+                if (Text[I] == TEXT('\\')) { I += 2; continue; }
+                if (Text[I] == TEXT('"')) { ++I; break; }
+                ++I;
+            }
+            if (Depth == 1)
+            {
+                const FStringView KeyView(*Text + Start + 1, FMath::Max(0, I - Start - 2));
+                int32 J = I;
+                while (J < Len && (Text[J] == TEXT(' ') || Text[J] == TEXT('\t') || Text[J] == TEXT('\r') || Text[J] == TEXT('\n'))) ++J;
+                if (J < Len && Text[J] == TEXT(':') && KeyView.Equals(FieldName, ESearchCase::CaseSensitive))
+                {
+                    int32 K = J + 1;
+                    while (K < Len && (Text[K] == TEXT(' ') || Text[K] == TEXT('\t') || Text[K] == TEXT('\r') || Text[K] == TEXT('\n'))) ++K;
+                    if (K < Len && (Text[K] == TEXT('{') || Text[K] == TEXT('[')))
+                    {
+                        const TCHAR OpenCh = Text[K], CloseCh = OpenCh == TEXT('{') ? TEXT('}') : TEXT(']');
+                        int32 SubDepth = 1;
+                        bool bInStr = false;
+                        ++K;
+                        while (K < Len && SubDepth > 0)
+                        {
+                            const TCHAR Sc = Text[K];
+                            if (bInStr)
+                            {
+                                if (Sc == TEXT('\\')) { K += 2; continue; }
+                                if (Sc == TEXT('"')) bInStr = false;
+                            }
+                            else
+                            {
+                                if (Sc == TEXT('"')) bInStr = true;
+                                else if (Sc == OpenCh) ++SubDepth;
+                                else if (Sc == CloseCh) --SubDepth;
+                            }
+                            ++K;
+                        }
+                        if (SubDepth == 0)
+                        {
+                            Out.AppendChars(*Text + Start, J - Start + 1);
+                            Out += OpenCh == TEXT('{') ? TEXT("{}") : TEXT("[]");
+                            I = K;
+                            continue;
+                        }
+                    }
+                }
+            }
+            Out.AppendChars(*Text + Start, I - Start);
+            continue;
+        }
+        if (Ch == TEXT('{') || Ch == TEXT('[')) ++Depth;
+        else if (Ch == TEXT('}') || Ch == TEXT(']')) --Depth;
+        Out.AppendChar(Ch);
+        ++I;
+    }
+    return Out;
+}
+
+static TSharedPtr<FJsonObject> ReadJsonStrippingField(const FString& Path, const TCHAR* FieldName)
+{
+    FString Raw;
+    if (!FFileHelper::LoadFileToString(Raw, *Path)) return nullptr;
+    const FString Stripped = StripTopLevelJsonField(Raw, FieldName);
+    Raw.Empty();
+    TSharedPtr<FJsonObject> Root;
+    if (!FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Stripped), Root) || !Root.IsValid()) return nullptr;
+    return Root;
 }
 
 void AJapanWorld::Load()
@@ -85,11 +180,20 @@ void AJapanWorld::Load()
     const bool bAllMigrated = Manifest && Manifest->bOnlyMigrated;
     auto ServiceRuns = [&](const TCHAR* Service) { return !Manifest || Manifest->Runs(FName(Service)); };
     const FString JsonPath = AtelierDataPath(TEXT("world.json"));
-    FString Text;
-    if (!FFileHelper::LoadFileToString(Text, *JsonPath)) { UE_LOG(LogTemp, Error, TEXT("world.json not found at %s"), *JsonPath); return; }
     TSharedPtr<FJsonObject> Root;
-    TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(Text);
-    if (!FJsonSerializer::Deserialize(Reader, Root) || !Root.IsValid()) { UE_LOG(LogTemp, Error, TEXT("world.json parse failed")); return; }
+    if (bAllMigrated)
+    {
+        if (!FPaths::FileExists(JsonPath)) { UE_LOG(LogTemp, Error, TEXT("world.json not found at %s"), *JsonPath); return; }
+        Root = ReadJsonStrippingField(JsonPath, TEXT("instances"));
+    }
+    else
+    {
+        FString Text;
+        if (!FFileHelper::LoadFileToString(Text, *JsonPath)) { UE_LOG(LogTemp, Error, TEXT("world.json not found at %s"), *JsonPath); return; }
+        TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(Text);
+        FJsonSerializer::Deserialize(Reader, Root);
+    }
+    if (!Root.IsValid()) { UE_LOG(LogTemp, Error, TEXT("world.json parse failed")); return; }
 
     // The tree house's build (world/regions/treehouse/build.py) writes what depends on its meshes to a file of its
     // own: prop instances join the world's, and its lights and rooms join world['treehouse'].
@@ -98,13 +202,16 @@ void AJapanWorld::Load()
     if(Root->TryGetObjectField(TEXT("treehouse"),HouseLayout) &&
        (HouseRuntime=AtelierReadJson(FPaths::GetPath(JsonPath)/TEXT("treehouse/runtime.json"))))
     {
-        auto Instances=Root->GetObjectField(TEXT("instances"));
-        for(const auto& Pair:HouseRuntime->GetObjectField(TEXT("instances"))->Values)
+        if (!bAllMigrated)
         {
-            TArray<TSharedPtr<FJsonValue>> Combined;
-            const TArray<TSharedPtr<FJsonValue>>* Prior=nullptr;
-            if(Instances->TryGetArrayField(Pair.Key,Prior)) Combined=*Prior;
-            Combined.Append(Pair.Value->AsArray());Instances->SetArrayField(Pair.Key,Combined);
+            auto Instances=Root->GetObjectField(TEXT("instances"));
+            for(const auto& Pair:HouseRuntime->GetObjectField(TEXT("instances"))->Values)
+            {
+                TArray<TSharedPtr<FJsonValue>> Combined;
+                const TArray<TSharedPtr<FJsonValue>>* Prior=nullptr;
+                if(Instances->TryGetArrayField(Pair.Key,Prior)) Combined=*Prior;
+                Combined.Append(Pair.Value->AsArray());Instances->SetArrayField(Pair.Key,Combined);
+            }
         }
         for(const auto& Pair:HouseRuntime->Values)
             if(Pair.Key!=TEXT("instances")) (*HouseLayout)->SetField(Pair.Key,Pair.Value);
@@ -113,31 +220,34 @@ void AJapanWorld::Load()
     // Optional independently generated eastern district. Keep the original world
     // and southwest work untouched; append instance groups before creating HISMs.
     const FString CityPath=FPaths::GetPath(JsonPath)/TEXT("hidamari/city.json");
-    TSharedPtr<FJsonObject> City=AtelierReadJson(CityPath);
+    TSharedPtr<FJsonObject> City=bAllMigrated ? ReadJsonStrippingField(CityPath, TEXT("instances")) : AtelierReadJson(CityPath);
     if(City)
     {
-        auto Instances=Root->GetObjectField(TEXT("instances"));
-        // The old distant scenery inside the new playable district must disappear.
-        for(auto& Pair:Instances->Values)
+        if (!bAllMigrated)
         {
-            if(!FString(Pair.Key).StartsWith(TEXT("Tree"))) continue;
-            TArray<TSharedPtr<FJsonValue>> Kept;
-            for(const auto& Item:Pair.Value->AsArray())
+            auto Instances=Root->GetObjectField(TEXT("instances"));
+            // The old distant scenery inside the new playable district must disappear.
+            for(auto& Pair:Instances->Values)
             {
-                const auto& P=Item->AsArray();
-                const double X=P[0]->AsNumber(),Y=P[1]->AsNumber();
-                const bool InCity=X>300 && X<2200 && Y>-450 && Y<1600;
-                const bool InNorth=X>-700 && X<2400 && Y>500 && Y<3000;
-                if(!InCity && !InNorth) Kept.Add(Item);
+                if(!FString(Pair.Key).StartsWith(TEXT("Tree"))) continue;
+                TArray<TSharedPtr<FJsonValue>> Kept;
+                for(const auto& Item:Pair.Value->AsArray())
+                {
+                    const auto& P=Item->AsArray();
+                    const double X=P[0]->AsNumber(),Y=P[1]->AsNumber();
+                    const bool InCity=X>300 && X<2200 && Y>-450 && Y<1600;
+                    const bool InNorth=X>-700 && X<2400 && Y>500 && Y<3000;
+                    if(!InCity && !InNorth) Kept.Add(Item);
+                }
+                Pair.Value=MakeShared<FJsonValueArray>(Kept);
             }
-            Pair.Value=MakeShared<FJsonValueArray>(Kept);
-        }
-        for(const auto& Pair:City->GetObjectField(TEXT("instances"))->Values)
-        {
-            TArray<TSharedPtr<FJsonValue>> Combined;
-            const TArray<TSharedPtr<FJsonValue>>* Prior=nullptr;
-            if(Instances->TryGetArrayField(Pair.Key,Prior)) Combined=*Prior;
-            Combined.Append(Pair.Value->AsArray());Instances->SetArrayField(Pair.Key,Combined);
+            for(const auto& Pair:City->GetObjectField(TEXT("instances"))->Values)
+            {
+                TArray<TSharedPtr<FJsonValue>> Combined;
+                const TArray<TSharedPtr<FJsonValue>>* Prior=nullptr;
+                if(Instances->TryGetArrayField(Pair.Key,Prior)) Combined=*Prior;
+                Combined.Append(Pair.Value->AsArray());Instances->SetArrayField(Pair.Key,Combined);
+            }
         }
         // Hidamari's late-afternoon grade over the whole city (location.json city_bounds) and the arrival hillside west
         // of it (x 280), out over the harbour to the lighthouse (y -280) and up to 700 m, so the town seen from a glide
@@ -363,69 +473,59 @@ void AJapanWorld::Load()
     const TArray<TSharedPtr<FJsonValue>>* WD = nullptr;
     if (Root->TryGetArrayField(TEXT("wind_dir"), WD) && WD->Num() >= 2) WindDir = FVector((*WD)[0]->AsNumber(), -(*WD)[1]->AsNumber(), 0).GetSafeNormal();
     WindSpeed = Root->HasField(TEXT("wind_speed")) ? Root->GetNumberField(TEXT("wind_speed")) * 100.0 : 350.f;
-    // The skate pier clears its own ground of trees, bushes, grass and litter (world/regions/skatepark/park.json).
     const FString ParkPath = AtelierDataPath(TEXT("skatepark/park.json"));
-    TArray<TArray<FVector2D>> ParkClearance = ASkatePark::LoadClearance(ParkPath);
-    // The hippodrome on the slope north of Hidamari (docs/HIPPODROME.md) keeps its oval and stands clear too.
     const FString HippodromePath = AtelierDataPath(TEXT("hippodrome/hippodrome.json"));
-    ParkClearance.Append(ASkatePark::LoadClearance(HippodromePath));
-    // Henry's stable east of the course (world/regions/hidamari_stable/README.md): gated on the committed switch
-    // AHidamariStable::bEnabled (paired with hidamari_stable/layout.py ENABLED) so terrain and fixed world always agree.
     const FString StablePath = AtelierDataPath(TEXT("hidamari_stable/stable.json"));
-    if (AHidamariStable::bEnabled) ParkClearance.Append(ASkatePark::LoadClearance(StablePath));
+    TArray<TArray<FVector2D>> ParkClearance;
     int32 Cleared = 0;
-    // Playable ground far from the origin, such as the forest round the Mega Park (megapark/forest.py): the detailed
-    // trees there are near ones, with shadows, collision and the camera fade; the low-poly crowns stay backdrop.
     TArray<FBox2D> NearTrees;
-    const TArray<TSharedPtr<FJsonValue>>* NearBoxes = nullptr;
-    if (City.IsValid() && City->TryGetArrayField(TEXT("near_trees"), NearBoxes))
-        for (const TSharedPtr<FJsonValue>& V : *NearBoxes)
-        {
-            const TArray<TSharedPtr<FJsonValue>>& B = V->AsArray();
-            if (B.Num() < 4) continue;
-            const FVector A = ToUE(B[0]->AsNumber(), B[1]->AsNumber(), 0), C = ToUE(B[2]->AsNumber(), B[3]->AsNumber(), 0);
-            NearTrees.Add(FBox2D(FVector2D(FMath::Min(A.X, C.X), FMath::Min(A.Y, C.Y)), FVector2D(FMath::Max(A.X, C.X), FMath::Max(A.Y, C.Y))));
-        }
-    ABelmonteRegion::Clear(Root, AtelierDataPath(TEXT("belmonte/runtime.json")));
-    ABelmonteRegion::Clear(Root, AtelierDataPath(TEXT("brinecove/runtime.json")));
-    ABelmonteRegion::Clear(Root, AtelierDataPath(TEXT("gondola/runtime.json")));
     const TSharedPtr<FJsonObject>* Inst = nullptr;
-    TMap<FString,TArray<FString>> CityPieces;
-    TMap<FString,FBox> CityLogicalBounds;
-    TSet<FString> LoadedCityPieces,PlacedCityParents;
-    const bool PiecesReady=JapanCityPieces::Read(
-        AtelierReadJson(AtelierDataPath(TEXT("city_surface_tiles/v1_128m/manifest.json"))),CityPieces,&CityLogicalBounds);
-    if (!PiecesReady) Incomplete.Add(TEXT("complete production city pieces"));
-    TMap<FString,TArray<FString>> SouthwestPieces;
-    TMap<FString,FBox> SouthwestLogicalBounds;
-    TSet<FString> LoadedSouthwestPieces,PlacedSouthwestParents;
-    const bool SouthwestReady=JapanSouthwestPieces::Read(
-        AtelierReadJson(AtelierDataPath(TEXT("southwest/runtime.json"))),SouthwestPieces,&SouthwestLogicalBounds);
-    if(!SouthwestReady)Incomplete.Add(TEXT("complete Southwest pieces"));
-    TMap<FString,TArray<FString>> LakePieces;
-    TMap<FString,FBox> LakeLogicalBounds;
-    TSet<FString> LoadedLakePieces,PlacedLakeParents;
-    const bool LakeReady=JapanLakePieces::Read(
-        AtelierReadJson(AtelierDataPath(TEXT("forest_lake/manifest.json"))),LakePieces,&LakeLogicalBounds);
-    if(!LakeReady)Incomplete.Add(TEXT("complete lake pieces"));
-    TMap<FString,TArray<FString>> VillagePieces;
-    TMap<FString,FBox> VillageLogicalBounds;
-    TSet<FString> LoadedVillagePieces,PlacedVillageParents;
-    const bool VillageReady=JapanVillagePieces::Read(
-        AtelierReadJson(AtelierDataPath(TEXT("village/atomic-manifest.json"))),VillagePieces,&VillageLogicalBounds);
-    if(!VillageReady)Incomplete.Add(TEXT("complete Village pieces"));
+    TMap<FString,TArray<FString>> CityPieces, SouthwestPieces, LakePieces, VillagePieces, TreehouseSurfaces;
+    TMap<FString,FBox> CityLogicalBounds, SouthwestLogicalBounds, LakeLogicalBounds, VillageLogicalBounds, TreehouseLogicalBounds;
+    TSet<FString> LoadedCityPieces, PlacedCityParents, LoadedSouthwestPieces, PlacedSouthwestParents;
+    TSet<FString> LoadedLakePieces, PlacedLakeParents, LoadedVillagePieces, PlacedVillageParents;
     TArray<FString> DressingPieces;
-    TSet<FString> LoadedDressingPieces;
-    const bool DressingReady=JapanTreehousePieces::Read(
-        AtelierReadJson(AtelierDataPath(TEXT("treehouse/pieces.json"))),DressingPieces);
-    if (!DressingReady) Incomplete.Add(TEXT("complete treehouse dressing pieces"));
-    TMap<FString,TArray<FString>> TreehouseSurfaces;
-    TMap<FString,FBox> TreehouseLogicalBounds;
-    TSet<FString> LoadedStructurePieces;
-    const bool TreehouseSurfacesReady=JapanTreehouseSurfacePieces::Read(
-        AtelierReadJson(AtelierDataPath(TEXT("treehouse/surfaces.json"))),TreehouseSurfaces,&TreehouseLogicalBounds);
-    if(!TreehouseSurfacesReady || !DressingReady || TreehouseSurfaces.FindChecked(TEXT("TH_Dressing"))!=DressingPieces)
-        Incomplete.Add(TEXT("complete consistent Treehouse surface pieces"));
+    TSet<FString> LoadedDressingPieces, LoadedStructurePieces;
+    bool PiecesReady = true, SouthwestReady = true, LakeReady = true, VillageReady = true, DressingReady = true, TreehouseSurfacesReady = true;
+    // When bAllMigrated is true, saved AV2ScenePatch ExpectedMembers replace runtime scenery spawning and piece-roster checks:
+    // skip parsing ~68 MB of clearance/manifest JSON files (belmonte/runtime.json, brinecove/runtime.json, gondola/runtime.json, manifests).
+    if (!bAllMigrated)
+    {
+        ParkClearance = ASkatePark::LoadClearance(ParkPath);
+        ParkClearance.Append(ASkatePark::LoadClearance(HippodromePath));
+        if (AHidamariStable::bEnabled) ParkClearance.Append(ASkatePark::LoadClearance(StablePath));
+        const TArray<TSharedPtr<FJsonValue>>* NearBoxes = nullptr;
+        if (City.IsValid() && City->TryGetArrayField(TEXT("near_trees"), NearBoxes))
+            for (const TSharedPtr<FJsonValue>& V : *NearBoxes)
+            {
+                const TArray<TSharedPtr<FJsonValue>>& B = V->AsArray();
+                if (B.Num() < 4) continue;
+                const FVector A = ToUE(B[0]->AsNumber(), B[1]->AsNumber(), 0), C = ToUE(B[2]->AsNumber(), B[3]->AsNumber(), 0);
+                NearTrees.Add(FBox2D(FVector2D(FMath::Min(A.X, C.X), FMath::Min(A.Y, C.Y)), FVector2D(FMath::Max(A.X, C.X), FMath::Max(A.Y, C.Y))));
+            }
+        ABelmonteRegion::Clear(Root, AtelierDataPath(TEXT("belmonte/runtime.json")));
+        ABelmonteRegion::Clear(Root, AtelierDataPath(TEXT("brinecove/runtime.json")));
+        ABelmonteRegion::Clear(Root, AtelierDataPath(TEXT("gondola/runtime.json")));
+        PiecesReady = JapanCityPieces::Read(
+            AtelierReadJson(AtelierDataPath(TEXT("city_surface_tiles/v1_128m/manifest.json"))),CityPieces,&CityLogicalBounds);
+        if (!PiecesReady) Incomplete.Add(TEXT("complete production city pieces"));
+        SouthwestReady = JapanSouthwestPieces::Read(
+            AtelierReadJson(AtelierDataPath(TEXT("southwest/runtime.json"))),SouthwestPieces,&SouthwestLogicalBounds);
+        if (!SouthwestReady) Incomplete.Add(TEXT("complete Southwest pieces"));
+        LakeReady = JapanLakePieces::Read(
+            AtelierReadJson(AtelierDataPath(TEXT("forest_lake/manifest.json"))),LakePieces,&LakeLogicalBounds);
+        if (!LakeReady) Incomplete.Add(TEXT("complete lake pieces"));
+        VillageReady = JapanVillagePieces::Read(
+            AtelierReadJson(AtelierDataPath(TEXT("village/atomic-manifest.json"))),VillagePieces,&VillageLogicalBounds);
+        if (!VillageReady) Incomplete.Add(TEXT("complete Village pieces"));
+        DressingReady = JapanTreehousePieces::Read(
+            AtelierReadJson(AtelierDataPath(TEXT("treehouse/pieces.json"))),DressingPieces);
+        if (!DressingReady) Incomplete.Add(TEXT("complete treehouse dressing pieces"));
+        TreehouseSurfacesReady = JapanTreehouseSurfacePieces::Read(
+            AtelierReadJson(AtelierDataPath(TEXT("treehouse/surfaces.json"))),TreehouseSurfaces,&TreehouseLogicalBounds);
+        if (!TreehouseSurfacesReady || !DressingReady || TreehouseSurfaces.FindChecked(TEXT("TH_Dressing"))!=DressingPieces)
+            Incomplete.Add(TEXT("complete consistent Treehouse surface pieces"));
+    }
     if (!bAllMigrated && Root->TryGetObjectField(TEXT("instances"), Inst))
     {
         for (const auto& Pair : (*Inst)->Values)
@@ -614,7 +714,9 @@ void AJapanWorld::Load()
                         S->SetCanEverAffectNavigation(false);
                         S->SetCollisionEnabled(ECollisionEnabled::NoCollision);
                         S->SetHiddenInGame(true); S->bCastHiddenShadow = true; S->SetCastShadow(true);
-                        S->bAffectIndirectLightingWhileHidden = true;
+                        S->bAffectDynamicIndirectLighting = false;
+                        S->bAffectIndirectLightingWhileHidden = false;
+                        S->bAffectDistanceFieldLighting = false;
                         if (Fade != JapanSeeThrough::FadeSolid) S->SetCustomPrimitiveDataFloat(0, float(Fade));
                         S->SetWorldPositionOffsetDisableDistance(18000);
                         S->bAutoRebuildTreeOnInstanceChanges = false;
@@ -622,11 +724,10 @@ void AJapanWorld::Load()
                         S->AddInstances(Xs, false, false, false);
                         S->BuildTreeIfOutdated(true, true);
                         S->bAutoRebuildTreeOnInstanceChanges = true;
-                        // The twin also carries the group's distance field (for shadows and, while hidden, sky
-                        // occlusion), so Quality mode still darkens the forest beyond the cascades; the scene holds each
-                        // tree's field once.
                         H->SetCastShadow(false); H->bAffectDistanceFieldLighting = false;
+                        RegisteredTwins.Add(S);
                         ShadowTwins.Add(S);
+                        ShadowTwinBounds.Add(S, S->Bounds.GetBox());
                         if (bMigrationBuild) MigrationTwins.Add(H, S);
                     }
                 };
@@ -683,9 +784,11 @@ void AJapanWorld::Load()
         SkyDome->RegisterComponent();
     }
     TMap<FString,TArray<FString>> IslandPieces;
-    if(!JapanIslandPieces::Read(AtelierReadJson(AtelierDataPath(TEXT("terrain/island.json"))),IslandPieces))
-        Incomplete.Add(TEXT("complete island pieces"));
-    else if (!(Manifest && Manifest->CoversService(TEXT("Sea")))) for(const FString& Path:IslandPieces.FindChecked(TEXT("Sea")))
+    if (!(Manifest && Manifest->CoversService(TEXT("Sea"))))
+    {
+        if(!JapanIslandPieces::Read(AtelierReadJson(AtelierDataPath(TEXT("terrain/island.json"))),IslandPieces))
+            Incomplete.Add(TEXT("complete island pieces"));
+        else for(const FString& Path:IslandPieces.FindChecked(TEXT("Sea")))
     {
         UStaticMesh* SeaMesh=LoadMesh(Path);
         if(!SeaMesh){Incomplete.Add(TEXT("island Sea piece ")+Path);continue;}
@@ -696,7 +799,9 @@ void AJapanWorld::Load()
         Sea->SetGenerateOverlapEvents(false);
         Sea->ComponentTags.Add(TEXT("IslandSurface:Sea"));
         Sea->RegisterComponent();
+        RegisteredSeaPieces.Add(Sea);
         SeaPieces.Add(Sea);
+    }
     }
     bLoaded = true;
     if (bMigrationBuild) { MigrationIncomplete = Incomplete; return; }   // the editor migration copies the static scenery built so far
@@ -917,30 +1022,33 @@ void AJapanWorld::Load()
     // The far hills' trees stand on the hills' original heights, but the northern
     // surface and the Mega Park approach lowered that ground. Once every region's
     // ground is in place, drop each backdrop tree with no ground under its base.
-#if WITH_EDITOR
-    // An editor build compiles spawned meshes asynchronously, and a mesh still compiling has no collision yet: the
-    // volcano's ground was still building here, and the trace dropped about half its forest.
-    FStaticMeshCompilingManager::Get().FinishAllCompilation();
-#endif
-    int32 Floating = 0, Grounded = 0;
-    const FCollisionQueryParams GroundQuery(SCENE_QUERY_STAT(BackdropGround), true);
-    for (auto* Group : BackdropGroups)
+    if (!BackdropGroups.IsEmpty())
     {
-        if (!Group || !Group->GetStaticMesh() || !Group->GetStaticMesh()->GetName().StartsWith(TEXT("Tree"))) continue;
-        TArray<int32> Remove;
-        for (int32 I = 0; I < Group->GetInstanceCount(); ++I)
+#if WITH_EDITOR
+        // An editor build compiles spawned meshes asynchronously, and a mesh still compiling has no collision yet: the
+        // volcano's ground was still building here, and the trace dropped about half its forest.
+        FStaticMeshCompilingManager::Get().FinishAllCompilation();
+#endif
+        int32 Floating = 0, Grounded = 0;
+        const FCollisionQueryParams GroundQuery(SCENE_QUERY_STAT(BackdropGround), true);
+        for (auto* Group : BackdropGroups)
         {
-            FTransform Instance;
-            Group->GetInstanceTransform(I, Instance, true);
-            const FVector Base = Instance.GetLocation();
-            FHitResult Hit;
-            if (GetWorld()->LineTraceSingleByChannel(Hit, Base + FVector(0, 0, 300), Base - FVector(0, 0, 400), ECC_Visibility, GroundQuery)) ++Grounded;
-            else Remove.Add(I);
+            if (!Group || !Group->GetStaticMesh() || !Group->GetStaticMesh()->GetName().StartsWith(TEXT("Tree"))) continue;
+            TArray<int32> Remove;
+            for (int32 I = 0; I < Group->GetInstanceCount(); ++I)
+            {
+                FTransform Instance;
+                Group->GetInstanceTransform(I, Instance, true);
+                const FVector Base = Instance.GetLocation();
+                FHitResult Hit;
+                if (GetWorld()->LineTraceSingleByChannel(Hit, Base + FVector(0, 0, 300), Base - FVector(0, 0, 400), ECC_Visibility, GroundQuery)) ++Grounded;
+                else Remove.Add(I);
+            }
+            if (!Remove.IsEmpty()) Group->RemoveInstances(Remove);
+            Floating += Remove.Num();
         }
-        if (!Remove.IsEmpty()) Group->RemoveInstances(Remove);
-        Floating += Remove.Num();
+        UE_LOG(LogTemp, Display, TEXT("BACKDROP TREES kept %d on the ground, removed %d with none under them"), Grounded, Floating);
     }
-    UE_LOG(LogTemp, Display, TEXT("BACKDROP TREES kept %d on the ground, removed %d with none under them"), Grounded, Floating);
     UE_LOG(LogTemp, Display, TEXT("SKATE PARK cleared %d vegetation instances"), Cleared);
     // The road guardrails are grindable: the W-beam's top edge is 85 cm over the rail line.
     if (USkateRailSubsystem* Rails = GetWorld()->GetSubsystem<USkateRailSubsystem>())
@@ -967,8 +1075,15 @@ void AJapanWorld::Load()
     AGullFlock* Flock = GetNetMode()==NM_DedicatedServer || !ServiceRuns(TEXT("Gulls")) ? nullptr : GetWorld()->SpawnActor<AGullFlock>(ToUE(20, -170, 45), FRotator::ZeroRotator);
     if (!City.IsValid()) Incomplete.Add(TEXT("Hidamari data"));
     if (HouseLayout && !HouseRuntime.IsValid()) Incomplete.Add(TEXT("tree house data"));
+    AppliedScreenSizeCull = FMath::Max(0.f, CVarScreenSizeCull.GetValueOnGameThread());
+    for (TActorIterator<AActor> It(GetWorld()); It; ++It)
+        if (!It->IsA<AV2ScenePatch>()) RegisterActorScreenSizeCull(*It);
+    if (!ScreenSizeCullSpawnHandle.IsValid())
+        ScreenSizeCullSpawnHandle = GetWorld()->AddOnActorSpawnedHandler(
+            FOnActorSpawned::FDelegate::CreateUObject(this, &ThisClass::RegisterActorScreenSizeCull));
     // V2: the saved scenery this map holds joins the same lists (patches streamed in later join on their BeginPlay).
     for (TActorIterator<AV2ScenePatch> It(GetWorld()); It; ++It) RegisterScenePatch(*It);
+    UpdateShadowTwinResidency(true);
     if (Manifest) UE_LOG(LogTemp, Display, TEXT("V2 SCENERY %d instances saved in this map, %d patches%s"),
         MigratedInstances, ScenePatches.Num(), bAllMigrated ? TEXT(" (only migrated scenery)") : TEXT(""));
     if (TotalInstances == 0) Incomplete.Add(TEXT("world geometry"));
@@ -994,22 +1109,75 @@ void AJapanWorld::RegisterScenePatch(AV2ScenePatch* Patch)
     }
     TArray<UStaticMeshComponent*> Components;
     Patch->GetComponents(Components);
+    const bool bCitySourcePrefix = Patch->SourceKey.StartsWith(TEXT("city:"), ESearchCase::CaseSensitive);
     for (UStaticMeshComponent* C : Components)
     {
+        if (!C) continue;
+        if (auto* Instanced = Cast<UInstancedStaticMeshComponent>(C); Instanced && Instanced->GetInstanceCount() == 0)
+        {
+            // Emptied split-object source patches carry 0 instances: unregister their idle scene proxy after ExpectedMembers verified.
+            if (Instanced->IsRegistered()) Instanced->UnregisterComponent();
+            continue;
+        }
         auto* H = Cast<UHierarchicalInstancedStaticMeshComponent>(C);
-        if (H && C->ComponentHasTag(AV2ScenePatch::RoleGroup)) { Groups.AddUnique(H); TotalInstances += H->GetInstanceCount(); }
-        if (H && C->ComponentHasTag(AV2ScenePatch::RoleBackdrop)) BackdropGroups.AddUnique(H);
-        if (H && C->ComponentHasTag(AV2ScenePatch::RoleShadowTwin)) ShadowTwins.AddUnique(H);
-        if (H && C->ComponentHasTag(AV2ScenePatch::RoleSeeThrough)) SeeThroughGroups.AddUnique(H);
-        if (C->ComponentHasTag(AV2ScenePatch::RoleSea)) SeaPieces.AddUnique(C);
+        if (H && Patch->SourceKey.StartsWith(TEXT("belmonte:"), ESearchCase::CaseSensitive))
+        {
+            const FString MeshName = H->GetStaticMesh() ? H->GetStaticMesh()->GetName() : FString();
+            if (MeshName.Contains(TEXT("Bush")) || MeshName.Contains(TEXT("Saucer")) || MeshName.Contains(TEXT("Cup"))
+                || MeshName.Contains(TEXT("Pot")) || MeshName.Contains(TEXT("Flower")))
+            {
+                H->SetCastShadow(false);
+                if (H->InstanceEndCullDistance == 0 || H->InstanceEndCullDistance > 14000)
+                    H->SetCullDistances(11000, 14000);
+                H->WorldPositionOffsetDisableDistance = 6000;
+            }
+            else if (MeshName.Contains(TEXT("Tree")))
+            {
+                if (H->InstanceEndCullDistance == 0 || H->InstanceEndCullDistance > 220000)
+                    H->SetCullDistances(180000, 220000);
+                H->WorldPositionOffsetDisableDistance = 12000;
+            }
+        }
+        if (H && C->ComponentHasTag(AV2ScenePatch::RoleGroup))
+        {
+            bool bAlready = false;
+            RegisteredGroups.Add(H, &bAlready);
+            if (!bAlready) { Groups.Add(H); TotalInstances += H->GetInstanceCount(); }
+        }
+        if (H && C->ComponentHasTag(AV2ScenePatch::RoleBackdrop))
+        {
+            bool bAlready = false;
+            RegisteredBackdrops.Add(H, &bAlready);
+            if (!bAlready) BackdropGroups.Add(H);
+        }
+        if (H && C->ComponentHasTag(AV2ScenePatch::RoleShadowTwin))
+        {
+            H->bAffectDynamicIndirectLighting = false;
+            H->bAffectIndirectLightingWhileHidden = false;
+            H->bAffectDistanceFieldLighting = false;
+            bool bAlready = false;
+            RegisteredTwins.Add(H, &bAlready);
+            if (!bAlready)
+            {
+                ShadowTwins.Add(H);
+                ShadowTwinBounds.Add(H, H->Bounds.GetBox());
+            }
+        }
+        if (H && C->ComponentHasTag(AV2ScenePatch::RoleSeeThrough))
+        {
+            bool bAlready = false;
+            RegisteredSeeThrough.Add(H, &bAlready);
+            if (!bAlready) SeeThroughGroups.Add(H);
+        }
+        if (C->ComponentHasTag(AV2ScenePatch::RoleSea))
+        {
+            bool bAlready = false;
+            RegisteredSeaPieces.Add(C, &bAlready);
+            if (!bAlready) SeaPieces.Add(C);
+        }
         if (C->ComponentHasTag(AV2ScenePatch::RoleSkyDome)) SkyDome = C;
-    }
-    // The menu's settings already applied reach the newcomer's components alone: re-applying them to every group for
-    // each patch made arrival streaming quadratic (thousands of patches, about 20 s at 4 fps after a long travel).
-    bool bCityTreePiece = false;
-    for (UStaticMeshComponent* C : Components)
-    {
-        if (auto* H = Cast<UHierarchicalInstancedStaticMeshComponent>(C))
+
+        if (H)
         {
             if (AppliedBackdropCull > 0.f && C->ComponentHasTag(AV2ScenePatch::RoleBackdrop))
             {
@@ -1017,18 +1185,25 @@ void AJapanWorld::RegisterScenePatch(AV2ScenePatch* Patch)
                 ForgetScreenSizeCull(H);
             }
             if (C->ComponentHasTag(AV2ScenePatch::RoleGroup)) ApplyPerformanceToGroup(H);
-            if (C->ComponentHasTag(AV2ScenePatch::RoleShadowTwin)) ApplyPerformanceToTwin(H);
+            if (C->ComponentHasTag(AV2ScenePatch::RoleShadowTwin))
+            {
+                ApplyPerformanceToTwin(H);
+                const float ReachCm = FMath::Max(AppliedTreeShadow, 80.f) * 100.f + 18000.f;
+                FVector CamLoc = PlayerStart.GetLocation();
+                if (const APlayerCameraManager* Cam = UGameplayStatics::GetPlayerCameraManager(this, 0)) CamLoc = Cam->GetCameraLocation();
+                if (const FBox* Box = ShadowTwinBounds.Find(H); Box && Box->ComputeSquaredDistanceToPoint(CamLoc) > FMath::Square(ReachCm))
+                    if (H->IsRegistered()) H->UnregisterComponent();
+            }
+            if (RequestedTreeOptimization >= 0 && C->ComponentHasTag(AV2ScenePatch::RoleGroup))
+            {
+                bool bTryTreeSwap = bCitySourcePrefix;
+                if (!bTryTreeSwap)
+                    for (const FName& Tag : C->ComponentTags)
+                        if (IsCityTreePiece(Tag)) { bTryTreeSwap = true; break; }
+                if (bTryTreeSwap) ApplyTreeOptimizationToGroup(H);
+            }
         }
-        for (const FName& Tag : C->ComponentTags)
-            if (IsCityTreePiece(Tag)) { bCityTreePiece = true; break; }
-        if (AppliedScreenSizeCull > 0.f) ApplyScreenSizeCullTo(C, AppliedScreenSizeCull);
-    }
-    if (AppliedScreenSizeCull <= 0.f) bScreenSizeCullDirty = true;
-    if (bCityTreePiece && RequestedTreeOptimization >= 0)
-    {
-        // The saved request, not the last success: a swap that failed before this patch arrived is retried too.
-        AppliedTreeOptimization = -1;
-        ApplyTreeOptimization(RequestedTreeOptimization != 0, RequestedTreeLODMode, RequestedTreeDistanceScale);
+        RegisterScreenSizeCullComponent(C);
     }
     // japan.HideGroups is a diagnosis: while one runs, its next pass revisits every group.
     if (!AppliedHideGroups.IsEmpty()) AppliedHideGroups.Reset();
@@ -1043,11 +1218,14 @@ void AJapanWorld::UnregisterScenePatch(AV2ScenePatch* Patch)
     {
         if (auto* H = Cast<UHierarchicalInstancedStaticMeshComponent>(C))
         {
-            if (Groups.Remove(H)) TotalInstances -= H->GetInstanceCount();
-            BackdropGroups.Remove(H); ShadowTwins.Remove(H); SeeThroughGroups.Remove(H);
+            if (RegisteredGroups.Remove(H) > 0) { Groups.RemoveSingleSwap(H, EAllowShrinking::No); TotalInstances -= H->GetInstanceCount(); }
+            if (RegisteredBackdrops.Remove(H) > 0) BackdropGroups.RemoveSingleSwap(H, EAllowShrinking::No);
+            if (RegisteredTwins.Remove(H) > 0) { ShadowTwins.RemoveSingleSwap(H, EAllowShrinking::No); ShadowTwinBounds.Remove(H); }
+            if (RegisteredSeeThrough.Remove(H) > 0) SeeThroughGroups.RemoveSingleSwap(H, EAllowShrinking::No);
         }
-        SeaPieces.Remove(C);
+        if (RegisteredSeaPieces.Remove(C) > 0) SeaPieces.RemoveSingleSwap(C, EAllowShrinking::No);
         if (SkyDome == C) SkyDome = nullptr;
+        ScreenSizeCullComponents.Remove(C);
         ScreenSizeCullStates.Remove(C);
     }
 }
@@ -1153,28 +1331,38 @@ void AJapanWorld::ApplyGroupDiagnostics()
 // about 4 px across at 1440p and a 70 degree FOV. Distant props and trees below that size cost depth, base and shadow
 // work for no visible detail (view 1: 0.7 ms of 18.8 on an M1 Max). Large meshes (ground, sea, mountains) get
 // distances far past the world, so nothing near or large changes. 0 restores each component's own distances.
-static TAutoConsoleVariable<float> CVarScreenSizeCull(TEXT("japan.ScreenSizeCull"),1000.f,
-    TEXT("Cull static meshes beyond this multiple of their bounds radius (0 = off)."),ECVF_Default);
+
+void AJapanWorld::RegisterScreenSizeCullComponent(UStaticMeshComponent* Component)
+{
+    if (!IsValid(Component) || Component->GetWorld() != GetWorld()) return;
+    ScreenSizeCullComponents.Add(Component);
+    if (AppliedScreenSizeCull > 0.f) ApplyScreenSizeCullTo(Component, AppliedScreenSizeCull);
+}
+
+void AJapanWorld::RegisterActorScreenSizeCull(AActor* Actor)
+{
+    if (!Actor || Actor->GetWorld() != GetWorld() || Actor->IsA<AV2ScenePatch>()) return;
+    TArray<UStaticMeshComponent*> Components;
+    Actor->GetComponents(Components);
+    for (UStaticMeshComponent* C : Components) RegisterScreenSizeCullComponent(C);
+}
 
 void AJapanWorld::ApplyScreenSizeCull()
 {
     const float Multiple = FMath::Max(0.f,CVarScreenSizeCull.GetValueOnGameThread());
     if (!bLoaded) return;
-    // A changed multiple or an owned writer (profile, diagnostics) revisits at once; otherwise a scan every few seconds
-    // picks up spawned components and distances other code has set since.
-    const bool bChanged = !FMath::IsNearlyEqual(Multiple,AppliedScreenSizeCull);
-    const double Now = FPlatformTime::Seconds();
-    if (!bChanged && !bScreenSizeCullDirty && Now < NextScreenSizeCullScan) return;
-    if (Multiple <= 0.f && !bChanged && ScreenSizeCullStates.IsEmpty()) return;
+    // Components apply screen-size cull directly on registration and on ForgetScreenSizeCull(Component).
+    // Only a console change to japan.ScreenSizeCull revisits the tracked world component set.
+    if (FMath::IsNearlyEqual(Multiple,AppliedScreenSizeCull)) return;
     AppliedScreenSizeCull = Multiple;
-    bScreenSizeCullDirty = false;
-    NextScreenSizeCullScan = Now + 5.;
     int32 Touched = 0;
-    for (TObjectIterator<UStaticMeshComponent> It; It; ++It)
-        if (ApplyScreenSizeCullTo(*It, Multiple)) ++Touched;
-    // Off: every component is back on its current uncapped distances and nothing more is tracked.
+    for (auto It = ScreenSizeCullComponents.CreateIterator(); It; ++It)
+    {
+        if (!It->IsValid()) { It.RemoveCurrent(); continue; }
+        if (ApplyScreenSizeCullTo(It->Get(), Multiple)) ++Touched;
+    }
     if (Multiple <= 0.f) ScreenSizeCullStates.Empty();
-    if (bChanged || Touched) UE_LOG(LogTemp,Display,TEXT("SCREEN SIZE CULL %.0f x radius on %d components"),Multiple,Touched);
+    UE_LOG(LogTemp,Display,TEXT("SCREEN SIZE CULL %.0f x radius on %d components"),Multiple,Touched);
 }
 
 bool AJapanWorld::ApplyScreenSizeCullTo(UStaticMeshComponent* Component, float Multiple)
@@ -1231,9 +1419,38 @@ bool AJapanWorld::ApplyScreenSizeCullTo(UStaticMeshComponent* Component, float M
 
 void AJapanWorld::ForgetScreenSizeCull(UStaticMeshComponent* Component)
 {
-    // Its owner just wrote new uncapped distances: the next pass takes them as the base and caps them again.
+    // Its owner just wrote new uncapped distances: re-evaluate this component alone in O(1) without a global scan.
     ScreenSizeCullStates.Remove(Component);
-    bScreenSizeCullDirty = true;
+    if (Component)
+    {
+        ScreenSizeCullComponents.Add(Component);
+        if (AppliedScreenSizeCull > 0.f) ApplyScreenSizeCullTo(Component, AppliedScreenSizeCull);
+    }
+}
+
+void AJapanWorld::UpdateShadowTwinResidency(bool bForce)
+{
+    if (ShadowTwinBounds.IsEmpty()) return;
+    FVector CamLoc = PlayerStart.GetLocation();
+    if (const APlayerCameraManager* Cam = UGameplayStatics::GetPlayerCameraManager(this, 0)) CamLoc = Cam->GetCameraLocation();
+    else if (const APawn* Pawn = UGameplayStatics::GetPlayerPawn(this, 0)) CamLoc = Pawn->GetActorLocation();
+    const float BaseShadowCm = FMath::Max(AppliedTreeShadow > 0.f ? AppliedTreeShadow : 80.f, 20.f) * 100.f;
+    const double RegisterDistSq = FMath::Square(double(BaseShadowCm + 12000.f));
+    const double UnregisterDistSq = FMath::Square(double(BaseShadowCm + 18000.f));
+    for (auto It = ShadowTwinBounds.CreateIterator(); It; ++It)
+    {
+        UHierarchicalInstancedStaticMeshComponent* Twin = It.Key().Get();
+        if (!IsValid(Twin) || Twin->GetInstanceCount() == 0) { It.RemoveCurrent(); continue; }
+        const double DistSq = It.Value().ComputeSquaredDistanceToPoint(CamLoc);
+        if (Twin->IsRegistered())
+        {
+            if (DistSq > UnregisterDistSq) Twin->UnregisterComponent();
+        }
+        else if (DistSq <= (bForce ? UnregisterDistSq : RegisterDistSq))
+        {
+            Twin->RegisterComponent();
+        }
+    }
 }
 
 void AJapanWorld::ApplyPerformanceSettings(bool bPerformance, float TreeSwayMetres, float ForestDetail, float TreeShadowMetres)
@@ -1246,6 +1463,7 @@ void AJapanWorld::ApplyPerformanceSettings(bool bPerformance, float TreeSwayMetr
     AppliedTreeShadow = TreeShadowMetres;
     for (auto* Group : Groups) ApplyPerformanceToGroup(Group);
     for (auto* Twin : ShadowTwins) ApplyPerformanceToTwin(Twin);
+    UpdateShadowTwinResidency(true);
 }
 
 void AJapanWorld::ApplyPerformanceToGroup(UHierarchicalInstancedStaticMeshComponent* Group)
@@ -1403,6 +1621,12 @@ void AJapanWorld::Tick(float Dt)
     UpdateNorthAerialGrade(Dt);
     ApplyGroupDiagnostics();
     ApplyScreenSizeCull();
+    ShadowTwinResidencyElapsed += Dt;
+    if (ShadowTwinResidencyElapsed >= .5f)
+    {
+        ShadowTwinResidencyElapsed = 0.f;
+        UpdateShadowTwinResidency(false);
+    }
     if (!WindMPC) return;
     UMaterialParameterCollectionInstance* I = GetWorld()->GetParameterCollectionInstance(WindMPC);
     if (!I) return;

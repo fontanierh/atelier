@@ -184,19 +184,7 @@ ABelmonteRegion* ABelmonteRegion::Spawn(AJapanWorld* Landscape, const FString& P
             }
             continue;
         }
-        auto* Mesh = LoadObject<UStaticMesh>(nullptr, *Asset);
-        if (!Mesh)
-        {
-            ++Missing;
-            UE_LOG(LogTemp, Error, TEXT("%s missing mesh %s"), *Tag.ToString().ToUpper(), *Asset);
-            continue;
-        }
         const bool Plant = Entry->GetBoolField(TEXT("plant"));
-        // Plant components belong to JapanWorld, so the normal tree settings and LOD swaps apply to this district too.
-        auto* Group = MakeGroup(Plant ? static_cast<UObject*>(Landscape) : Region,
-            Plant ? Landscape->GetRootComponent() : Region->GetRootComponent(), Entry, Mesh, Tag, Missing);
-        Group->bAutoRebuildTreeOnInstanceChanges = false;
-        Group->RegisterComponent();
         TArray<FTransform> Instances;
         if (Plant)
             for (FTransform Placement : PlantTransforms(Data, Entry, GondolaClearance))
@@ -218,6 +206,29 @@ ABelmonteRegion* ABelmonteRegion::Spawn(AJapanWorld* Landscape, const FString& P
                 return Manifest->CoversGroup(Tag, V2MigrationTowns::PieceKey(Key, CellX, CellY));
             });
         }
+        if (Manifest && Instances.IsEmpty())
+        {
+            // All kept cells of this group are saved in AV2ScenePatch actors (or lie outside bounds): verify package without loading mesh/materials.
+            if (FPackageName::DoesPackageExist(FPackageName::ObjectPathToPackageName(Asset))) ++Saved;
+            else
+            {
+                ++Missing;
+                UE_LOG(LogTemp, Error, TEXT("%s missing saved-group mesh %s"), *Tag.ToString().ToUpper(), *Asset);
+            }
+            continue;
+        }
+        auto* Mesh = LoadObject<UStaticMesh>(nullptr, *Asset);
+        if (!Mesh)
+        {
+            ++Missing;
+            UE_LOG(LogTemp, Error, TEXT("%s missing mesh %s"), *Tag.ToString().ToUpper(), *Asset);
+            continue;
+        }
+        // Plant components belong to JapanWorld, so the normal tree settings and LOD swaps apply to this district too.
+        auto* Group = MakeGroup(Plant ? static_cast<UObject*>(Landscape) : Region,
+            Plant ? Landscape->GetRootComponent() : Region->GetRootComponent(), Entry, Mesh, Tag, Missing);
+        Group->bAutoRebuildTreeOnInstanceChanges = false;
+        Group->RegisterComponent();
         Group->AddInstances(Instances, false, false, false);
         Group->BuildTreeIfOutdated(true, true);
         Group->bAutoRebuildTreeOnInstanceChanges = true;

@@ -2,7 +2,10 @@
 
 #include "AtelierData.h"
 #include "Dom/JsonObject.h"
+#include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
+#include "Serialization/JsonReader.h"
+#include "Serialization/JsonSerializer.h"
 
 namespace V2MigrationTowns
 {
@@ -50,6 +53,36 @@ void CellOf(const FVector& OriginCm, const FTransform& Placement, int32& OutCell
 
 TSharedPtr<FJsonObject> GondolaClearance()
 {
-    return AtelierReadJson(AtelierDataPath(TEXT("gondola/runtime.json")));
+    static TSharedPtr<FJsonObject> Cached;
+    static FString CachedPath;
+    const FString Path = AtelierDataPath(TEXT("gondola/runtime.json"));
+    if (Cached.IsValid() && CachedPath == Path) return Cached;
+    FString Raw;
+    if (!FFileHelper::LoadFileToString(Raw, *Path)) return nullptr;
+    // InClearance only reads clearance_segments_m / clearance_m (~20 KB); skip deserializing the 21 MB "lines" polylines.
+    int32 LinesKey = Raw.Find(TEXT("\"lines\""), ESearchCase::CaseSensitive);
+    if (LinesKey != INDEX_NONE)
+    {
+        int32 Colon = Raw.Find(TEXT(":"), ESearchCase::CaseSensitive, ESearchDir::FromStart, LinesKey + 7);
+        int32 Open = Colon != INDEX_NONE ? Raw.Find(TEXT("["), ESearchCase::CaseSensitive, ESearchDir::FromStart, Colon + 1) : INDEX_NONE;
+        if (Open != INDEX_NONE)
+        {
+            int32 Depth = 1, K = Open + 1;
+            bool bInStr = false;
+            while (K < Raw.Len() && Depth > 0)
+            {
+                const TCHAR C = Raw[K];
+                if (bInStr) { if (C == TEXT('\\')) { K += 2; continue; } if (C == TEXT('"')) bInStr = false; }
+                else { if (C == TEXT('"')) bInStr = true; else if (C == TEXT('[')) ++Depth; else if (C == TEXT(']')) --Depth; }
+                ++K;
+            }
+            if (Depth == 0) Raw = Raw.Left(Open + 1) + Raw.Mid(K - 1);
+        }
+    }
+    TSharedPtr<FJsonObject> Parsed;
+    if (!FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Raw), Parsed) || !Parsed.IsValid()) return nullptr;
+    CachedPath = Path;
+    Cached = Parsed;
+    return Cached;
 }
 }
