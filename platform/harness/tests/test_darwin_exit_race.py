@@ -108,7 +108,7 @@ def test_default_aggregate_error_replaces_running_receipt_without_claiming_succe
         if len(calls) == 1:
             return before
         if len(calls) == 2 or not recoverable:
-            raise PermissionError(errno.EPERM, 'sample denied')
+            raise PermissionError(errno.EPERM, 'sample denied', 77)
         return []
 
     tree = SimpleNamespace(root=(1, 10), same=lambda pin: True, reporters=None, sample=sample)
@@ -124,6 +124,7 @@ def test_default_aggregate_error_replaces_running_receipt_without_claiming_succe
     assert report['termination_reason'] == 'monitor_error'
     assert report['cleanup_complete'] is recoverable
     assert report['error_type'] == 'PermissionError' and report['peak_bytes'] == 77
+    assert report['error_errno'] == errno.EPERM and report['error_pid'] == 77
     assert report['processes'] == before and cleaned == [tree]
     if recoverable:
         assert report['cleanup_processes'] == [] and report['cleanup_footprint_bytes'] == 0
