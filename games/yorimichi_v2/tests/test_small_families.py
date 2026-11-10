@@ -386,3 +386,22 @@ def test_the_real_tree_house_verified_files_are_in_adoption_form():
         if verified.is_file():
             text = verified.read_text()
             assert json.dumps(json.loads(text), indent=2, sort_keys=True) + '\n' == text, slug
+
+def test_the_default_plan_runs_after_the_claim_and_reports_the_moved_records():
+    """Plan mode reads the post-migration tree: each record the SMALLFAM write moved reports `migrated`, the rest load."""
+    result = sf.classify(ROOT)
+    moved = sorted(r['record'] for r in result['records'] if r['status'] == 'migrated')
+    assert moved == sorted(sf.MIGRATED)
+    assert all(not (ROOT / f'assets/{record}/asset.toml').is_file() for record in moved)
+    assert sum(f['migrated'] for f in result['families'].values()) == len(sf.MIGRATED) == 10
+    assert sf.summary_lines(result)[0].split()[-1] == 'migrated'
+
+
+def test_a_migrated_record_that_is_still_present_is_refused(tmp_path, monkeypatch):
+    record = 'adopted/fixture/still-here'
+    (tmp_path / f'assets/{record}').mkdir(parents=True)
+    (tmp_path / f'assets/{record}/asset.toml').write_text('')
+    monkeypatch.setattr(sf, 'REGISTRY', {record: ('fixture', 'origin', 'evidence', 'planned', '')})
+    monkeypatch.setattr(sf, 'MIGRATED', frozenset({record}))
+    with pytest.raises(sf.FamilyError, match='still present'):
+        sf.classify(tmp_path)

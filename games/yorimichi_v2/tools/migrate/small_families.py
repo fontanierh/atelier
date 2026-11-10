@@ -251,10 +251,34 @@ def megapark_report(donor: Path | None) -> dict:
             'names': sorted('MI_' + key[2:] for key in materials)}
 
 
+# The adopted records the SMALLFAM write moved into generated records (PR #797); their rows report `migrated`.
+MIGRATED = frozenset({
+    'adopted/belmonte/shared-metal-glass', 'adopted/belmonte/shared-water', 'adopted/hippodrome/loose_files',
+    'adopted/japan/textures/plaza-harbor', 'adopted/japan/treehouse/surface-flat', 'adopted/japan/treehouse/surface-glass',
+    'adopted/japan/treehouse/surface-rope', 'adopted/japan/treehouse/surface-trunk',
+    'adopted/megapark/shared-materials-pavement', 'adopted/megapark/shared-materials-wood'})
+
+
+def _family_counts(out: dict, family: str) -> dict:
+    return out['families'].setdefault(family, {'records': 0, 'packages': 0, 'planned': 0, 'need-read': 0,
+                                               'blocked': 0, 'unreal-authored': 0, 'migrated': 0})
+
+
 def classify(game: Path, donor: Path | None = None) -> dict:
-    """Every adopted record of the families: its packages, the byte checks and the registry row."""
+    """Every adopted record of the families: its packages, the byte checks and the registry row. A record the claim
+    moved out (MIGRATED) must be gone and reports `migrated`; any other missing record is still an error."""
     out = {'families': {}, 'records': [], 'packages': 0, 'problems': []}
     for record_id, (family, origin, evidence, status, note) in REGISTRY.items():
+        if record_id in MIGRATED:
+            if (game / f'assets/{record_id}/asset.toml').is_file():
+                raise FamilyError(f'{record_id} is listed as migrated, but its adopted record is still present')
+            out['records'].append({'record': record_id, 'family': family, 'origin': origin, 'evidence': evidence,
+                                   'status': 'migrated', 'note': 'moved into generated records by the SMALLFAM write',
+                                   'packages': [], 'byte_problems': [], 'refs': {}})
+            fam = _family_counts(out, family)
+            fam['records'] += 1
+            fam['migrated'] += 1
+            continue
         asset = load_record(game, record_id)
         problems = byte_problems(game, record_id)
         packages = [o.package for o in asset.outputs]
@@ -268,8 +292,7 @@ def classify(game: Path, donor: Path | None = None) -> dict:
         out['records'].append(row)
         out['packages'] += len(packages)
         out['problems'] += [f'{record_id}: {p}' for p in problems]
-        fam = out['families'].setdefault(family, {'records': 0, 'packages': 0, 'planned': 0, 'need-read': 0,
-                                                  'blocked': 0, 'unreal-authored': 0})
+        fam = _family_counts(out, family)
         fam['records'] += 1
         fam['packages'] += len(packages)
         fam[status] += 1
@@ -280,12 +303,13 @@ def classify(game: Path, donor: Path | None = None) -> dict:
 
 
 def summary_lines(result: dict) -> list[str]:
-    lines = [f"{'family':<12} {'records':>7} {'packages':>8} {'planned':>7} {'need-read':>9} {'blocked':>7} {'editor':>6}"]
+    lines = [f"{'family':<12} {'records':>7} {'packages':>8} {'planned':>7} {'need-read':>9} {'blocked':>7} {'editor':>6} "
+             f"{'migrated':>8}"]
     for family in FAMILY_ORDER:
         f = result['families'].get(family)
         if f:
             lines.append(f"{family:<12} {f['records']:>7} {f['packages']:>8} {f['planned']:>7} {f['need-read']:>9} "
-                         f"{f['blocked']:>7} {f['unreal-authored']:>6}")
+                         f"{f['blocked']:>7} {f['unreal-authored']:>6} {f['migrated']:>8}")
     lines.append(f"total packages {result['packages']}; byte problems {len(result['problems'])}")
     return lines
 
