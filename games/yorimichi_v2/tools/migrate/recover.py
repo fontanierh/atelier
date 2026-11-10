@@ -22,6 +22,7 @@ import hashlib
 import json
 import re
 import shutil
+import struct
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -316,6 +317,20 @@ def plan_citysurfaces(game: Path, donor: Path, owner: dict[str, str], all_owner:
 TRAIN_SAVED = HERE / 'saved' / 'belmontetrain.json'
 
 
+def glb_instanced(path: Path) -> tuple[int, list[str]]:
+    """(triangles, material names) of a binary glTF counted per node instance: the donor's triangle figure. A mesh
+    that several nodes place counts once per placement (the Belmonte LOD1 files place some meshes up to four times)."""
+    data = path.read_bytes()
+    if data[:4] != b'glTF':
+        raise RecoverError(f'{path}: not a binary glTF')
+    doc = json.loads(data[20:20 + struct.unpack_from('<I', data, 12)[0]])
+
+    def mesh_tris(index: int) -> int:
+        return sum(doc['accessors'][prim['indices']]['count'] // 3 for prim in doc['meshes'][index]['primitives'])
+    total = sum(mesh_tris(node['mesh']) for node in doc.get('nodes', []) if 'mesh' in node)
+    return total, [m.get('name', '') for m in doc.get('materials', [])]
+
+
 def plan_belmontetrain(game: Path, donor: Path, owner: dict[str, str], all_owner: dict[str, str]) -> Plan:
     """The donor's Belmonte train (belmonte-train: service/service.json, service/import-report.json, the Train Builder's
     GLBs; import_belmonte_train.py): each vehicle from its LOD0-LOD2 files with its fixed boxes as simple-as-complex
@@ -366,6 +381,9 @@ def plan_belmontetrain(game: Path, donor: Path, owner: dict[str, str], all_owner
                 add(leaf_package, f'prop/belmontetrain/{unit}-door-{tail}', f'shared/belmontetrain/{unit}',
                     [(donor / leaf['glb']).resolve()], f'{leaf_package.rsplit("/", 1)[1]}: a {unit} door leaf',
                     {'collision': 'boxes', 'boxes': []})
+        # The vehicle's LOD1 and LOD2 meshes are not planned: the import builds them from the prop record's lod_chain as
+        # transient meshes, and the residual records' standalone Source/SM_BT_<V>/SM_BT_<V>_LODn packages are unused donor
+        # leftovers that belmontetrain_lods.py retires.
     return Plan('belmontetrain', generated, unmapped, {})
 
 
