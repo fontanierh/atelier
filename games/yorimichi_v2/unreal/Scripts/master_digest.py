@@ -41,7 +41,8 @@ EXPRESSION_PROPERTIES = ('parameter_name', 'default_value', 'r', 'constant', 'co
                          'output_type', 'data_index', 'const_default_value',
                          'inputs', 'scene_texture_id', 'collection', 'g', 'b', 'a', 'material_function',
                          'use_custom_primitive_data', 'primitive_data_index',
-                         'transform_source_type', 'transform_type')   # desc is editor-only metadata
+                         'transform_source_type', 'transform_type',
+                         'ignore_pause', 'override_period', 'period')   # desc is editor-only metadata
 LISTS = ('expressions', 'connections', 'property_connections')
 SETS = ('parameters',)
 TOPOLOGY_VERSION = 2

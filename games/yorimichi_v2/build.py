@@ -307,6 +307,7 @@ def _authorize_import(ctx, log):
     must be exactly its asset record's recorded import, and no other record may own a destination."""
     import json
     import os
+    import sys
     authority = _authority()
     import records
     plan_file = Path(os.environ['V2_IMPORT_PLAN'])
@@ -321,6 +322,10 @@ def _authorize_import(ctx, log):
             or plan.get('version') != asset.recipe.get('version')):
         raise RuntimeError(f"import plan for {asset.id} does not match its record (packages {expected}, "
                            f"importer {asset.recipe.get('importer')!r})")
+    if asset.kind == 'material-master':
+        sys.path.insert(0, str(UNREAL / 'Scripts'))
+        from master_sources import checked_sources
+        checked_sources(GAME, asset, plan)
     destinations = set()
     for package in expected:
         stem = records.package_files(GAME, package)[0].with_suffix('')

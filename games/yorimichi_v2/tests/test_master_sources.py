@@ -2,6 +2,8 @@
 import ast
 import hashlib
 import importlib.util
+import io
+import json
 import os
 from pathlib import Path
 import py_compile
@@ -94,6 +96,94 @@ def test_a_single_source_builder_still_loads(tmp_path):
     entry.write_text('def build():\n    return 42\n')
     with loader.builder([entry], 'build') as build:
         assert build() == 42
+
+
+@pytest.fixture
+def prepared_master(tmp_path):
+    game = tmp_path / 'game'
+    folder = game / 'assets/master/test/surface'
+    entry, helper = sources(folder / 'src', 42)
+    source_rows = ''.join(f'[[sources]]\npath = "src/{path.name}"\n'
+                          f'sha256 = "{hashlib.sha256(path.read_bytes()).hexdigest()}"\n' for path in (entry, helper))
+    record = folder / 'asset.toml'
+    record.write_text('schema = 1\nid = "master/test/surface"\nkind = "material-master"\nauthority = "generated"\n'
+                      'owner = "shared/test/surface"\n' + source_rows +
+                      '[recipe]\nimporter = "material-master"\nversion = 1\n[recipe.settings]\n'
+                      'builder = "build"\nreads = []\n[[outputs]]\npackage = "/Game/Test/M_Surface"\n')
+    asset = records.load_asset(record)
+    plan = dict(asset=asset.id, kind=asset.kind, importer='material-master', version=1, settings=asset.recipe['settings'],
+                sources=[str(path.resolve()) for path in (entry, helper)],
+                portable_sources=['games/yorimichi_v2/' + path.relative_to(game).as_posix() for path in (entry, helper)],
+                packages=['/Game/Test/M_Surface'])
+    return game, asset, plan
+
+
+def test_verified_snapshots_are_the_bytes_executed(prepared_master):
+    game, asset, plan = prepared_master
+    contents = loader.checked_sources(game, asset, plan)
+    # This swap happens after verification. The loader must retain the accepted bytes, without reopening the files.
+    for path in plan['sources']:
+        Path(path).write_text('raise RuntimeError("changed after verification")\n')
+    before = namespaces()
+    with loader.builder(plan['sources'], 'build', source_bytes=contents) as build:
+        assert build() == 42
+    assert namespaces() == before
+
+
+@pytest.mark.parametrize('route', ['direct-build', 'editor'])
+@pytest.mark.parametrize('changed', ['entry', 'helper', 'source-path', 'portable-path', 'settings'])
+def test_master_write_boundaries_refuse_changed_sources_before_execution(prepared_master, monkeypatch, route, changed):
+    """Prepared plans are replayable only while their recipe and every declared source still match the canonical record."""
+    game, asset, plan = prepared_master
+    if changed in ('entry', 'helper'):
+        path = Path(plan['sources'][changed == 'helper'])
+        path.write_text(path.read_text() + '\n# changed after preparation\n')
+        error = 'pinned sha256'
+    elif changed == 'source-path':
+        other = game / 'unlisted.py'
+        other.write_bytes(Path(plan['sources'][0]).read_bytes())   # even identical bytes do not authorize another path
+        plan['sources'][0] = str(other)
+        error = 'sources does not match'
+    elif changed == 'portable-path':
+        plan['portable_sources'][0] = 'games/yorimichi_v2/assets/unlisted.py'
+        error = 'portable_sources does not match'
+    else:
+        plan['settings'] = dict(plan['settings'], builder='other')
+        error = 'settings does not match'
+    authority = SimpleNamespace(discovered=lambda _: SimpleNamespace(by_id={asset.id: asset}))
+    monkeypatch.setitem(sys.modules, 'authority', authority)
+    touched = []
+    if route == 'direct-build':
+        spec = importlib.util.spec_from_file_location('v2_master_source_boundary_recipe', ROOT / 'build.py')
+        recipe = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(recipe)
+        recipe.GAME = game
+        plan_file = game / 'plan.json'
+        plan_file.write_text(json.dumps(plan))
+        monkeypatch.setenv('V2_IMPORT_PLAN', str(plan_file))
+        authority.authorize = lambda *args, **kwargs: touched.append('authorize')
+        action = lambda: recipe._authorize_import(None, io.StringIO())
+    else:
+        # Execute the actual editor entry function without importing or starting Unreal.
+        tree = ast.parse((ROOT / 'unreal/Scripts/import_asset.py').read_text())
+        function = next(node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == '_material_master')
+        namespace = dict(Path=Path, sys=sys, __file__=str(game / 'unreal/Scripts/import_asset.py'),
+                         _checked_master_sources=loader.checked_sources,
+                         _master_builder=lambda *args, **kwargs: touched.append('builder'))
+        exec(compile(ast.Module(body=[function], type_ignores=[]), 'import_asset.py', 'exec'), namespace)
+        action = lambda: namespace['_material_master'](plan)
+    before = namespaces()
+    with pytest.raises(RuntimeError, match=error):
+        action()
+    assert not touched and namespaces() == before
+
+
+def test_source_snapshots_must_cover_every_declared_file(prepared_master):
+    game, asset, plan = prepared_master
+    contents = loader.checked_sources(game, asset, plan)
+    with pytest.raises(RuntimeError, match='one source snapshot'):
+        with loader.builder(plan['sources'], 'build', source_bytes=contents[:1]):
+            pytest.fail('a missing helper snapshot was accepted')
 
 
 @pytest.mark.parametrize('mode', ['base-only', 'with-glow', 'glow-only'])

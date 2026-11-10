@@ -20,7 +20,7 @@ import import_settings  # noqa: E402
 import lod_preservation  # noqa: E402
 from mesh_materials import assign_materials  # noqa: E402
 import master_digest  # noqa: E402
-from master_sources import builder as _master_builder  # noqa: E402
+from master_sources import builder as _master_builder, checked_sources as _checked_master_sources  # noqa: E402
 
 MARKER = 'V2 IMPORT DONE'
 LOD_RESULT = 'lod-result.json'   # beside the plan: each static-mesh package's LOD chain before and after
@@ -542,7 +542,12 @@ def _material_master(plan):
     build's unwired expressions."""
     if not plan['sources'] or len(plan['packages']) != 1:
         raise RuntimeError('a material master names an entry builder with optional helpers and builds one package')
-    with _master_builder(plan['sources'], plan['settings']['builder']) as builder:
+    game = Path(__file__).resolve().parents[2]
+    sys.path.insert(0, str(game / 'tools/content'))
+    import authority
+    asset = authority.discovered(game).by_id.get(plan['asset'])
+    contents = _checked_master_sources(game, asset, plan)
+    with _master_builder(plan['sources'], plan['settings']['builder'], source_bytes=contents) as builder:
         _material_master_with_builder(plan, builder)
 
 

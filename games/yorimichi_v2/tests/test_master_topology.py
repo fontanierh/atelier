@@ -156,6 +156,17 @@ def test_position_transform_space_changes_reject(prop, changed):
     assert 'rendered topology differs at MP_EMISSIVE_COLOR' in digest.accept(saved, digest.read(material))
 
 
+@pytest.mark.parametrize(('prop', 'changed'), [('ignore_pause', True), ('override_period', True), ('period', 2.0)])
+def test_time_animation_settings_changes_reject(prop, changed):
+    """Animation pause and wrap behavior must survive a rebuild, including settings left at builder defaults."""
+    time = node('MaterialExpressionTime', 'time', ignore_pause=False, override_period=prop == 'period', period=1.0)
+    material = Material([time], {'MP_EMISSIVE_COLOR': (time, '')})
+    saved = digest.read(material)
+    assert digest.accept(saved, digest.read(material)) == []
+    time.props[prop] = changed
+    assert 'rendered topology differs at MP_EMISSIVE_COLOR' in digest.accept(saved, digest.read(material))
+
+
 @pytest.mark.parametrize('setting', ['is_sky', 'blendable_location', 'dithered_lod_transition',
                                      'tangent_space_normal', 'compute_fog_per_pixel'])
 def test_upcoming_render_settings_are_compared(setting):
