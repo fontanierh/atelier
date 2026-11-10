@@ -143,14 +143,23 @@ contract review reads them on every PR. Playtests keep finding the same defects,
 
 ## Images
 
-- Use **GPT Image 2.5 Sunburst** (`gpt-image-2.5-sunburst`) with `quality=high` for new concepts, reference sheets,
-  textures and map paintings, unless the task calls for another quality. Never silently substitute another model.
-- Record the model and prompt of every generated image in its provenance file.
+- Use **GPT Image 2.6 Sunburst** (`gpt-image-2.6-sunburst`, default in `atelier.ai.images`) with `quality=high` for
+  new concepts, reference sheets, textures, map paintings and animated GIF references, unless the task calls for
+  another quality. Do not use `gpt-image-2.5-sunburst`, and never silently substitute another model.
+- `gpt-image-2.6-sunburst` supports animated GIF output (`output_format="gif"`, or a `.gif` target in
+  `atelier.ai.images.paint`) on both `/v1/images/generations` and reference-guided `/v1/images/edits`:
+  `frame_count` (2 to 16 frames, default 9), `frame_duration_ms` (20 to 2000 ms rounded to 10 ms, default 200),
+  `size` (`"auto"` or `WIDTHxHEIGHT` multiples of 16), and optional `complexity` (`"low"`, `"medium"`, `"high"`).
+  Use GIF output for visual-effects loops (foliage sway, water surf, sparks, smoke, cloth/hair motion) and short
+  animation reference studies.
+- Record the model, format options and prompt of every generated image or GIF in its provenance file.
 
 ## Animation reference videos
 
 - Prefer **H3 Max at 480p** (`minimax/minimax-h3-max` through the Vercel AI Gateway) for cost; use Seedance only when
-  its quality justifies it. Both clients are in `platform/studio/node/`.
+  its quality justifies it. Both clients are in `platform/studio/node/`. For short looping motion studies and visual
+  effects, **GPT Image 2.6 Sunburst** animated GIFs (`atelier.ai.images.paint(..., 'auto', frame_count=...,
+  frame_duration_ms=...)` to a `.gif` target) are also available.
 - An H3 prompt states the appearance and camera, ordered and timed phases, support contacts, airborne impulses,
   rotation direction and count, and the recovery. Always require **constant framing** (no zoom, the character stays
   the same size) and **real-time speed** (no slow motion). Inspect the motion before accepting a take.

@@ -70,3 +70,71 @@ def test_paint_writes_the_record_before_the_call_and_never_repays(api, tmp_path,
     with pytest.raises(FileExistsError):
         images.paint(tmp_path / 'A.png', 'p', '1024x1024', record=record, key='sk-secret-test')
     assert len(seen) == 1
+
+
+def test_default_model_is_sunburst_2_6():
+    assert images.MODEL == 'gpt-image-2.6-sunburst'
+
+
+def test_gif_generation_and_edit_fields(api, tmp_path):
+    seen, reply = api
+    gif_bytes = b'GIF89a fake loop'
+    reply['body'] = {'data': [{'b64_json': base64.b64encode(gif_bytes).decode()}], 'usage': {'total_tokens': 42}}
+
+    blobs, _, _ = images.sunburst(
+        'falling maple leaves looping cleanly',
+        '1024x1024',
+        output_format='gif',
+        frame_count=12,
+        frame_duration_ms=120,
+        complexity='medium',
+        key='sk-test',
+    )
+    assert blobs == [gif_bytes]
+    gen_req = json.loads(seen[-1].content)
+    assert gen_req == {
+        'model': 'gpt-image-2.6-sunburst',
+        'prompt': 'falling maple leaves looping cleanly',
+        'size': '1024x1024',
+        'quality': 'high',
+        'output_format': 'gif',
+        'frame_count': 12,
+        'frame_duration_ms': 120,
+        'complexity': 'medium',
+        'n': 1,
+    }
+
+    ref = tmp_path / 'frame0.png'
+    Image.new('RGB', (512, 512), (40, 80, 120)).save(ref)
+    record = tmp_path / 'surf.provenance.json'
+    done = images.paint(
+        tmp_path / 'surf.gif',
+        'gentle shoreline foam loop matching the reference frame',
+        'auto',
+        [ref],
+        record=record,
+        frame_count=9,
+        frame_duration_ms=150,
+        complexity='low',
+        key='sk-secret-test',
+    )
+    assert (tmp_path / 'surf.gif').read_bytes() == gif_bytes
+    assert done['requested_model'] == 'gpt-image-2.6-sunburst'
+    assert done['output_format'] == 'gif'
+    assert done['frame_count'] == 9 and done['frame_duration_ms'] == 150 and done['complexity'] == 'low'
+    assert done['endpoint'] == '/v1/images/edits'
+    edit_body = seen[-1].content
+    assert b'name="output_format"\r\n\r\ngif' in edit_body
+    assert b'name="frame_count"\r\n\r\n9' in edit_body
+    assert b'name="frame_duration_ms"\r\n\r\n150' in edit_body
+
+
+def test_invalid_gif_options_fail_before_ledger_submission(api, tmp_path):
+    seen, _ = api
+    record = tmp_path / 'bad.provenance.json'
+    with pytest.raises(ValueError, match='output_format="gif"'):
+        images.paint(tmp_path / 'still.png', 'p', '1024x1024', record=record, frame_count=8, key='sk-test')
+    with pytest.raises(ValueError, match='2 to 16'):
+        images.paint(tmp_path / 'loop.gif', 'p', 'auto', record=record, frame_count=32, key='sk-test')
+    assert not record.exists()
+    assert seen == []
