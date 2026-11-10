@@ -211,6 +211,107 @@ def replay(src: Path, component: str, scopes=SCOPES) -> dict:
         sys.dont_write_bytecode = old_flag
 
 
+# --- an independent generator: one harbour pier ----------------------------------------------------------------------------
+# props5 carves the cargo off the three piers, a change to those models' geometry, so each pier first gets a generator
+# of its own (games/CONTRACTS independent-generator-before-model-edit). `harbor()` builds the whole harbour; its first
+# `for name, px, y0, y1, width in L.PIERS:` loop body is the pier and nothing else (the cargo is the second such loop),
+# and it uses no RNG. pier_model is that body for one row, with the donor's shared Builder and kit helpers.
+
+PIER_SOURCES = ('world/regions/brinecove/procedural/harbor.py', 'world/regions/brinecove/layout.py',
+                'world/regions/brinecove/geom.py', 'world/regions/brinecove/kit.py')
+
+
+def pier_model(src: Path, name: str) -> dict:
+    """@cc [owner:fontanierh,label:architecture] brinecove-pier-generator
+    One pier's geometry from its explicit `L.PIERS` row, built without any other harbour model: {'verts', 'faces',
+    'mats'} (the Builder's own lists). Shared helpers stay the donor's (Builder, bollard, lantern_post); the loop body
+    is `procedural/harbor.py`'s first pier loop, and pier_problems proves it reproduces the accepted pier."""
+    old_flag, sys.dont_write_bytecode = sys.dont_write_bytecode, True
+    added = [str(src / 'world'), str(src / 'world' / 'regions')]
+    sys.path[:0] = added
+    _forget()
+    try:
+        import importlib
+        L = importlib.import_module('brinecove.layout')
+        geom = importlib.import_module('brinecove.geom')
+        kit = importlib.import_module('brinecove.kit')
+        rows = [r for r in L.PIERS if r[0] == name]
+        if len(rows) != 1:
+            raise MarketError(f'no single pier {name!r} in L.PIERS')
+        _, px, y0, y1, width = rows[0]
+        b = geom.Builder(f'pier_{name}')
+        length = y0 - y1
+        b.box((px, (y0 + y1) / 2, 4.9), (width, length, 0.7), 'wood_light')
+        for yy in [y0 - 1.5 - i * 8 for i in range(int(length / 8) + 1)]:
+            for side in (-1, 1):
+                bx = px + side * (width / 2 - 1.0)
+                b.cylinder((bx, yy, -4.5), (bx, yy, 5.0), 0.55, 'wood_dark', 7)
+                b.beam((bx, yy, 0.5), (px, yy, 3.9), 0.25, 'wood_dark')
+        for i in range(int(length / 9)):
+            yy = y0 - 4 - i * 9
+            b.box((px, yy, 5.28), (width - 0.4, 0.18, 0.08), 'wood_dark')
+        if name in ('central', 'east'):             # T-head on the main and east piers
+            tw = 40 if name == 'central' else 26
+            b.box((px, y1 + 2, 4.9), (tw, 14, 0.7), 'wood_light')
+            for xx in (-tw / 2 + 2, tw / 2 - 2):
+                b.cylinder((px + xx, y1 - 3, -4.5), (px + xx, y1 - 3, 5.0), 0.6, 'wood_dark', 7)
+        for i in range(max(2, int(length / 42))):
+            yy = y0 - 14 - i * 42
+            for side in (-1, 1):
+                if i % 2:
+                    kit.bollard(b, px + side * (width / 2 - 1.2), yy, 5.3)
+        kit.lantern_post(b, px - width / 2 + 1.4, y1 + 3, 5.3, 3.0)
+        kit.lantern_post(b, px + width / 2 - 1.4, y0 - 16, 5.3, 3.0)
+        return {'verts': b.verts, 'faces': b.faces, 'mats': b.mats}
+    finally:
+        for path in added:
+            sys.path.remove(path)
+        _forget()
+        sys.dont_write_bytecode = old_flag
+
+
+PIER_GENERATOR = 'generator/brinecove/piers'
+
+
+def pier_generator_files(src: Path) -> dict:
+    """{game-relative path: bytes} of the pier generator record: the donor files pier_model reads, copied into src/ and
+    pinned by sha256 (the form of generator/bike/wheels). Editor-owned, no outputs; the carved piers reference it."""
+    import hashlib
+    files = {f'assets/{PIER_GENERATOR}/src/{Path(rel).name}': (src / rel).read_bytes() for rel in PIER_SOURCES}
+    lines = ['# Donor generator (tools/migrate/brinecove_market.py pier_model): one harbour pier from its L.PIERS row, the',
+             '# body of procedural/harbor.py\'s first pier loop with the shared Builder and kit helpers (no other harbour model).',
+             '# It owns no package. Its sources are copied into src/ and pinned by sha256; the pier records reference it.',
+             'schema = 1', f'id = "{PIER_GENERATOR}"', 'kind = "generator"', 'authority = "editor"',
+             'owner = "shared/brinecove/piers"', 'license = "owner-published (docs/DECISIONS.md D05 group 1)"',
+             'provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"']
+    for rel in PIER_SOURCES:
+        name = Path(rel).name
+        lines += ['', '[[sources]]', f'path = "src/{name}"',
+                  f'sha256 = "{hashlib.sha256(files[f"assets/{PIER_GENERATOR}/src/{name}"]).hexdigest()}"']
+    files[f'assets/{PIER_GENERATOR}/asset.toml'] = ('\n'.join(lines) + '\n').encode()
+    return files
+
+
+def pier_problems(game: Path, src: Path, name: str) -> list[str]:
+    """The pier generator against the accepted record: every triangle the pier record draws now (its carve remainder)
+    is generated by pier_model exactly once, and pier_model generates nothing else."""
+    rid = f'prop/brinecove/harbor-pier-{name}'
+    built = pier_model(src, name)
+    built['owner'] = [rid] * len(built['faces'])
+    index = face_index(built)
+    apply_ = _apply()
+    asset = apply_.records.load_asset(game / 'assets' / rid / 'asset.toml')
+    try:
+        tris = drawn_triangles(game, rid, {'mesh': asset.outputs[0].package.rsplit('/', 1)[1]})
+        owners_of(tris, index)
+    except (OSError, ValueError, MarketError, apply_.carve.CarveError) as error:
+        return [f'{rid}: the pier generator does not reproduce the record: {error}']
+    made = sum(len(f) - 2 for f in built['faces'])         # each n-gon face is n - 2 triangles
+    if made != len(tris):
+        return [f'{rid}: the pier generator makes {made} triangles, the record draws {len(tris)}']
+    return []
+
+
 # --- matching generated faces to donor triangles -------------------------------------------------------------------------
 
 def _f32(v: float) -> float:
@@ -629,6 +730,7 @@ def build(game: Path, donor: Path, src: Path, stage: Path, batch: str, names: li
     check_packages(game, parts)
     plan = {'tiles': tiles, 'parts': parts, 'remainders': remainders, 'stage': stage, 'prior': done['prior']}
     plan['replaced'] = recuts(game, plan, batch)
+    plan['src'] = src
     return plan
 
 
@@ -700,6 +802,14 @@ def check(game: Path, donor: Path | None, batch: str, retired: bool = False, gro
     if donor is None:
         return problems
     records = apply_.records
+    src = donor_source(donor)
+    for rid, cut in exp.get('replaced', {}).items():     # a carved pier: its own generator reproduces it, pins hold
+        if cut['after'] is not None and cut['object'].startswith('harbor-pier-'):
+            problems += pier_problems(game, src, cut['object'][len('harbor-pier-'):])
+            for rel, data in pier_generator_files(src).items():
+                path = game / rel
+                if not path.is_file() or path.read_bytes() != data:
+                    problems.append(f'{PIER_GENERATOR}: {Path(rel).name} is missing or not the donor bytes')
     glb_dir = donor / 'brinecove' / 'glb'
     sources, pieces = [], []
     for stem in exp['tiles']:
@@ -1078,7 +1188,8 @@ def recuts(game: Path, plan: dict, batch: str) -> dict:
     out = {}
     for obj, (rid, part) in sorted(replaced_parts(region, batch).items()):
         if not (game / 'assets' / rid / 'asset.toml').is_file() and rid in applied and applied[rid]['after'] is None:
-            out[rid] = applied[rid]
+            # retired: its package and owner are the earlier part's (part_generated's owner form)
+            out[rid] = {**applied[rid], 'package': part['package'], 'owner': 'shared/brinecove/' + rid.rsplit('/', 1)[1]}
             continue
         pieces = [p for p in plan['parts'].values() if p['object'].startswith(obj + '-')]
         if not pieces:
@@ -1104,6 +1215,11 @@ def recut_asset_text(base: str, cut: dict) -> str:
     text = re.sub(r'(?m)^slot_materials = \[.*\]$', 'slot_materials = ' + json.dumps(after['slots']), text, count=1)
     text = re.sub(r'\((\d+) triangles\)\.$', f'({after["triangles"]} triangles, its cargo split off by the re-split).',
                   text.split('\n', 1)[0], count=1) + '\n' + text.split('\n', 1)[1]
+    if cut['object'].startswith('harbor-pier-'):          # a carved pier names its generator (pier_model)
+        def with_generator(m):
+            refs = sorted({*re.findall(r'"([^"]+)"', m.group(1)), PIER_GENERATOR})
+            return 'references = [' + ', '.join(f'"{r}"' for r in refs) + ']'
+        text = re.sub(r'(?m)^references = \[(.*)\]$', with_generator, text, count=1)
     return carve.with_derive(text, f'src/{name}', f'src/{sel}')
 
 
@@ -1125,6 +1241,8 @@ def apply_ops(game: Path, plan: dict, batch: str) -> tuple[dict, dict]:
     def put(rel: str, data: bytes):
         if not (game / rel).is_file() or (game / rel).read_bytes() != data:
             writes[rel] = data
+        else:
+            writes.pop(rel, None)       # a rerun: apply's compute may have queued older bytes for a file already right
 
     for rid, cut in cuts.items():
         if cut['after'] is None:
@@ -1135,6 +1253,11 @@ def apply_ops(game: Path, plan: dict, batch: str) -> tuple[dict, dict]:
         if any(k.startswith(f'assets/{rid}/') for k in writes):
             scopes.add((f'asset/{rid}', cut['owner']))
             extra |= {f'{apply_.GAME_REL}/{rel}' for rel in apply_.record_set(game, rid, cut['package'], sel)}
+    if any(c['after'] is not None and c['object'].startswith('harbor-pier-') for c in cuts.values()):
+        for rel, data in pier_generator_files(plan['src']).items():     # the carved piers' generator (pier_model)
+            put(rel, data)
+            extra.add(f'{apply_.GAME_REL}/{rel}')
+        scopes.add((f'asset/{PIER_GENERATOR}', 'shared/brinecove/piers'))
     objects_rel = f'world/regions/{apply_.REGION}/objects.toml'
     text = writes[objects_rel].decode() if objects_rel in writes else (game / objects_rel).read_text()
     for rid, cut in cuts.items():       # a carved object's description counts what it keeps

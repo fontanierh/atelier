@@ -717,7 +717,7 @@ package = "/Game/Brinecove/Meshes/SM_BC_HarborPierWest"
 def test_a_carved_coarse_record_pins_its_original_and_selection_once():
     """The re-cut record keeps its original as the first source, adds the selection and [derive], and counts the derived
     mesh's slots and triangles; carving the carved text again changes nothing."""
-    cut = {'record': 'prop/brinecove/harbor-pier-west', 'mesh': 'SM_BC_HarborPierWest',
+    cut = {'record': 'prop/brinecove/harbor-pier-west', 'object': 'harbor-pier-west', 'mesh': 'SM_BC_HarborPierWest',
            'after': {'triangles': 2136, 'slots': ['/Game/M/MI_lantern', '/Game/M/MI_wood'], 'selection_sha256': 'b' * 64}}
     text = market.recut_asset_text(PIER_TOML, cut)
     data = market.tomllib.loads(text)
@@ -728,6 +728,7 @@ def test_a_carved_coarse_record_pins_its_original_and_selection_once():
     assert data['recipe']['settings']['triangles'] == 2136
     assert data['recipe']['settings']['slot_materials'] == ['/Game/M/MI_lantern', '/Game/M/MI_wood']
     assert '(2136 triangles, its cargo split off by the re-split).' in text.split('\n', 1)[0]
+    assert data['references'] == ['adopted/brinecove/materials', market.PIER_GENERATOR]   # a pier names its generator
     assert market.recut_asset_text(text, cut) == text
 
 
@@ -788,3 +789,22 @@ def test_a_rerun_of_a_carved_record_binds_its_slots_by_name():
     kept = ['/Game/Brinecove/Materials/MI_BC_lantern', '/Game/Brinecove/Materials/MI_BC_wood_dark']
     slots = apply_.material_packages(['BC_lantern', 'BC_rope', 'BC_wood_dark'], kept)
     assert [slots[m] for m in ('BC_lantern', 'BC_wood_dark')] == kept
+
+
+@pytest.mark.skipif(not DONOR or not Path(DONOR).is_dir(), reason='needs the donor export (YV2_DONOR_BUILD)')
+def test_donor_each_pier_has_an_independent_generator_that_reproduces_it():
+    """pier_model builds one pier from its L.PIERS row alone: exactly the faces harbor() makes in that pier's scope and
+    not in a cargo piece (same corners, same materials), and every triangle of the carved pier record."""
+    donor = Path(DONOR)
+    src = market.donor_source(donor)
+    built = market.replay(src, 'Harbor')
+    for name in ('central', 'west', 'east'):
+        own = 'pier-' + name
+        want = sorted((tuple(tuple(built['verts'][i]) for i in f), m) for f, m, c in
+                      zip(built['faces'], built['mats'], built['owner']) if c and c[-1] == own)
+        alone = market.pier_model(src, name)
+        got = sorted((tuple(tuple(alone['verts'][i]) for i in f), m) for f, m in zip(alone['faces'], alone['mats']))
+        assert got == want and got
+        game = Path(market.__file__).resolve().parents[2]
+        if (game / f'assets/prop/brinecove/harbor-pier-{name}/asset.toml').is_file():
+            assert market.pier_problems(game, src, name) == []
