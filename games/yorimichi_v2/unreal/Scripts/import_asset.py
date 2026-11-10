@@ -6,6 +6,7 @@ recreates other packages and saves only the planned ones. It reimports into the 
 to it, and its user-owned settings, survive. Import metadata keeps the repository-relative source path, never the
 absolute path of this checkout (CONTRACTS yorimichi-v2-portable-records).
 """
+import importlib.util
 import json
 import os
 import sys
@@ -19,6 +20,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import import_settings  # noqa: E402
 import lod_preservation  # noqa: E402
 from mesh_materials import assign_materials  # noqa: E402
+import master_digest  # noqa: E402
 
 MARKER = 'V2 IMPORT DONE'
 LOD_RESULT = 'lod-result.json'   # beside the plan: each static-mesh package's LOD chain before and after
@@ -527,11 +529,66 @@ def _material_instances(plan, settings):
         U.log(f'V2 import wrote {package} from parent {parent_path}')
 
 
+def _master_builder(path, name):
+    """The builder function the record names, from its pinned source file (loaded as a module of its own)."""
+    spec = importlib.util.spec_from_file_location(f'v2_master_builder_{name}', path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    builder = getattr(module, name, None)
+    if not callable(builder) or name.startswith('_'):
+        raise RuntimeError(f'{path} has no builder {name}')
+    return builder
+
+
+def _material_master(plan):
+    """@cc [owner:fontanierh,label:correctness] importer-writes-only-record-outputs
+    Rebuild one generator master from its pinned builder and save it only when its wiring digest equals the saved original's
+    (master_digest.accept). The rebuild first goes to a transient package, which is compared and deleted and never saved. Only
+    an accepted rebuild is saved, into the record's one output package, and read back against the same digest. Nothing else is
+    written: a builder error, a difference, or an unreadable digest refuses before the save."""
+    if len(plan['sources']) != 1 or len(plan['packages']) != 1:
+        raise RuntimeError('a material master names one builder source and builds one package')
+    settings = plan['settings']
+    builder = _master_builder(plan['sources'][0], settings['builder'])
+    reads = {}
+    for path in settings.get('reads', []):
+        loaded = U.load_asset(path) if path.startswith('/Engine/') else EAL.load_asset(path)
+        if loaded is None:
+            raise RuntimeError(f'read {path} is not in the project')
+        reads[path] = loaded
+    package = plan['packages'][0]
+    arguments = dict(settings.get('arguments', {}))
+    if not EAL.does_asset_exist(package):
+        raise RuntimeError(f'{package} has no saved original to compare with; a master is rebuilt only over its original')
+    saved = master_digest.read(EAL.load_asset(package))
+    scratch = f'{TRANSIENT}/MasterCheck/{package.rsplit("/", 1)[1]}'
+    if EAL.does_asset_exist(scratch):
+        EAL.delete_asset(scratch)
+    try:
+        problems = master_digest.accept(saved, master_digest.read(builder(scratch, reads, **arguments)))
+    finally:
+        if EAL.does_asset_exist(scratch):
+            EAL.delete_asset(scratch)
+    if problems:
+        raise RuntimeError(f'{package} is not accepted: ' + '; '.join(problems[:8]))
+    builder(package, reads, **arguments)
+    if not EAL.save_asset(package, only_if_is_dirty=False):
+        raise RuntimeError(f'could not save {package}')
+    problems = master_digest.accept(saved, master_digest.read(EAL.load_asset(package)))
+    if problems:
+        raise RuntimeError(f'{package} reads back different from its saved original: ' + '; '.join(problems[:8]))
+    U.log(f'V2 import wrote {package} from {plan["portable_sources"][0]}')
+
+
 def main():
     if not U.V2SaveGuard.is_active():
         raise RuntimeError('the V2 save guard is not active (V2_SAVE_ALLOW); an import runs only through its build step')
     plan = json.loads(open(os.environ['V2_IMPORT_PLAN']).read())
     settings = plan['settings']
+    if plan['importer'] == 'material-master':
+        _material_master(plan)
+        U.log(MARKER)
+        return
     if plan['importer'] == 'material-instance':
         # A material instance pins no source file: its inputs are the parent and textures already in the project.
         _material_instances(plan, settings)

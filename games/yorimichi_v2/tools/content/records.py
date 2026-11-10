@@ -293,6 +293,8 @@ def material_settings(recipe: dict, where: Path, inputs: list[str], outputs: lis
 MASTER_IMPORTER = ('material-master', 1)
 MASTER_SETTINGS = {'builder', 'reads', 'arguments'}
 MASTER_BUILDER = re.compile(r'^[a-z][a-z0-9_]*$')
+# An engine asset a master may read (a default texture such as WhiteSquareTexture): owned by no record, like ENGINE_PARENTS.
+ENGINE_PACKAGE = re.compile(r'^/Engine(/[A-Za-z0-9_.-]+)+$')
 
 
 def material_master_settings(recipe: dict, where: Path, authority: str, sources: list, outputs: list[str]) -> dict:
@@ -319,8 +321,9 @@ def material_master_settings(recipe: dict, where: Path, authority: str, sources:
         raise RecordError(f'{where}: builder {builder!r} must be a lower-case function name')
     reads = settings.get('reads', [])
     if not isinstance(reads, list) or len(set(reads)) != len(reads) \
-            or any(not isinstance(package, str) or not PACKAGE.match(package) for package in reads):
-        raise RecordError(f'{where}: reads must be a list of distinct /Game packages')
+            or any(not isinstance(package, str) or not (PACKAGE.match(package) or ENGINE_PACKAGE.match(package))
+                   for package in reads):
+        raise RecordError(f'{where}: reads must be a list of distinct /Game or /Engine packages')
     arguments = settings.get('arguments', {})
     if not isinstance(arguments, dict):
         raise RecordError(f'{where}: arguments must be a table of name = value')
@@ -361,7 +364,7 @@ def material_input_problems(asset: 'Asset', outputs_of: dict[str, set[str]]) -> 
     """Each package a material instance or master reads must be an output of one of its input_dependencies; [] when all
     are. `outputs_of` maps every record ID to the set of its /Game output packages."""
     if asset.kind == 'material-master':
-        wanted = material_master_reads(asset)
+        wanted = [package for package in material_master_reads(asset) if not ENGINE_PACKAGE.match(package)]
     elif asset.kind == 'material-instance':
         wanted = material_inputs(asset)
     else:
