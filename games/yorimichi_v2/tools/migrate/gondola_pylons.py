@@ -47,6 +47,7 @@ import authority  # noqa: E402
 import records  # noqa: E402
 sys.path.insert(0, str(HERE))
 import brinecove_split_apply as apply  # noqa: E402  (Journal and execute: the journaled write every migrate step uses)
+import group_split  # noqa: E402  (the shared prepare/save/retire lifecycle)
 import objects  # noqa: E402  (record_text and MANIFEST: how a saved object's record and its map manifest are written)
 
 REGION = 'w18-gondola'
@@ -115,13 +116,6 @@ def block_text(pylon: dict) -> str:
     ])
 
 
-def saved_definition(item: dict) -> dict:
-    """What objects.saved.json records for an object: objects.py's definition (its entry without `about`, with the models and
-    groups load_objects derives)."""
-    models = [item['model']] if isinstance(item['model'], str) else list(item['model'])
-    return {'id': item['id'], 'route': list(item['route']), 'model': item['model'], 'models': models, 'groups': []}
-
-
 def tower_models_exist(game: Path, taken: list[dict]) -> None:
     missing = sorted(p['model'] for p in taken if not (game / 'assets' / p['model'] / 'asset.toml').is_file())
     if missing:
@@ -149,185 +143,43 @@ def render(text: str, data: dict, game: Path = GAME) -> str:
     return head.rstrip('\n') + '\n\n' + '\n\n'.join(body) + '\n'
 
 
-# --- the files a step names ----------------------------------------------------------------------------------------------
+# --- the shared lifecycle (group_split.py) -------------------------------------------------------------------------------
+
+SPLIT = group_split.Split(
+    region=REGION, pending=PENDING, group=GROUP, group_ids=tuple(GROUP_IDS), is_replacement=lambda i: bool(PYLON.match(i)),
+    error=PylonError, label='gondola pylon', noun='pylon',
+    unprepared=lambda groups: f'{len(groups)} pylon group(s) listed; prepare with --claim',
+    done=lambda wanted: 'the groups are retired and the ten pylon objects are listed')
+
+
+def saved_definition(item: dict) -> dict:
+    return group_split.saved_definition(item)
+
 
 def pending_of(game: Path) -> dict | None:
-    path = game / PENDING_REL
-    if not path.is_file():
-        return None
-    try:
-        body = json.loads(path.read_text())
-    except ValueError as error:
-        raise PylonError(f'{PENDING_REL} is not JSON: {error}') from None
-    if body.get('schema') != 1 or set(body) != {'schema', 'groups', 'replacements'}:
-        raise PylonError(f'{PENDING_REL} has an unknown shape')
-    return body
-
-
-def pending_text(pending: dict) -> str:
-    return json.dumps(pending, indent=2, sort_keys=True) + '\n'
-
-
-def group_listing(game: Path, gid: str) -> dict:
-    """A group's record and its files and actor packages as they are on disk: what retirement deletes."""
-    folder = game / 'assets' / gid
-    asset = records.load_asset(folder / 'asset.toml')
-    files = [p.relative_to(game).as_posix() for p in sorted(folder.rglob('*')) if p.is_file()]
-    packages = []
-    for output in asset.outputs:
-        packages += [rel for rel in apply.package_rels(game, output.package) if (game / rel).is_file()]
-    if not any(rel.endswith(records.PACKAGE_EXTENSIONS) for rel in packages):
-        raise PylonError(f'{gid}: its actor package {[o.package for o in asset.outputs]} is missing')
-    return {'files': files, 'packages': sorted(set(packages))}
-
-
-def group_checks(game: Path, items: list[dict], saved: dict) -> None:
-    """Each listed group: its record names it and its models, and objects.saved.json records its definition."""
-    for item in items:
-        gid = item['id']
-        record = game / 'assets' / gid / 'asset.toml'
-        if not record.is_file():
-            raise PylonError(f'{gid}: its record {record.relative_to(game)} is missing')
-        asset = records.load_asset(record)
-        if asset.id != gid or sorted(asset.references) != sorted(saved_definition(item)['models']):
-            raise PylonError(f'{gid}: its record does not name this group or its models')
-        if saved.get(gid) != saved_definition(item):
-            raise PylonError(f'{gid}: objects.saved.json does not record its objects.toml definition')
-
-
-def saved_of(game: Path) -> dict:
-    path = game / SAVED_REL
-    return json.loads(path.read_text()).get('objects', {}) if path.is_file() else {}
-
-
-def objects_of(game: Path) -> dict:
-    return {i['id']: i for i in tomllib.loads((game / OBJECTS_REL).read_text()).get('objects', [])}
+    return group_split.pending_of(SPLIT, game)
 
 
 def receipt_ok(game: Path, pid: str, item: dict, saved: dict) -> bool:
-    """A replacement's accepted receipt: its saved entry equals its definition, its record names it, and its verified.json
-    hashes each of its actor packages as they are on disk."""
-    if saved.get(pid) != saved_definition(item):
-        return False
-    record, verified = game / 'assets' / pid / 'asset.toml', game / 'assets' / pid / 'verified.json'
-    if not record.is_file() or not verified.is_file():
-        return False
-    asset = records.load_asset(record)
-    if asset.id != pid or not asset.outputs:
-        return False
-    files = json.loads(verified.read_text()).get('files', {})
-    for output in asset.outputs:
-        path = next((p for p in records.package_files(game, output.package) if p.is_file()), None)
-        if path is None or files.get(path.relative_to(game).as_posix()) != records.sha256_file(path):
-            return False
-    return True
+    return group_split.receipt_ok(game, pid, item, saved)
 
-
-# --- the states --------------------------------------------------------------------------------------------------------
 
 def state(game: Path, taken: list[dict]) -> tuple[str, str]:
-    """(state, detail) of the tree: unprepared, prepared, saved, or done. Refuses a tree no step explains."""
-    objects_now, saved = objects_of(game), saved_of(game)
-    groups = [i for i in objects_now.values() if GROUP.match(i['id'])]
-    pylons_listed = {i for i in objects_now if PYLON.match(i)}
-    wanted = {p['object'] for p in taken}
-    pending = pending_of(game)
-    if pending is None:
-        if groups and not pylons_listed:
-            return 'unprepared', f'{len(groups)} pylon group(s) listed; prepare with --claim'
-        group_left = any((game / 'assets' / g / 'asset.toml').is_file() or g in saved for g in GROUP_IDS)
-        if not groups and wanted <= pylons_listed and not group_left:
-            return 'done', 'the groups are retired and the ten pylon objects are listed'
-        raise PylonError('objects.toml, objects.saved.json and the group records disagree and no pending file explains it')
-    if groups or set(pending['replacements']) != pylons_listed:
-        raise PylonError(f'{PENDING_REL} does not match objects.toml')
-    for gid in pending['groups']:
-        if gid not in saved or not (game / 'assets' / gid / 'asset.toml').is_file():
-            raise PylonError(f'{gid} is pending retirement but its saved entry or record is gone')
-    missing = [pid for pid in sorted(wanted) if not receipt_ok(game, pid, objects_now[pid], saved)]
-    if missing:
-        return 'prepared', f'{len(missing)} replacement(s) without an accepted receipt, e.g. {missing[0]}'
-    return 'saved', f'all {len(wanted)} replacements have accepted receipts; retire with --retire --claim'
+    return group_split.state(SPLIT, game, taken)
 
 
 def claim_paths(game: Path, taken: list[dict]) -> dict:
-    """Every path and scope the steps touch, for one claim: the W18 objects, the pending file, the groups' records and actor
-    packages (as the pending file or the disk names them), the ten replacement records, and the manifest objects.py lists."""
-    pending = pending_of(game)
-    if pending is not None:
-        listing = {g: {'files': v['files'], 'packages': v['packages']} for g, v in pending['groups'].items()}
-    else:
-        listing = {g: group_listing(game, g) for g in GROUP_IDS if (game / 'assets' / g / 'asset.toml').is_file()}
-    rels = {OBJECTS_REL, SAVED_REL, PENDING_REL}
-    for entry in listing.values():
-        rels |= set(entry['files']) | set(entry['packages'])
-    for p in taken:
-        rels |= {f'assets/{p["object"]}/asset.toml', f'assets/{p["object"]}/verified.json'}
-    rels.add(objects.MANIFEST[ENVIRONMENT])
-    return {'paths': sorted(f'games/yorimichi_v2/{r}' for r in rels), 'scopes': sorted(SCOPES)}
+    return group_split.claim_paths(SPLIT, game, taken)
 
-
-def authorize(game: Path, taken: list[dict], claim: str | None, what: str) -> None:
-    """The complete claim, checked before any byte of the step is written."""
-    plan = claim_paths(game, taken)
-    try:
-        authority.authorize(plan['paths'], claim, what, scopes=SCOPES)
-    except authority.Unauthorized as error:
-        raise PylonError(str(error)) from None
-
-
-# --- the steps ---------------------------------------------------------------------------------------------------------
 
 def prepare(game: Path, taken: list[dict], claim: str, *, lockable=None, echo=print) -> str:
-    """Step 1. A rerun when already prepared (or later) is a no-op. The claim is checked before any write."""
-    apply.Journal(game).recover(claim)
-    current, why = state(game, taken)
-    if current != 'unprepared':
-        echo(f'prepare: already {current} ({why}); nothing written')
-        return current
-    text = (game / OBJECTS_REL).read_text()
-    data = runtime(game)
-    objects_out = render(text, data, game)
-    listed, saved = group_listing_all(game), saved_of(game)
-    group_checks(game, [i for i in objects_of(game).values() if GROUP.match(i['id'])], saved)
-    pending = {'schema': 1, 'groups': listed, 'replacements': sorted(p['object'] for p in taken)}
-    authorize(game, taken, claim, 'gondola pylon prepare')
-    ops = {'writes': {OBJECTS_REL: objects_out.encode(), PENDING_REL: pending_text(pending).encode()}, 'deletes': []}
-    apply.execute(game, ops, scopes=SCOPES, **({'lockable': lockable} if lockable else {}))
-    echo(f'prepare: {len(pending["replacements"])} pylon objects listed; {len(listed)} group(s) pending retirement')
-    return 'prepared'
-
-
-def group_listing_all(game: Path) -> dict:
-    listed = {}
-    for item in [i for i in objects_of(game).values() if GROUP.match(i['id'])]:
-        listed[item['id']] = group_listing(game, item['id'])
-    return listed
+    """Step 1 (group_split.prepare), rendering objects.toml from the runtime data file."""
+    return group_split.prepare(SPLIT, game, taken, claim, lambda text: render(text, runtime(game), game), lockable=lockable, echo=echo)
 
 
 def retire(game: Path, taken: list[dict], claim: str, *, lockable=None, echo=print) -> str:
-    """Step 3. Refuses, changing nothing, unless every replacement has an accepted receipt. A rerun after it is a no-op."""
-    apply.Journal(game).recover(claim)
-    current, why = state(game, taken)
-    if current == 'done':
-        echo(f'retire: already done ({why}); nothing written')
-        return current
-    if current != 'saved':
-        raise PylonError(f'retire refused: the pylon objects are {current} ({why}); nothing changed')
-    pending = pending_of(game)
-    saved = saved_of(game)
-    deletes = set([PENDING_REL])
-    for gid, listing in pending['groups'].items():
-        deletes |= {rel for rel in listing['files'] + listing['packages'] if (game / rel).is_file()}
-        saved.pop(gid, None)
-    body = json.loads((game / SAVED_REL).read_text())
-    body['objects'] = saved
-    authorize(game, taken, claim, 'gondola pylon retire')
-    ops = {'writes': {SAVED_REL: (json.dumps(body, indent=2, sort_keys=True) + '\n').encode()},
-           'deletes': sorted(deletes)}
-    apply.execute(game, ops, scopes=SCOPES, **({'lockable': lockable} if lockable else {}))
-    echo(f'retire: {len(pending["groups"])} group(s) removed; {len(deletes) - 1} file(s) deleted')
-    return 'done'
+    """Step 3 (group_split.retire): only once every replacement has an accepted receipt."""
+    return group_split.retire(SPLIT, game, taken, claim, lockable=lockable, echo=echo)
 
 
 def main(argv=None) -> int:
