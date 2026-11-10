@@ -77,6 +77,18 @@ bool FGondolaLine::Parse(const TSharedPtr<FJsonObject>& Data)
     if(Stops.Num()!=4)return false;
     for(const auto& Value:(*Clock)->GetArrayField(TEXT("events")))
     {const auto E=Value->AsObject();if(!E)return false;Events.Add({E->GetNumberField(TEXT("time")),E->GetStringField(TEXT("kind"))});}
+    Bounds=FBox(ForceInit);
+    Sectors.Reset();
+    constexpr int32 SectorPoints=512;
+    for(int32 S=0;S<Points.Num()-1;S+=SectorPoints)
+    {
+        FGondolaSector Sec;
+        Sec.Start=S;
+        Sec.End=FMath::Min(S+SectorPoints,Points.Num()-1);
+        for(int32 K=Sec.Start;K<=Sec.End;++K)Sec.Bounds+=Points[K];
+        Bounds+=Sec.Bounds;
+        Sectors.Add(Sec);
+    }
     return true;
 }
 
@@ -256,10 +268,65 @@ double AGondolaService::ServiceTime()const
 void AGondolaService::Place(double Time,bool First)
 {
     const float RunningScale=HasAuthority()?FMath::Clamp(ClockScale.GetValueOnGameThread(),0.f,30.f):NetworkState.Scale;
-    for(FCabin& C:Cabins)
+    const auto* PC=GetWorld()->GetFirstPlayerController();
+    FVector View=PC&&PC->PlayerCameraManager?PC->PlayerCameraManager->GetCameraLocation():FVector::ZeroVector;
+    TArray<FVector,TInlineAllocator<8>> Observers;
+    if(PC&&PC->PlayerCameraManager)Observers.Add(View);
+    if(PC&&PC->GetPawn())
     {
+        const FVector PawnLoc=PC->GetPawn()->GetActorLocation();
+        Observers.Add(PawnLoc);
+        if(View.IsZero())View=PawnLoc;
+    }
+    TArray<uint8,TInlineAllocator<32>> HasRider;
+    HasRider.Init(0,Cabins.Num());
+    for(const FTransportRider& R:Riders)
+        if(R.bAboard&&R.Character.IsValid()&&Cabins.IsValidIndex(R.Vehicle))HasRider[R.Vehicle]=1;
+    for(const FRiderSeat& S:SeatsByRider)
+        if(S.Seat!=INDEX_NONE&&S.Character.IsValid()&&Cabins.IsValidIndex(S.Cabin))HasRider[S.Cabin]=1;
+    for(const FGondolaPassenger& P:NetworkState.Passengers)
+        if(P.Rider&&Cabins.IsValidIndex(P.Cabin))HasRider[P.Cabin]=1;
+    for(TActorIterator<AWandererCharacter> It(GetWorld());It;++It)
+    {
+        AWandererCharacter* Ch=*It;
+        if(!Ch||Ch->IsNpc())continue;
+        Observers.Add(Ch->GetActorLocation());
+        if(const UPrimitiveComponent* Base=Ch->GetMovementBase())
+            for(int32 CabinIdx=0;CabinIdx<Cabins.Num();++CabinIdx)
+                if(Cabins[CabinIdx].Body==Base){HasRider[CabinIdx]=1;break;}
+    }
+    constexpr double CabinSleepDistSq=FMath::Square(50000.);
+    for(int32 CabinIdx=0;CabinIdx<Cabins.Num();++CabinIdx)
+    {
+        FCabin& C=Cabins[CabinIdx];
         const auto& L=Lines[C.Line];const double T=Time+L.Cycle*C.Index/L.CabinCount;
-        C.Previous=C.Body->GetComponentTransform();const auto P=L.State(T,Pivot);
+        const auto P=L.State(T,Pivot);
+        bool bAwake=First||HasRider[CabinIdx]!=0||Observers.IsEmpty();
+        if(!bAwake)
+        {
+            const FVector CabinLoc=P.Body.GetLocation();
+            for(const FVector& Obs:Observers)
+                if(FVector::DistSquared(CabinLoc,Obs)<=CabinSleepDistSq){bAwake=true;break;}
+        }
+        if(!bAwake)
+        {
+            if(!C.bSleeping)
+            {
+                C.Body->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+                C.DoorBlock->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+                C.Audio->SetSpeed(0.f);
+                C.bSleeping=true;
+            }
+            C.Pose=P;C.LastTime=T;C.bPrimed=true;
+            continue;
+        }
+        if(C.bSleeping)
+        {
+            C.bSleeping=false;
+            C.Body->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+            C.Previous=P.Body;
+        }
+        else C.Previous=C.Body->GetComponentTransform();
         C.Body->SetWorldTransform(P.Body,false,nullptr,ETeleportType::TeleportPhysics);C.Grip->SetWorldTransform(P.Grip);
         for(UStaticMeshComponent* Part:C.Parts)Part->SetWorldTransform(P.Body);
         for(int32 D=0;D<C.Doors.Num();++D)
@@ -280,13 +347,33 @@ void AGondolaService::Place(double Time,bool First)
     }
     for(FStation& S:Stations)S.Audio->SetRunning(RunningScale>0.f?1.f:0.f);
     // Imported far detail is permitted only beyond its declared contact/deviation distances.
-    const auto* PC=GetWorld()->GetFirstPlayerController();const FVector View=PC&&PC->PlayerCameraManager?PC->PlayerCameraManager->GetCameraLocation():FVector::ZeroVector;
+    constexpr double SkipSectorSq=FMath::Square(40000.);
+    constexpr double Lod1Sq=FMath::Square(100000.);
+    constexpr double Lod2Sq=FMath::Square(200000.);
     for(const FRope& Rope:Ropes)
     {
-        const auto& L=Lines[Rope.Line];double Best=DBL_MAX;
-        for(int32 I=0;I<L.Points.Num()-1;I+=20)
-        {const int32 J=FMath::Min(I+20,L.Points.Num()-1);const double Lower=FMath::Max(0.,FVector::Dist(View,L.Points[I])-(L.Arc[J]-L.Arc[I])*100.);Best=FMath::Min(Best,Lower*Lower);}
-        Rope.Mesh->SetForcedLodModel(Best<FMath::Square(100000.)?1:Best<FMath::Square(200000.)?2:3);
+        const auto& L=Lines[Rope.Line];
+        const double LineDistSq=L.Bounds.ComputeSquaredDistanceToPoint(View);
+        if(LineDistSq>=Lod2Sq){Rope.Mesh->SetForcedLodModel(3);continue;}
+        double BestSq=DBL_MAX;
+        for(const FGondolaSector& Sec:L.Sectors)
+        {
+            const double SecDistSq=Sec.Bounds.ComputeSquaredDistanceToPoint(View);
+            if(SecDistSq>=BestSq||SecDistSq>=Lod2Sq)continue;
+            if(LineDistSq>SkipSectorSq||SecDistSq>SkipSectorSq)
+            {
+                BestSq=FMath::Min(BestSq,FVector::DistSquared(View,Sec.Bounds.GetCenter()));
+                if(BestSq<Lod1Sq)break;
+                continue;
+            }
+            for(int32 I=Sec.Start;I<=Sec.End;I+=20)
+            {
+                BestSq=FMath::Min(BestSq,FVector::DistSquared(View,L.Points[I]));
+                if(BestSq<Lod1Sq)break;
+            }
+            if(BestSq<Lod1Sq)break;
+        }
+        Rope.Mesh->SetForcedLodModel(BestSq<Lod1Sq?1:BestSq<Lod2Sq?2:3);
     }
 }
 
@@ -321,6 +408,13 @@ void AGondolaService::SitDown(FTransportRider& R,FRiderSeat& S,int32 CabinIndex,
     if(S.Seat!=INDEX_NONE&&Cabins.IsValidIndex(S.Cabin)&&Cabins[S.Cabin].SeatTaken.IsValidIndex(S.Seat))
         Cabins[S.Cabin].SeatTaken[S.Seat]=0;
     FCabin& Cabin=Cabins[CabinIndex];
+    if(Cabin.bSleeping)
+    {
+        Cabin.bSleeping=false;
+        Cabin.Body->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+        Cabin.Body->SetWorldTransform(Cabin.Pose.Body,false,nullptr,ETeleportType::TeleportPhysics);
+        Cabin.Previous=Cabin.Pose.Body;
+    }
     if(Cabin.SeatTaken.IsValidIndex(SeatIndex))Cabin.SeatTaken[SeatIndex]=1;
     R.Vehicle=CabinIndex;
     FTransportRiders::SetAboard(R,true,false,ETransportVehicle::Gondola);
@@ -455,6 +549,7 @@ void AGondolaService::UpdateRiders(float Dt)
         {
             const FCabin& Cabin=Cabins[I];
             if(C->GetMovementBase()==Cabin.Body){Vehicle=I;break;}
+            if(Cabin.bSleeping)continue;
             // The character has not ticked yet: test the frame it occupied last tick.
             const FVector Local=Cabin.Previous.InverseTransformPosition(Feet);
             if(FMath::Abs(Local.X)>Size.X/2||FMath::Abs(Local.Y)>Size.Y/2||Local.Z<FloorZ-12||Local.Z>FloorZ+25)continue;
@@ -561,10 +656,11 @@ FString AGondolaService::StateJson()const
     for(int32 I=0;I<Cabins.Num();++I)
     {
         const auto& C=Cabins[I];auto Row=MakeShared<FJsonObject>();Row->SetNumberField(TEXT("index"),I);Row->SetStringField(TEXT("line"),Lines[C.Line].Id);
-        const FVector At=C.Body->GetComponentLocation();TArray<TSharedPtr<FJsonValue>> Position;
+        const FTransform CabinXf=C.bSleeping?C.Pose.Body:C.Body->GetComponentTransform();
+        const FVector At=CabinXf.GetLocation();TArray<TSharedPtr<FJsonValue>> Position;
         for(double V:{At.X,At.Y,At.Z})Position.Add(MakeShared<FJsonValueNumber>(V));Row->SetArrayField(TEXT("location"),Position);
         Row->SetNumberField(TEXT("speed_m_s"),C.Pose.Speed);Row->SetNumberField(TEXT("door"),C.Pose.Door);
-        Row->SetNumberField(TEXT("floor_tilt_deg"),FMath::RadiansToDegrees(FMath::Acos(FMath::Clamp(C.Body->GetUpVector().Z,-1.,1.))));
+        Row->SetNumberField(TEXT("floor_tilt_deg"),FMath::RadiansToDegrees(FMath::Acos(FMath::Clamp(CabinXf.GetUnitAxis(EAxis::Z).Z,-1.,1.))));
         Row->SetNumberField(TEXT("side"),C.Pose.Stop==INDEX_NONE?0:Lines[C.Line].Stops[C.Pose.Stop].Side);
         Row->SetStringField(TEXT("station"),C.Pose.Stop==INDEX_NONE?TEXT(""):Lines[C.Line].Stops[C.Pose.Stop].Station);Rows.Add(MakeShared<FJsonValueObject>(Row));
     }
@@ -612,10 +708,10 @@ FVector AGondolaService::Point(const FString& What)const
     if(Parts.Num()==3&&Parts[0]==TEXT("seat"))
     {
         const int32 C=FCString::Atoi(*Parts[1]),I=FCString::Atoi(*Parts[2]);
-        return Cabins.IsValidIndex(C)&&Seats.IsValidIndex(I)?Cabins[C].Body->GetComponentTransform().TransformPosition(Seats[I].Location):FVector::ZeroVector;
+        return Cabins.IsValidIndex(C)&&Seats.IsValidIndex(I)?(Cabins[C].bSleeping?Cabins[C].Pose.Body:Cabins[C].Body->GetComponentTransform()).TransformPosition(Seats[I].Location):FVector::ZeroVector;
     }
     if(Parts.Num()==2&&Parts[0]==TEXT("cabin"))
-    {const int32 I=FCString::Atoi(*Parts[1]);return Cabins.IsValidIndex(I)?Cabins[I].Body->GetComponentTransform().TransformPosition(FVector(0,0,FloorZ)):FVector::ZeroVector;}
+    {const int32 I=FCString::Atoi(*Parts[1]);return Cabins.IsValidIndex(I)?(Cabins[I].bSleeping?Cabins[I].Pose.Body:Cabins[I].Body->GetComponentTransform()).TransformPosition(FVector(0,0,FloorZ)):FVector::ZeroVector;}
     return FVector::ZeroVector;
 }
 FString UGondolaLive::GondolaState(){auto* S=AGondolaService::Find(ULiveLibrary::GameWorld());return S?S->StateJson():TEXT("{}");}

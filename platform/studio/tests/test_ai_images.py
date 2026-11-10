@@ -88,7 +88,7 @@ def test_gif_generation_and_edit_fields(api, tmp_path):
 
     blobs, _, _ = images.sunburst(
         'falling maple leaves looping cleanly',
-        '1024x1024',
+        '768x768',
         output_format='gif',
         frame_count=12,
         frame_duration_ms=120,
@@ -100,7 +100,7 @@ def test_gif_generation_and_edit_fields(api, tmp_path):
     assert gen_req == {
         'model': 'gpt-image-2.6-sunburst',
         'prompt': 'falling maple leaves looping cleanly',
-        'size': '1024x1024',
+        'size': '768x768',
         'quality': 'high',
         'output_format': 'gif',
         'frame_count': 12,
@@ -143,3 +143,18 @@ def test_invalid_gif_options_fail_before_ledger_submission(api, tmp_path):
         images.paint(tmp_path / 'loop.gif', 'p', 'auto', record=record, frame_count=32, key='sk-test')
     assert not record.exists()
     assert seen == []
+
+
+def test_gif_grid_limit_is_checked_before_ledger_submission(api, tmp_path):
+    seen, _ = api
+    record = tmp_path / 'loop.provenance.json'
+    with pytest.raises(ValueError, match='3840'):
+        images.paint(tmp_path / 'loop.gif', 'p', '1024x1024', record=record, frame_count=12, key='sk-test')
+    assert not record.exists() and seen == []
+
+    images.paint(tmp_path / 'loop.gif', 'p', '1024x1024', record=record, key='sk-test')
+    assert len(seen) == 1  # default nine frames fit a 3x3 grid
+
+    images._request_fields('p', '960x960', output_format='gif', frame_count=16)
+    with pytest.raises(ValueError, match='3840'):
+        images._request_fields('p', '976x960', output_format='gif', frame_count=16)

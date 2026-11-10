@@ -222,7 +222,7 @@ void UBikeComponent::LoadSounds()
  for(const TCHAR* Cue:{TEXT("bell"),TEXT("stand_up"),TEXT("stand_down"),TEXT("creak"),TEXT("land"),TEXT("rattle"),TEXT("crash"),TEXT("fall")})
  {
   const int32 First=Waves.Num();
-  for(int32 I=1;I<=8;++I)if(USoundWave* W=Load(FString::Printf(TEXT("%s_%02d"),Cue,I)))Waves.Add(W);
+  for(int32 I=1;I<=8;++I){USoundWave* W=Load(FString::Printf(TEXT("%s_%02d"),Cue,I));if(!W)break;Waves.Add(W);}
   if(Waves.Num()>First)CueRange.Add(FName(Cue),FIntPoint(First,Waves.Num()-First));
  }
  for(int32 I=0;I<LoopCount;++I)

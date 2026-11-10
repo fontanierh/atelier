@@ -155,7 +155,10 @@ void UHorseComponent::Initialize(AWandererCharacter* InRider)
         USkeletalMeshComponent* P = NewObject<USkeletalMeshComponent>(Rider, Name);
         P->SetupAttachment(HorseRoot);
         P->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+        P->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::OnlyTickPoseWhenRendered;
+        P->PrimaryComponentTick.bStartWithTickEnabled = false;
         P->RegisterComponent();
+        P->SetComponentTickEnabled(false);
         P->SetVisibility(false, true);
         return P;
     };
@@ -423,19 +426,25 @@ bool UHorseComponent::IsValidAppearance(const FJapanHorseAppearance& A) const
     return A.IsWithin(Breeds.Num(), TackIds.Num(), 1 + CoatVariants.Num(), CoatMasks.Num(), 1 + HairColors.Num(), HairPatterns.Num(), Tints.Num());
 }
 
+void UHorseComponent::SetHorseMeshesActive(bool bActive)
+{
+    if (HorseRoot) HorseRoot->SetVisibility(bActive, true);
+    for (USkeletalMeshComponent* P : {HorseMesh.Get(), SaddleMesh.Get(), ReinsMesh.Get()})
+    {
+        if (!P) continue;
+        P->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::OnlyTickPoseWhenRendered;
+        P->SetComponentTickEnabled(bActive);
+    }
+}
+
 bool UHorseComponent::ApplyAppearance(const FJapanHorseAppearance& NewAppearance)
 {
     if (!IsValidAppearance(NewAppearance)) return false;
     const bool bBody = NewAppearance.Breed != Appearance.Breed || NewAppearance.Tack != Appearance.Tack;
-    const bool bTextures = NewAppearance.Coat != Appearance.Coat || NewAppearance.Mask != Appearance.Mask;
     Appearance = NewAppearance;
     if (Phase == EPhase::Stowed) bPendingAppearance = true;
     if (bBody) ApplyCurrentBreedAndTack();
     ApplyCurrentMaterials();
-    // Local look changes can replace whole meshes and texture sets. Request collection at the engine's next safe
-    // opportunity, with incremental purging, so trying breeds does not wait for the periodic pass. A remote look must
-    // not make every observer collect; colour-only changes allocate no new asset set. Never collect inline here.
-    if ((bBody || bTextures) && Rider && Rider->IsLocallyControlled() && GEngine) GEngine->ForceGarbageCollection(false);
     return true;
 }
 
@@ -526,7 +535,7 @@ bool UHorseComponent::Toggle()
     ResetPresentation();
     Hint.Reset();
     Play(EHorseRole::Mount);
-    HorseRoot->SetVisibility(true, true);
+    SetHorseMeshesActive(true);
     JapanVehicleVisuals::SetRiderPose(Rider, MeshLocation, MeshRotation.Quaternion(), false);
     UE_LOG(LogTemp, Display, TEXT("HORSE summon: %s"), *GetStatus());
     return true;
@@ -593,7 +602,7 @@ void UHorseComponent::StowImmediately()
         Role = ForcedIdle = EHorseRole::Idle;
         ++Serial;
     }
-    if (HorseRoot) HorseRoot->SetVisibility(false, true);
+    SetHorseMeshesActive(false);
     PhaseTime = Speed = Steering = GaitPhase = IdleTimer = GroundPitch = BankAngle = 0.f;
     bSprint = bReinIn = bTerminal = false;
     Hint.Reset();
@@ -882,6 +891,7 @@ void UHorseComponent::AdvanceGait(float Dt)
 
 void UHorseComponent::Present(float Dt)
 {
+    if (HorseMesh && !HorseMesh->IsComponentTickEnabled()) SetHorseMeshesActive(true);
     if (Dt <= 0.f) return;
     Dt = FMath::Min(Dt, .05f);   // the springs below stay stable through a hitch
     UAnimSequence* const Clip = GetHorseSequence();

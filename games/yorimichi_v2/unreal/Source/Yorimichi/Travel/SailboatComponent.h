@@ -60,6 +60,9 @@ private:
  bool bEquipped=false,bMenu=false,bAssetsReady=false;
  uint32 Serial=0;
  FString Hint=TEXT("Launch near a shore or low dock");
+ mutable TWeakObjectPtr<const UObject> CachedWaterLandscape;
+ mutable int32 CachedWaterGroupCount=-1;
+ mutable TArray<int32> CachedWaterGroupIndices;
  void QueryParams(FCollisionQueryParams&) const;
  bool GroundAt(FVector,FHitResult&) const;
  bool ClearWater(FVector Center,float Yaw) const;

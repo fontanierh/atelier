@@ -43,6 +43,7 @@ public:
     virtual void Tick(float DeltaSeconds) override;
     virtual void EndPlay(const EEndPlayReason::Type Reason) override;
     virtual bool IsNpc() const override { return true; }
+    virtual bool PlantsFeet() const override { return !bDistanceSleeping && Super::PlantsFeet(); }
     virtual bool IsSparringWith(const AActor* Other) const override;
     virtual float SparringDamage(int32 Power) const override;
 
@@ -161,4 +162,7 @@ private:
     /** Carry on with the attack under way; false when it is over. */
     bool Press_Attack(float Dt, float Distance);
     void UpdateRoninAttachments();
+    bool ShouldSleepByDistance() const;
+    void SetDistanceSleeping(bool bSleep);
+    bool bDistanceSleeping = false;
 };

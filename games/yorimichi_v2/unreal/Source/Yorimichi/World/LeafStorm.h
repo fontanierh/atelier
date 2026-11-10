@@ -21,6 +21,15 @@ public:
     UPROPERTY() AJapanWorld* World = nullptr;
     TWeakObjectPtr<ASkatePark> SkatePark;
     TArray<FStormLeaf> L; TArray<FTransform> Xf; int32 Count = 900; int32 Frame = 0;
+    TArray<float> TerrainHeights;
+    int32 TerrainResolution = 0;
+    FBox2D TerrainBounds{ForceInit};
+    FVector CachedPlayerPos = FVector::ZeroVector;
+    float CachedPlayerFootZ = 0.f;
+    bool bHasCachedPlayerFootZ = false;
+    float DistantUpdateAccum = 1.f;
+    void LoadTerrainHeightmap();
+    bool SampleGroundHeight(const FVector& P, float& OutHeight) const;
     void Respawn(FStormLeaf& Leaf, const FVector& Player, bool bInitial);
     float GroundZ(const FVector& P) const;
 };

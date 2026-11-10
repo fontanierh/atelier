@@ -14,8 +14,14 @@
 #include "YorimichiCombatFX.h"
 #include "SkateComponent.h"
 #include "SailboatComponent.h"
+#include "BikeComponent.h"
+#include "HorseComponent.h"
+#include "JapanFootsteps.h"
+#include "JapanNetwork.h"
+#include "SeeThrough.h"
 #include "AIController.h"
 #include "GameFramework/PlayerController.h"
+#include "Components/AudioComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
@@ -92,6 +98,8 @@ ASwordTrainer::ASwordTrainer(const FObjectInitializer& ObjectInitializer) : Supe
     GetCapsuleComponent()->InitCapsuleSize(22.f, 74.f);
     GetMesh()->SetRelativeLocation(FVector(0, 0, -74.65f));
     GetMesh()->SetRelativeRotation(FRotator::ZeroRotator);
+    GetMesh()->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::OnlyTickPoseWhenRendered;
+    GetMesh()->bEnableUpdateRateOptimizations = true;
     GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
 }
 
@@ -111,6 +119,20 @@ void ASwordTrainer::BeginPlay()
         GetCharacterMovement()->SetCrouchedHalfHeight(72.f);
     }
     Super::BeginPlay();
+    if (USkeletalMeshComponent* Body = GetMesh())
+    {
+        Body->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::OnlyTickPoseWhenRendered;
+        Body->bEnableUpdateRateOptimizations = true;
+    }
+    if (USailboatComponent* S = GetSailboat()) { S->Deactivate(); S->SetComponentTickEnabled(false); }
+    if (UBikeComponent* B = GetBike()) { B->Deactivate(); B->SetComponentTickEnabled(false); }
+    if (UHorseComponent* H = GetHorse()) { H->Deactivate(); H->SetComponentTickEnabled(false); }
+    if (UJapanFootstepComponent* F = GetFootsteps()) { F->Deactivate(); F->SetComponentTickEnabled(false); }
+    if (USeeThroughComponent* ST = FindComponentByClass<USeeThroughComponent>()) { ST->Deactivate(); ST->SetComponentTickEnabled(false); }
+    TArray<UAudioComponent*> AudioComps;
+    GetComponents<UAudioComponent>(AudioComps);
+    for (UAudioComponent* AC : AudioComps)
+        if (AC) { AC->Stop(); AC->Deactivate(); AC->SetComponentTickEnabled(false); }
     UAdventureMoveSet* Set = NewObject<UAdventureMoveSet>(this, TEXT("TrainerMoves"));
     if (Set->Initialize(this, Record(bOwn ? TEXT("sword-trainer/adventure.json") : TEXT("cairo/adventure.json")))) Moves = Set;
     else UE_LOG(LogTemp, Error, TEXT("Sword trainer: no move set (build unreal.cairo_adventure or unreal.sword_trainer)"));
@@ -405,6 +427,7 @@ void ASwordTrainer::AlertCamp(AWandererCharacter* Player)
         if (!Member || !Member->IsHostileRonin() || Member->bDefeated || Member->DefeatCooldown > 0.f ||
             Member->Bout == EBout::Fighting || Member->Bout == EBout::Over) continue;
         if (FVector::Dist2D(Member->CampOrigin, CampOrigin) > 2500.f) continue;
+        Member->SetDistanceSleeping(false);
         Member->Opponent = Player;
         Member->ReleaseAll();
         if (Member->Moves) Member->Moves->SetCombatTarget(Player);
@@ -598,6 +621,7 @@ FString ASwordTrainer::BoutName() const
 void ASwordTrainer::OpenMenu(AWandererCharacter* Player)
 {
     if (Menu.IsValid() || !Player || !GEngine || !GEngine->GameViewport) return;
+    SetDistanceSleeping(false);
     Opponent = Player;
     Bout = EBout::Talking;
     MenuLevel = Level;
@@ -675,6 +699,7 @@ void ASwordTrainer::Restore(AWandererCharacter* Who)
 bool ASwordTrainer::StartBout(AWandererCharacter* Player, int32 NewLevel, bool bShield, bool bPlayerShield)
 {
     if (bShield || bPlayerShield || !Player || !Player->GetMoves() || !Moves || Bout == EBout::Fighting) return false;
+    SetDistanceSleeping(false);
     CloseMenu();
     Opponent = Player;
     Level = FMath::Clamp(NewLevel, 0, 2);
@@ -740,8 +765,97 @@ void ASwordTrainer::FaceToward(const FVector& Where, float Dt)
 
 // ----------------------------------------------------------------------------------------------------------- Brain
 
+bool ASwordTrainer::ShouldSleepByDistance() const
+{
+    if (Menu.IsValid() || Bout == EBout::Talking) return false;
+    UWorld* W = GetWorld();
+    if (!W) return false;
+    constexpr double SleepDistSq = 12000. * 12000.;
+    const FVector MyLoc = GetActorLocation();
+    double MinDistSq = DBL_MAX;
+    bool bFoundPlayer = false;
+    if (const AWandererCharacter* Opp = Opponent.Get(); Opp && !Opp->IsNpc())
+    {
+        bFoundPlayer = true;
+        MinDistSq = FMath::Min(MinDistSq, FVector::DistSquared(MyLoc, Opp->GetActorLocation()));
+    }
+    if (const APlayerController* PC = W->GetFirstPlayerController())
+        if (const APawn* Pawn = PC->GetPawn())
+        {
+            bFoundPlayer = true;
+            MinDistSq = FMath::Min(MinDistSq, FVector::DistSquared(MyLoc, Pawn->GetActorLocation()));
+        }
+    if (JapanNetwork::IsOnline(W))
+        for (TActorIterator<AWandererCharacter> It(W); It; ++It)
+            if (const AWandererCharacter* Ch = *It; Ch && !Ch->IsNpc())
+            {
+                bFoundPlayer = true;
+                MinDistSq = FMath::Min(MinDistSq, FVector::DistSquared(MyLoc, Ch->GetActorLocation()));
+                if (MinDistSq <= SleepDistSq) return false;
+            }
+    return bFoundPlayer && MinDistSq > SleepDistSq;
+}
+
+void ASwordTrainer::SetDistanceSleeping(bool bSleep)
+{
+    if (bDistanceSleeping == bSleep) return;
+    bDistanceSleeping = bSleep;
+    if (bSleep)
+    {
+        if (Bout == EBout::Fighting || Bout == EBout::Ready) EndBout(TEXT(""));
+        if (Bout == EBout::Return)
+        {
+            SetActorLocationAndRotation(Home, FRotator(0.f, HomeYaw, 0.f), false, nullptr, ETeleportType::TeleportPhysics);
+            Bout = EBout::Home;
+            SetIntent(TEXT("home"));
+        }
+        ReleaseAll();
+        if (Moves && Moves->IsBusy()) Moves->Reset();
+        if (UCharacterMovementComponent* M = GetCharacterMovement())
+        {
+            M->StopMovementImmediately();
+            M->SetComponentTickEnabled(false);
+        }
+        if (USkeletalMeshComponent* Body = GetMesh())
+            Body->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::OnlyTickPoseWhenRendered;
+        SetActorTickInterval(0.25f);
+    }
+    else
+    {
+        SetActorTickInterval(0.f);
+        if (UCharacterMovementComponent* M = GetCharacterMovement())
+        {
+            M->SetComponentTickEnabled(true);
+            if (M->MovementMode == MOVE_None) M->SetMovementMode(MOVE_Walking);
+        }
+        UpdateRoninAttachments();
+    }
+}
+
 void ASwordTrainer::Tick(float Dt)
 {
+    const bool bWantSleep = ShouldSleepByDistance();
+    if (bWantSleep != bDistanceSleeping) SetDistanceSleeping(bWantSleep);
+    if (bDistanceSleeping)
+    {
+        CalloutTime = FMath::Max(0.f, CalloutTime - Dt);
+        DefeatCooldown = FMath::Max(0.f, DefeatCooldown - Dt);
+        if (Bout == EBout::Over && bDefeated)
+        {
+            BoutTime += Dt;
+            if (BoutTime > 45.f)
+            {
+                bDefeated = false;
+                DefeatCooldown = 6.f;
+                Bout = EBout::Home;
+                BoutTime = 0.f;
+                SetIntent(TEXT("home"));
+                Restore(this);
+                SetActorLocationAndRotation(Home, FRotator(0.f, HomeYaw, 0.f), false, nullptr, ETeleportType::TeleportPhysics);
+            }
+        }
+        return;
+    }
     CalloutTime = FMath::Max(0.f, CalloutTime - Dt);
     IntentTime += Dt; BoutTime += Dt;
     // A gesture (a bow, a word) ends with its clip.
@@ -758,6 +872,10 @@ void ASwordTrainer::Tick(float Dt)
         case EBout::Over: AdvanceOver(Dt); break;
         case EBout::Return: AdvanceReturn(Dt); break;
         }
+    if (USkeletalMeshComponent* Body = GetMesh())
+        Body->VisibilityBasedAnimTickOption = (Bout == EBout::Fighting && Moves && Moves->IsAttacking())
+            ? EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones
+            : EVisibilityBasedAnimTickOption::OnlyTickPoseWhenRendered;
     Super::Tick(Dt);
     UpdateRoninAttachments();
 }

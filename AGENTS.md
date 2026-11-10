@@ -152,6 +152,7 @@ contract review reads them on every PR. Playtests keep finding the same defects,
   `size` (`"auto"` or `WIDTHxHEIGHT` multiples of 16), and optional `complexity` (`"low"`, `"medium"`, `"high"`).
   Use GIF output for visual-effects loops (foliage sway, water surf, sparks, smoke, cloth/hair motion) and short
   animation reference studies.
+- Explicit GIF sizes must fit the frame grid's 3840 px edge limit: 12 frames at 1024x1024 exceed it; use 768x768 or 9 frames.
 - Record the model, format options and prompt of every generated image or GIF in its provenance file.
 
 ## Animation reference videos

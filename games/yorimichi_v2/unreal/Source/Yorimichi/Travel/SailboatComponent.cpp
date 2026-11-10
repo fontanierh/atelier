@@ -42,10 +42,25 @@ void USailboatComponent::QueryParams(FCollisionQueryParams& P) const
  P.AddIgnoredActor(Rider);
  if(!Landscape)return;
  for(auto* Sea:Landscape->SeaPieces)if(Sea)P.AddIgnoredComponent(Sea);
- for(auto* G:Landscape->Groups)if(G&&G->GetStaticMesh())
- {const FString N=G->GetStaticMesh()->GetName();if(N==TEXT("Sea")||N==TEXT("HD_Sea")||N==TEXT("HD_InlandWater")||N==TEXT("HD_PlazaWater")||
-   G->ComponentHasTag(TEXT("CitySurface:HD_Sea"))||G->ComponentHasTag(TEXT("CitySurface:HD_InlandWater"))||
-   G->ComponentHasTag(TEXT("CitySurface:HD_PlazaWater")))P.AddIgnoredComponent(G);}
+ if(CachedWaterLandscape.Get()!=Landscape||CachedWaterGroupCount!=Landscape->Groups.Num())
+ {
+  CachedWaterLandscape=Landscape;
+  CachedWaterGroupCount=Landscape->Groups.Num();
+  CachedWaterGroupIndices.Reset();
+  static const FName TagHDSea(TEXT("CitySurface:HD_Sea")),TagHDInlandWater(TEXT("CitySurface:HD_InlandWater")),TagHDPlazaWater(TEXT("CitySurface:HD_PlazaWater"));
+  for(int32 Index=0;Index<CachedWaterGroupCount;++Index)
+  {
+   const auto* G=Landscape->Groups[Index];
+   if(!G||!G->GetStaticMesh())continue;
+   const FString N=G->GetStaticMesh()->GetName();
+   if(N==TEXT("Sea")||N==TEXT("HD_Sea")||N==TEXT("HD_InlandWater")||N==TEXT("HD_PlazaWater")||
+      G->ComponentHasTag(TagHDSea)||G->ComponentHasTag(TagHDInlandWater)||G->ComponentHasTag(TagHDPlazaWater))
+    CachedWaterGroupIndices.Add(Index);
+  }
+ }
+ for(const int32 Index:CachedWaterGroupIndices)
+  if(Landscape->Groups.IsValidIndex(Index)&&Landscape->Groups[Index])
+   P.AddIgnoredComponent(Landscape->Groups[Index]);
 }
 bool USailboatComponent::GroundAt(FVector P,FHitResult& Hit) const
 {

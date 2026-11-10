@@ -1,14 +1,43 @@
 #include "TransportAudio.h"
+#include "Camera/PlayerCameraManager.h"
 #include "Components/AudioComponent.h"
+#include "GameFramework/Pawn.h"
+#include "GameFramework/PlayerController.h"
+#include "Misc/PackageName.h"
 #include "Sound/SoundWave.h"
 #include "Sound/SoundAttenuation.h"
 #include "Engine/World.h"
 
+TMap<FName,UTransportAudioComponent::FCachedWave> UTransportAudioComponent::SoundWaveCache;
+
+USoundWave* UTransportAudioComponent::LoadCachedWave(const FString& Name)
+{
+ const FName Key(*Name);
+ if(const FCachedWave* Cached=SoundWaveCache.Find(Key))
+ {
+  if(Cached->bMissing)return nullptr;
+  if(USoundWave* Existing=Cached->Wave.Get())return Existing;
+ }
+ const FString Package=FString::Printf(TEXT("/Game/Audio/Transport/%s"),*Name);
+ USoundWave* Loaded=FPackageName::DoesPackageExist(Package)
+  ?LoadObject<USoundWave>(nullptr,*FString::Printf(TEXT("%s.%s"),*Package,*Name),nullptr,LOAD_NoWarn|LOAD_Quiet)
+  :nullptr;
+ SoundWaveCache.Add(Key,FCachedWave{Loaded,Loaded==nullptr});
+ return Loaded;
+}
+
 namespace
 {
-USoundWave* LoadTransportWave(const FString& Name)
+constexpr double TransportAudioSleepDistSq=28000.*28000.;
+bool TryGetListenerLocation(const UWorld* World,FVector& OutLocation)
 {
- return LoadObject<USoundWave>(nullptr,*FString::Printf(TEXT("/Game/Audio/Transport/%s.%s"),*Name,*Name),nullptr,LOAD_NoWarn|LOAD_Quiet);
+ if(!World)return false;
+ if(const APlayerController* PC=World->GetFirstPlayerController())
+ {
+  if(PC->PlayerCameraManager){OutLocation=PC->PlayerCameraManager->GetCameraLocation();return true;}
+  if(const APawn* Pawn=PC->GetPawn()){OutLocation=Pawn->GetActorLocation();return true;}
+ }
+ return false;
 }
 USoundAttenuation* MakeAttenuation(UObject* Outer,float Inner,float Falloff)
 {
@@ -44,7 +73,7 @@ bool UTransportAudioComponent::EnsureLoaded()
   const int32 First=Waves.Num();
   for(int32 I=1;I<=8;++I)
   {
-   USoundWave* W=LoadTransportWave(FString::Printf(TEXT("%s_%02d"),Cue,I));
+   USoundWave* W=LoadCachedWave(FString::Printf(TEXT("%s_%02d"),Cue,I));
    if(!W)break;
    Waves.Add(W);
   }
@@ -55,7 +84,7 @@ bool UTransportAudioComponent::EnsureLoaded()
  {
   auto* L=NewObject<UAudioComponent>(GetOwner(),*FString::Printf(TEXT("%s_%s"),*GetName(),S.Cue));
   L->SetupAttachment(this);L->bAutoActivate=false;L->bAllowSpatialization=true;L->AttenuationSettings=Near;
-  L->SetSound(LoadTransportWave(FString::Printf(TEXT("%s_01"),S.Cue)));L->RegisterComponent();
+  L->SetSound(LoadCachedWave(FString::Printf(TEXT("%s_01"),S.Cue)));L->RegisterComponent();
   Found+=L->Sound!=nullptr;
   FLoopState State;State.FadeIn=S.FadeIn;State.FadeOut=S.FadeOut;
   Loops.Add(L);LoopStates.Add(State);LoopNames.Add(FName(S.Cue));
@@ -74,6 +103,11 @@ void UTransportAudioComponent::SetLoop(int32 Index,float Volume,float Pitch)
 void UTransportAudioComponent::PlayCue(FName Cue,float Volume,bool bFar,float Delay,FVector Offset)
 {
  if(!EnsureLoaded())return;
+ if(!bFar)
+ {
+  FVector Listener;
+  if(TryGetListenerLocation(GetWorld(),Listener)&&FVector::DistSquared(GetComponentLocation(),Listener)>TransportAudioSleepDistSq)return;
+ }
  FPending P;P.Cue=Cue;P.Volume=Volume;P.Wait=Delay;P.bFar=bFar;P.Offset=Offset;
  if(Delay>0.f)Pending.Add(P);else Fire(P);
 }
@@ -91,6 +125,29 @@ void UTransportAudioComponent::TickComponent(float Dt,ELevelTick TickType,FActor
  if(!EnsureLoaded()){SetComponentTickEnabled(false);return;}   // no bank here, or a dedicated server: stay silent
  if(Dt<=0.f)return;
  const FVector Here=GetComponentLocation();
+ FVector Listener;
+ const bool bOutOfRange=TryGetListenerLocation(GetWorld(),Listener)&&FVector::DistSquared(Here,Listener)>TransportAudioSleepDistSq;
+ if(bOutOfRange)
+ {
+  if(!bDistanceSleeping)
+  {
+   bDistanceSleeping=true;
+   for(UAudioComponent* L:Loops)if(L&&L->IsPlaying())L->Stop();
+   PrimaryComponentTick.TickInterval=.25f;
+  }
+  LastLocation=Here;bHasLocation=true;
+  Evaluate(Dt);
+  for(FLoopState& S:LoopStates){S.Volume=S.Target;S.Pitch=S.TargetPitch;}
+  for(int32 I=Pending.Num()-1;I>=0;--I)
+   if((Pending[I].Wait-=Dt)<=0.f){const FPending P=Pending[I];Pending.RemoveAt(I);if(P.bFar)Fire(P);}
+  return;
+ }
+ if(bDistanceSleeping)
+ {
+  bDistanceSleeping=false;
+  PrimaryComponentTick.TickInterval=0.f;
+  bHasLocation=false;
+ }
  if(bHasLocation)
  {
   // A docking snap or a skipped ride moves the vehicle in one frame: that is not speed.

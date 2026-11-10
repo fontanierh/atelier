@@ -54,8 +54,11 @@ private:
  TArray<FName> LoopNames;
  TArray<FPending> Pending;
  FVector LastLocation=FVector::ZeroVector;
+ struct FCachedWave { TWeakObjectPtr<USoundWave> Wave; bool bMissing=false; };
+ static TMap<FName,FCachedWave> SoundWaveCache;
+ static USoundWave* LoadCachedWave(const FString& Name);
  float Speed=0.f;
- bool bLoaded=false,bTried=false,bHasLocation=false;
+ bool bLoaded=false,bTried=false,bHasLocation=false,bDistanceSleeping=false;
  void Fire(const FPending& P);
 };
 

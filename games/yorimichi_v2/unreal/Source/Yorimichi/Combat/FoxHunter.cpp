@@ -14,6 +14,7 @@
 #include "Engine/SkinnedAsset.h"
 #include "ReferenceSkeleton.h"
 #include "Engine/World.h"
+#include "EngineUtils.h"
 #include "Kismet/GameplayStatics.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Animation/AnimSequence.h"
@@ -51,8 +52,8 @@ AFoxHunter::AFoxHunter(const FObjectInitializer& ObjectInitializer) : Super(Obje
     GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
     GetMesh()->SetRenderCustomDepth(true);
     GetMesh()->SetCustomDepthStencilValue(1);
-    GetMesh()->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
-    GetMesh()->bEnableUpdateRateOptimizations = false;
+    GetMesh()->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::OnlyTickPoseWhenRendered;
+    GetMesh()->bEnableUpdateRateOptimizations = true;
 }
 
 void AFoxHunter::BeginPlay()
@@ -130,6 +131,10 @@ void AFoxHunter::Enter(EFoxState Next, FName ClipName, float Blend, bool bLoop)
     }
     if (State == EFoxState::Idle && Next == EFoxState::Approach) JapanEnemyQA::Noticed(this);
     State = Next; StateTime = 0.f; CurrentClip = ClipName; PreviousStrike.Reset();
+    if (USkeletalMeshComponent* M = GetMesh())
+        M->VisibilityBasedAnimTickOption = (Next == EFoxState::Attack && !bDistanceSleeping)
+            ? EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones
+            : EVisibilityBasedAnimTickOption::OnlyTickPoseWhenRendered;
     SetAnimRootMotionTranslationScale(RootMotionScale);
     if (ClipName.IsNone()) { if (!AnimationAction.IsNone()) SetAction(NAME_None, false, Blend); }
     else SetAction(ClipName, bLoop, Blend);
@@ -224,6 +229,7 @@ void AFoxHunter::SweepStrike()
 void AFoxHunter::TakeSwordHit(int32 Strength, AActor* From)
 {
     if (!HasAuthority() || !IsReady() || !IsAlive()) return;
+    if (bDistanceSleeping) SetDistanceSleeping(false);
     if (JapanNetwork::IsOnline(GetWorld()))
     {
         auto* Player = Cast<AWandererCharacter>(From);
@@ -281,11 +287,86 @@ void AFoxHunter::Respawn()
     NoticeBlock = 2.f; Note(TEXT("returns"));
 }
 
+bool AFoxHunter::ShouldSleepByDistance() const
+{
+    if (State == EFoxState::Dead) return false;
+    UWorld* W = GetWorld();
+    if (!W) return false;
+    constexpr double SleepDistSq = 12000. * 12000.;
+    const FVector MyLoc = GetActorLocation();
+    double MinDistSq = DBL_MAX;
+    bool bFoundPlayer = false;
+    if (IsValid(Target) && !Target->IsNpc())
+    {
+        bFoundPlayer = true;
+        MinDistSq = FMath::Min(MinDistSq, FVector::DistSquared(MyLoc, Target->GetActorLocation()));
+    }
+    if (const APawn* Pawn = UGameplayStatics::GetPlayerPawn(this, 0))
+    {
+        bFoundPlayer = true;
+        MinDistSq = FMath::Min(MinDistSq, FVector::DistSquared(MyLoc, Pawn->GetActorLocation()));
+    }
+    if (JapanNetwork::IsOnline(W))
+        for (TActorIterator<AWandererCharacter> It(W); It; ++It)
+            if (const AWandererCharacter* Ch = *It; Ch && !Ch->IsNpc())
+            {
+                bFoundPlayer = true;
+                MinDistSq = FMath::Min(MinDistSq, FVector::DistSquared(MyLoc, Ch->GetActorLocation()));
+                if (MinDistSq <= SleepDistSq) return false;
+            }
+    return bFoundPlayer && MinDistSq > SleepDistSq;
+}
+
+void AFoxHunter::SetDistanceSleeping(bool bSleep)
+{
+    if (bDistanceSleeping == bSleep) return;
+    bDistanceSleeping = bSleep;
+    if (bSleep)
+    {
+        if (State != EFoxState::Idle)
+        {
+            SetActorLocationAndRotation(Home, FRotator(0.f, HomeYaw, 0.f), false, nullptr, ETeleportType::TeleportPhysics);
+            Enter(EFoxState::Idle, NAME_None, 0.f);
+            PublishNetworkState();
+        }
+        if (UCharacterMovementComponent* M = GetCharacterMovement())
+        {
+            M->StopMovementImmediately();
+            M->SetComponentTickEnabled(false);
+        }
+        if (USkeletalMeshComponent* MeshComp = GetMesh())
+            MeshComp->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::OnlyTickPoseWhenRendered;
+        if (Paint && !FMath::IsNearlyEqual(LastHitFlash, 0.f))
+        {
+            Paint->SetScalarParameterValue(TEXT("HitFlash"), 0.f);
+            LastHitFlash = 0.f;
+        }
+        SetActorTickInterval(0.25f);
+    }
+    else
+    {
+        SetActorTickInterval(0.f);
+        if (UCharacterMovementComponent* M = GetCharacterMovement())
+        {
+            M->SetComponentTickEnabled(true);
+            if (IsAlive() && M->MovementMode == MOVE_None) M->SetMovementMode(MOVE_Walking);
+        }
+    }
+}
+
 void AFoxHunter::Tick(float Dt)
 {
     Super::Tick(Dt);
     if (!IsReady()) return;
     if (JapanNetwork::IsOnline(GetWorld()) && !HasAuthority()) { PresentNetworkState(); return; }
+    const bool bWantSleep = ShouldSleepByDistance();
+    if (bWantSleep != bDistanceSleeping) SetDistanceSleeping(bWantSleep);
+    if (bDistanceSleeping)
+    {
+        NoticeBlock = FMath::Max(0.f, NoticeBlock - Dt);
+        Flash = 0.f;
+        return;
+    }
     JapanEnemyQA::AuthorityTick(this);
     Clock += Dt;
     if (JapanNetwork::IsOnline(GetWorld()))
@@ -307,7 +388,12 @@ void AFoxHunter::Tick(float Dt)
     AdvanceAction(Dt);
     StateTime += Dt; Cooldown = FMath::Max(0.f, Cooldown - Dt); NoticeBlock = FMath::Max(0.f, NoticeBlock - Dt);
     Flash = FMath::Max(0.f, Flash - Dt); Poise = FMath::Min(2.f, Poise + Dt / 2.5f);
-    if (Paint) Paint->SetScalarParameterValue(TEXT("HitFlash"), Flash > 0.f ? .5f * Flash / .22f : 0.f);
+    const float HitFlashVal = Flash > 0.f ? .5f * Flash / .22f : 0.f;
+    if (Paint && !FMath::IsNearlyEqual(LastHitFlash, HitFlashVal))
+    {
+        Paint->SetScalarParameterValue(TEXT("HitFlash"), HitFlashVal);
+        LastHitFlash = HitFlashVal;
+    }
     const FFoxHunterClip* C = Clip(CurrentClip);
     const bool bClipDone = C && !C->Loop && ActionTime >= C->Duration;
     FVector ToTarget = Target ? Target->GetActorLocation() - GetActorLocation() : FVector::ZeroVector; ToTarget.Z = 0;

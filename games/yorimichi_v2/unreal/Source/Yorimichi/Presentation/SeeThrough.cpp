@@ -126,6 +126,18 @@ void USeeThroughComponent::TickComponent(float DeltaTime, ELevelTick TickType, F
     if (!Collection) return;
     UMaterialParameterCollectionInstance* Values = World->GetParameterCollectionInstance(Collection);
     if (!Values) return;
+    if (LastValuesInstance.Get() != Values)
+    {
+        LastValuesInstance = Values;
+        FMemory::Memzero(bParamWritten, sizeof(bParamWritten));
+    }
+    auto SetParamIfChanged = [&](int32 Slot, const FName& Param, const FLinearColor& Value)
+    {
+        if (bParamWritten[Slot] && Value.Equals(LastParams[Slot], 1e-4f)) return;
+        LastParams[Slot] = Value;
+        bParamWritten[Slot] = true;
+        Values->SetVectorParameterValue(Param, Value);
+    };
     if (!House.IsValid())
         for (TActorIterator<AJapanWorld> It(World); It; ++It)
             if (It->bLoaded)
@@ -161,7 +173,9 @@ void USeeThroughComponent::TickComponent(float DeltaTime, ELevelTick TickType, F
 
     const FVector At = Pawn->GetActorLocation();
     const float Half = Pawn->GetCapsuleComponent() ? Pawn->GetCapsuleComponent()->GetScaledCapsuleHalfHeight() : 90.f;
-    Values->SetVectorParameterValue(TEXT("Focus"), FLinearColor(At.X, At.Y, At.Z, Half));
+    static const FName FocusParam(TEXT("Focus")), EyeParam(TEXT("Eye")), CutParam(TEXT("Cut")), FadeParam(TEXT("Fade"));
+    static const FName RoomParam(TEXT("Room")), RoomSizeParam(TEXT("RoomSize")), RoomShapeParam(TEXT("RoomShape"));
+    SetParamIfChanged(0, FocusParam, FLinearColor(At.X, At.Y, At.Z, Half));
 
     // The camera the view was drawn from last (the camera manager updates after this tick), smoothed.
     bool bCamera = false;
@@ -175,13 +189,13 @@ void USeeThroughComponent::TickComponent(float DeltaTime, ELevelTick TickType, F
     if (!bEyeSet || FVector::DistSquared(Camera, Eye) > FMath::Square(EyeJump)) Eye = Camera;
     else Eye = FMath::VInterpTo(Eye, Camera, DeltaTime, EyeSpeed);
     bEyeSet = bCamera;
-    Values->SetVectorParameterValue(TEXT("Eye"), FLinearColor(Eye.X, Eye.Y, Eye.Z, 0.f));
+    SetParamIfChanged(1, EyeParam, FLinearColor(Eye.X, Eye.Y, Eye.Z, 0.f));
     // Cut: the hole's radius and front margin, the lens fade's strength, the hole's strength (0 unless in hole mode).
-    Values->SetVectorParameterValue(TEXT("Cut"), FLinearColor(JapanSeeThrough::Radius(), FrontMargin, Strength, Strength * HoleBlend));
+    SetParamIfChanged(2, CutParam, FLinearColor(JapanSeeThrough::Radius(), FrontMargin, Strength, Strength * HoleBlend));
     // Fade: the whole fades' strength (they give way to the hole in hole mode), the body clearance, the lens range and
     // the big things' reach.
     const float Whole = bCamera ? Strength * (1.f - HoleBlend) : 0.f;
-    Values->SetVectorParameterValue(TEXT("Fade"), FLinearColor(Whole, SightBodyClearance, LensRange, BigReach));
+    SetParamIfChanged(3, FadeParam, FLinearColor(Whole, SightBodyClearance, LensRange, BigReach));
 
     // Hole mode: the tree house room he is in, if any, whose near walls and roof open while the camera is outside it.
     // A change of room first closes the old one, then opens the new one, so the walls never jump from one room to the
@@ -198,11 +212,11 @@ void USeeThroughComponent::TickComponent(float DeltaTime, ELevelTick TickType, F
     if (Place && Place->SeeThroughRooms.IsValidIndex(Room))
     {
         const FSeeThroughRoom& R = Place->SeeThroughRooms[Room];
-        Values->SetVectorParameterValue(TEXT("Room"), FLinearColor(R.Center.X, R.Center.Y, R.Center.Z, R.Yaw));
-        Values->SetVectorParameterValue(TEXT("RoomSize"), FLinearColor(R.Extent.X, R.Extent.Y, R.Extent.Z, RoomBlend));
-        Values->SetVectorParameterValue(TEXT("RoomShape"), FLinearColor(R.bRound ? 1.f : 0.f, WallBand, Eaves, 0.f));
+        SetParamIfChanged(4, RoomParam, FLinearColor(R.Center.X, R.Center.Y, R.Center.Z, R.Yaw));
+        SetParamIfChanged(5, RoomSizeParam, FLinearColor(R.Extent.X, R.Extent.Y, R.Extent.Z, RoomBlend));
+        SetParamIfChanged(6, RoomShapeParam, FLinearColor(R.bRound ? 1.f : 0.f, WallBand, Eaves, 0.f));
     }
-    else Values->SetVectorParameterValue(TEXT("RoomSize"), FLinearColor(100.f, 100.f, 100.f, 0.f));
+    else SetParamIfChanged(5, RoomSizeParam, FLinearColor(100.f, 100.f, 100.f, 0.f));
 
     // The trail the curtains swing from: his position every TrailStep seconds. A jump of more than 2 m in a frame
     // (a map travel, a respawn) starts it afresh, so no curtain swings along the line of a teleport.
@@ -218,6 +232,6 @@ void USeeThroughComponent::TickComponent(float DeltaTime, ELevelTick TickType, F
         // Missing samples repeat the oldest one, long ago: a segment of no length that moves nothing.
         const int32 S = FMath::Min(K, TrailFilled - 1);
         const float Age = K < TrailFilled ? float(Now - TrailTime[S]) : 10.f;
-        Values->SetVectorParameterValue(TrailNames[K], FLinearColor(Trail[S].X, Trail[S].Y, Trail[S].Z, Age));
+        SetParamIfChanged(7 + K, TrailNames[K], FLinearColor(Trail[S].X, Trail[S].Y, Trail[S].Z, Age));
     }
 }

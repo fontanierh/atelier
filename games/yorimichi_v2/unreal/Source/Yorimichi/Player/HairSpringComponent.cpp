@@ -1,6 +1,7 @@
 #include "HairSpringComponent.h"
 #include "WandererCharacter.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Engine/SkeletalMesh.h"
 #include "Misc/CommandLine.h"
 #include "Misc/Parse.h"
 
@@ -40,7 +41,15 @@ void UHairSpringComponent::TickComponent(float Dt, ELevelTick TickType, FActorCo
         Flex += FlexVelocity * H;
         if (Flex.SizeSquared() > 1.) { Flex.Normalize(); FlexVelocity = FVector2D::ZeroVector; }
     }
-    const float Enabled = (FParse::Param(FCommandLine::Get(), TEXT("statichair")) || FParse::Param(FCommandLine::Get(), TEXT("cairostatichair"))) ? 0.f : ContactFade;
-    Mesh->SetMorphTarget(Morphs[0], Flex.X * Enabled);
-    Mesh->SetMorphTarget(Morphs[1], Flex.Y * Enabled);
+    static const bool bStaticHair = FParse::Param(FCommandLine::Get(), TEXT("statichair")) || FParse::Param(FCommandLine::Get(), TEXT("cairostatichair"));
+    const float Enabled = bStaticHair ? 0.f : ContactFade;
+    USkeletalMesh* Asset = Mesh->GetSkeletalMeshAsset();
+    if (AppliedMeshAsset.Get() != Asset)
+    {
+        AppliedMeshAsset = Asset;
+        AppliedMorphWeights = FVector2D(MAX_flt, MAX_flt);
+    }
+    const float Weight0 = float(Flex.X) * Enabled, Weight1 = float(Flex.Y) * Enabled;
+    if (FMath::Abs(Weight0 - float(AppliedMorphWeights.X)) >= 1e-4f) { Mesh->SetMorphTarget(Morphs[0], Weight0); AppliedMorphWeights.X = Weight0; }
+    if (FMath::Abs(Weight1 - float(AppliedMorphWeights.Y)) >= 1e-4f) { Mesh->SetMorphTarget(Morphs[1], Weight1); AppliedMorphWeights.Y = Weight1; }
 }

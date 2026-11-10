@@ -66,6 +66,7 @@ void USkateComponent::Initialize(ACharacter* Character)
         auto* C = NewObject<UStaticMeshComponent>(Rider, Name);
         C->SetupAttachment(Parent); C->SetStaticMesh(Mesh);
         C->SetCollisionEnabled(ECollisionEnabled::NoCollision); C->SetGenerateOverlapEvents(false); C->SetCanEverAffectNavigation(false);
+        C->bCastInsetShadow = true;
         C->SetRenderCustomDepth(true); C->SetCustomDepthStencilValue(2);
         C->RegisterComponent(); return C;
     };
@@ -112,7 +113,7 @@ void USkateComponent::LoadSounds()
     for (const FString& Cue : Cues)
     {
         const int32 First = Waves.Num();
-        for (int32 I = 1; I <= 8; ++I) if (USoundWave* W = Load(FString::Printf(TEXT("%s_%02d"), *Cue, I))) Waves.Add(W);
+        for (int32 I = 1; I <= 8; ++I) { USoundWave* W = Load(FString::Printf(TEXT("%s_%02d"), *Cue, I)); if (!W) break; Waves.Add(W); }
         if (Waves.Num() > First) CueRange.Add(FName(*Cue), FIntPoint(First, Waves.Num() - First));
     }
     for (const FSoftObjectPath& Path : Settings->FallSounds)
@@ -422,8 +423,8 @@ void USkateComponent::TickComponent(float Dt,ELevelTick Type,FActorComponentTick
     if (bNetworkProxy) return;
     Super::TickComponent(Dt,Type,Tick);
     if (Mode != ESkateMode::Off) UpdateAudio(Dt);
-    // Preload the skating session after play begins, so it is ready by the first mount (SkateRuntime.cpp).
-    if (bAvailable && Rider && !ShownRuntime && !bSimulationPreloaded && GetWorld()->GetTimeSeconds()>2.) PreloadSimulation();
+    // Preload the skating session after play begins, staggered from PrepareRideClips (2.90 s) so neither stalls Frame 114 (SkateRuntime.cpp).
+    if (bAvailable && Rider && !ShownRuntime && !bSimulationPreloaded && GetWorld()->GetTimeSeconds() > 2.35) PreloadSimulation();
     PollIdleSimulation();
     // After the ride's step (in CharacterMovement's tick) and before the mesh animates.
     if (bAvailable && Rider) { TickTransition(Dt); SyncRootMotion(); }

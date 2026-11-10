@@ -95,6 +95,54 @@ void AJapanHUD::DrawHUD()
     }
     if (FJapanCharacterSelect::IsOpen()) return;
     if (Pawn->IsCinematic()) return;
+    UWorld* World = GetWorld();
+    const double Now = FPlatformTime::Seconds();
+    if (World && (CachedActorWorld.Get() != World || Now >= NextActorCacheRefresh))
+    {
+        CachedActorWorld = World;
+        NextActorCacheRefresh = Now + 1.0;
+        CachedTrainers.Reset();
+        for (TActorIterator<ASwordTrainer> It(World); It; ++It) CachedTrainers.Add(*It);
+        CachedFoxHunters.Reset();
+        for (TActorIterator<AFoxHunter> It(World); It; ++It) CachedFoxHunters.Add(*It);
+        if (!CachedRacingService.IsValid())
+        {
+            TActorIterator<ARacingService> It(World);
+            CachedRacingService = It ? *It : nullptr;
+        }
+        if (!CachedTrainService.IsValid())
+        {
+            TActorIterator<ABelmonteTrainService> It(World);
+            CachedTrainService = It ? *It : nullptr;
+        }
+    }
+    auto FindCachedTrainer = [&]() -> const ASwordTrainer*
+    {
+        if (Pawn->GetMoves())
+            if (const ASwordTrainer* Locked = Cast<ASwordTrainer>(Pawn->GetMoves()->GetTarget()))
+                return Locked;
+        const ASwordTrainer* BestActive = nullptr;
+        float BestDist = 3500.f;
+        const ASwordTrainer* VillageTrainer = nullptr;
+        const ASwordTrainer* AnyTrainer = nullptr;
+        for (const TWeakObjectPtr<AActor>& Entry : CachedTrainers)
+        {
+            const ASwordTrainer* Candidate = static_cast<const ASwordTrainer*>(Entry.Get());
+            if (!Candidate) continue;
+            if (!AnyTrainer) AnyTrainer = Candidate;
+            if (!Candidate->IsHostileRonin()) VillageTrainer = Candidate;
+            const float D = FVector::Dist2D(Pawn->GetActorLocation(), Candidate->GetActorLocation());
+            float CalloutAlpha = 0.f;
+            const ASwordTrainer::EBout CandidateBout = Candidate->GetBout();
+            if ((CandidateBout == ASwordTrainer::EBout::Ready || CandidateBout == ASwordTrainer::EBout::Fighting ||
+                 !Candidate->GetCallout(CalloutAlpha).IsEmpty()) && D < BestDist)
+            {
+                BestDist = D;
+                BestActive = Candidate;
+            }
+        }
+        return BestActive ? BestActive : (VillageTrainer ? VillageTrainer : AnyTrainer);
+    };
     // A line from the live bridge (ULiveLibrary::Say), centred at the top.
     {
         FString Line; float Alpha = 0.f;
@@ -127,7 +175,7 @@ void AJapanHUD::DrawHUD()
     // filmed frames).
     auto DrawTrainer = [&](bool bController, bool bSailboat)
     {
-    if (const ASwordTrainer* Trainer = ASwordTrainer::Find(Pawn); Trainer && !bSailboat && !Pawn->IsZeppelinPassenger())
+    if (const ASwordTrainer* Trainer = FindCachedTrainer(); Trainer && !bSailboat && !Pawn->IsZeppelinPassenger())
     {
         const float Scale = Canvas->SizeY / 1080.f;
         if (Trainer->CanTalk(Pawn) && !Trainer->IsMenuOpen())
@@ -166,7 +214,6 @@ void AJapanHUD::DrawHUD()
     if (UYorimichiLive::IsFilmHud()) { DrawSkateLine(); DrawTrainer(false, false); return; }
     // Being hit washes the screen red for a moment (AYorimichiCombatFX::PlayerHurt).
     if (Pawn->GetDamageFlash()>0.f) DrawRect(FLinearColor(.75f,.08f,.04f,.13f*Pawn->GetDamageFlash()),0,0,Canvas->SizeX,Canvas->SizeY);
-    const double Now = FPlatformTime::Seconds();
     if (Now >= NextControllerCheck)
     {
         const int32 Style=CurrentControllerStyle();
@@ -232,7 +279,24 @@ void AJapanHUD::DrawHUD()
             Controls+=FString::Printf(TEXT("   %s change stop"),!bController?TEXT("[ / ]"):ControllerStyle==2?TEXT("L1 / R1"):ControllerStyle==3?TEXT("L / R"):TEXT("LB / RB"));
     }
     {
-        const FString TrainHint=ABelmonteTrainService::Hint(Pawn);
+        FString TrainHint;
+        if (const auto* TrainSvc = static_cast<const ABelmonteTrainService*>(CachedTrainService.Get());
+            TrainSvc && !(Pawn->GetSkate() && Pawn->GetSkate()->IsRiding()) && !Pawn->OnVehicle() && !Pawn->IsZeppelinPassenger())
+        {
+            bool bNearTrain = Pawn->IsOnTrain();
+            if (!bNearTrain)
+            {
+                const FBelmonteTrainLine& Line = TrainSvc->GetLine();
+                const double SvcTime = TrainSvc->ServiceTime();
+                const FVector PawnAt = Pawn->GetActorLocation();
+                for (int32 TrainIdx = 0; TrainIdx < Line.Trains.Num(); ++TrainIdx)
+                {
+                    const FVector Consist = Line.Point(Line.Chainage(TrainIdx, SvcTime), Line.OnLoopTrack(TrainIdx, SvcTime));
+                    if (FVector::DistSquared2D(PawnAt, Consist) <= FMath::Square(15000.f)) { bNearTrain = true; break; }
+                }
+            }
+            if (bNearTrain) TrainHint = ABelmonteTrainService::Hint(Pawn);
+        }
         if(!TrainHint.IsEmpty())Controls=TrainHint.Replace(TEXT("Use"),bController?TEXT("D-pad Down"):TEXT("E"));
         const FString HoistHint=CraterParkTower::Hint(Pawn);
         if(!HoistHint.IsEmpty())
@@ -303,11 +367,13 @@ void AJapanHUD::DrawHUD()
     {
         const auto& Stamina=Pawn->GetStamina();
         const FVector2D Centre(64,Canvas->SizeY-125);
+        const int RingCount=FMath::Max(1,int(Stamina.Capacity));
+        const int Segments=FMath::Clamp(64/RingCount,12,64);
         for(int Ring=0;Ring<int(Stamina.Capacity);++Ring)
-        for(int Segment=0;Segment<64;++Segment)
+        for(int Segment=0;Segment<Segments;++Segment)
         {
-            const float Radius=12+Ring*7,A=2*PI*Segment/64-PI/2,B=2*PI*(Segment+1)/64-PI/2;
-            const bool Filled=float(Segment)/64<FMath::Clamp(Stamina.Units-Ring,0.f,1.f);
+            const float Radius=12+Ring*7,A=2*PI*Segment/Segments-PI/2,B=2*PI*(Segment+1)/Segments-PI/2;
+            const bool Filled=float(Segment)/Segments<FMath::Clamp(Stamina.Units-Ring,0.f,1.f);
             const FLinearColor Color=Filled?(Stamina.Exhausted?FLinearColor(.9,.4,.2):FLinearColor(.55,.86,.32)):FLinearColor(.15,.22,.16);
             DrawLine(Centre.X+Radius*FMath::Cos(A),Centre.Y+Radius*FMath::Sin(A),Centre.X+Radius*FMath::Cos(B),Centre.Y+Radius*FMath::Sin(B),Color,4.f);
         }
@@ -323,10 +389,12 @@ void AJapanHUD::DrawHUD()
         if (const auto* Moves = Pawn->GetMoves(); Moves && Moves->GuardPressure() > .01f)
             DrawRect(FLinearColor(.95f,.75f,.35f),BarX,BarY+BarH+3,BarW*Moves->GuardPressure(),3.f);
         const AFoxHunter* Nearest=nullptr; float Best=1e9f;
-        for (TActorIterator<AFoxHunter> It(GetWorld());It;++It)
+        for (const TWeakObjectPtr<AActor>& Entry : CachedFoxHunters)
         {
-            const float D=FVector::Dist2D(It->GetActorLocation(),Pawn->GetActorLocation());
-            if (D<Best && (It->IsEngaged() || D<1500.f) && It->IsReady()) { Best=D; Nearest=*It; }
+            const auto* Fox = static_cast<const AFoxHunter*>(Entry.Get());
+            if (!Fox) continue;
+            const float D=FVector::Dist2D(Fox->GetActorLocation(),Pawn->GetActorLocation());
+            if (D<Best && (Fox->IsEngaged() || D<1500.f) && Fox->IsReady()) { Best=D; Nearest=Fox; }
         }
         if (Nearest)
         {
@@ -342,7 +410,7 @@ void AJapanHUD::DrawHUD()
 
     DrawTrainer(bController, bSailboat);
     // Near a racecourse: the next race, the race running or the last podium (docs/RACING.md).
-    if (const ARacingService* Racing = ARacingService::Find(GetWorld()))
+    if (const auto* Racing = static_cast<const ARacingService*>(CachedRacingService.Get()))
     {
         const FString Line = Racing->HudLine(Pawn);
         if (!Line.IsEmpty())
