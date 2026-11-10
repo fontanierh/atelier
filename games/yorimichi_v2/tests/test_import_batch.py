@@ -190,6 +190,42 @@ def test_a_rerun_starts_no_session(game):
     assert session.calls == 0
 
 
+@pytest.mark.parametrize('previous_import', [False, True])
+def test_a_batch_refuses_unpinned_master_bytes_without_writing_or_starting_the_editor(game, previous_import):
+    """Changing even a comment in a pinned builder cannot be accepted as an ordinary source refresh by a warm batch."""
+    folder = game / 'assets/master/pinned'
+    source = b'def build(package, reads):\n    pass\n'
+    builder = folder / 'src/builder.py'
+    write(builder, source)
+    write(folder / 'asset.toml', f'''schema = 1
+id = "master/pinned"
+kind = "material-master"
+authority = "generated"
+owner = "region/w04-skatepark"
+[[sources]]
+path = "src/builder.py"
+sha256 = "{sha(source)}"
+[recipe]
+importer = "material-master"
+version = 1
+[recipe.settings]
+builder = "build"
+[[outputs]]
+package = "/Game/Props/M_Pinned"
+''')
+    write(game / 'unreal/Content/Props/M_Pinned.uasset', b'saved original')
+    if previous_import:
+        assert batch(game, ['master/pinned'], FakeSession(game))['imported'] == ['master/pinned']
+    write(builder, source + b'# unrecorded edit\n')
+    before = {p.relative_to(game): p.read_bytes() for p in game.rglob('*') if p.is_file()}
+    session = FakeSession(game)
+    report = batch(game, ['master/pinned'], session)
+    assert report['imported'] == [] and report['unchanged'] == []
+    assert 'differs from its pinned sha256' in report['failed']['master/pinned']
+    assert session.calls == 0
+    assert {p.relative_to(game): p.read_bytes() for p in game.rglob('*') if p.is_file()} == before
+
+
 def test_batch_size_bounds_the_jobs_per_session(game):
     session = FakeSession(game)
     report = batch(game, ['prop/a', 'prop/b', 'prop/c'], session, size=2)

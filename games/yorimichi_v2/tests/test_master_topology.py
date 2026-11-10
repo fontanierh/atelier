@@ -49,6 +49,7 @@ class Editing:
     get_material_property_input_node_output_name = staticmethod(lambda material, pin: material.roots[pin][1])
     get_inputs_for_material_expression = staticmethod(lambda material, expression: [edge[1] for edge in expression.inputs])
     get_material_expression_input_names = staticmethod(lambda expression: [edge[0] for edge in expression.inputs])
+    get_material_expression_output_names = staticmethod(lambda expression: expression.props['outputs'])
 
     @staticmethod
     def get_input_node_output_name_for_material_expression(expression, source):
@@ -170,3 +171,61 @@ def test_an_api_that_cannot_distinguish_repeated_source_outputs_refuses():
     failed = digest.read(Material([source, mix], {'MP_BASE_COLOR': (mix, '')}))
     assert 'cannot read distinct output selections' in failed['error']
     assert digest.accept(failed, failed)
+
+
+class ExpressionInput:
+    def __init__(self, source, output, mask):
+        self.props = dict(Expression=source, OutputIndex=output,
+                          **dict(zip(('Mask', 'MaskR', 'MaskG', 'MaskB', 'MaskA'), mask)))
+
+    def get_editor_property(self, name):
+        return self.props[name]
+
+
+class CustomInput:
+    def __init__(self, name, source, output, mask):
+        self.props = {'input_name': name, 'Input': ExpressionInput(source, output, mask)}
+
+    def get_editor_property(self, name):
+        return self.props[name]
+
+
+def custom_channels():
+    source = node('MaterialExpressionTextureSample', 'texture', outputs=['RGB', 'R', 'G', 'B', 'A'])
+    custom = node('MaterialExpressionCustom', 'custom', code='return C*CA;',
+                  inputs=[('C', source, 'RGB'), ('CA', source, 'A')])
+    custom.props['inputs'] = [CustomInput('C', source, 0, [1, 1, 1, 1, 0]),
+                              CustomInput('CA', source, 4, [1, 0, 0, 0, 1])]
+    return Material([source, custom], {'MP_BASE_COLOR': (custom, '')}), custom
+
+
+def test_custom_inputs_read_their_own_output_instead_of_the_first_source_match():
+    """Harbor and retail Custom graphs use both RGB and alpha from one source; those exact per-input selections matter."""
+    material, custom = custom_channels()
+    saved = digest.read(material)
+    assert 'error' not in saved
+    assert digest.accept(saved, digest.read(custom_channels()[0])) == []
+    selection = custom.props['inputs'][1].props['Input']
+    selection.props['OutputIndex'] = 1
+    assert digest.accept(saved, digest.read(material))
+
+
+def test_custom_input_component_masks_and_source_identity_are_checked():
+    material, custom = custom_channels()
+    saved = digest.read(material)
+    selection = custom.props['inputs'][1].props['Input']
+    selection.props['MaskA'] = 0
+    assert digest.accept(saved, digest.read(material))
+    selection.props['Expression'] = node('MaterialExpressionTextureSample', 'other')
+    assert 'input enumeration' in digest.read(material)['error']
+
+
+def test_surface_dot_product_reads_both_reflected_inputs():
+    source = node('MaterialExpressionSubtract', 'vector', outputs=[''])
+    dot = node('MaterialExpressionDotProduct', 'dot', inputs=[('A', source, ''), ('B', source, '')],
+               A=ExpressionInput(source, 0, [0, 0, 0, 0, 0]), B=ExpressionInput(source, 0, [0, 0, 0, 0, 0]))
+    material = Material([source, dot], {'MP_BASE_COLOR': (dot, '')})
+    saved = digest.read(material)
+    assert 'error' not in saved and digest.accept(saved, digest.read(material)) == []
+    dot.props['B'].props['MaskR'] = 1
+    assert digest.accept(saved, digest.read(material))

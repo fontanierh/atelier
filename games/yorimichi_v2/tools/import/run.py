@@ -445,6 +445,8 @@ def _prepare_batch(game, asset, by_id, *, claim, echo, authorized=False):
     stale = [d for d, s in deps.items() if s is None]
     if stale:
         raise ImportError_(f'{asset.id}: input dependencies {stale} have no verified state; import them first')
+    if asset.kind == 'material-master':
+        check_master_pins(asset)
     hashes = current_source_hashes(asset)
     fingerprint = fingerprint_with_sources(asset, hashes, deps)
     if up_to_date(game, asset, fingerprint):
