@@ -55,6 +55,8 @@ CITY_V4 = '/Game/Experiments/CityTrees/v4/{name}_v4'
 CITY_LOD = '/Game/Experiments/CityTrees/v4/lods/{name}'
 DONOR_ENV = 'YV2_DONOR_BUILD'
 COPIED_SETTINGS = ('collision', 'hulls', 'full_precision_uvs')   # the original's mesh settings, as its own import sets them
+PACKAGE_LIST = GAME / 'docs' / 'inventory' / 'plants-and-city-tree-packages.txt'
+PLANT_ADOPTED = 'adopted/brinecove/plant-'
 
 
 class PlanError(RuntimeError):
@@ -129,6 +131,36 @@ def _check_file(file: Path, sha: str, what: str, unmapped: list) -> bool:
     return True
 
 
+def slot_name(material: str) -> str:
+    """The name a plant's slot saves: its material's name without the MI_ prefix (MI_BC_leaf_deep -> BC_leaf_deep), which is
+    the GLB's own material name (the mesh read agrees)."""
+    return material.rsplit('/', 1)[1].removeprefix('MI_')
+
+
+def glb_material_names(path: Path) -> list:
+    """The glTF material names of a binary glTF, in slot order (read only)."""
+    data = path.read_bytes()
+    if data[:4] != b'glTF':
+        raise PlanError(f'{path.name}: not a binary glTF')
+    size = int.from_bytes(data[12:16], 'little')
+    doc = json.loads(data[20:20 + size])
+    return [m.get('name', '') for m in doc.get('materials', [])]
+
+
+def family_of(record_id: str) -> str:
+    """The family of a planned record ID, or '' for any other record."""
+    if record_id.startswith('prop/brinecove/plant-'):
+        return 'plants'
+    if record_id.startswith('prop/citytrees/'):
+        return 'city-v4' if record_id.endswith('-v4') else 'city-lods'
+    return ''
+
+
+def expected_packages() -> list:
+    """The 72 packages the plan covers, from the committed list."""
+    return PACKAGE_LIST.read_text().split()
+
+
 def plan_plants(game: Path, donor: Path, by_id: dict, owner_of: dict, unmapped: list) -> list:
     report = _json(donor / 'brinecove' / 'build-report.json')
     materials = report['materials']
@@ -149,6 +181,10 @@ def plan_plants(game: Path, donor: Path, by_id: dict, owner_of: dict, unmapped: 
         missing = [m for m in slots if m not in owner_of]
         if not slots or missing:
             unmapped.append(f'{name}: material(s) {missing or row["slots"]} owned by no record')
+            continue
+        glb_names = glb_material_names(glb)
+        if glb_names != [slot_name(m) for m in slots]:
+            unmapped.append(f'{name}: the GLB names its materials {glb_names}, not the slots\' {[slot_name(m) for m in slots]}')
             continue
         settings = {'slot_materials': slots, 'triangles': row['triangles']}
         if row['collision']:
@@ -226,6 +262,37 @@ def plan_city(game: Path, donor: Path, by_id: dict, owner_of: dict, unmapped: li
     return out
 
 
+def state(game: Path) -> tuple:
+    """(state, detail). `unprepared`: the adopted records hold the 72 packages and no planned record exists. `done`: 72 records
+    of these families list them and no adopted record does. Anything else is refused, never guessed."""
+    expected = set(expected_packages())
+    by_id, _ = load_records(game)
+    adopted = {o.package for rid, asset in by_id.items()
+               if rid.startswith(PLANT_ADOPTED) or rid == CITY_ADOPTED for o in asset.outputs}
+    planned = {o.package for rid, asset in by_id.items() if family_of(rid) for o in asset.outputs}
+    if adopted & expected == expected and not planned & expected:
+        return 'unprepared', f'{len(expected)} packages in the adopted records; prepare with --claim'
+    if not adopted & expected and planned & expected == expected:
+        return 'done', f'{len(expected)} records list the packages; the adopted records list none'
+    raise PlanError(f'partly moved: {len(adopted & expected)} package(s) adopted, {len(planned & expected)} planned; resolve by hand')
+
+
+def records_plan(game: Path) -> Plan:
+    """The plan as the written records state it (the done state): the same families, settings, sources and outputs."""
+    by_id, _ = load_records(game)
+    out = []
+    for rid, asset in sorted(by_id.items()):
+        family = family_of(rid)
+        if not family:
+            continue
+        out.append(Rec(id=rid, family=family, owner=asset.owner, kind=asset.kind,
+                       sources=[Src(src.path, src.sha256, asset.folder / src.path) for src in asset.sources],
+                       settings=dict((asset.recipe or {}).get('settings', {})), references=list(asset.references),
+                       outputs=[o.package for o in asset.outputs], about='written record', adopted=''))
+    packages = {package: rec.id for rec in out for package in rec.outputs}
+    return Plan(out, [], packages, None)
+
+
 def plan(game: Path, donor: Path) -> Plan:
     by_id, owner_of = load_records(game)
     unmapped = []
@@ -277,13 +344,24 @@ def evidence(plan_: Plan, read: dict) -> dict:
             row = read[package]
             out[package] = {
                 'family': rec.family,
-                'slots': [slot['material'] for slot in row['slots']],
+                'slots': [{'name': slot['name'], 'imported': slot['imported'], 'material': slot['material']}
+                          for slot in row['slots']],
                 'lods': [{'screen': round(lod['screen'], 3), 'triangles': lod['triangles'], 'sections': lod['sections']}
                          for lod in row['lods']],
                 'collision': {'trace': _trace(row['collision']['trace']), 'convex': row['collision']['convex'],
                               'simple': row['collision']['simple'], 'boxes': len(row['collision']['boxes']),
                               'double_sided': row['collision']['double_sided']}}
     return out
+
+
+def expected_slot_names(rec: Rec) -> list:
+    """The slot names the record expects the import to save: a plant's are its materials' names, a _v4's are its own label
+    (`slots`), and a city LOD's are the FBX material's name. A label M_Arcade in a _v4 therefore disagrees with the read."""
+    if rec.family == 'plants':
+        return [slot_name(m) for m in rec.settings['slot_materials']]
+    if rec.family == 'city-v4':
+        return [label for label, _ in rec.settings['slots']]
+    return [V4_SLOT]
 
 
 def disagreements(plan_: Plan, ev: dict) -> list:
@@ -298,8 +376,14 @@ def disagreements(plan_: Plan, ev: dict) -> list:
                 out.append(f'{package}: no evidence')
                 continue
             slots = rec.settings.get('slot_materials') or [v[1] for v in rec.settings.get('slots', [])]
-            if got['slots'] != slots:
-                out.append(f'{package}: slots {got["slots"]} are not {slots}')
+            got_materials = [slot['material'] for slot in got['slots']]
+            if got_materials != slots:
+                out.append(f'{package}: slots {got_materials} are not {slots}')
+            names = expected_slot_names(rec)
+            for key in ('name', 'imported'):
+                got_names = [slot[key] for slot in got['slots']]
+                if got_names != names:
+                    out.append(f'{package}: slot {key} names {got_names} are not {names}')
             lods = got['lods']
             if lods[0]['sections'] != list(range(len(slots))):
                 out.append(f'{package}: LOD0 sections {lods[0]["sections"]} do not use every slot')
