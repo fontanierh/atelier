@@ -19,8 +19,10 @@ import records  # noqa: E402
 import master_records as planner  # noqa: E402
 import master_sources  # noqa: E402
 
-FAMILY = planner.load_families()['japan_surfaces']
-MASTERS = {row['builder']: row for row in FAMILY['masters']}
+FAMILIES = planner.load_families()
+SURFACES = [FAMILIES['japan_surfaces'], FAMILIES['japan_vegetation']]   # one builder module, imported in two batches
+FAMILY = SURFACES[0]
+MASTERS = {row['builder']: row for family in SURFACES for row in family['masters']}
 sources = planner.builder_sources(FAMILY)
 with master_sources.builder(sources, 'painted_material') as entry:
     builders = sys.modules[entry.__module__]
@@ -84,8 +86,9 @@ def named(log, method):
 def test_family_names_exactly_the_four_reserved_masters_and_all_reads_have_owners():
     assert {row['package'].rsplit('/', 1)[1] for row in MASTERS.values()} == {
         'M_Painted', 'M_Foliage', 'M_Grass', 'M_Village'}
-    assert FAMILY['helpers'] == ['master_haze.py']
-    assert not set(FAMILY['keeps']) & {row['package'] for row in MASTERS.values()}
+    for family in SURFACES:
+        assert family['builder'] == FAMILY['builder'] and family['helpers'] == ['master_haze.py']
+        assert not set(family['keeps']) & {row['package'] for row in family['masters']}
     for row in MASTERS.values():
         inspect.signature(getattr(builders, row['builder'])).bind(row['package'], {}, **row['arguments'])
         owned = {out.package for source in row['inputs']

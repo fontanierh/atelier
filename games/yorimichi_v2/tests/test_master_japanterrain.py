@@ -1,5 +1,5 @@
-"""The japan terrain family (M_ForestImpostor, M_ForestGround, M_CoastRock, M_NorthGate and M_NorthMountains, from
-adopted/japan/materials/base-materials): the builders traced against a recording stand-in for unreal, the build-output
+"""The japan terrain families (japan_terrain: M_ForestImpostor and M_CoastRock; japan_terrain_ground: M_ForestGround,
+M_NorthGate and M_NorthMountains; both from adopted/japan/materials/base-materials, with one builder module): the builders traced against a recording stand-in for unreal, the build-output
 values they take as arguments, and the planner's view of the family. Nothing here runs Unreal.
 
 The traces are pinned by a sha256 of the call log. The pins were produced by running the donor functions (games/yorimichi
@@ -10,7 +10,6 @@ the same stand-in, which gave identical graph calls (84, 65, 67, 43 and 116). Th
 first graph node are its own plumbing and were left out of its log. The donor is not in this tree, so the pins are the
 record of that check."""
 import hashlib
-import importlib.util
 import inspect
 import sys
 from pathlib import Path
@@ -21,17 +20,18 @@ ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT / 'unreal/Scripts'
 sys.path.insert(0, str(ROOT / 'tools' / 'content'))
 sys.path.insert(0, str(ROOT / 'tools' / 'migrate'))
+sys.path.insert(0, str(SCRIPTS))
 import records  # noqa: E402
 import master_records as planner  # noqa: E402
+import master_sources  # noqa: E402
 
 FAMILIES = planner.load_families()
-FAMILY = FAMILIES['japan_terrain']
-MASTERS = {m['builder']: m for m in FAMILY['masters']}
-MODULE = SCRIPTS / 'material_masters' / 'japan_terrain_masters.py'
+TERRAIN = [FAMILIES['japan_terrain'], FAMILIES['japan_terrain_ground']]
+MASTERS = {m['builder']: m for family in TERRAIN for m in family['masters']}
+FAMILY_OF = {m['builder']: family for family in TERRAIN for m in family['masters']}
 
-spec = importlib.util.spec_from_file_location('v2_japan_terrain_masters', MODULE)
-builders = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(builders)
+with master_sources.builder(planner.builder_sources(TERRAIN[0]), 'forest_impostor') as entry:
+    builders = sys.modules[entry.__module__]
 
 TRACES = {
     'forest_impostor': '12ca4aaddd7d31841f8843d0d1c40556c55b086904e9a19074602c7edcf340c6',
@@ -91,9 +91,11 @@ def trace(builder):
 
 def test_the_module_imports_without_the_editor_and_every_master_binds_to_its_builder():
     assert builders.unreal is None
-    for master in FAMILY['masters']:
+    assert {planner.builder_rel(f) for f in TERRAIN} == {'src/japan_terrain_masters.py'}
+    assert all(f['helpers'] == ['master_haze.py'] for f in TERRAIN)
+    for master in MASTERS.values():
         builder = getattr(builders, master['builder'])
-        assert inspect.isfunction(builder) and master['builder'] in FAMILY['donor_lines']
+        assert inspect.isfunction(builder) and master['builder'] in FAMILY_OF[master['builder']]['donor_lines']
         inspect.signature(builder).bind(master['package'], {}, **master['arguments'])
 
 
@@ -106,7 +108,7 @@ def test_each_builder_traces_as_its_donor_function(builder):
 
 def test_the_haze_is_the_donor_atmosphere_share_and_colour():
     assert builders.SHARE == 'saturate(1-exp(-max(D-3000.0,0)/900000.0))'
-    assert builders.COLOUR == (0.0932, 0.2301, 0.5328)
+    assert builders.haze.COLOUR == (0.0932, 0.2301, 0.5328)
 
 
 def test_the_build_output_values_are_the_donor_export_values_and_agree_with_each_other():
@@ -120,12 +122,13 @@ def test_the_build_output_values_are_the_donor_export_values_and_agree_with_each
 
 
 def test_the_family_shares_the_adopted_record_and_every_read_is_owned_by_an_input_or_the_engine():
-    assert FAMILY['adopted'] == FAMILIES['japan_base']['adopted']
-    packages = {m['package'] for m in FAMILY['masters']}
+    packages = {m['package'] for m in MASTERS.values()}
+    for family in TERRAIN:
+        assert family['adopted'] == FAMILIES['japan_base']['adopted']
+        assert not {m['package'] for m in family['masters']} & set(family['keeps'])
     for other in ('japan_base', 'japan_sea'):
         assert not packages & {m['package'] for m in FAMILIES[other]['masters']}
-    assert not packages & set(FAMILY['keeps'])
-    for master in FAMILY['masters']:
+    for master in MASTERS.values():
         owned = set()
         for dep in master['inputs']:
             owned |= {o.package for o in records.load_asset(ROOT / f'assets/{dep}/asset.toml').outputs}
@@ -133,11 +136,13 @@ def test_the_family_shares_the_adopted_record_and_every_read_is_owned_by_an_inpu
 
 
 def test_the_planned_records_are_material_masters_pinned_to_the_builder(tmp_path):
-    sha = planner.builder_sha(FAMILY)
-    for master in FAMILY['masters']:
+    for master in MASTERS.values():
+        family = FAMILY_OF[master['builder']]
+        sha = planner.builder_sha(family)
         path = tmp_path / f'{master["id"].replace("/", "_")}.toml'
-        path.write_text(planner.record_text(FAMILY, master, sha))
+        path.write_text(planner.record_text(family, master, sha))
         asset = records.load_asset(path)
         assert asset.kind == 'material-master' and asset.authority == 'generated'
-        assert [(s.path, s.sha256) for s in asset.sources] == [(planner.builder_rel(FAMILY), sha)]
+        assert [(s.path, s.sha256) for s in asset.sources] == [
+            (f'src/{source.name}', hashlib.sha256(source.read_bytes()).hexdigest()) for source in planner.builder_sources(family)]
         assert [o.package for o in asset.outputs] == [master['package']]

@@ -16,6 +16,7 @@ FAMILY = {
     'owner': 'shared/japan/materials/base-materials',
     'license': 'owner-published (docs/DECISIONS.md D05 group 1)',
     'builder': 'japan_terrain_masters.py',   # unreal/Scripts/material_masters/, copied into each record's src/
+    'helpers': ['master_haze.py'],   # copied and pinned after the entry builder in each record's sources
     'donor': 'games/yorimichi/unreal/Scripts (one file per builder, see donor_lines), with atmosphere.py 17-62 and '
              'coast_rock_look.py',
     'donor_lines': {

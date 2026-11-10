@@ -260,6 +260,26 @@ def claim_ops(game: Path, family: dict) -> dict:
     return {'writes': writes, 'deletes': deletes}
 
 
+def refresh_ops(game: Path, family: dict) -> dict:
+    """The source refresh of a done family whose builder or helpers changed: {'writes': {rel: bytes}, 'deletes': [rel]}
+    with each master record and pinned source that differs from the plan, and each src/ module the plan no longer
+    declares. verified.json is never written: the records stay unimported until tools/import/run.py rebuilds them."""
+    if state(game, family) != 'done':
+        raise PlanError(f'the {family["name"]} masters are not records yet; refresh is only for a done family')
+    sha = builder_sha(family)
+    writes, deletes = {}, []
+    for master in family['masters']:
+        folder = f'assets/{master["id"]}'
+        planned = {f'{folder}/asset.toml': record_text(family, master, sha).encode()}
+        planned.update({f'{folder}/src/{source.name}': source.read_bytes() for source in builder_sources(family)})
+        for rel, data in planned.items():
+            if not (game / rel).is_file() or (game / rel).read_bytes() != data:
+                writes[rel] = data
+        deletes += sorted(rel for path in (game / folder / 'src').glob('*.py')
+                          if (rel := path.relative_to(game).as_posix()) not in planned)
+    return {'writes': writes, 'deletes': deletes}
+
+
 def generator_text(game: Path, family: dict) -> str:
     """The adopted record as a generator record: the same id, owner, provenance and pinned sources; no outputs."""
     text = (game / f'assets/{family["adopted"]}/asset.toml').read_text()
@@ -297,19 +317,20 @@ def slimmed_adopted(game: Path, family: dict) -> dict:
     return out
 
 
-def claim_paths(game: Path, family: dict) -> list[str]:
-    ops = claim_ops(game, family)
+def claim_paths(game: Path, family: dict, *, refresh=False) -> list[str]:
+    ops = refresh_ops(game, family) if refresh else claim_ops(game, family)
     return sorted(set(ops['writes']) | set(ops['deletes']))
 
 
-def materialize(game: Path, family: dict, claim: str, *, echo=print) -> None:
+def materialize(game: Path, family: dict, claim: str, *, refresh=False, echo=print) -> None:
     apply.Journal(game).recover(claim)
-    ops = claim_ops(game, family)
+    ops = refresh_ops(game, family) if refresh else claim_ops(game, family)
     if not ops['writes'] and not ops['deletes']:
-        echo(f'materialize: the {family["name"]} masters are already records and nothing references the adopted record; '
-             'nothing written')
+        echo(f'materialize: the {family["name"]} masters are already records' + (
+             ' pinned to the current sources' if refresh else ' and nothing references the adopted record') +
+             '; nothing written')
         return
-    paths = claim_paths(game, family)
+    paths = claim_paths(game, family, refresh=refresh)
     try:
         authority.authorize([f'{GAME_REL}/{rel}' for rel in paths], claim,
                             f'Yorimichi V2 {family["name"]} materials as material-master records', scopes=[family['owner']])
@@ -325,6 +346,8 @@ def main(argv=None) -> int:
     parser.add_argument('--family', required=True, help='a master_families/ module name')
     parser.add_argument('--paths', action='store_true', help='print the claim paths and the scope')
     parser.add_argument('--claim', metavar='TASK', help='the one journaled write')
+    parser.add_argument('--refresh', action='store_true',
+                        help='a done family: rewrite the records and sources its changed builder or helpers plan')
     args = parser.parse_args(argv)
     try:
         families = load_families()
@@ -332,11 +355,11 @@ def main(argv=None) -> int:
             raise PlanError(f'no family {args.family}; known: {", ".join(sorted(families))}')
         family = families[args.family]
         if args.claim:
-            materialize(args.game, family, args.claim)
+            materialize(args.game, family, args.claim, refresh=args.refresh)
             return 0
         print(f'state: {state(args.game, family)}')
-        if args.paths or state(args.game, family) == 'unprepared':
-            for rel in claim_paths(args.game, family):
+        if args.paths or args.refresh or state(args.game, family) == 'unprepared':
+            for rel in claim_paths(args.game, family, refresh=args.refresh):
                 print(f'path {GAME_REL}/{rel}')
             print(f'scopes: {family["owner"]}')
     except (PlanError, records.RecordError, authority.Unauthorized) as error:

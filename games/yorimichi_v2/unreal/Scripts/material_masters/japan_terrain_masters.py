@@ -4,27 +4,19 @@ base-materials owned (docs/inventory/master-sources.md, section 10). Donor: game
 source baseline 7eec0f98dd (docs/DECISIONS.md D01): forest_impostor_material.py, forest_ground.py and mountain_material.py.
 
 All four take the shared aerial perspective of the donor's atmosphere.py (blob sha256 b59478df...), whose constants come
-from sea_look.py (HAZE_CM, FAR_COLOUR). Its two node helpers and its HLSL are ported below; forest_ground also uses
+from sea_look.py (HAZE_CM, FAR_COLOUR); the separately pinned master_haze helper owns that graph. forest_ground uses
 ground_grain.py (5c06a2e0...) and coast_rock_look.py (its code(), without the donor's contract docstring). Generated
 values the donor read from its build output (north_snow.json south_join_m) arrive as recipe arguments.
 
 As in the other master modules: no asset is saved, loaded or imported here (every texture arrives through reads[path],
 and the importer saves the one it accepts), and nothing runs at import, so the module imports without the Unreal editor.
 """
+from . import master_haze as haze
+
 try:
     import unreal
 except ImportError:   # outside the editor: the functions are defined but cannot run
     unreal = None
-
-
-def _num(x):
-    """sea_look.py num: an HLSL float literal"""
-    return repr(float(x))
-
-
-def _f3(c):
-    """sea_look.py f3: an HLSL float3 literal"""
-    return 'float3(%s)' % ','.join(_num(x) for x in c)
 
 
 def _material(package):
@@ -44,44 +36,9 @@ def _custom_inputs(names):
     return args
 
 
-# --- atmosphere.py (lines 17-62): the haze every lit land material shares ----------------------------------------------
+# --- atmosphere.py (lines 17-62): the haze every lit land material shares, from the pinned master_haze helper
 
-HORIZON = (0.126, 0.311, 0.720)                       # sea_look.py 50
-HAZE_CM = 900000.0                                    # sea_look.py 67
-COLOUR = tuple(round(c * 0.74, 4) for c in HORIZON)   # sea_look.py 68-69, FAR_COLOUR
-START_CM = 3000.0      # the first 30 m are untouched
-SHARE = f'saturate(1-exp(-max(D-{_num(START_CM)},0)/{_num(HAZE_CM)}))'
-
-
-def _haze_custom(m, code, inputs, x, y):
-    """atmosphere._custom"""
-    MEL = unreal.MaterialEditingLibrary
-    n = MEL.create_material_expression(m, unreal.MaterialExpressionCustom, x, y)
-    n.set_editor_property('code', code)
-    n.set_editor_property('output_type', unreal.CustomMaterialOutputType.CMOT_FLOAT3)
-    n.set_editor_property('inputs', _custom_inputs([name for name, _, _ in inputs]))
-    for name, src, out in inputs:
-        assert MEL.connect_material_expressions(src, out, n, name), name
-    return n
-
-
-def _haze_apply(m, base, glow=None, base_out='', glow_out='', x=400, y=0):
-    """atmosphere.apply: base colour and emissive with the haze applied; glow None: the material had no emission."""
-    MEL = unreal.MaterialEditingLibrary
-    depth = MEL.create_material_expression(m, unreal.MaterialExpressionPixelDepth, x - 200, y + 300)
-    b = _haze_custom(m, f'return (B)*(1-{SHARE});', [('B', base, base_out), ('D', depth, '')], x, y)
-    if glow is None:
-        g = _haze_custom(m, f'float h={SHARE}; return {_f3(COLOUR)}*h;', [('D', depth, '')], x, y + 200)
-    else:
-        g = _haze_custom(m, f'float h={SHARE}; return (E)*(1-h)+{_f3(COLOUR)}*h;',
-                         [('E', glow, glow_out), ('D', depth, '')], x, y + 200)
-    return b, g
-
-
-def _haze_glow(m, x=400, y=200):
-    """atmosphere.glow: the emissive node for a material whose base colour code already takes out SHARE."""
-    depth = unreal.MaterialEditingLibrary.create_material_expression(m, unreal.MaterialExpressionPixelDepth, x - 200, y + 100)
-    return _haze_custom(m, f'float h={SHARE}; return {_f3(COLOUR)}*h;', [('D', depth, '')], x, y)
+SHARE = haze.SHARE   # the haze share of pixel depth D, which the gate and mountain HLSL also take out
 
 
 # --- The forest crown impostor (M_ForestImpostor) -----------------------------------------------------------------------
@@ -126,7 +83,7 @@ def forest_impostor(package, reads, *, white, default_normal):
     M.connect_material_expressions(tint, '', tinted, 'B')
     fill = node(U.MaterialExpressionMultiply, const_b=.015)
     M.connect_material_expressions(tinted, '', fill, 'A')
-    base, emit = _haze_apply(m, tinted, fill)
+    base, emit = haze.apply(unreal, m, tinted, fill)
     M.connect_material_property(base, '', U.MaterialProperty.MP_BASE_COLOR)
     M.connect_material_property(emit, '', U.MaterialProperty.MP_EMISSIVE_COLOR)
     subsurface = node(U.MaterialExpressionMultiply, const_b=.22)
@@ -201,7 +158,7 @@ def forest_ground(package, reads, *, near, detail, south_join_m):
     for src, out, key in [(near_tex, '', 'NearTex'), (near_param, '', 'Near'), (vc, '', 'C'), (vc, 'A', 'Alpha')]:
         assert M.connect_material_expressions(src, out, base, key)
     fill = node(U.MaterialExpressionConstant, r=0.)
-    shaded, emission = _haze_apply(m, base, fill)
+    shaded, emission = haze.apply(unreal, m, base, fill)
     M.connect_material_property(shaded, '', U.MaterialProperty.MP_BASE_COLOR)
     M.connect_material_property(emission, '', U.MaterialProperty.MP_EMISSIVE_COLOR)
     M.connect_material_property(node(U.MaterialExpressionConstant, r=1.), '', U.MaterialProperty.MP_ROUGHNESS)
@@ -259,7 +216,7 @@ def coast_rock(package, reads, *, texture):
     normal = custom(ROCK_NORMAL, [('P', p, ''), ('N', vertex_normal, '')])
     base = custom(ROCK_COLOUR, [('P', p, ''), ('N', normal, ''), ('C', vc, ''),
                                 ('Rock', node(U.MaterialExpressionTextureObject, texture=reads[texture]), '')])
-    shaded, emission = _haze_apply(m, base, node(U.MaterialExpressionConstant, r=0.))
+    shaded, emission = haze.apply(unreal, m, base, node(U.MaterialExpressionConstant, r=0.))
     for prop, n in [(U.MaterialProperty.MP_BASE_COLOR, shaded), (U.MaterialProperty.MP_EMISSIVE_COLOR, emission),
                     (U.MaterialProperty.MP_NORMAL, normal),
                     (U.MaterialProperty.MP_ROUGHNESS, node(U.MaterialExpressionConstant, r=1.)),
@@ -310,7 +267,7 @@ def north_gate(package, reads, *, ground):
     l.connect_material_expressions(tex, '', c, 'Tex')
     l.connect_material_expressions(depth, '', c, 'D')
     l.connect_material_property(c, '', U.MaterialProperty.MP_BASE_COLOR)
-    l.connect_material_property(_haze_glow(m), '', U.MaterialProperty.MP_EMISSIVE_COLOR)
+    l.connect_material_property(haze.glow(unreal, m), '', U.MaterialProperty.MP_EMISSIVE_COLOR)
     for prop, value in [(U.MaterialProperty.MP_ROUGHNESS, 1.), (U.MaterialProperty.MP_SPECULAR, 0.)]:
         n = l.create_material_expression(m, U.MaterialExpressionConstant, 100, 300)
         n.set_editor_property('r', value)
@@ -503,7 +460,7 @@ return float3(bounce,bounce,bounce);''')
     caps.set_editor_property('parameter_name','Caps');caps.set_editor_property('default_value',0.)
     l.connect_material_expressions(caps,'',ambient,'Caps');l.connect_material_expressions(caps,'',c,'Caps')
     emission=l.create_material_expression(m,unreal.MaterialExpressionAdd,400,150)
-    l.connect_material_expressions(_haze_glow(m),'',emission,'A')
+    l.connect_material_expressions(haze.glow(unreal, m),'',emission,'A')
     l.connect_material_expressions(ambient,'',emission,'B')
     l.connect_material_property(emission,'',unreal.MaterialProperty.MP_EMISSIVE_COLOR)
     for prop,value in [(unreal.MaterialProperty.MP_ROUGHNESS,1.),(unreal.MaterialProperty.MP_SPECULAR,0.)]:

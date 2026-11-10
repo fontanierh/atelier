@@ -17,6 +17,7 @@ FAMILY = {
     'owner': 'shared/japan/materials/base-materials',
     'license': 'owner-published (docs/DECISIONS.md D05 group 1)',
     'builder': 'japan_surface_masters.py',
+    'helpers': ['master_haze.py'],   # copied and pinned after the entry builder in each record's sources
     'donor': 'games/yorimichi/unreal/Scripts at 7eec0f98dd (pins in docs/inventory/japan-surfaces-prep.md)',
     'donor_lines': {
         'foliage_material': 'shared_materials.py 37-81, 169-221; foliage_material.py 5-17; see_through.py 381-435, 509-516',
