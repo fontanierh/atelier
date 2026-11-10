@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_SignalMast: the signal mast, cut from the fused tile(s) Market_3_4_Piece113, Market_3_4_Piece131, Market_4_4_Piece002, Market_4_4_Piece020 (508 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/brinecove/signal-mast"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/brinecove/signal-mast"
+references = ["adopted/brinecove/materials"]
+
+[[sources]]
+path = "src/SM_BC_SignalMast.glb"
+sha256 = "3c9727b176140728d41d14389fe674e300b76f362360a460cbb32c6404e97e8c"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Brinecove/Materials/MI_BC_cream", "/Game/Brinecove/Materials/MI_BC_flag_red", "/Game/Brinecove/Materials/MI_BC_rope", "/Game/Brinecove/Materials/MI_BC_wood", "/Game/Brinecove/Materials/MI_BC_roof_teal", "/Game/Brinecove/Materials/MI_BC_wood_dark"]
+triangles = 508
+collision = "complex"
+full_precision_uvs = true
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_SignalMast"

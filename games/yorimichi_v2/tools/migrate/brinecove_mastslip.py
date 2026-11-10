@@ -551,9 +551,8 @@ def apply(game: Path, donor: Path, src: Path, stage: Path, claim: str) -> dict:
     yard_record = game / 'assets' / YARD_RECORD
     asset_text = (yard_record / 'asset.toml').read_text()
     objects_rel = f'world/regions/{apply_.REGION}/objects.toml'
-    objects_text = writes.get(objects_rel)
-    if objects_text is None:
-        objects_text = (game / objects_rel).read_text()
+    objects_text = writes.get(objects_rel)   # apply's compute holds the new objects.toml as bytes
+    objects_text = (game / objects_rel).read_text() if objects_text is None else objects_text.decode()
     asset_new, objects_new = yard_text_edits(asset_text, objects_text, recut['sha256'], YARD_AFTER)
     batch1_path = game / 'world' / 'regions' / apply_.REGION / BATCH1
     batch1 = json.loads(batch1_path.read_text())

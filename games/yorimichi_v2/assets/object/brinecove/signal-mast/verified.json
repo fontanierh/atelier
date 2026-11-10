@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/signal-mast",
+  "dependencies": {
+    "prop/brinecove/signal-mast": "39528655f5c5cebbc3164cbd1c738903ab2af456848dfa6a1b9679aee648a431"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/9/5C/9QJK081D187BWRL4QMX311.uasset": "6c9156d20a7cd010d6ff3a59bbec111e4b27e99373873a4f2e965769736b065d"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

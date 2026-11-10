@@ -4003,6 +4003,16 @@
         "prop/brinecove/rocks-7-6-soft"
       ]
     },
+    "object/brinecove/shipyard-slip": {
+      "groups": [
+        "SM_BC_ShipyardSlip"
+      ],
+      "id": "object/brinecove/shipyard-slip",
+      "model": "prop/brinecove/shipyard-slip",
+      "models": [
+        "prop/brinecove/shipyard-slip"
+      ]
+    },
     "object/brinecove/shipyard-yard": {
       "groups": [
         "SM_BC_ShipyardYard"
@@ -4011,6 +4021,16 @@
       "model": "prop/brinecove/shipyard-yard",
       "models": [
         "prop/brinecove/shipyard-yard"
+      ]
+    },
+    "object/brinecove/signal-mast": {
+      "groups": [
+        "SM_BC_SignalMast"
+      ],
+      "id": "object/brinecove/signal-mast",
+      "model": "prop/brinecove/signal-mast",
+      "models": [
+        "prop/brinecove/signal-mast"
       ]
     },
     "object/brinecove/sloop-east": {

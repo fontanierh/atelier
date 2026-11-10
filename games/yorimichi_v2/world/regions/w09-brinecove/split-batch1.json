@@ -315,23 +315,23 @@
       "max": [
         408.5,
         23.403,
-        -53.05
+        -55.45
       ],
       "mesh": "SM_BC_ShipyardYard",
       "min": [
         340.8947,
         0.3818,
-        -106.5
+        -105.4328
       ],
       "object": "shipyard-yard",
       "package": "/Game/Brinecove/Meshes/SM_BC_ShipyardYard",
-      "sha256": "4e9d5402b8207f45a2753cefcb73b62df61658f0861220cd96da1d273e29ebcc",
+      "sha256": "c886436ce232adb472dee853458a222298bbc1f11e5e88d6697b71cbe42499bf",
       "soft": false,
       "tiles": [
         "Harbor_5_3",
         "Harbor_5_4"
       ],
-      "triangles": 9558
+      "triangles": 9352
     }
   },
   "schema": 1,
@@ -342,12 +342,12 @@
     "Harbor_2_3_Soft": {},
     "Harbor_5_3": {
       "prop/brinecove/fish-shed": 468,
-      "prop/brinecove/shipyard-yard": 8926
+      "prop/brinecove/shipyard-yard": 8734
     },
     "Harbor_5_3_Soft": {},
     "Harbor_5_4": {
       "prop/brinecove/crane-east": 168,
-      "prop/brinecove/shipyard-yard": 632
+      "prop/brinecove/shipyard-yard": 618
     },
     "Market_3_4_Piece130": {
       "prop/brinecove/market-auction-block": 132
