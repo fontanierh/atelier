@@ -7,7 +7,7 @@ authority = "editor"
 owner = "shared/megapark/seam"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
-references = ["master/megapark/opaque", "master/megapark/masked", "master/megapark/translucent"]
+references = ["adopted/megapark/base-materials"]
 
 [[outputs]]
 package = "/Game/MegaPark/Materials/MI_4cef5bb305cb09eb_Seam"

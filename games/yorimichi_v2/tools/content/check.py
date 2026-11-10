@@ -200,6 +200,8 @@ def check(game: Path = GAME, *, full: bool = False, write_index: bool = True,
                                         'record the new source hash in asset.toml'))
         record = verified.get(asset.id)
         if record is None:
+            if asset.kind == 'generator':   # sources only: nothing is saved or imported, so nothing is verified
+                continue
             if asset.id not in {p.subject for p in problems if p.code == 'SCHEMA'}:
                 problems.append(Problem('RECORD_MISSING', asset.id, 'no verified.json for its packages', redo))
             continue

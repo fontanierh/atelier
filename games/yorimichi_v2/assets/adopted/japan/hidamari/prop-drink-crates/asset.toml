@@ -7,7 +7,7 @@ authority = "editor"
 owner = "shared/japan/hidamari/prop-drink-crates"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
-references = ["master/hidamari/city"]
+references = ["adopted/japan/hidamari/generator"]
 
 [[sources]]
 path = "source/assets/hidamari/props/drink_crates/concept.jpg"

@@ -185,7 +185,7 @@ def test_a_builder_makes_no_engine_call_when_a_read_it_needs_is_missing():
 def test_the_planner_loads_both_new_families_with_their_keys():
     assert {'swordcamp', 'hidamari_city', 'hippodrome'} <= set(FAMILIES)
     for family in (SWORD, CITY):
-        assert set(family) == planner.FAMILY_KEYS
+        assert planner.FAMILY_KEYS <= set(family) <= planner.FAMILY_KEYS | planner.OPTIONAL_KEYS
         assert (planner.BUILDERS / family['builder']).is_file()
         assert family['fallback'] in {m['id'] for m in family['masters']}
 
@@ -197,12 +197,16 @@ def test_each_master_has_its_keys_and_a_builder_with_donor_lines():
             assert master['builder'] in family['donor_lines']
 
 
-def test_the_family_outputs_are_the_adopted_records_packages_and_nothing_more():
+def test_both_families_are_done_and_the_city_keeps_its_generator_record():
+    """Sword Camp retired its adopted record; the Hidamari record holds the region generator's pinned sources, so it stays
+    as a generator record that owns no package."""
     for family in (SWORD, CITY):
-        adopted = tomllib.loads((GAME / f'assets/{family["adopted"]}/asset.toml').read_text())
-        listed = {o['package'] for o in adopted['outputs']}
-        assert listed == {m['package'] for m in family['masters']}
-        assert planner.state(GAME, family) == 'unprepared'
+        assert planner.state(GAME, family) == 'done'
+        assert planner.claim_ops(GAME, family) == {'writes': {}, 'deletes': []}
+    assert not (GAME / f'assets/{SWORD["adopted"]}/asset.toml').exists()
+    generator = records.load_asset(GAME / f'assets/{CITY["adopted"]}/asset.toml')
+    assert generator.kind == 'generator' and generator.outputs == [] and generator.sources
+    assert CITY['generator'] and 'generator' not in SWORD
 
 
 def test_every_read_is_an_output_of_a_record_the_master_names_as_input():
@@ -231,30 +235,19 @@ def test_the_planned_record_text_is_a_valid_material_master_with_the_pinned_buil
         assert [o.package for o in asset.outputs] == [master['package']]
 
 
-def test_the_swordcamp_references_rewrite_to_the_camp_master():
-    rewrites = planner.reference_rewrites(GAME, SWORD)
-    referencing = [p for p in records.record_paths(GAME)
-                   if SWORD['adopted'] in records.load_asset(p).references and
-                   p.relative_to(GAME).as_posix() != f'assets/{SWORD["adopted"]}/asset.toml']
-    assert len(rewrites) == len(referencing) == 14
-    for rel, data in rewrites.items():
-        assert tomllib.loads(data.decode())['references'] == ['master/swordcamp/camp'], rel
+def test_the_swordcamp_references_point_at_the_camp_master():
+    pointing = [p for p in records.record_paths(GAME) if 'master/swordcamp/camp' in records.load_asset(p).references]
+    assert len(pointing) == 14
+    for path in records.record_paths(GAME):
+        asset = records.load_asset(path)
+        assert SWORD['adopted'] not in asset.references + asset.input_dependencies, path
 
 
-def test_the_hidamari_references_rewrite_to_the_city_master_and_the_plaster_input_drops_its_mention():
-    rewrites = planner.reference_rewrites(GAME, CITY)
-    referencing = [p for p in records.record_paths(GAME)
-                   if CITY['adopted'] in records.load_asset(p).references and
-                   p.relative_to(GAME).as_posix() != f'assets/{CITY["adopted"]}/asset.toml']
-    assert len(rewrites) == len(referencing) == 56
-    plaster = 'assets/adopted/japan/hidamari/surface-plaster/asset.toml'
-    for rel, data in rewrites.items():
-        expected = [] if rel == plaster else ['master/hidamari/city']
-        assert tomllib.loads(data.decode()).get('references', []) == expected, rel
-    # the plaster record is an input of the master, so it drops the mention rather than reference what it feeds
+def test_the_hidamari_records_keep_referencing_their_generator_and_the_plaster_feeds_the_city_master():
+    """The generator record stays, so the 56 props and surfaces keep referencing it (no prop names M_HDCity); the plaster
+    record is an input of the master and gains no mention of what it feeds."""
+    referencing = [p for p in records.record_paths(GAME) if CITY['adopted'] in records.load_asset(p).references]
+    assert len(referencing) == 56
+    assert not any('master/hidamari/city' in records.load_asset(p).references + records.load_asset(p).input_dependencies
+                   for p in records.record_paths(GAME))
     assert CITY['masters'][0]['inputs'] == ['adopted/japan/hidamari/surface-plaster']
-
-
-def test_the_claim_paths_are_the_adopted_pair_the_masters_and_the_rewritten_records():
-    assert len(planner.claim_paths(GAME, SWORD)) == 2 + 2 * 2 + 14
-    assert len(planner.claim_paths(GAME, CITY)) == 2 + 2 + 56

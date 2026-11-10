@@ -7,7 +7,7 @@ authority = "editor"
 owner = "shared/megapark/cell-x350-zm450"
 provenance = "donor build of games/yorimichi (unreal.megapark) from games/yorimichi/assets/megapark/collision/01880F3528AF906B_0.npz, collision/5DB95324F1AA68C6_0.npz, geometry/6A5170620386E3BA.npz, geometry/C809B0BD30B056FC.npz (map.json 0x01880F3528AF906B, 0x5DB95324F1AA68C6, 0x6A5170620386E3BA, 0xC809B0BD30B056FC)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
-references = ["master/megapark/opaque", "master/megapark/masked", "master/megapark/translucent"]
+references = ["adopted/megapark/base-materials"]
 
 [[sources]]
 path = "source/assets/megapark/collision/01880F3528AF906B_0.npz"

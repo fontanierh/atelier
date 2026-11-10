@@ -6,6 +6,8 @@ import inspect
 import sys
 from pathlib import Path
 
+import json
+import tomllib
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -131,12 +133,24 @@ def test_every_master_package_is_a_material_package_of_the_adopted_record():
     assert listed == ADOPTED_PACKAGES, sorted(listed ^ ADOPTED_PACKAGES)
 
 
-def test_the_planner_refuses_while_the_fourteen_kept_packages_stay_in_the_record():
-    """The planner refuses an adopted record that owns more than its masters. It names exactly the kept packages, so the
-    keeps decision (docs/inventory/master-sources.md, section 10) is the only thing between this family and a claim."""
-    with pytest.raises(planner.PlanError) as error:
-        planner.state(ROOT, FAMILY)
-    assert str(error.value) == f'{FAMILY["adopted"]} also owns {sorted(KEPT)}; split it by hand first'
+def test_the_kept_packages_stay_in_the_slimmed_adopted_record():
+    """@cc [owner:fontanierh,label:correctness] master-records-keeps
+    With keeps, the planner accepts the record, slims its outputs and verified files to exactly the kept packages, and
+    rewrites only records that name a moved master; a record still naming a kept package keeps its mention."""
+    assert planner.state(ROOT, FAMILY) == 'unprepared'
+    ops = planner.claim_ops(ROOT, FAMILY)
+    assert ops['deletes'] == []
+    folder = f'assets/{FAMILY["adopted"]}'
+    slim = tomllib.loads(ops['writes'][f'{folder}/asset.toml'].decode())
+    assert sorted(o['package'] for o in slim['outputs']) == sorted(KEPT)
+    files = json.loads(ops['writes'][f'{folder}/verified.json'])['files']
+    assert {f.rsplit('.', 1)[0] for f in files} == {'unreal/Content/' + k[len('/Game/'):] for k in KEPT}
+    moved = {m['id'] for m in FAMILY['masters']}
+    for rel, data in ops['writes'].items():
+        if rel.startswith(('assets/master/', folder)):
+            continue
+        refs = tomllib.loads(data.decode()).get('references', [])
+        assert set(refs) & moved, rel
 
 
 def test_every_read_is_an_output_of_an_input_record_on_disk():

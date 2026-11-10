@@ -28,7 +28,10 @@ KINDS = ('static-mesh', 'skeletal-mesh', 'skeleton', 'animation', 'material', 'm
          'adopted',
          # One saved object of a map (its actor package): an editing unit of its own inside its region, recorded and
          # validated apart from the region's other actors (tools/migrate/objects.py).
-         'placement')
+         'placement',
+         # A region generator's pinned code and data, with no package of its own: what its records were generated from,
+         # kept recoverable after the packages it once owned moved to their own records (tools/migrate/master_records.py).
+         'generator')
 VERIFIED_KINDS = ('imported', 'editor-saved')
 LFS_POINTER = b'version https://git-lfs.github.com/spec/v1'
 ID = re.compile(r'^[a-z0-9][a-z0-9-]*(/[a-z0-9][a-z0-9._-]*)+$')
@@ -449,7 +452,10 @@ def load_asset(path: Path) -> Asset:
         if writer not in ('generated', 'editor'):
             raise RecordError(f'{path}: output {package} writer must be generated or editor')
         outputs.append(Output(package, writer))
-    if not outputs:
+    if kind == 'generator':
+        if outputs or recipe is not None or not sources:
+            raise RecordError(f'{path}: a generator record names pinned [[sources]] and no outputs or recipe')
+    elif not outputs:
         raise RecordError(f'{path}: an asset needs at least one output package')
     if len({o.package for o in outputs}) != len(outputs):
         raise RecordError(f'{path}: duplicate output package')

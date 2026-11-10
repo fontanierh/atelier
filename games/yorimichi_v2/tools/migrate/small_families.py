@@ -251,11 +251,12 @@ def megapark_report(donor: Path | None) -> dict:
             'names': sorted('MI_' + key[2:] for key in materials)}
 
 
-# The adopted records a later write moved into generated records (SMALLFAM, PR #797; MASTERHD, the hippodrome masters);
+# The adopted records a later write moved into generated records (SMALLFAM, PR #797; MASTERHD and MASTERS2, the material masters);
 # their rows report `migrated`.
 MIGRATED = frozenset({
     'adopted/belmonte/shared-metal-glass', 'adopted/belmonte/shared-water', 'adopted/hippodrome/loose_files',
-    'adopted/hippodrome/materials',
+    'adopted/hippodrome/materials', 'adopted/skatepark/materials', 'adopted/skatepark/board', 'adopted/fx', 'adopted/racing',
+    'adopted/swordcamp/materials',
     'adopted/japan/textures/plaza-harbor', 'adopted/japan/treehouse/surface-flat', 'adopted/japan/treehouse/surface-glass',
     'adopted/japan/treehouse/surface-rope', 'adopted/japan/treehouse/surface-trunk',
     'adopted/megapark/shared-materials-pavement', 'adopted/megapark/shared-materials-wood'})
@@ -275,7 +276,7 @@ def classify(game: Path, donor: Path | None = None) -> dict:
             if (game / f'assets/{record_id}/asset.toml').is_file():
                 raise FamilyError(f'{record_id} is listed as migrated, but its adopted record is still present')
             out['records'].append({'record': record_id, 'family': family, 'origin': origin, 'evidence': evidence,
-                                   'status': 'migrated', 'note': 'moved into generated records by the SMALLFAM write',
+                                   'status': 'migrated', 'note': 'moved into generated records by a claimed write',
                                    'packages': [], 'byte_problems': [], 'refs': {}})
             fam = _family_counts(out, family)
             fam['records'] += 1

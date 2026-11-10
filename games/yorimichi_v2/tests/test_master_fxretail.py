@@ -200,9 +200,10 @@ def test_each_family_names_its_adopted_owner_its_builder_and_a_fallback_among_it
         assert family['adopted'] == adopted and family['owner'] == owner and family['fallback'] == fallback
         assert family['builder'] == builder
         assert set(planner.fallback_ids(family)) <= {m['id'] for m in family['masters']}
-        adopted_record = records.load_asset(ROOT / 'assets' / adopted / 'asset.toml')
-        assert family['owner'] == adopted_record.owner and family['license'] == adopted_record.license
-        assert sorted(o.package for o in adopted_record.outputs) == sorted(m['package'] for m in family['masters'])
+        for master in family['masters']:   # each master record carries the adopted record's owner and license
+            record = records.load_asset(ROOT / 'assets' / master['id'] / 'asset.toml')
+            assert (record.owner, record.license) == (family['owner'], family['license']), master['id']
+            assert [o.package for o in record.outputs] == [master['package']]
 
 
 def test_each_master_reads_are_outputs_of_its_inputs_in_the_real_records():
@@ -240,15 +241,17 @@ def test_the_planned_records_load_as_material_masters_pinned_to_their_builder():
             assert sorted(asset.input_dependencies) == sorted(master['inputs'])
 
 
-def test_the_planner_is_unprepared_on_the_real_tree_and_plans_its_paths_without_writing():
-    game = ROOT
-    expect = {'fx': 9, 'racing': 4, 'megapark': 53}   # adopted record (2 files) + per master: record and builder copy + rewrites
+def test_the_planner_is_done_on_the_real_tree_and_has_nothing_left_to_write():
+    """The three families were materialized: fx and racing retired their adopted records, megapark kept its record as the
+    generator record that holds the region generator's pinned sources."""
     for family in (FX, RACING, MEGAPARK):
-        assert planner.state(game, family) == 'unprepared', family['name']
-        assert len(planner.claim_paths(game, family)) == expect[family['name']], family['name']
-    assert not (ROOT / 'assets/master/fx').exists()
-    assert not (ROOT / 'assets/master/racing').exists()
-    assert not (ROOT / 'assets/master/megapark').exists()
+        assert planner.state(ROOT, family) == 'done', family['name']
+        assert planner.claim_ops(ROOT, family) == {'writes': {}, 'deletes': []}, family['name']
+    assert not (ROOT / f'assets/{FX["adopted"]}/asset.toml').exists()
+    assert not (ROOT / f'assets/{RACING["adopted"]}/asset.toml').exists()
+    generator = records.load_asset(ROOT / f'assets/{MEGAPARK["adopted"]}/asset.toml')
+    assert generator.kind == 'generator' and generator.outputs == [] and generator.sources
+    assert not (ROOT / f'assets/{MEGAPARK["adopted"]}/verified.json').exists()
 
 
 # --- the wiring, against the donor -------------------------------------------------------------------------------------
@@ -322,30 +325,23 @@ def test_no_record_depends_on_the_racing_record_and_the_fx_instances_depend_on_t
     """@cc [owner:fontanierh,label:correctness] master-records-dependency-rewrite
     material/fx-instances names adopted/fx in input_dependencies; its instances parent to the additive and dust masters, so it
     depends on those two after the claim."""
-    assert planner.reference_rewrites(ROOT, RACING) == {}
-    rewrites = planner.reference_rewrites(ROOT, FX)
-    assert list(rewrites) == ['assets/material/fx-instances/asset.toml']
-    data = tomllib.loads(rewrites['assets/material/fx-instances/asset.toml'].decode())
-    assert data['input_dependencies'] == [d for d in data['input_dependencies'] if d != 'adopted/fx']
+    for path in records.record_paths(ROOT):
+        asset = records.load_asset(path)
+        assert RACING['adopted'] not in asset.references + asset.input_dependencies, path
+        assert FX['adopted'] not in asset.references + asset.input_dependencies, path
+    data = tomllib.loads((ROOT / 'assets/material/fx-instances/asset.toml').read_text())
     assert {'master/fx/additive', 'master/fx/dust'} <= set(data['input_dependencies'])
 
 
-def test_the_megapark_mentions_rewrite_to_the_masters_each_record_uses():
-    """A cell names no master package, so it references all three retail parents; the instance records name M_RetailOpaque in
-    their recipe and depend on it; shared-textures-common feeds the masters and drops its mention."""
-    rewrites = planner.reference_rewrites(ROOT, MEGAPARK)
-    assert len(rewrites) == 45
-    every = ['master/megapark/opaque', 'master/megapark/masked', 'master/megapark/translucent']
-    counts = {'every': 0, 'opaque-dependency': 0, 'dropped': 0}
-    for rel, data in rewrites.items():
-        record = tomllib.loads(data.decode())
-        mentions = record.get('references', []) + record.get('input_dependencies', [])
-        assert MEGAPARK['adopted'] not in mentions, rel
-        if record.get('references', [])[-3:] == every or set(every) <= set(record.get('references', [])):
-            counts['every'] += 1
-        elif 'master/megapark/opaque' in record.get('input_dependencies', []):
+def test_the_megapark_mentions_keep_the_generator_and_the_dependencies_move_to_the_opaque_master():
+    """The generator record stays, so a record that references it keeps that reference (41 cells and shared-textures-common);
+    the three instance records name M_RetailOpaque in their recipe and depend on that master instead."""
+    counts = {'generator': 0, 'opaque-dependency': 0}
+    for path in records.record_paths(ROOT):
+        asset = records.load_asset(path)
+        assert MEGAPARK['adopted'] not in asset.input_dependencies, path
+        if MEGAPARK['adopted'] in asset.references:
+            counts['generator'] += 1
+        if 'master/megapark/opaque' in asset.input_dependencies:
             counts['opaque-dependency'] += 1
-        else:
-            assert rel == 'assets/adopted/megapark/shared-textures-common/asset.toml', rel
-            counts['dropped'] += 1
-    assert counts == {'every': 41, 'opaque-dependency': 3, 'dropped': 1}
+    assert counts == {'generator': 42, 'opaque-dependency': 3}

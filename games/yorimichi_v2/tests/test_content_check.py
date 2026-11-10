@@ -254,6 +254,36 @@ package = "/Game/M"
         records.load_asset(folder / 'asset.toml')
 
 
+def generator_asset(game, extra=''):
+    folder = game / 'assets/gen/city'
+    write(folder / 'source/build.py', b'print(1)\n')
+    write(folder / 'asset.toml', f'''schema = 1
+id = "gen/city"
+kind = "generator"
+authority = "editor"
+owner = "shared/gen/city"
+[[sources]]
+path = "source/build.py"
+sha256 = "{sha(b'print(1)' + bytes([10]))}"
+{extra}''')
+    return folder
+
+
+def test_a_generator_record_pins_sources_and_check_asks_no_verified_file(game):
+    folder = generator_asset(game)
+    assert records.load_asset(folder / 'asset.toml').outputs == []
+    assert codes(game) == ([], [])
+    write(folder / 'source/build.py', b'print(2)\n')
+    assert codes(game)[0] == ['SOURCE_CHANGED']
+
+
+@pytest.mark.parametrize('extra', ['[[outputs]]\npackage = "/Game/Gen/M_City"\n', '[recipe]\nimporter = "x"\nversion = 1\n'])
+def test_a_generator_record_with_an_output_or_a_recipe_is_refused(tmp_path, extra):
+    folder = generator_asset(tmp_path, extra)
+    with pytest.raises(records.RecordError, match='generator record|no \\[recipe\\]'):
+        records.load_asset(folder / 'asset.toml')
+
+
 def test_published_schemas_match_the_validator():
     schemas = Path(__file__).resolve().parents[1] / 'schemas'
     asset = json.loads((schemas / 'asset.schema.json').read_text())

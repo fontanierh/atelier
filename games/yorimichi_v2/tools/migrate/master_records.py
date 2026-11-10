@@ -12,9 +12,14 @@ every package, so it is deleted with its verified.json, and every record that re
 uses instead (reference_rewrites). The records are not imported here: the V2 editor builds and reads back each master
 (unreal/Scripts/import_asset.py, material-master), and tools/import/run.py writes its verified.json.
 
-States: `unprepared` (the adopted record lists exactly the family's masters, no master record exists) and `done` (every
-master record exists, the adopted record is gone). Any other state refuses, so a half-moved set is never extended by a
-second write. An adopted record that owns other packages too refuses: it is split by hand first.
+States: `unprepared` (the adopted record lists exactly the family's masters and its kept packages, no master record
+exists) and `done` (every master record exists, the adopted record is gone or lists only its kept packages). Any other
+state refuses, so a half-moved set is never extended by a second write. An adopted record that owns packages beyond the
+family's masters refuses unless the family names them in `keeps`: then the record stays, slimmed to those packages (its
+asset.toml outputs and its verified.json files), and a record that names a kept package, or names no moved master, keeps
+its reference to it. A family marked `generator` keeps the adopted record as a generator record: its pinned sources stay,
+its outputs and verified.json go, every reference to it stays (it is still what those records were generated from) and
+gains the masters the record names, and an input dependency on it moves to the masters the record names.
 """
 from __future__ import annotations
 
@@ -42,6 +47,9 @@ PROVENANCE = '{donor} at the V2 source baseline (docs/DECISIONS.md D01, D02)'
 DEPENDENCY_KEYS = ('references', 'input_dependencies')
 LINE = {key: re.compile(rf'^{key} = (\[.*\])$', re.M) for key in DEPENDENCY_KEYS}
 FAMILY_KEYS = {'name', 'adopted', 'owner', 'license', 'builder', 'donor', 'donor_lines', 'fallback', 'masters'}
+# keeps: packages the adopted record keeps. generator: the adopted record also holds its region generator's pinned code,
+# so it becomes a generator record (records.KINDS) instead of being deleted, and its referrers keep pointing at it.
+OPTIONAL_KEYS = {'keeps', 'generator'}
 MASTER_KEYS = {'id', 'package', 'builder', 'reads', 'inputs', 'arguments'}
 
 
@@ -57,7 +65,7 @@ def load_families(folder: Path = FAMILY_DIR) -> dict:
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
         family = module.FAMILY
-        if set(family) != FAMILY_KEYS or family['name'] != path.stem:
+        if not FAMILY_KEYS <= set(family) <= FAMILY_KEYS | OPTIONAL_KEYS or family['name'] != path.stem:
             raise PlanError(f'{path.name}: a family has the keys {sorted(FAMILY_KEYS)} and is named after its file')
         if not (BUILDERS / family['builder']).is_file():
             raise PlanError(f'{path.name}: no builder module {family["builder"]} in unreal/Scripts/material_masters')
@@ -67,6 +75,8 @@ def load_families(folder: Path = FAMILY_DIR) -> dict:
                                 'builder with donor lines')
         if not set(fallback_ids(family)) <= {m['id'] for m in family['masters']} or not fallback_ids(family):
             raise PlanError(f'{path.name}: the fallback is one or more of the family masters')
+        if set(family.get('keeps', ())) & {m['package'] for m in family['masters']}:
+            raise PlanError(f'{path.name}: a kept package cannot also be a master')
         out[family['name']] = family
     return out
 
@@ -101,13 +111,15 @@ def _packages_named(value) -> set:
 
 
 def reference_rewrites(game: Path, family: dict) -> dict:
-    """{rel: bytes} for every record that names the adopted record in its references or input_dependencies. Each
-    mention becomes the masters whose packages the record's recipe names, or the family's fallback when it names none.
-    A record that is itself an input of a family master drops the mention instead, so no record depends on what it
-    feeds. A dependency line this cannot rewrite refuses."""
+    """{rel: bytes} for every record whose references or input_dependencies name the adopted record and change. Each
+    mention becomes the masters whose packages the record's recipe names, or the family's fallback when it names none;
+    under `keeps` or `generator` the record stays and keeps the references that still hold (see the module docstring).
+    A record that is itself an input of a family master gains no master mention, so no record depends on what it feeds.
+    A dependency line this cannot rewrite refuses."""
     adopted = family['adopted']
     by_package = {m['package']: m['id'] for m in family['masters']}
     feeds = {dep for m in family['masters'] for dep in m['inputs']}
+    kept = set(family.get('keeps', ()))
     out = {}
     for path in records.record_paths(game):
         rel = path.relative_to(game).as_posix()
@@ -117,13 +129,20 @@ def reference_rewrites(game: Path, family: dict) -> dict:
         if not any(adopted in getattr(asset, key) for key in DEPENDENCY_KEYS):
             continue
         named = _packages_named(asset.recipe or {})
-        masters = [] if asset.id in feeds else (sorted({by_package[p] for p in named if p in by_package})
-                                                or fallback_ids(family))
+        moved = sorted({by_package[p] for p in named if p in by_package})
         text = path.read_text()
         for key in DEPENDENCY_KEYS:
             current = getattr(asset, key)
             if adopted not in current:
                 continue
+            if asset.id in feeds:   # never depend on, or reference, what this record feeds
+                masters = [adopted] if key == 'references' and family.get('generator') else []
+            elif family.get('generator'):   # the record stays: a reference keeps it, a dependency moves to the masters
+                masters = [adopted] + moved if key == 'references' else (moved or fallback_ids(family))
+            elif kept:   # the record stays: a record still using it, or naming no moved master, keeps the mention
+                masters = moved + ([adopted] if named & kept or not moved else [])
+            else:
+                masters = moved or fallback_ids(family)
             match = LINE[key].search(text)
             if match is None or json.loads(match.group(1)) != current:
                 raise PlanError(f'{rel}: its {key} are not one rewritable line')
@@ -132,10 +151,14 @@ def reference_rewrites(game: Path, family: dict) -> dict:
                 for item in (masters if ref == adopted else [ref]):
                     if item not in new:
                         new.append(item)
+            if new == current:
+                continue
             if new:
                 text = text[:match.start(1)] + json.dumps(new) + text[match.end(1):]
             else:   # an emptied list goes away with its line
                 text = text[:match.start()] + text[match.end() + 1:]
+        if text == path.read_text():
+            continue
         out[rel] = text.encode()
     return out
 
@@ -175,11 +198,16 @@ def state(game: Path, family: dict) -> str:
     present = [m['id'] for m in masters if (game / f'assets/{m["id"]}/asset.toml').is_file()]
     packages = {m['package'] for m in masters}
     listed = {o.package for o in records.load_asset(adopted).outputs} if adopted.is_file() else set()
-    if listed - packages:
-        raise PlanError(f'{family["adopted"]} also owns {sorted(listed - packages)}; split it by hand first')
-    if not present and packages == listed:
+    kept = set(family.get('keeps', ()))
+    if family.get('generator') and adopted.is_file() and records.load_asset(adopted).kind == 'generator' \
+            and len(present) == len(masters):
+        return 'done'
+    if listed - packages - kept:
+        raise PlanError(f'{family["adopted"]} also owns {sorted(listed - packages - kept)}; split it by hand first or '
+                        'name them in keeps')
+    if not present and listed == packages | kept:
         return 'unprepared'
-    if len(present) == len(masters) and not listed:
+    if len(present) == len(masters) and listed == kept:
         return 'done'
     raise PlanError(f'the {family["name"]} masters are half-moved: records {present}, adopted still lists '
                     f'{sorted(listed & packages)}; resolve by hand')
@@ -196,9 +224,53 @@ def claim_ops(game: Path, family: dict) -> dict:
         folder = f'assets/{master["id"]}'
         writes[f'{folder}/asset.toml'] = record_text(family, master, sha).encode()
         writes[f'{folder}/{builder_rel(family)}'] = builder_path(family).read_bytes()
+    if family.get('keeps'):
+        writes.update(slimmed_adopted(game, family))
+        return {'writes': writes, 'deletes': []}
+    if family.get('generator'):
+        writes[f'assets/{family["adopted"]}/asset.toml'] = generator_text(game, family).encode()
+        verified = f'assets/{family["adopted"]}/verified.json'
+        return {'writes': writes, 'deletes': [verified] if (game / verified).is_file() else []}
     deletes = [f'assets/{family["adopted"]}/{name}' for name in ('asset.toml', 'verified.json')
                if (game / f'assets/{family["adopted"]}/{name}').is_file()]
     return {'writes': writes, 'deletes': deletes}
+
+
+def generator_text(game: Path, family: dict) -> str:
+    """The adopted record as a generator record: the same id, owner, provenance and pinned sources; no outputs."""
+    text = (game / f'assets/{family["adopted"]}/asset.toml').read_text()
+    for master in family['masters']:
+        block = f'\n[[outputs]]\npackage = "{master["package"]}"\n'
+        if text.count(block) != 1:
+            raise PlanError(f'{family["adopted"]}: {master["package"]} is not one plain [[outputs]] table')
+        text = text.replace(block, '')
+    if text.count('kind = "adopted"\n') != 1 or '[[outputs]]' in text:
+        raise PlanError(f'{family["adopted"]}: not an adopted record of only the family masters')
+    note = ('# A generator record since its masters became material-master records (tools/migrate/master_records.py):\n'
+            '# it keeps the region generator\'s pinned code and data, and owns no package.\n')
+    return note + text.replace('kind = "adopted"\n', 'kind = "generator"\n')
+
+
+def slimmed_adopted(game: Path, family: dict) -> dict:
+    """{rel: bytes}: the adopted record without the moved masters, in its asset.toml outputs and its verified.json files.
+    A record whose outputs are not one `[[outputs]]` table per package refuses."""
+    folder = f'assets/{family["adopted"]}'
+    text = (game / folder / 'asset.toml').read_text()
+    moved = {m['package'] for m in family['masters']}
+    for package in moved:
+        block = f'\n[[outputs]]\npackage = "{package}"\n'
+        if text.count(block) != 1:
+            raise PlanError(f'{family["adopted"]}: {package} is not one plain [[outputs]] table')
+        text = text.replace(block, '')
+    out = {f'{folder}/asset.toml': text.encode()}
+    verified_path = game / folder / 'verified.json'
+    if verified_path.is_file():
+        verified = json.loads(verified_path.read_text())
+        prefixes = tuple('unreal/Content/' + package[len('/Game/'):] + '.' for package in moved)
+        moved_files = {f for f in verified['files'] if f.startswith(prefixes)}
+        verified['files'] = {f: h for f, h in verified['files'].items() if f not in moved_files}
+        out[f'{folder}/verified.json'] = (json.dumps(verified, indent=2, sort_keys=True) + '\n').encode()
+    return out
 
 
 def claim_paths(game: Path, family: dict) -> list[str]:

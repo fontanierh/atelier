@@ -9,8 +9,7 @@
     "id",
     "kind",
     "authority",
-    "owner",
-    "outputs"
+    "owner"
   ],
   "properties": {
     "schema": {
@@ -39,7 +38,8 @@
         "foliage",
         "physics",
         "adopted",
-        "placement"
+        "placement",
+        "generator"
       ]
     },
     "authority": {
@@ -174,5 +174,40 @@
       },
       "description": "a carved tile: sources are exactly [original, selection]; the import derives the remainder under build/yorimichi_v2/derived (tools/content/carve.py)"
     }
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "generator"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "sources"
+        ],
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "outputs"
+              ]
+            },
+            {
+              "required": [
+                "recipe"
+              ]
+            }
+          ]
+        }
+      },
+      "else": {
+        "required": [
+          "outputs"
+        ]
+      }
+    }
+  ]
 }

@@ -291,10 +291,13 @@ def test_no_builder_saves_or_makes_a_directory_itself(donor_piers):
 
 # --- the planner, the real records and the reference rewrites -----------------------------------------------------------
 
-def test_the_planner_loads_both_families_and_each_is_unprepared_on_the_real_tree():
+def test_the_planner_loads_both_families_and_each_is_done_on_the_real_tree():
+    """Both families were materialized (claims MASTERS1/MASTERS2): the adopted records are gone and nothing is left to write."""
     assert {'skatepark', 'skatepark_board'} <= set(FAMILIES)
+    game = REPO / 'games' / 'yorimichi_v2'
     for family in (PIER, BOARD):
-        assert planner.state(REPO / 'games' / 'yorimichi_v2', family) == 'unprepared'
+        assert planner.state(game, family) == 'done'
+        assert planner.claim_ops(game, family) == {'writes': {}, 'deletes': []}
 
 
 def test_every_master_read_is_an_output_of_its_declared_input_records():
@@ -331,22 +334,20 @@ def test_the_builder_sources_are_pinned_to_the_builder_files():
     assert planner.builder_path(PIER).is_file() and planner.builder_path(BOARD).is_file()
 
 
-def test_each_referencing_record_points_at_the_masters_its_slot_map_names(tmp_path):
-    """The 17 records that reference adopted/skatepark/materials each name their masters in slot_map. The rewrite points each
-    at exactly those masters, and nothing is left on the adopted record. The fallback (Pier_concrete, the surface 16 of the 17
-    name) is not used by any of them, since each names a master. Read from the real tree; nothing is written."""
+def test_each_referencing_record_points_at_the_masters_its_slot_map_names():
+    """The 17 records that referenced adopted/skatepark/materials each name their masters in slot_map, and each now references
+    exactly those masters. The fallback (Pier_concrete) was used by none of them, since each names a master."""
     game = REPO / 'games' / 'yorimichi_v2'
-    rewrites = planner.reference_rewrites(game, PIER)
-    assert len(rewrites) == 17
-    for rel, data in rewrites.items():
-        original = (game / rel).read_text()
-        slots = re_slots(original)
-        expected = sorted({f'master/skatepark/pier-{slot[len("Pier_"):]}' for slot in slots})
-        rewritten = tmp_path / rel.replace('/', '_')
-        rewritten.write_bytes(data)
-        asset = records.load_asset(rewritten)
-        assert PIER['adopted'] not in asset.references, rel
-        assert sorted(r for r in asset.references if r.startswith('master/skatepark/')) == expected, rel
+    pointing = 0
+    for path in records.record_paths(game):
+        asset = records.load_asset(path)
+        assert PIER['adopted'] not in asset.references + asset.input_dependencies, path
+        named = sorted(r for r in asset.references if r.startswith('master/skatepark/pier-'))
+        if named:
+            pointing += 1
+            slots = re_slots(path.read_text())
+            assert named == sorted({f'master/skatepark/pier-{slot[len("Pier_"):]}' for slot in slots}), path
+    assert pointing == 17
 
 
 def re_slots(text):
