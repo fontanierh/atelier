@@ -41,10 +41,11 @@ void UJapanGameInstance::StartNetworkQA()
             UTF8_TO_TCHAR(YORIMICHI_NETWORK_BUILD_ID),UTF8_TO_TCHAR(YORIMICHI_COMPILED_TARGET),UTF8_TO_TCHAR(YORIMICHI_COMPILED_INPUT_DIGEST));
         return;
     }
-    if ((NetworkQARole != TEXT("server") && NetworkQARole != TEXT("client") && NetworkQARole != TEXT("bind-failure")) ||
+    if ((NetworkQARole != TEXT("server") && NetworkQARole != TEXT("client") && NetworkQARole != TEXT("bind-failure") &&
+         NetworkQARole != TEXT("host-leave")) ||
         !FParse::Value(FCommandLine::Get(), TEXT("networkqadir="), NetworkQADirectory))
     {
-        UE_LOG(LogTemp, Error, TEXT("NETWORK QA requires role server|client|bind-failure and an output directory"));
+        UE_LOG(LogTemp, Error, TEXT("NETWORK QA requires role server|client|bind-failure|host-leave and an output directory"));
         AtelierRequestExit(1); return;
     }
     IFileManager::Get().MakeDirectory(*NetworkQADirectory, true);
@@ -205,6 +206,34 @@ bool UJapanGameInstance::TickNetworkQA(float)
     if (Now - NetworkQAStarted > 240.) return Fail(TEXT("Native session lifecycle deadline expired"));
     UWorld* World = GetWorld();
     if (!World || !World->HasBegunPlay()) return true;
+    if (NetworkQARole == TEXT("host-leave"))
+    {
+        // One packaged process, the menu's two calls: HostGame (identity, Tailscale address, listen travel to
+        // JapanNetwork::Map()) and then LeaveGame (travel back to the same map, Solo). Receipts: connected, complete.
+        if (Now - NetworkQAStarted > 120.) return Fail(TEXT("Host and leave deadline expired: ") + Status);
+        const APlayerController* Local = GetFirstLocalPlayerController();
+        if (!bNetworkQAHostRequested)
+        {
+            auto* Pawn = Cast<AWandererCharacter>(Local ? Local->GetPawn() : nullptr);
+            if (!Pawn || !Pawn->IsReady()) return true;
+            bNetworkQAHostRequested = true;
+            HostGame(2);
+            return true;
+        }
+        if (NetworkQALeaving <= 0.)
+        {
+            const auto* Hosted = World->GetGameState<AJapanGameState>();
+            if (World->GetNetMode() != NM_ListenServer || !Hosted || !Hosted->bWorldReady || Hosted->SessionId.IsEmpty() ||
+                !Local || !Local->GetPawn()) return true;
+            if (!WriteNetworkQA(TEXT("connected"))) return Fail(TEXT("Could not save hosted receipt"));
+            NetworkQALeaving = Now;
+            LeaveGame();
+            return true;
+        }
+        if (World->GetNetMode() != NM_Standalone || World->GetNetDriver() || !Local || !Local->GetPawn()) return true;
+        if (!WriteNetworkQA(TEXT("complete"))) return Fail(TEXT("Could not save return-to-solo receipt"));
+        FPlatformMisc::RequestExit(false); return false;
+    }
     if (NetworkQARole == TEXT("bind-failure"))
     {
         if (Now - NetworkQAStarted > 90.) return Fail(TEXT("Occupied-port host recovery deadline expired"));
