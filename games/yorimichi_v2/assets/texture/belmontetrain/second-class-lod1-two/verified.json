@@ -1,0 +1,12 @@
+{
+  "asset": "texture/belmontetrain/second-class-lod1-two",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_SecondClass/LOD1/T_BT_Two.uasset": "cadcc1202ef1e5f64231dbed0a1279e396cbb384dfd4fb5c93bf63f461fd74dc"
+  },
+  "input_fingerprint": "6f03d6f0b6b40584f409431f873159f5c2df6cf5ab68ebc18fa6d194a9487375",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

@@ -1,0 +1,12 @@
+{
+  "asset": "texture/belmontetrain/baggage-van-lod2-baggage-van-interior",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BaggageVan/LOD2/T_BT_BaggageVanInterior.uasset": "1f6f0d44ca56029f4af226800cad0d6ebd8f57025409e830243c48f129cca888"
+  },
+  "input_fingerprint": "77e9ec37754f4f091d3ef0fddd48fb118d7824c80072a2f5c2481f32eb84fa94",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

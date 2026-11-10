@@ -1,0 +1,25 @@
+# Planned from the donor Belmonte train (tools/migrate/belmontetrain_materials.py): T_BT_FirstClassInterior in first-class LOD2, the donor image T_BT_FirstClassInterior.png.
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "texture/belmontetrain/first-class-lod2-first-class-interior"
+kind = "texture"
+authority = "generated"
+owner = "shared/belmontetrain/first-class"
+
+[[sources]]
+path = "src/T_BT_FirstClassInterior.png"
+sha256 = "4b2b7fb1c82c4c38030f143a94c2ed1f54f64e6eb16d5349913cc7f994f279b4"
+
+[recipe]
+importer = "texture"
+version = 1
+
+[recipe.settings]
+srgb = true
+compression = "TC_DEFAULT"
+lod_group = "TEXTUREGROUP_WORLD"
+address = "wrap"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_FirstClass/LOD2/T_BT_FirstClassInterior"

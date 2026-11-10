@@ -6,7 +6,7 @@ id = "prop/belmontetrain/locomotive-door-cab-r"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/belmontetrain/locomotive"
-references = ["adopted/belmontetrain/locomotive"]
+references = ["material/belmontetrain/locomotive-lod0", "material/belmontetrain/locomotive-lod1", "material/belmontetrain/locomotive-lod2", "texture/belmontetrain/locomotive-lod0-crest", "texture/belmontetrain/locomotive-lod0-smokebox-door", "texture/belmontetrain/locomotive-lod0-underframe", "texture/belmontetrain/locomotive-lod0-walnut", "texture/belmontetrain/locomotive-lod0-walnut1", "texture/belmontetrain/locomotive-lod1-crest", "texture/belmontetrain/locomotive-lod1-smokebox-door", "texture/belmontetrain/locomotive-lod1-underframe", "texture/belmontetrain/locomotive-lod1-walnut", "texture/belmontetrain/locomotive-lod1-walnut1", "texture/belmontetrain/locomotive-lod2-underframe"]
 
 [[sources]]
 path = "src/SM_BTD_Locomotive_cab_r.glb"

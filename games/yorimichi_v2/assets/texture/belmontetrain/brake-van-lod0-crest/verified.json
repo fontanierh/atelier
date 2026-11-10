@@ -1,0 +1,12 @@
+{
+  "asset": "texture/belmontetrain/brake-van-lod0-crest",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BrakeVan/LOD0/T_BT_Crest.uasset": "faa51383a5ad20d2a99e68985823ffdafc4356ba2f3bec4170d3c0b75f924be7"
+  },
+  "input_fingerprint": "627bfe593d46f3cd383e07ba810f6f9b00bddeb983315f2d3ac002df287836be",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

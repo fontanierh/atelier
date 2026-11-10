@@ -1,0 +1,12 @@
+{
+  "asset": "texture/belmontetrain/brake-van-lod0-panel-wide",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BrakeVan/LOD0/T_BT_PanelWide.uasset": "daaf8d18836c19ac6dfc34857238350cd9b33b95314df403c1a5eb3136edccc9"
+  },
+  "input_fingerprint": "3c605f10bcd3c85977480b367d384f2d8f2ca152735f7222843f806e6f781fb2",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

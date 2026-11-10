@@ -1,0 +1,12 @@
+{
+  "asset": "texture/belmontetrain/second-class-lod0-underframe",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/T_BT_Underframe.uasset": "cac8be530d4bb64637e518e2d721464b34756e360d172a8a9045b9417cc18c55"
+  },
+  "input_fingerprint": "0823cfcc12d1357213414fb7763d25b30bb4379ce8dd7ab48ec4a1a762ad35d2",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

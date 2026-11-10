@@ -1,0 +1,25 @@
+# Planned from the donor Belmonte train (tools/migrate/belmontetrain_materials.py): T_BT_Lino in second-class LOD1, the donor image T_BT_Lino.jpg.
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "texture/belmontetrain/second-class-lod1-lino"
+kind = "texture"
+authority = "generated"
+owner = "shared/belmontetrain/second-class"
+
+[[sources]]
+path = "src/T_BT_Lino.jpg"
+sha256 = "e5b1ba3ce7e689e151dcf584150af936370c253255da9e81e0f53e39b6f584eb"
+
+[recipe]
+importer = "texture"
+version = 1
+
+[recipe.settings]
+srgb = true
+compression = "TC_DEFAULT"
+lod_group = "TEXTUREGROUP_WORLD"
+address = "wrap"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD1/T_BT_Lino"

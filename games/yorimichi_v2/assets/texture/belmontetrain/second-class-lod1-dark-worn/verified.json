@@ -1,0 +1,12 @@
+{
+  "asset": "texture/belmontetrain/second-class-lod1-dark-worn",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_SecondClass/LOD1/T_BT_DarkWorn.uasset": "f1ba075186d95981220a3952918a21186b6464df8b846273b8cc6060a029cb00"
+  },
+  "input_fingerprint": "1635aa4cbbf7de0813b6bebdbf077ea9e04182e2c39dd7d13c880063eabd05d1",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

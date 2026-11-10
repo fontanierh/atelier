@@ -1,0 +1,12 @@
+{
+  "asset": "texture/belmontetrain/first-class-lod1-underframe",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_FirstClass/LOD1/T_BT_Underframe.uasset": "86006dbfde29bc23b17586028002cf07f64478d1fa73e1686cbf78d3f5ce5cf5"
+  },
+  "input_fingerprint": "bdd55f933f0418955d46581c93879f90b72858a5d525608ea90ec4aa80b79989",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

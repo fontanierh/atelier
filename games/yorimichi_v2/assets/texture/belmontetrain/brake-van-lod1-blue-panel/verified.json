@@ -1,0 +1,12 @@
+{
+  "asset": "texture/belmontetrain/brake-van-lod1-blue-panel",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BrakeVan/LOD1/T_BT_BluePanel.uasset": "22488dea17e6db16f8d8f3da831016cf81c48798ed7cb15888aa5a061fe2be4d"
+  },
+  "input_fingerprint": "cb99732d9e27f332f4a4072e14562b7526bd19d5bc06f085b18a1650671e0a15",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

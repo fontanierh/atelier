@@ -1,0 +1,12 @@
+{
+  "asset": "texture/belmontetrain/restaurant-lod0-panel-tall",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Restaurant/LOD0/T_BT_PanelTall.uasset": "97a94e7d1b6650d8de0bb378f3fb83de92764ad4fbf75ae12583cc989fa65da7"
+  },
+  "input_fingerprint": "660948b64cf84cb418f3e0d901a61ad67f789e90b486367e1ef324f659b90305",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

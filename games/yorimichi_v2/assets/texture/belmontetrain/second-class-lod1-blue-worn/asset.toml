@@ -1,0 +1,25 @@
+# Planned from the donor Belmonte train (tools/migrate/belmontetrain_materials.py): T_BT_BlueWorn in second-class LOD1, the donor image T_BT_BlueWorn.png.
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "texture/belmontetrain/second-class-lod1-blue-worn"
+kind = "texture"
+authority = "generated"
+owner = "shared/belmontetrain/second-class"
+
+[[sources]]
+path = "src/T_BT_BlueWorn.png"
+sha256 = "ca8fe879cedbab24f2f31b696402819da2bc62693f55dd1b422eaed9a1641d9f"
+
+[recipe]
+importer = "texture"
+version = 1
+
+[recipe.settings]
+srgb = true
+compression = "TC_DEFAULT"
+lod_group = "TEXTUREGROUP_WORLD"
+address = "wrap"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD1/T_BT_BlueWorn"

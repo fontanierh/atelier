@@ -1,0 +1,12 @@
+{
+  "asset": "texture/belmontetrain/brake-van-lod2-roof",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BrakeVan/LOD2/T_BT_Roof.uasset": "69d499ea84ea3096160cffab82f7da57c7249261cf4eb48863f830a21ac414e1"
+  },
+  "input_fingerprint": "7ef8a25ce4c2cd49e4abd34da8073e03aa68ac6fedf12ce2bc8c45cdffd2c108",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

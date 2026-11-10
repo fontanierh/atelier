@@ -1,0 +1,12 @@
+{
+  "asset": "texture/belmontetrain/restaurant-lod1-carpet-burgundy",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Restaurant/LOD1/T_BT_CarpetBurgundy.uasset": "c5be814421f0eebabed0c2191cbf4f3bee0faa5e6aff0b369d58056b4db14307"
+  },
+  "input_fingerprint": "a52d6daf56b679c4f29822acc35c394f448dec9b596438225e04096c193da80e",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

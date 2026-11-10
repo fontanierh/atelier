@@ -1,0 +1,12 @@
+{
+  "asset": "texture/belmontetrain/brake-van-lod0-panel-tall",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BrakeVan/LOD0/T_BT_PanelTall.uasset": "f39226d6452e77d26b215ce988b089c8c9b042b304b0b31ae5ffd51e5500f8e2"
+  },
+  "input_fingerprint": "8f4f86f01113a5780f8f300d7a29d5ef5004f7164dfa55f211cfa3c39a7a192f",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

@@ -1,0 +1,12 @@
+{
+  "asset": "texture/belmontetrain/brake-van-lod0-ivory",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BrakeVan/LOD0/T_BT_Ivory.uasset": "862d49faca4d2246a71792f4b42b36678f7fa333a8dee53f5aa4ab944f20c60a"
+  },
+  "input_fingerprint": "4dc57c64dc80962e2714b891ce2994f47c44630fcde89d620e8c956ce05ca38b",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

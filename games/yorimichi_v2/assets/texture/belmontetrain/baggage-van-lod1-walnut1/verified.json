@@ -1,0 +1,12 @@
+{
+  "asset": "texture/belmontetrain/baggage-van-lod1-walnut1",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BaggageVan/LOD1/T_BT_Walnut1.uasset": "983208821dc8d33e6078ae371aec7c90d5cc22608bbaf0f114e0ef5c82cbdc4f"
+  },
+  "input_fingerprint": "7dde6dd41b067d8b6fdc51e118e153acd9052c90bae30e3b80845fa7a6734af9",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

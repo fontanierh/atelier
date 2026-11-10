@@ -1,0 +1,12 @@
+{
+  "asset": "texture/belmontetrain/brake-van-lod1-tiles",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BrakeVan/LOD1/T_BT_Tiles.uasset": "8800b9dd3655463c07b21b8e823ada59d32f7866b103bf0bf9501283371dee31"
+  },
+  "input_fingerprint": "4ce34f9b0cdc51a72bf56d05964ab0fccb3d61c5496a9699d222719bea03c494",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

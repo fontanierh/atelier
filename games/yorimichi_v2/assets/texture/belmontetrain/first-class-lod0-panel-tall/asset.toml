@@ -1,0 +1,25 @@
+# Planned from the donor Belmonte train (tools/migrate/belmontetrain_materials.py): T_BT_PanelTall in first-class LOD0, the donor image T_BT_PanelTall.png.
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "texture/belmontetrain/first-class-lod0-panel-tall"
+kind = "texture"
+authority = "generated"
+owner = "shared/belmontetrain/first-class"
+
+[[sources]]
+path = "src/T_BT_PanelTall.png"
+sha256 = "9c1b7dd0b2f829ed2beac94bf879bc0b44595be112858366b7fd32461effb132"
+
+[recipe]
+importer = "texture"
+version = 1
+
+[recipe.settings]
+srgb = true
+compression = "TC_DEFAULT"
+lod_group = "TEXTUREGROUP_WORLD"
+address = "wrap"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_FirstClass/LOD0/T_BT_PanelTall"

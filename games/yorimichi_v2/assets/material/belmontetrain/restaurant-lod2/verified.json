@@ -1,0 +1,23 @@
+{
+  "asset": "material/belmontetrain/restaurant-lod2",
+  "dependencies": {
+    "texture/belmontetrain/restaurant-lod2-ivory": "91fa92318c6400852ecf0dd3e24be81986bb0866b7bbd0b14aff3abae2b3ac8a",
+    "texture/belmontetrain/restaurant-lod2-restaurant-interior": "bd567a21b4aa93f7601418065f678ca371f3c4aeb60409cc01cc982f3e5ebdbd",
+    "texture/belmontetrain/restaurant-lod2-roof": "4d336449cee936d325efc2ce26e2502ba515a953cc9c9fbdd730ce6eb6152698",
+    "texture/belmontetrain/restaurant-lod2-underframe": "d67663f1f863e0516d96721fb159458d77ca583578380f785e80de7902b4cb14"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Restaurant/LOD2/M_BT_GlassDark.uasset": "8e95f71ddf9a5435a11cc70a2c2793e18fdaa3817c5397173779db5943a6c03a",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Restaurant/LOD2/M_BT_LiveryBlue.uasset": "f7b73f495dba8f3137d30b3d66530f77e7f8c99e83d8b8bdd6c2f1a27c3b0a53",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Restaurant/LOD2/M_BT_LiveryIvory.uasset": "37fc43a45e392345d908f74093751c13089dcd88f4b57cab1b07753ff166bebd",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Restaurant/LOD2/M_BT_Roof.uasset": "38d75638c2eb137284e66bb0c493c3fe5aab49b842a1222bb1fbc521a58c2c05",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Restaurant/LOD2/M_BT_Rubber.uasset": "d857abb62c46a462b0a527dbd8af3ae45fa68852d80aba7def9c88ab933996ba",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Restaurant/LOD2/M_BT_Undercarriage.uasset": "63354661740c7a63844ae3a8182d9f30429c5f12f8c4cbafb9a99ec75d3bf935",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Restaurant/LOD2/M_BT_WindowInteriorRestaurant.uasset": "acd7caaa32ef34d6e0ed45e50e1da6fc48e651305b5132a755bac8ed4869646c"
+  },
+  "input_fingerprint": "cd0e82f80d15d72355f5261eec2f2a7078f5caee5fdd4b2a46c4cc1c745c5f42",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "material-instance@2"
+}

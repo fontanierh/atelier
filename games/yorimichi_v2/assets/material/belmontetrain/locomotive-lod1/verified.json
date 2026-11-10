@@ -1,0 +1,32 @@
+{
+  "asset": "material/belmontetrain/locomotive-lod1",
+  "dependencies": {
+    "texture/belmontetrain/locomotive-lod1-crest": "3c15121cdb39cbc3e165a5184c014b5ac5dbd95b2a46c00c48610958b6c2d74b",
+    "texture/belmontetrain/locomotive-lod1-smokebox-door": "762df113cf3e736e822cdc05420c5298a9fbb8325dfe59ba23944c6fa6390841",
+    "texture/belmontetrain/locomotive-lod1-underframe": "d12da98c517fd5b6d605d977fcae79bb1a722f4d70a758026ce011d1123e559a",
+    "texture/belmontetrain/locomotive-lod1-walnut": "3150686f0d278403ceca1eaed1b07b110252ecb0e85524368e85db124efbc1f2",
+    "texture/belmontetrain/locomotive-lod1-walnut1": "007f47e1ed9e0eb10f4e8ba52ebc640704c9ed5a2c53064602956d412cdfeb7e"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Locomotive/LOD1/M_BT_Brass.uasset": "b8e68a0c2924e89b3459119553b6fbf3d81ed0b83c35759e9897475b0deefffa",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Locomotive/LOD1/M_BT_Ceiling.uasset": "4021bff4d0a762f465042f751f4a76aaaf931ddad1a950374f71da135caac0fe",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Locomotive/LOD1/M_BT_Coal.uasset": "0523334c2e331c77ca8995604f3ba2a61e8d292dd631f9f30900afcc89b446be",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Locomotive/LOD1/M_BT_Crest.uasset": "471f7ad395245543f3aac0984362da98215da973f6407c88093936858ef2db71",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Locomotive/LOD1/M_BT_EndDark.uasset": "13f5b410934fc8b8307a3c84656dbcbf1bbb8fecb93d105bfe61a47b56e9ab3a",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Locomotive/LOD1/M_BT_Fire.uasset": "9df16a6ac884dd56ec32ebbc2f4ee60545c70a62b3c42d9c6f2c63806a4071f8",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Locomotive/LOD1/M_BT_Glass.uasset": "6737bb248a49a515ceaca08da0478f00b5c49bf33b61095c578a3c6a620bc130",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Locomotive/LOD1/M_BT_IronBlack.uasset": "9a3587a6dddbec448e2f384f12c0eb9142650f2513a7ce97f34abe4519ced1e4",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Locomotive/LOD1/M_BT_LampWhite.uasset": "73a5b9c4f3acf775cca91dca50eb6e1834f0702b2b0333a34eefa67730c42811",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Locomotive/LOD1/M_BT_LocoBlack.uasset": "624d6cfe69540bd550326475a84c02b063a997a7399b2702db980c9d3a2993fc",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Locomotive/LOD1/M_BT_Parquet.uasset": "e2257bbf0a2f55d20ad43f49a7fdc37a8e581c15cb03200fd5fec9101a352445",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Locomotive/LOD1/M_BT_SmokeboxDoor.uasset": "e80a9ce641882307c7f26b72f0483d856910e2f22d210205264d6a592d405b60",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Locomotive/LOD1/M_BT_Steel.uasset": "1635f48296f26e2fc345485191e047840666c4d1aa311f8259a9c4681eb782fc",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Locomotive/LOD1/M_BT_Undercarriage.uasset": "1c4c87cdf4b22003b53275e9dd376bd288f3d6d8444f094297cc3f8064ba022a",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Locomotive/LOD1/M_BT_Walnut.uasset": "4aa5e8fdb00677d01c6c99cbada6c8823f29b1a77b5ec167a4c0a37810797462"
+  },
+  "input_fingerprint": "189f153214aaaed05159f5712c3ff6ea1e80d96dd58261ffc2764ecd85eb1bd3",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "material-instance@2"
+}

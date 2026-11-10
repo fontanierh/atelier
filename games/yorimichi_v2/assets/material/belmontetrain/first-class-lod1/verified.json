@@ -1,0 +1,39 @@
+{
+  "asset": "material/belmontetrain/first-class-lod1",
+  "dependencies": {
+    "texture/belmontetrain/first-class-lod1-blue-panel": "8afe804d02682ad7a471797bc69c25bca2846909117be0b7e07186d57d6bd1a7",
+    "texture/belmontetrain/first-class-lod1-carpet-emerald": "d0f9117a9178ad3bb0c62b44f871cc586239b631cf10efb3d867a11b152986f1",
+    "texture/belmontetrain/first-class-lod1-crest": "2fe2c60827b3ee7a4463e548c5b6491ea0e1112998d09f773958bb4519699969",
+    "texture/belmontetrain/first-class-lod1-ivory": "277e9783d818b3e6904b568f79a015971fce3ec533d65bb4c5c8b8a909175462",
+    "texture/belmontetrain/first-class-lod1-roof": "670e2c9f44385271528a7a52ef9c08aaf01638be4b4b1dfb511fd3f31accbcbb",
+    "texture/belmontetrain/first-class-lod1-tiles": "88132374d85cfc6062b7affc9620cc37a25a9a32e411b5c2c1be63e8200eb430",
+    "texture/belmontetrain/first-class-lod1-underframe": "34d6c28e8c4c9bb32c6716783f7c2f6d3a1f1cf9b6457d7d961c6267ace8392e",
+    "texture/belmontetrain/first-class-lod1-walnut": "cefa4fd3891a60ee0c158a46ac00478c0006650f135c7b0156edff31fc5aa7ac",
+    "texture/belmontetrain/first-class-lod1-walnut1": "e62c02c34892fc2ead3ec73f11a8752e18f514a8642a98baed2734d80e4fadff"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_FirstClass/LOD1/M_BT_Brass.uasset": "bf405b51e6c32125831e2481dc6bed1bee06a2108b6f3af6421c31b1afe0029b",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_FirstClass/LOD1/M_BT_CarpetEmerald.uasset": "512ee405fd4dfd171d2c02a65d0ad461ea8b9dd0632b5d1ceb571b06792c4828",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_FirstClass/LOD1/M_BT_Ceiling.uasset": "d0d9137d84aba95908c126d1770d1cdf741cf00f6c308f86fd0f5b42155ebc28",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_FirstClass/LOD1/M_BT_Crest.uasset": "8c45b893b1c1dda53e166e74a6a4e51f3af45b0d5594de92eb66289e9af86154",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_FirstClass/LOD1/M_BT_EndDark.uasset": "06ca276629d9bdb50d533bf5230c60a7dce03dbff458ad213eebbb8b1c354f3d",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_FirstClass/LOD1/M_BT_Glass.uasset": "6fda2da7fe2b4f284117034db7194b6f6a7e16a1620e11521148bbce2c4f3be5",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_FirstClass/LOD1/M_BT_GlassFrosted.uasset": "179cb0b6336ccb53ba191e49fb2175946acd176960c6bca6ffdbfff1d6387ba0",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_FirstClass/LOD1/M_BT_LiveryBlue.uasset": "bb5583f5a458e34477cd1d9d5c59cc8de30d9419d7797ea98168dd1eb8b1d731",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_FirstClass/LOD1/M_BT_LiveryIvory.uasset": "f305f7f6724983c9d228514542e183400c7c9bbc1929714eabf04c9c9df88730",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_FirstClass/LOD1/M_BT_LiveryPanel.uasset": "ac2f8d10a94832dc48cfc9b77ac0c32d4dc541b6132ff718e6f32dea7c63cd57",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_FirstClass/LOD1/M_BT_Parquet.uasset": "0af93dd423ad4894b167cae345361d09ce06ccd71ddf7da6e8c9fa8eb6c83601",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_FirstClass/LOD1/M_BT_Roof.uasset": "d19d2c50b97ddaae6c4051e2ac1959b8b36b2a99474325b1c8eea13c8b4d75c3",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_FirstClass/LOD1/M_BT_Rubber.uasset": "d952e72f87f6d0045d3b3b39fb3ba24a2a6e17881ee586e206c3edd2c0b80e86",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_FirstClass/LOD1/M_BT_Steel.uasset": "d2bcd3ef5e175959f6c537e7e199f65084d53648be6f52506e6f1666a21b8f40",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_FirstClass/LOD1/M_BT_Tile.uasset": "0ad9148b5c270e58b04aa9b30a8334fc09374b8ffd78e942c910eb017815ae1c",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_FirstClass/LOD1/M_BT_Undercarriage.uasset": "73210a00047310c298245bbbf38db26e7abad02fa8d85be23abc7c5b922b38a6",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_FirstClass/LOD1/M_BT_VelvetEmerald.uasset": "9b715528d342c8f839f2cb39cde007a6d4cfa59f5cec5050d03cd3030863ee45",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_FirstClass/LOD1/M_BT_Walnut.uasset": "5fbd3a9806d0b83b35ea2032620c8f86b5f4483b1a22508a2794362ae8a366b0"
+  },
+  "input_fingerprint": "d33d15e3da2719315063835201c2104cdd08914869f18458a8e269e2b65e3d67",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "material-instance@2"
+}

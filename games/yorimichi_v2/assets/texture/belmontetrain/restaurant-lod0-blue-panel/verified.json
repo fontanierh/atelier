@@ -1,0 +1,12 @@
+{
+  "asset": "texture/belmontetrain/restaurant-lod0-blue-panel",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Restaurant/LOD0/T_BT_BluePanel.uasset": "1351bdc29c6d89f36af6517041241916256e88ebbe6ad5a912d10c351db93778"
+  },
+  "input_fingerprint": "206accc38d42aec84876c0345a06a3fde38eaad7dca6f6d0d8ca51afb34781bd",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

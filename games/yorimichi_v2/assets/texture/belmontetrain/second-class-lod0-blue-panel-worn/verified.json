@@ -1,0 +1,12 @@
+{
+  "asset": "texture/belmontetrain/second-class-lod0-blue-panel-worn",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/T_BT_BluePanelWorn.uasset": "92579c11f480211830d9dd1fb22de345631a94a21856c662c427181777c6ffed"
+  },
+  "input_fingerprint": "22cf6a2cc76ba75ba9be060d71fb1c49af7df2c3e3ef6bc362e193837048d75b",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

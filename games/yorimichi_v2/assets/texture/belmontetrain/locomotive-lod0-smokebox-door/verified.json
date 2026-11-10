@@ -1,0 +1,12 @@
+{
+  "asset": "texture/belmontetrain/locomotive-lod0-smokebox-door",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Locomotive/LOD0/T_BT_SmokeboxDoor.uasset": "85869e465ed934821930eb21da2d12b217fe58e54016dd170f02cbad4470b70d"
+  },
+  "input_fingerprint": "1b0852f5ca718d1c18caece5f75263721fca8f0c96fe838f3ea14b19f01c3692",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

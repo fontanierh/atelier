@@ -1,0 +1,25 @@
+# Planned from the donor Belmonte train (tools/migrate/belmontetrain_materials.py): T_BT_Tiles in brake-van LOD0, the donor image T_BT_Tiles.png.
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "texture/belmontetrain/brake-van-lod0-tiles"
+kind = "texture"
+authority = "generated"
+owner = "shared/belmontetrain/brake-van"
+
+[[sources]]
+path = "src/T_BT_Tiles.png"
+sha256 = "929cdacfd474591c871d4f6c6beb44ba33661ab594b74a5e97c275598335b862"
+
+[recipe]
+importer = "texture"
+version = 1
+
+[recipe.settings]
+srgb = true
+compression = "TC_DEFAULT"
+lod_group = "TEXTUREGROUP_WORLD"
+address = "wrap"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_BrakeVan/LOD0/T_BT_Tiles"

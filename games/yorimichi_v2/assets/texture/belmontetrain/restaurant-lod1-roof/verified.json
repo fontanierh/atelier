@@ -1,0 +1,12 @@
+{
+  "asset": "texture/belmontetrain/restaurant-lod1-roof",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Restaurant/LOD1/T_BT_Roof.uasset": "a58b61ac31b1b534a416d3d4c014d96028371d103a9c5070e782b4472ef1eb57"
+  },
+  "input_fingerprint": "9df736397a63cd58d837ec5119e43e2feb43d82df98334d6dd2d0879a13f6eb4",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

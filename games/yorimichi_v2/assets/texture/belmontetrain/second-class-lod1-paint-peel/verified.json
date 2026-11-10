@@ -1,0 +1,12 @@
+{
+  "asset": "texture/belmontetrain/second-class-lod1-paint-peel",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_SecondClass/LOD1/T_BT_PaintPeel.uasset": "54c9c8dd6a2c16f30fc2bfd9c12704c4a17c4fe1a43ccba6708a3f6e2b2b1276"
+  },
+  "input_fingerprint": "5fdce6fe29e95dc2f4171ae75dcbfa1595c3609ce580548453d44dd864956727",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

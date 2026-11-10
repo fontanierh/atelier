@@ -1,0 +1,12 @@
+{
+  "asset": "texture/belmontetrain/restaurant-lod0-panel-wide",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Restaurant/LOD0/T_BT_PanelWide.uasset": "cfa14fbbf270fc65ba4a9dcb19c97d73ed58231adf852d1e783031469e01b79b"
+  },
+  "input_fingerprint": "111ff3fe789f21918cf1d83f46f98f99650a937c73596442703925ad320c622b",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

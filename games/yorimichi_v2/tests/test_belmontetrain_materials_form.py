@@ -185,6 +185,11 @@ def test_the_import_rows_carry_the_switches_and_a_texture_may_keep_only_a_relati
     assert rows[0]['switches'] == {'bHasBaseColorTexture': True}
     assert s.donor_named(['games/yorimichi_v2/unreal/Content/x.glb', '', '/work/checkout'], '/work/checkout') == []
     assert s.donor_named(['/donor-build/x.glb'], '/work/checkout') == ['/donor-build/x.glb']
+    # The editor reports the portable source resolved against its working folder: that path is not a donor path.
+    portable = 'games/yorimichi_v2/assets/texture/t/src/T.png'
+    assert s.donor_named(['/engine/bin/' + portable], '/engine/bin', portable) == []
+    assert s.donor_named(['/engine/bin/' + portable], '/engine/bin') == ['/engine/bin/' + portable]
+    assert s.donor_named(['/donor-build/T.png'], '/engine/bin', portable) == ['/donor-build/T.png']
 
 
 REPORT_MATERIALS = ROOT / 'unreal' / 'Scripts' / 'report_materials.py'

@@ -1,0 +1,18 @@
+{
+  "asset": "material/belmontetrain/tender-lod2",
+  "dependencies": {
+    "texture/belmontetrain/tender-lod2-underframe": "e81420f1e876da87988b86189b929ed8242db4720b06d8f3ca2de472fa60ceb4",
+    "texture/belmontetrain/tender-lod2-walnut": "3770815f505721f336526af4910da8b8bb472ed0fea2a0a827fe28e23d498616"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Tender/LOD2/M_BT_Coal.uasset": "77d4c9ebc50f5d886080d04c43658e8cb217d948109049e207c54ecd6790aef5",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Tender/LOD2/M_BT_LiveryBlue.uasset": "09e07ef48034bdc107232ced253ad5b70b40294a9ab43730cd5605ac40df7c57",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Tender/LOD2/M_BT_Parquet.uasset": "c981d79f706eaca948a8dc0394efea416763b3944fc338b4180a98478569ee82",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Tender/LOD2/M_BT_Undercarriage.uasset": "0815ceece745350029424b4f7267d5c6a4f62be677da143b149409ab8de20d03"
+  },
+  "input_fingerprint": "922d9ba3e20e3824e9e16e23d624330a60accb501dc549daf80f8f06535b669f",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "material-instance@2"
+}

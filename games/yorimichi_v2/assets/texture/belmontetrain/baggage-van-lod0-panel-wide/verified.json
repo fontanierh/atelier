@@ -1,0 +1,12 @@
+{
+  "asset": "texture/belmontetrain/baggage-van-lod0-panel-wide",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BaggageVan/LOD0/T_BT_PanelWide.uasset": "3e1210b3842d550f145a90d2a232b1c3a549a22e2904168c9fd7a3202eb442b1"
+  },
+  "input_fingerprint": "4527f5223b9926bd4fe9dd85d9135d9e0b64abed377a529d78912e376f91c31f",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

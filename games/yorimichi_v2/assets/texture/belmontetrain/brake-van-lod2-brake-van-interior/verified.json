@@ -1,0 +1,12 @@
+{
+  "asset": "texture/belmontetrain/brake-van-lod2-brake-van-interior",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BrakeVan/LOD2/T_BT_BrakeVanInterior.uasset": "fc48cc0fb53377aa431f3fc475603ac5ed964d643c35be90c93794cc3bc06fa6"
+  },
+  "input_fingerprint": "ec0969b1975ef766de22659a585b00c5f41c273ebea1694a0d07bdb1fb2fee5f",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

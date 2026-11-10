@@ -1,0 +1,12 @@
+{
+  "asset": "texture/belmontetrain/tender-lod0-underframe",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Tender/LOD0/T_BT_Underframe.uasset": "b70b17e7514b5b1a309cc2624ee5166e7b96ad6de380a433007e7af797948044"
+  },
+  "input_fingerprint": "e3ed459e3bd1938503d9d2c66d03a30519264918fd004f1760c125dd9b89d1ff",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

@@ -1,0 +1,12 @@
+{
+  "asset": "texture/belmontetrain/first-class-lod0-panel-wide",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_FirstClass/LOD0/T_BT_PanelWide.uasset": "b643e60b46e6592908904596a60055adc80985b3c7f472e4d406c91e063d37c7"
+  },
+  "input_fingerprint": "16c2969dbf041aa620953185a45828d5a50cfe979cbb61ed4269859906738f2f",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

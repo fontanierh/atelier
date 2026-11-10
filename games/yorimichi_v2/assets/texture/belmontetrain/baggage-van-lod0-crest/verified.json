@@ -1,0 +1,12 @@
+{
+  "asset": "texture/belmontetrain/baggage-van-lod0-crest",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BaggageVan/LOD0/T_BT_Crest.uasset": "284381d6411e86f34be3a038dae7d8308f6089ce235bc4793b07c1843c1119e4"
+  },
+  "input_fingerprint": "da6325285521095d75027e867820fabae6f9029cebcf185d0ccee289f3e674dc",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

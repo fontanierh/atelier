@@ -1,0 +1,25 @@
+# Planned from the donor Belmonte train (tools/migrate/belmontetrain_materials.py): T_BT_TilesGrimy in second-class LOD0, the donor image T_BT_TilesGrimy.jpg.
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "texture/belmontetrain/second-class-lod0-tiles-grimy"
+kind = "texture"
+authority = "generated"
+owner = "shared/belmontetrain/second-class"
+
+[[sources]]
+path = "src/T_BT_TilesGrimy.jpg"
+sha256 = "299ba076969e4b6d742de98ff8eab609f8ff98c458c5f2d332fa576c31157ea2"
+
+[recipe]
+importer = "texture"
+version = 1
+
+[recipe.settings]
+srgb = true
+compression = "TC_DEFAULT"
+lod_group = "TEXTUREGROUP_WORLD"
+address = "wrap"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/T_BT_TilesGrimy"

@@ -1,0 +1,12 @@
+{
+  "asset": "texture/belmontetrain/baggage-van-lod0-panel-tall",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BaggageVan/LOD0/T_BT_PanelTall.uasset": "e01f152c6cefa372dd8003a82b5f1e0148d0f41f9525842d1f1a54d956de225b"
+  },
+  "input_fingerprint": "1f151420d047bd0ca6d93180e86d3c1e16551ee37201c59073f6c42b513db35d",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

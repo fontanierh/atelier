@@ -1,0 +1,12 @@
+{
+  "asset": "texture/belmontetrain/brake-van-lod0-walnut1",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BrakeVan/LOD0/T_BT_Walnut1.uasset": "693a257c1b7dcee31822d97c67ddd264beff238c2b01aa621946fb7bd263a665"
+  },
+  "input_fingerprint": "07158cd60bba73ea9ca33cf1b51706566a6255f8fef30272453d9c83fea5e6d5",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

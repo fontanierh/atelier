@@ -6,7 +6,7 @@ id = "prop/belmontetrain/tender"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/belmontetrain/tender"
-references = ["adopted/belmontetrain/tender"]
+references = ["material/belmontetrain/tender-lod0", "material/belmontetrain/tender-lod1", "material/belmontetrain/tender-lod2", "texture/belmontetrain/tender-lod0-crest", "texture/belmontetrain/tender-lod0-roof", "texture/belmontetrain/tender-lod0-underframe", "texture/belmontetrain/tender-lod0-walnut", "texture/belmontetrain/tender-lod1-crest", "texture/belmontetrain/tender-lod1-roof", "texture/belmontetrain/tender-lod1-underframe", "texture/belmontetrain/tender-lod1-walnut", "texture/belmontetrain/tender-lod2-underframe", "texture/belmontetrain/tender-lod2-walnut"]
 
 [[sources]]
 path = "src/SM_BT_Tender_LOD0.glb"

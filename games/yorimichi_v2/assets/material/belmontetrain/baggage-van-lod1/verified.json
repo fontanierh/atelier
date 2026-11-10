@@ -1,0 +1,40 @@
+{
+  "asset": "material/belmontetrain/baggage-van-lod1",
+  "dependencies": {
+    "texture/belmontetrain/baggage-van-lod1-blue-panel": "1da2e94d65e6501507d0ea6c170f64ed5da1a1d6b8b0519d4db4723a1f88a53b",
+    "texture/belmontetrain/baggage-van-lod1-crest": "e70227587bc6b36e1eec05ae4864428bc3e0926a813e285e283760dee47d89b6",
+    "texture/belmontetrain/baggage-van-lod1-ivory": "be50b38e19408320319a27cfec307e08801c18c19076e7951327f0bef8b83c94",
+    "texture/belmontetrain/baggage-van-lod1-roof": "8383c94e524d4b4020a8a9f01577e87070d4f59b1497b41f941af8f606c8812b",
+    "texture/belmontetrain/baggage-van-lod1-underframe": "b6f1afccbc0362a749f04be8b054a3f207d5a405a60db21274465e04769fb992",
+    "texture/belmontetrain/baggage-van-lod1-walnut": "8d1887154e34eda4c05d0b0f37aa516cb65e58f3a02fe089e2c9c5d9864a389d",
+    "texture/belmontetrain/baggage-van-lod1-walnut1": "41abdbb414bcd57212cf0ce73d7b985e6379dbdd3d979739beb15a987374e59c"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BaggageVan/LOD1/M_BT_Brass.uasset": "ee505882a331eaafa14a878f67036e94b9afcc8e34842f789ce42b5d19d44222",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BaggageVan/LOD1/M_BT_BrassDull.uasset": "e34f7cfaf3c28baf88f0f6434ee9796de4a2bcbfa570457b03a50cce7a253f5b",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BaggageVan/LOD1/M_BT_Ceiling.uasset": "6571b446282a396bfd6d5470509fd639de13694091a9c79187f92df5cb45f46c",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BaggageVan/LOD1/M_BT_Crest.uasset": "9afc652c6f75496e3e39997dd84f78e12661f24fe99758fc8a993baccfe6cc32",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BaggageVan/LOD1/M_BT_CurtainCanvas.uasset": "f9a0b18329567a9d9ebae5683177f3e3fb5716e66c3aaadb8a95ee6f65c9d7be",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BaggageVan/LOD1/M_BT_EnamelGrimy.uasset": "29eff68b5b3be5807f2e8b35fe4b64b37b30a619ed248820369d5eaa52bdc2b6",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BaggageVan/LOD1/M_BT_EnamelSoot.uasset": "505a4b80cf044a3e65432153723e325a0974773433e2193f176d7ff549bc1510",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BaggageVan/LOD1/M_BT_EnamelWhite.uasset": "3bf0fca3a3d2d48a323a7cae78084eb9a16a1ccfc25b42867f104335b60bb1e0",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BaggageVan/LOD1/M_BT_EndDark.uasset": "26c9c285a7f0df8e83b2d185a9207f21d909a34829e4cb6f773450f517c9133c",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BaggageVan/LOD1/M_BT_Glass.uasset": "30e9b1625d66df3d8e68da4f953df02d4e5a0c7e7fb7aba74c8f1f5b83fd3265",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BaggageVan/LOD1/M_BT_IronBlack.uasset": "f2d5335c043ff782043d6315704a9bb5b3cc62a516eb920775c16de2b8432110",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BaggageVan/LOD1/M_BT_LampWhite.uasset": "8d55deeea22283d1447e3e4e483a232b51d093ddd8a847df40ed8e5e327e16ce",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BaggageVan/LOD1/M_BT_LiveryBlue.uasset": "185b25a763665fab77dee1210dd1e517bb9d2de24850e02daa8cf01e60f783dc",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BaggageVan/LOD1/M_BT_LiveryIvory.uasset": "eeaed97a25e6eef78bea3b3d816a22c878dc3204fc99dba823ead7555f5f72ae",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BaggageVan/LOD1/M_BT_LiveryPanel.uasset": "baa87f026bd28ede4442b420455ac084a3527602a87a56edd4fc54f40a363bcb",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BaggageVan/LOD1/M_BT_Parquet.uasset": "4484981bffba4556f8607f9cb31783f239bf9613bd22a311e77e000c5ef418ca",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BaggageVan/LOD1/M_BT_Roof.uasset": "ea39f4944a6e3f28525478d8939075197fcd2ae99d3bbf239abe65d7bd1b4732",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BaggageVan/LOD1/M_BT_Rubber.uasset": "b154d3d81738ca94c7587b5b4b530278b5b7e4c46a12f37a8230de475ee2d65b",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BaggageVan/LOD1/M_BT_Steel.uasset": "3d7cfdd93973d5545483536eda096ba595da9fa0708044bd86ac44571747e3af",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BaggageVan/LOD1/M_BT_Undercarriage.uasset": "44af0ab530fe6ed506a7d1f5bdcfc643b83bcee38e68e968e72e148597bfed0f",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BaggageVan/LOD1/M_BT_Walnut.uasset": "f0ed60a59e87a01d341182769d0d81dbb9d77d5dbcc519320a649e0acd3fe8b6"
+  },
+  "input_fingerprint": "0d15cc35fab90e28f0b59f4084515d39c1784deaae72b912e427d0ba80ac8353",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "material-instance@2"
+}

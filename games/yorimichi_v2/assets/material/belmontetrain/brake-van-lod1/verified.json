@@ -1,0 +1,43 @@
+{
+  "asset": "material/belmontetrain/brake-van-lod1",
+  "dependencies": {
+    "texture/belmontetrain/brake-van-lod1-blue-panel": "051cd7da16c424f219a4b7a5cf1476369f07d7391bbba44dfea64619bbf145a0",
+    "texture/belmontetrain/brake-van-lod1-crest": "c1623ad5cba818c93a59b865db6cf1de6403c0ba88e3533a5f4b1d39d3f60947",
+    "texture/belmontetrain/brake-van-lod1-ivory": "7a805cfd5f22e6362b6f9172059b31894d48edabd5e8d61d9e9f945e33fa313e",
+    "texture/belmontetrain/brake-van-lod1-roof": "1a2ba512d4b868a067fbdcd2020da57678988a7b4f9662fa04c59eea103399df",
+    "texture/belmontetrain/brake-van-lod1-tiles": "b2b56e9a653a578308bf44ee31ebda5f0e910b54bdeb27599a243143de37f0d9",
+    "texture/belmontetrain/brake-van-lod1-underframe": "d8df339af841c95fa65c577ef3c846e4b51e417e1bd1f67192ac2bfdad88c21d",
+    "texture/belmontetrain/brake-van-lod1-walnut": "f049ad48198e6525b2222945aae4e56699ef456dad3945c03f429db3d6903f7e",
+    "texture/belmontetrain/brake-van-lod1-walnut1": "bb7a467a9a1cb8553ad97e66fa29e3d52ef2c309d79e2d43aebfa294ef8803d4"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BrakeVan/LOD1/M_BT_Brass.uasset": "3449219fec79591682ed9a96c89b0e4b2248cc8f99c5fd095cc6d0a6aafd42c8",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BrakeVan/LOD1/M_BT_BrassDull.uasset": "cab1eea6a9fa9cd3a0a488740b34c15d2b7576b19b794ec02d5b48333db664fa",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BrakeVan/LOD1/M_BT_Ceiling.uasset": "6dfe50f807f4eafb8bae7a18643751c4116ed798f0412e4412883d7cea70cf3e",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BrakeVan/LOD1/M_BT_Crest.uasset": "a8b8b18a2688f7231812539b68c8b7257e21e3acfbf34a3928cc310bb93ce202",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BrakeVan/LOD1/M_BT_CurtainCanvas.uasset": "3902f5017a7a4b16da4fa2fcdff5669eec54b9d4207131dabb81d31781378e22",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BrakeVan/LOD1/M_BT_EnamelGrimy.uasset": "8b31929097ab6ab8edddcc2bb2b276e14a5523b73be37725b2b3e6f7d987c1ae",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BrakeVan/LOD1/M_BT_EnamelSoot.uasset": "a761b952906675418179cca2a13f6618434806138e771546788f29bd53802e2d",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BrakeVan/LOD1/M_BT_EnamelWhite.uasset": "186b870ea90ef26b1d87c32a444a51b2dd093d6d88f968b05cd8824a9ea229da",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BrakeVan/LOD1/M_BT_EndDark.uasset": "81b4b58bdc9845188600a1bbd74c73de2e9782d62a347260a81bd38763f126c2",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BrakeVan/LOD1/M_BT_Glass.uasset": "2a1988090b7f742ec08cc0e1b949b7f84ab08f19fd9408084fd79c12dbe8e97f",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BrakeVan/LOD1/M_BT_IronBlack.uasset": "855cfa3ad8da67ddf43f16b573e45037c551af89c83a3ec496491eb9771c8ae2",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BrakeVan/LOD1/M_BT_LampRed.uasset": "96eb48d939a233a0d6ed0a2d38db3b17d3b8770bc676a5703e5e6da7e2187d00",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BrakeVan/LOD1/M_BT_LampWhite.uasset": "9ba08b57eecb05b3827ba56902bab92c80bd66cda13faa4dfd2b38d292668cbd",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BrakeVan/LOD1/M_BT_LiveryBlue.uasset": "36cb793e8cc4de40a61b3a49e1a72cf1d7e9cab2ee6358cc9413de26dc81eed0",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BrakeVan/LOD1/M_BT_LiveryIvory.uasset": "8625395b1392a4127dbec2517af9b4676352f99cfdb3ca6d91d576da47c91a22",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BrakeVan/LOD1/M_BT_LiveryPanel.uasset": "a5fddb96846804d9f8c74ed8e3964543c109a1ecbb25e8852432fffcd87575eb",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BrakeVan/LOD1/M_BT_Parquet.uasset": "458a9f8b07c98cf374749844a9a995d84d40db1689e3d70b04d03e2040cd924e",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BrakeVan/LOD1/M_BT_Roof.uasset": "e9890719e9595097c37f4c5e5bc7f17dba5ae1d9a17f51586c8c29b7c4f94767",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BrakeVan/LOD1/M_BT_Rubber.uasset": "54c11a42e520ee5f5e0dc2db748e040780046e5c9c3d6afc59c0286ce7638329",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BrakeVan/LOD1/M_BT_Steel.uasset": "296ebfce2248f6b1878f20698b6dfe4222ae4b478dda85c9ea1f8a13606c1e2d",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BrakeVan/LOD1/M_BT_Tile.uasset": "6e428ca3d3edee3c0b0ec4429fe202e3b5fd11bd9407590f6f046b4f10904269",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BrakeVan/LOD1/M_BT_Undercarriage.uasset": "ae7c5ceb2ece91ed4654cd9e1805ef90da78c5f897a0bc543df54b873d7a1fe8",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BrakeVan/LOD1/M_BT_Walnut.uasset": "72ae3e98197376de29a330da03c8ba09b1d9e97e7950e9116c3fa7f740926ea3"
+  },
+  "input_fingerprint": "9423e76ea61bc178877d338bb169e4956772dbcab214337acadc27d617a1ee40",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "material-instance@2"
+}

@@ -99,11 +99,14 @@ def material_instances(settings: dict, packages: list) -> list:
     return out
 
 
-def donor_named(names, blank_folder: str) -> list:
+def donor_named(names, blank_folder: str, portable: str = '') -> list:
     """Pure: the absolute paths among the import-data names, other than the editor's working folder. A texture's import data
-    keeps its repository-relative source (set by the portable-source step), which is not a donor path; an absolute one is."""
+    keeps its repository-relative source (set by the portable-source step), which is not a donor path; an absolute one is.
+    The editor reports that relative source resolved against its working folder, so that exact path is the portable source
+    too, not a donor path."""
     blank = os.path.normpath(blank_folder)
-    return [name for name in names if name and os.path.isabs(name) and os.path.normpath(name) != blank]
+    allowed = {blank} | ({os.path.normpath(os.path.join(blank_folder, portable))} if portable else set())
+    return [name for name in names if name and os.path.isabs(name) and os.path.normpath(name) not in allowed]
 
 
 def donor_free(names, blank_folder: str) -> list:

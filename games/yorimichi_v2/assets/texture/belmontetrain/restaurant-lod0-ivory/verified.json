@@ -1,0 +1,12 @@
+{
+  "asset": "texture/belmontetrain/restaurant-lod0-ivory",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Restaurant/LOD0/T_BT_Ivory.uasset": "132199f29498dad1815ec334dfe34008b40f6687f16a5d0668eac1ad6d4a5e12"
+  },
+  "input_fingerprint": "a8341a742d84ac33676aba2e7048f1214149f4a41a9a6e929dab853a85ae80d3",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

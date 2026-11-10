@@ -1,0 +1,12 @@
+{
+  "asset": "texture/belmontetrain/second-class-lod2-ivory-worn",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_SecondClass/LOD2/T_BT_IvoryWorn.uasset": "4e2210d297c9fcce34f51c19891087193386eaaa6c70670af0e2edf9de0e35af"
+  },
+  "input_fingerprint": "d6876332ac6a6e9e103c31d7d9b822d49487c4c0a7eb8674fb95c962089c054e",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

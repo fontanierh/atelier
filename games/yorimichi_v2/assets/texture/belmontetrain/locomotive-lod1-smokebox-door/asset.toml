@@ -1,0 +1,25 @@
+# Planned from the donor Belmonte train (tools/migrate/belmontetrain_materials.py): T_BT_SmokeboxDoor in locomotive LOD1, the donor image T_BT_SmokeboxDoor.jpg.
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "texture/belmontetrain/locomotive-lod1-smokebox-door"
+kind = "texture"
+authority = "generated"
+owner = "shared/belmontetrain/locomotive"
+
+[[sources]]
+path = "src/T_BT_SmokeboxDoor.jpg"
+sha256 = "df4f5c6b50a7f998942821786cc5a610537d8e32ff39c26eda77d18b6b4892dd"
+
+[recipe]
+importer = "texture"
+version = 1
+
+[recipe.settings]
+srgb = true
+compression = "TC_DEFAULT"
+lod_group = "TEXTUREGROUP_WORLD"
+address = "wrap"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Locomotive/LOD1/T_BT_SmokeboxDoor"

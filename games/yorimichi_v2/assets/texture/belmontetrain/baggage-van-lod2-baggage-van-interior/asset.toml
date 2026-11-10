@@ -1,0 +1,25 @@
+# Planned from the donor Belmonte train (tools/migrate/belmontetrain_materials.py): T_BT_BaggageVanInterior in baggage-van LOD2, the donor image T_BT_BaggageVanInterior.png.
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "texture/belmontetrain/baggage-van-lod2-baggage-van-interior"
+kind = "texture"
+authority = "generated"
+owner = "shared/belmontetrain/baggage-van"
+
+[[sources]]
+path = "src/T_BT_BaggageVanInterior.png"
+sha256 = "8e6f6e9810359df347b01bb969a64b41968c082e4c4f7de4b0edc2c0c6a87d4c"
+
+[recipe]
+importer = "texture"
+version = 1
+
+[recipe.settings]
+srgb = true
+compression = "TC_DEFAULT"
+lod_group = "TEXTUREGROUP_WORLD"
+address = "wrap"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_BaggageVan/LOD2/T_BT_BaggageVanInterior"

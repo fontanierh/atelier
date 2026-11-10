@@ -1,0 +1,12 @@
+{
+  "asset": "texture/belmontetrain/first-class-lod0-carpet-emerald",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_FirstClass/LOD0/T_BT_CarpetEmerald.uasset": "9741e32c9a3f023dde3ec9ed7e03d0cbf52da17770f255daade4bc9c025d1e01"
+  },
+  "input_fingerprint": "22e49641f60e0071b94aea4290f94aefe6fb69cde975fa306ced6dbfced67d11",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

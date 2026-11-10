@@ -1,0 +1,12 @@
+{
+  "asset": "texture/belmontetrain/baggage-van-lod0-ivory",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BaggageVan/LOD0/T_BT_Ivory.uasset": "6dce4ec7cc1a511061bf9021d998bef263f51fd76426b6a779defe96a37e52f0"
+  },
+  "input_fingerprint": "55ada18c23d6aaebd657517a2d5995af81ff769c1b135b3daf64127418d12663",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

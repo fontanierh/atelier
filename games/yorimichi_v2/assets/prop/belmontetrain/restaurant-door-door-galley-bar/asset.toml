@@ -6,7 +6,7 @@ id = "prop/belmontetrain/restaurant-door-door-galley-bar"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/belmontetrain/restaurant"
-references = ["adopted/belmontetrain/restaurant"]
+references = ["material/belmontetrain/restaurant-lod0", "material/belmontetrain/restaurant-lod1", "material/belmontetrain/restaurant-lod2", "texture/belmontetrain/restaurant-lod0-blue-panel", "texture/belmontetrain/restaurant-lod0-carpet-burgundy", "texture/belmontetrain/restaurant-lod0-crest", "texture/belmontetrain/restaurant-lod0-ivory", "texture/belmontetrain/restaurant-lod0-panel-tall", "texture/belmontetrain/restaurant-lod0-panel-wide", "texture/belmontetrain/restaurant-lod0-roof", "texture/belmontetrain/restaurant-lod0-tiles", "texture/belmontetrain/restaurant-lod0-underframe", "texture/belmontetrain/restaurant-lod0-walnut", "texture/belmontetrain/restaurant-lod0-walnut1", "texture/belmontetrain/restaurant-lod1-blue-panel", "texture/belmontetrain/restaurant-lod1-carpet-burgundy", "texture/belmontetrain/restaurant-lod1-crest", "texture/belmontetrain/restaurant-lod1-ivory", "texture/belmontetrain/restaurant-lod1-roof", "texture/belmontetrain/restaurant-lod1-tiles", "texture/belmontetrain/restaurant-lod1-underframe", "texture/belmontetrain/restaurant-lod1-walnut", "texture/belmontetrain/restaurant-lod1-walnut1", "texture/belmontetrain/restaurant-lod2-ivory", "texture/belmontetrain/restaurant-lod2-restaurant-interior", "texture/belmontetrain/restaurant-lod2-roof", "texture/belmontetrain/restaurant-lod2-underframe"]
 
 [[sources]]
 path = "src/SM_BTD_Restaurant_door_galley_bar.glb"
