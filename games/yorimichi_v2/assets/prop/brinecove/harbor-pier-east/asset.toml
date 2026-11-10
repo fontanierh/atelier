@@ -6,7 +6,7 @@ id = "prop/brinecove/harbor-pier-east"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/brinecove/harbor-pier-east"
-references = ["adopted/brinecove/materials"]
+references = ["adopted/brinecove/materials", "generator/brinecove/piers"]
 
 [[sources]]
 path = "src/SM_BC_HarborPierEast.glb"
