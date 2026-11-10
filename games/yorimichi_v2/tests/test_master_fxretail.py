@@ -207,7 +207,8 @@ def test_each_family_names_its_adopted_owner_its_builder_and_a_fallback_among_it
 
 
 def test_each_master_reads_are_outputs_of_its_inputs_in_the_real_records():
-    """@cc [owner:fontanierh,label:correctness] fxretail-reads-owned-by-inputs"""
+    """@cc [owner:fontanierh,label:correctness] fxretail-reads-owned-by-inputs
+    Every non-engine package a master reads MUST be an output of one of its declared input records."""
     for family in (FX, RACING, MEGAPARK):
         for master in family['masters']:
             outputs_of = {}

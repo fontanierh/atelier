@@ -210,14 +210,16 @@ def test_the_digest_records_every_property_a_builder_writes():
 
 
 def test_an_unwired_expression_of_the_saved_original_is_not_rebuilt_and_still_accepted():
-    """@cc [owner:fontanierh,label:correctness] master-digest-unwired-not-compared"""
+    """@cc [owner:fontanierh,label:correctness] master-digest-unwired-not-compared
+    An unwired non-parameter expression in the saved original MUST NOT reject an otherwise matching rebuild."""
     saved = sample()
     saved['unwired'] = ['{"class": "Constant", "props": {"r": 0.0}}']
     assert digest.accept(saved, sample()) == []
 
 
 def test_a_parameter_only_on_an_unwired_expression_still_refuses():
-    """@cc [owner:fontanierh,label:correctness] master-digest-parameters-compared"""
+    """@cc [owner:fontanierh,label:correctness] master-digest-parameters-compared
+    A parameter present only in the saved original MUST reject a rebuild even when its expression is unwired."""
     param = '{"class": "TextureSampleParameter2D", "props": {"parameter_name": "Extra"}}'
     saved = sample()
     saved['unwired'], saved['parameters'] = [param], [param]
@@ -331,7 +333,9 @@ def referencing_record(game, slug, slot):
 
 
 def test_the_claim_points_every_reference_at_the_masters_the_record_slots(tmp_path):
-    """@cc [owner:fontanierh,label:correctness] master-records-no-dangling-reference"""
+    """@cc [owner:fontanierh,label:correctness] master-records-no-dangling-reference
+    Moving a family MUST replace references to its retired record with the slotted masters or declared fallback,
+    preserve unrelated references, and leave a repeated move with no writes or deletions."""
     game = make_game(tmp_path)
     surface = referencing_record(game, 'lane', HD['masters'][2]['package'])
     loose = referencing_record(game, 'tower', '/Game/Hippodrome/Meshes/SM_HD_Tower/HD_Tower')
@@ -376,7 +380,8 @@ def test_an_engine_default_is_an_allowed_read_and_owns_nothing(tmp_path):
 # --- the family registry --------------------------------------------------------------------------------------------------
 
 def test_every_committed_master_record_is_what_its_family_plans():
-    """@cc [owner:fontanierh,label:correctness] master-records-equal-plan"""
+    """@cc [owner:fontanierh,label:correctness] master-records-equal-plan
+    Every committed master record and pinned builder MUST equal the current family plan and builder source."""
     for family in planner.load_families().values():
         for master in family['masters']:
             path = ROOT / 'assets' / master['id'] / 'asset.toml'
