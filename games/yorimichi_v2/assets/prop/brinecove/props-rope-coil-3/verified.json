@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/props-rope-coil-3",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_PropsRopeCoil3.uasset": "326fe5aef72604d943316f91514925e4d75a585efa77945e3a5b750d9c0271e3"
+  },
+  "input_fingerprint": "5e833e7128c2155d6fe495906c32bd9f0d8b813cc5ee97798101b539f8db4464",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_PropsRopeCoil3": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

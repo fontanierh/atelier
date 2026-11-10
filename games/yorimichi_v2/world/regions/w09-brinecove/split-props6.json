@@ -1,0 +1,808 @@
+{
+  "about": "Expected result of tools/migrate/brinecove_split_apply.py (docs/inventory/brinecove-split.md): each part mesh, each tile remainder, and the donor tile each was cut from.",
+  "parts": {
+    "prop/brinecove/props-gull-1": {
+      "materials": [
+        "BC_sail"
+      ],
+      "max": [
+        134.3243,
+        47.9429,
+        60.4221
+      ],
+      "mesh": "SM_BC_PropsGull1",
+      "min": [
+        132.1243,
+        47.4929,
+        60.1975
+      ],
+      "object": "props-gull-1",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsGull1",
+      "sha256": "d8764dbc499df47fe06d9ecfa24d59413be8b229e1860d91677d3f8e13e644f6",
+      "soft": false,
+      "tiles": [
+        "Props_4_3"
+      ],
+      "triangles": 22
+    },
+    "prop/brinecove/props-gull-10": {
+      "materials": [
+        "BC_sail"
+      ],
+      "max": [
+        217.2162,
+        42.1067,
+        290.7053
+      ],
+      "mesh": "SM_BC_PropsGull10",
+      "min": [
+        215.0163,
+        41.6567,
+        290.4807
+      ],
+      "object": "props-gull-10",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsGull10",
+      "sha256": "18805586ebc8f9d91f9508965bbb756ee029dcad047bf5993d6a0d269e14da7e",
+      "soft": false,
+      "tiles": [
+        "Props_4_2"
+      ],
+      "triangles": 22
+    },
+    "prop/brinecove/props-gull-11": {
+      "materials": [
+        "BC_sail"
+      ],
+      "max": [
+        -143.26,
+        29.6449,
+        146.0827
+      ],
+      "mesh": "SM_BC_PropsGull11",
+      "min": [
+        -145.46,
+        29.1949,
+        145.8581
+      ],
+      "object": "props-gull-11",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsGull11",
+      "sha256": "f53137dd6d812d80de41bbaaf2f8606371251216d3ebb3c13c299138245a68db",
+      "soft": false,
+      "tiles": [
+        "Props_3_3"
+      ],
+      "triangles": 22
+    },
+    "prop/brinecove/props-gull-12": {
+      "materials": [
+        "BC_sail"
+      ],
+      "max": [
+        -82.6508,
+        54.8768,
+        282.7839
+      ],
+      "mesh": "SM_BC_PropsGull12",
+      "min": [
+        -84.8508,
+        54.4268,
+        282.5593
+      ],
+      "object": "props-gull-12",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsGull12",
+      "sha256": "c2bf53ea0f1d340bdf50d61847960ae6e41faf4f22ad7580a140a1f00c4bb3e2",
+      "soft": false,
+      "tiles": [
+        "Props_3_2"
+      ],
+      "triangles": 22
+    },
+    "prop/brinecove/props-gull-13": {
+      "materials": [
+        "BC_sail"
+      ],
+      "max": [
+        -270.9166,
+        30.3808,
+        261.4094
+      ],
+      "mesh": "SM_BC_PropsGull13",
+      "min": [
+        -273.1165,
+        29.9308,
+        261.1848
+      ],
+      "object": "props-gull-13",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsGull13",
+      "sha256": "95fb909f8d2a203f2ec2173c70d6c8e96c3d11f9abd41c06ad5ca8a3da9e432b",
+      "soft": false,
+      "tiles": [
+        "Props_2_2"
+      ],
+      "triangles": 22
+    },
+    "prop/brinecove/props-gull-14": {
+      "materials": [
+        "BC_sail"
+      ],
+      "max": [
+        3.5146,
+        25.8188,
+        170.8666
+      ],
+      "mesh": "SM_BC_PropsGull14",
+      "min": [
+        1.3146,
+        25.3688,
+        170.642
+      ],
+      "object": "props-gull-14",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsGull14",
+      "sha256": "b8833638b20a55831eb2930645ad3a826d8cd59f7d01b0fc2dddebd19916159f",
+      "soft": false,
+      "tiles": [
+        "Props_4_2"
+      ],
+      "triangles": 22
+    },
+    "prop/brinecove/props-gull-15": {
+      "materials": [
+        "BC_sail"
+      ],
+      "max": [
+        -76.5095,
+        26.3614,
+        -14.4447
+      ],
+      "mesh": "SM_BC_PropsGull15",
+      "min": [
+        -78.7095,
+        25.9114,
+        -14.6693
+      ],
+      "object": "props-gull-15",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsGull15",
+      "sha256": "ee1153cbcb5f0fac56e6c426f8b016d39cd2a28b2927fa8059c0c3cee46cf686",
+      "soft": false,
+      "tiles": [
+        "Props_3_3"
+      ],
+      "triangles": 22
+    },
+    "prop/brinecove/props-gull-16": {
+      "materials": [
+        "BC_sail"
+      ],
+      "max": [
+        -1.7415,
+        56.4064,
+        213.6792
+      ],
+      "mesh": "SM_BC_PropsGull16",
+      "min": [
+        -3.9415,
+        55.9564,
+        213.4546
+      ],
+      "object": "props-gull-16",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsGull16",
+      "sha256": "6f43438ca11f6351c3781d0ab5dca0fc264ca6948f882c2543b1d62792e7d283",
+      "soft": false,
+      "tiles": [
+        "Props_3_2"
+      ],
+      "triangles": 22
+    },
+    "prop/brinecove/props-gull-17": {
+      "materials": [
+        "BC_sail"
+      ],
+      "max": [
+        84.8536,
+        57.8306,
+        22.6021
+      ],
+      "mesh": "SM_BC_PropsGull17",
+      "min": [
+        82.6536,
+        57.3806,
+        22.3776
+      ],
+      "object": "props-gull-17",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsGull17",
+      "sha256": "4195e1c953fb51adeb2304ebd76f956da1ca68f341d164f661a8a82cd1423308",
+      "soft": false,
+      "tiles": [
+        "Props_4_3"
+      ],
+      "triangles": 22
+    },
+    "prop/brinecove/props-gull-18": {
+      "materials": [
+        "BC_sail"
+      ],
+      "max": [
+        -170.996,
+        39.0677,
+        81.9628
+      ],
+      "mesh": "SM_BC_PropsGull18",
+      "min": [
+        -173.196,
+        38.6177,
+        81.7382
+      ],
+      "object": "props-gull-18",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsGull18",
+      "sha256": "002c1218f4836e09e8f99198844b241bedc9e251348695efb79e44627461a5ee",
+      "soft": false,
+      "tiles": [
+        "Props_3_3"
+      ],
+      "triangles": 22
+    },
+    "prop/brinecove/props-gull-2": {
+      "materials": [
+        "BC_sail"
+      ],
+      "max": [
+        -2.2926,
+        36.1272,
+        124.9844
+      ],
+      "mesh": "SM_BC_PropsGull2",
+      "min": [
+        -4.4926,
+        35.6772,
+        124.7598
+      ],
+      "object": "props-gull-2",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsGull2",
+      "sha256": "08a8248b6cc7ef0d0128a8d57b48c120881e7466fa9993869e6e31fbd098d247",
+      "soft": false,
+      "tiles": [
+        "Props_3_3"
+      ],
+      "triangles": 22
+    },
+    "prop/brinecove/props-gull-3": {
+      "materials": [
+        "BC_sail"
+      ],
+      "max": [
+        -266.0798,
+        48.0252,
+        179.6874
+      ],
+      "mesh": "SM_BC_PropsGull3",
+      "min": [
+        -268.2798,
+        47.5752,
+        179.4628
+      ],
+      "object": "props-gull-3",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsGull3",
+      "sha256": "f4a0a4158896a9991ff1d75f049e330a2079ee943bcc055f540b90c129f7061c",
+      "soft": false,
+      "tiles": [
+        "Props_2_2"
+      ],
+      "triangles": 22
+    },
+    "prop/brinecove/props-gull-4": {
+      "materials": [
+        "BC_sail"
+      ],
+      "max": [
+        278.3062,
+        53.3256,
+        86.0679
+      ],
+      "mesh": "SM_BC_PropsGull4",
+      "min": [
+        276.1063,
+        52.8756,
+        85.8433
+      ],
+      "object": "props-gull-4",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsGull4",
+      "sha256": "9101139e266d3ac285ad22187ab39d9c6e11c93ebf49a409e72214014bc002ac",
+      "soft": false,
+      "tiles": [
+        "Props_5_3"
+      ],
+      "triangles": 22
+    },
+    "prop/brinecove/props-gull-5": {
+      "materials": [
+        "BC_sail"
+      ],
+      "max": [
+        -23.4326,
+        43.7871,
+        276.6795
+      ],
+      "mesh": "SM_BC_PropsGull5",
+      "min": [
+        -25.6326,
+        43.3371,
+        276.4549
+      ],
+      "object": "props-gull-5",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsGull5",
+      "sha256": "ba84f58fe0dfa6eb22ef376cb5582469d783556a10df88096a7b846f388b4224",
+      "soft": false,
+      "tiles": [
+        "Props_3_2"
+      ],
+      "triangles": 22
+    },
+    "prop/brinecove/props-gull-6": {
+      "materials": [
+        "BC_sail"
+      ],
+      "max": [
+        -70.504,
+        43.8638,
+        200.9803
+      ],
+      "mesh": "SM_BC_PropsGull6",
+      "min": [
+        -72.704,
+        43.4138,
+        200.7557
+      ],
+      "object": "props-gull-6",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsGull6",
+      "sha256": "4705a5c60ca3bed0991177268f35b16ee9f80e689118529af7ed99d81da79a56",
+      "soft": false,
+      "tiles": [
+        "Props_3_2"
+      ],
+      "triangles": 22
+    },
+    "prop/brinecove/props-gull-7": {
+      "materials": [
+        "BC_sail"
+      ],
+      "max": [
+        -1.1666,
+        51.6333,
+        213.1403
+      ],
+      "mesh": "SM_BC_PropsGull7",
+      "min": [
+        -3.3666,
+        51.1833,
+        212.9157
+      ],
+      "object": "props-gull-7",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsGull7",
+      "sha256": "8bd2a71de33991c1f61c052fc595623ee01c78d8329785fe8095b9bbb16b8d71",
+      "soft": false,
+      "tiles": [
+        "Props_3_2",
+        "Props_4_2"
+      ],
+      "triangles": 22
+    },
+    "prop/brinecove/props-gull-8": {
+      "materials": [
+        "BC_sail"
+      ],
+      "max": [
+        -303.722,
+        36.6811,
+        128.0722
+      ],
+      "mesh": "SM_BC_PropsGull8",
+      "min": [
+        -305.9221,
+        36.2311,
+        127.8476
+      ],
+      "object": "props-gull-8",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsGull8",
+      "sha256": "0c3b7f05d4112b68085cc73eef297979cec171fff09cf054f606bdcca88a8dd0",
+      "soft": false,
+      "tiles": [
+        "Props_2_3"
+      ],
+      "triangles": 22
+    },
+    "prop/brinecove/props-gull-9": {
+      "materials": [
+        "BC_sail"
+      ],
+      "max": [
+        120.3002,
+        36.8365,
+        31.9669
+      ],
+      "mesh": "SM_BC_PropsGull9",
+      "min": [
+        118.1002,
+        36.3865,
+        31.7423
+      ],
+      "object": "props-gull-9",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsGull9",
+      "sha256": "3d5bbc1df9b23f24acfb6281848fe121b7940963a6a839ac6554aebdb94ca71a",
+      "soft": false,
+      "tiles": [
+        "Props_4_3"
+      ],
+      "triangles": 22
+    },
+    "prop/brinecove/props-rope-coil-1": {
+      "materials": [
+        "BC_rope"
+      ],
+      "max": [
+        331.6773,
+        4.9693,
+        -68.3227
+      ],
+      "mesh": "SM_BC_PropsRopeCoil1",
+      "min": [
+        328.3227,
+        4.8307,
+        -71.6773
+      ],
+      "object": "props-rope-coil-1",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsRopeCoil1",
+      "sha256": "fe4a95eee94f91ed4af06810709e50af908b2895ee75c8158b4c4a537605c2f3",
+      "soft": false,
+      "tiles": [
+        "Props_5_3"
+      ],
+      "triangles": 144
+    },
+    "prop/brinecove/props-rope-coil-2": {
+      "materials": [
+        "BC_rope"
+      ],
+      "max": [
+        334.6773,
+        4.9693,
+        -68.3227
+      ],
+      "mesh": "SM_BC_PropsRopeCoil2",
+      "min": [
+        331.3227,
+        4.8307,
+        -71.6773
+      ],
+      "object": "props-rope-coil-2",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsRopeCoil2",
+      "sha256": "9aa2c204629308db2992c1d2769fb553baa2e255e9870743be6a1dad12f9488c",
+      "soft": false,
+      "tiles": [
+        "Props_5_3"
+      ],
+      "triangles": 144
+    },
+    "prop/brinecove/props-rope-coil-3": {
+      "materials": [
+        "BC_rope"
+      ],
+      "max": [
+        337.6773,
+        4.9693,
+        -68.3227
+      ],
+      "mesh": "SM_BC_PropsRopeCoil3",
+      "min": [
+        334.3227,
+        4.8307,
+        -71.6773
+      ],
+      "object": "props-rope-coil-3",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsRopeCoil3",
+      "sha256": "1fd51cf877cf35e90fd720b007c31725b9f7be912fa632618d0a90fa34c2c8c7",
+      "soft": false,
+      "tiles": [
+        "Props_5_3"
+      ],
+      "triangles": 144
+    }
+  },
+  "pending": {
+    "resave": [],
+    "stale": []
+  },
+  "retired": false,
+  "schema": 1,
+  "selection": [
+    "props-gull-1",
+    "props-gull-10",
+    "props-gull-11",
+    "props-gull-12",
+    "props-gull-13",
+    "props-gull-14",
+    "props-gull-15",
+    "props-gull-16",
+    "props-gull-17",
+    "props-gull-18",
+    "props-gull-2",
+    "props-gull-3",
+    "props-gull-4",
+    "props-gull-5",
+    "props-gull-6",
+    "props-gull-7",
+    "props-gull-8",
+    "props-gull-9",
+    "props-rope-coil-1",
+    "props-rope-coil-2",
+    "props-rope-coil-3"
+  ],
+  "shares": {
+    "Props_2_2": {
+      "prop/brinecove/props-gull-13": 22,
+      "prop/brinecove/props-gull-3": 22
+    },
+    "Props_2_3": {
+      "prop/brinecove/props-gull-8": 22
+    },
+    "Props_3_2": {
+      "prop/brinecove/props-gull-12": 22,
+      "prop/brinecove/props-gull-16": 22,
+      "prop/brinecove/props-gull-5": 22,
+      "prop/brinecove/props-gull-6": 22,
+      "prop/brinecove/props-gull-7": 8
+    },
+    "Props_3_3": {
+      "prop/brinecove/props-gull-11": 22,
+      "prop/brinecove/props-gull-15": 22,
+      "prop/brinecove/props-gull-18": 22,
+      "prop/brinecove/props-gull-2": 22
+    },
+    "Props_4_2": {
+      "prop/brinecove/props-gull-10": 22,
+      "prop/brinecove/props-gull-14": 22,
+      "prop/brinecove/props-gull-7": 14
+    },
+    "Props_4_3": {
+      "prop/brinecove/props-gull-1": 22,
+      "prop/brinecove/props-gull-17": 22,
+      "prop/brinecove/props-gull-9": 22
+    },
+    "Props_5_3": {
+      "prop/brinecove/props-gull-4": 22,
+      "prop/brinecove/props-rope-coil-1": 144,
+      "prop/brinecove/props-rope-coil-2": 144,
+      "prop/brinecove/props-rope-coil-3": 144
+    }
+  },
+  "tiles": {
+    "Props_2_2": {
+      "original": {
+        "material_package": {
+          "BC_sail": "/Game/Brinecove/Materials/MI_BC_sail"
+        },
+        "owner": "shared/brinecove/props-2-2",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "collision": "complex",
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_sail"
+          ],
+          "triangles": 44
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_Props_2_2",
+      "record": "prop/brinecove/props-2-2",
+      "remainder": null,
+      "source_triangles": 44
+    },
+    "Props_2_3": {
+      "original": {
+        "material_package": {
+          "BC_metal": "/Game/Brinecove/Materials/MI_BC_metal",
+          "BC_rope": "/Game/Brinecove/Materials/MI_BC_rope",
+          "BC_sail": "/Game/Brinecove/Materials/MI_BC_sail",
+          "BC_stone": "/Game/Brinecove/Materials/MI_BC_stone",
+          "BC_stone_light": "/Game/Brinecove/Materials/MI_BC_stone_light",
+          "BC_wood": "/Game/Brinecove/Materials/MI_BC_wood",
+          "BC_wood_dark": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+          "BC_wood_light": "/Game/Brinecove/Materials/MI_BC_wood_light"
+        },
+        "owner": "shared/brinecove/props-2-3",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "collision": "complex",
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_metal",
+            "/Game/Brinecove/Materials/MI_BC_rope",
+            "/Game/Brinecove/Materials/MI_BC_sail",
+            "/Game/Brinecove/Materials/MI_BC_stone",
+            "/Game/Brinecove/Materials/MI_BC_stone_light",
+            "/Game/Brinecove/Materials/MI_BC_wood",
+            "/Game/Brinecove/Materials/MI_BC_wood_dark",
+            "/Game/Brinecove/Materials/MI_BC_wood_light"
+          ],
+          "triangles": 2170
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_Props_2_3",
+      "record": "prop/brinecove/props-2-3",
+      "remainder": null,
+      "source_triangles": 22
+    },
+    "Props_3_2": {
+      "original": {
+        "material_package": {
+          "BC_flag_red": "/Game/Brinecove/Materials/MI_BC_flag_red",
+          "BC_metal": "/Game/Brinecove/Materials/MI_BC_metal",
+          "BC_sail": "/Game/Brinecove/Materials/MI_BC_sail",
+          "BC_wood": "/Game/Brinecove/Materials/MI_BC_wood",
+          "BC_wood_dark": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+          "BC_wood_light": "/Game/Brinecove/Materials/MI_BC_wood_light"
+        },
+        "owner": "shared/brinecove/props-3-2",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "collision": "complex",
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_flag_red",
+            "/Game/Brinecove/Materials/MI_BC_metal",
+            "/Game/Brinecove/Materials/MI_BC_sail",
+            "/Game/Brinecove/Materials/MI_BC_wood",
+            "/Game/Brinecove/Materials/MI_BC_wood_dark",
+            "/Game/Brinecove/Materials/MI_BC_wood_light"
+          ],
+          "triangles": 428
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_Props_3_2",
+      "record": "prop/brinecove/props-3-2",
+      "remainder": null,
+      "source_triangles": 96
+    },
+    "Props_3_3": {
+      "original": {
+        "material_package": {
+          "BC_flag_black": "/Game/Brinecove/Materials/MI_BC_flag_black",
+          "BC_metal": "/Game/Brinecove/Materials/MI_BC_metal",
+          "BC_rope": "/Game/Brinecove/Materials/MI_BC_rope",
+          "BC_sail": "/Game/Brinecove/Materials/MI_BC_sail",
+          "BC_wood": "/Game/Brinecove/Materials/MI_BC_wood",
+          "BC_wood_dark": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+          "BC_wood_light": "/Game/Brinecove/Materials/MI_BC_wood_light"
+        },
+        "owner": "shared/brinecove/props-3-3",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "collision": "complex",
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_flag_black",
+            "/Game/Brinecove/Materials/MI_BC_metal",
+            "/Game/Brinecove/Materials/MI_BC_rope",
+            "/Game/Brinecove/Materials/MI_BC_sail",
+            "/Game/Brinecove/Materials/MI_BC_wood",
+            "/Game/Brinecove/Materials/MI_BC_wood_dark",
+            "/Game/Brinecove/Materials/MI_BC_wood_light"
+          ],
+          "triangles": 4600
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_Props_3_3",
+      "record": "prop/brinecove/props-3-3",
+      "remainder": null,
+      "source_triangles": 88
+    },
+    "Props_4_2": {
+      "original": {
+        "material_package": {
+          "BC_flag_red": "/Game/Brinecove/Materials/MI_BC_flag_red",
+          "BC_metal": "/Game/Brinecove/Materials/MI_BC_metal",
+          "BC_sail": "/Game/Brinecove/Materials/MI_BC_sail",
+          "BC_wood": "/Game/Brinecove/Materials/MI_BC_wood",
+          "BC_wood_dark": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+          "BC_wood_light": "/Game/Brinecove/Materials/MI_BC_wood_light"
+        },
+        "owner": "shared/brinecove/props-4-2",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "collision": "complex",
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_flag_red",
+            "/Game/Brinecove/Materials/MI_BC_metal",
+            "/Game/Brinecove/Materials/MI_BC_sail",
+            "/Game/Brinecove/Materials/MI_BC_wood",
+            "/Game/Brinecove/Materials/MI_BC_wood_dark",
+            "/Game/Brinecove/Materials/MI_BC_wood_light"
+          ],
+          "triangles": 382
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_Props_4_2",
+      "record": "prop/brinecove/props-4-2",
+      "remainder": null,
+      "source_triangles": 58
+    },
+    "Props_4_3": {
+      "original": {
+        "material_package": {
+          "BC_flag_black": "/Game/Brinecove/Materials/MI_BC_flag_black",
+          "BC_metal": "/Game/Brinecove/Materials/MI_BC_metal",
+          "BC_rope": "/Game/Brinecove/Materials/MI_BC_rope",
+          "BC_sail": "/Game/Brinecove/Materials/MI_BC_sail",
+          "BC_wood": "/Game/Brinecove/Materials/MI_BC_wood",
+          "BC_wood_dark": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+          "BC_wood_light": "/Game/Brinecove/Materials/MI_BC_wood_light"
+        },
+        "owner": "shared/brinecove/props-4-3",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "collision": "complex",
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_flag_black",
+            "/Game/Brinecove/Materials/MI_BC_metal",
+            "/Game/Brinecove/Materials/MI_BC_rope",
+            "/Game/Brinecove/Materials/MI_BC_sail",
+            "/Game/Brinecove/Materials/MI_BC_wood",
+            "/Game/Brinecove/Materials/MI_BC_wood_dark",
+            "/Game/Brinecove/Materials/MI_BC_wood_light"
+          ],
+          "triangles": 4198
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_Props_4_3",
+      "record": "prop/brinecove/props-4-3",
+      "remainder": null,
+      "source_triangles": 66
+    },
+    "Props_5_3": {
+      "original": {
+        "material_package": {
+          "BC_metal": "/Game/Brinecove/Materials/MI_BC_metal",
+          "BC_rope": "/Game/Brinecove/Materials/MI_BC_rope",
+          "BC_sail": "/Game/Brinecove/Materials/MI_BC_sail",
+          "BC_wood": "/Game/Brinecove/Materials/MI_BC_wood",
+          "BC_wood_dark": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+          "BC_wood_light": "/Game/Brinecove/Materials/MI_BC_wood_light"
+        },
+        "owner": "shared/brinecove/props-5-3",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "collision": "complex",
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_metal",
+            "/Game/Brinecove/Materials/MI_BC_rope",
+            "/Game/Brinecove/Materials/MI_BC_sail",
+            "/Game/Brinecove/Materials/MI_BC_wood",
+            "/Game/Brinecove/Materials/MI_BC_wood_dark",
+            "/Game/Brinecove/Materials/MI_BC_wood_light"
+          ],
+          "triangles": 2634
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_Props_5_3",
+      "record": "prop/brinecove/props-5-3",
+      "remainder": null,
+      "source_triangles": 454
+    }
+  }
+}

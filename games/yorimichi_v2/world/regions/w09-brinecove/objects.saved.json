@@ -3587,76 +3587,6 @@
         "prop/brinecove/plant-small2"
       ]
     },
-    "object/brinecove/props-2-2": {
-      "groups": [
-        "SM_BC_Props_2_2"
-      ],
-      "id": "object/brinecove/props-2-2",
-      "model": "prop/brinecove/props-2-2",
-      "models": [
-        "prop/brinecove/props-2-2"
-      ]
-    },
-    "object/brinecove/props-2-3": {
-      "groups": [
-        "SM_BC_Props_2_3"
-      ],
-      "id": "object/brinecove/props-2-3",
-      "model": "prop/brinecove/props-2-3",
-      "models": [
-        "prop/brinecove/props-2-3"
-      ]
-    },
-    "object/brinecove/props-3-2": {
-      "groups": [
-        "SM_BC_Props_3_2"
-      ],
-      "id": "object/brinecove/props-3-2",
-      "model": "prop/brinecove/props-3-2",
-      "models": [
-        "prop/brinecove/props-3-2"
-      ]
-    },
-    "object/brinecove/props-3-3": {
-      "groups": [
-        "SM_BC_Props_3_3"
-      ],
-      "id": "object/brinecove/props-3-3",
-      "model": "prop/brinecove/props-3-3",
-      "models": [
-        "prop/brinecove/props-3-3"
-      ]
-    },
-    "object/brinecove/props-4-2": {
-      "groups": [
-        "SM_BC_Props_4_2"
-      ],
-      "id": "object/brinecove/props-4-2",
-      "model": "prop/brinecove/props-4-2",
-      "models": [
-        "prop/brinecove/props-4-2"
-      ]
-    },
-    "object/brinecove/props-4-3": {
-      "groups": [
-        "SM_BC_Props_4_3"
-      ],
-      "id": "object/brinecove/props-4-3",
-      "model": "prop/brinecove/props-4-3",
-      "models": [
-        "prop/brinecove/props-4-3"
-      ]
-    },
-    "object/brinecove/props-5-3": {
-      "groups": [
-        "SM_BC_Props_5_3"
-      ],
-      "id": "object/brinecove/props-5-3",
-      "model": "prop/brinecove/props-5-3",
-      "models": [
-        "prop/brinecove/props-5-3"
-      ]
-    },
     "object/brinecove/props-barrel-pier-central-sea": {
       "groups": [
         "SM_BC_PropsBarrelPierCentralSea"
@@ -4507,6 +4437,186 @@
         "prop/brinecove/props-fish-basket-7"
       ]
     },
+    "object/brinecove/props-gull-1": {
+      "groups": [
+        "SM_BC_PropsGull1"
+      ],
+      "id": "object/brinecove/props-gull-1",
+      "model": "prop/brinecove/props-gull-1",
+      "models": [
+        "prop/brinecove/props-gull-1"
+      ]
+    },
+    "object/brinecove/props-gull-10": {
+      "groups": [
+        "SM_BC_PropsGull10"
+      ],
+      "id": "object/brinecove/props-gull-10",
+      "model": "prop/brinecove/props-gull-10",
+      "models": [
+        "prop/brinecove/props-gull-10"
+      ]
+    },
+    "object/brinecove/props-gull-11": {
+      "groups": [
+        "SM_BC_PropsGull11"
+      ],
+      "id": "object/brinecove/props-gull-11",
+      "model": "prop/brinecove/props-gull-11",
+      "models": [
+        "prop/brinecove/props-gull-11"
+      ]
+    },
+    "object/brinecove/props-gull-12": {
+      "groups": [
+        "SM_BC_PropsGull12"
+      ],
+      "id": "object/brinecove/props-gull-12",
+      "model": "prop/brinecove/props-gull-12",
+      "models": [
+        "prop/brinecove/props-gull-12"
+      ]
+    },
+    "object/brinecove/props-gull-13": {
+      "groups": [
+        "SM_BC_PropsGull13"
+      ],
+      "id": "object/brinecove/props-gull-13",
+      "model": "prop/brinecove/props-gull-13",
+      "models": [
+        "prop/brinecove/props-gull-13"
+      ]
+    },
+    "object/brinecove/props-gull-14": {
+      "groups": [
+        "SM_BC_PropsGull14"
+      ],
+      "id": "object/brinecove/props-gull-14",
+      "model": "prop/brinecove/props-gull-14",
+      "models": [
+        "prop/brinecove/props-gull-14"
+      ]
+    },
+    "object/brinecove/props-gull-15": {
+      "groups": [
+        "SM_BC_PropsGull15"
+      ],
+      "id": "object/brinecove/props-gull-15",
+      "model": "prop/brinecove/props-gull-15",
+      "models": [
+        "prop/brinecove/props-gull-15"
+      ]
+    },
+    "object/brinecove/props-gull-16": {
+      "groups": [
+        "SM_BC_PropsGull16"
+      ],
+      "id": "object/brinecove/props-gull-16",
+      "model": "prop/brinecove/props-gull-16",
+      "models": [
+        "prop/brinecove/props-gull-16"
+      ]
+    },
+    "object/brinecove/props-gull-17": {
+      "groups": [
+        "SM_BC_PropsGull17"
+      ],
+      "id": "object/brinecove/props-gull-17",
+      "model": "prop/brinecove/props-gull-17",
+      "models": [
+        "prop/brinecove/props-gull-17"
+      ]
+    },
+    "object/brinecove/props-gull-18": {
+      "groups": [
+        "SM_BC_PropsGull18"
+      ],
+      "id": "object/brinecove/props-gull-18",
+      "model": "prop/brinecove/props-gull-18",
+      "models": [
+        "prop/brinecove/props-gull-18"
+      ]
+    },
+    "object/brinecove/props-gull-2": {
+      "groups": [
+        "SM_BC_PropsGull2"
+      ],
+      "id": "object/brinecove/props-gull-2",
+      "model": "prop/brinecove/props-gull-2",
+      "models": [
+        "prop/brinecove/props-gull-2"
+      ]
+    },
+    "object/brinecove/props-gull-3": {
+      "groups": [
+        "SM_BC_PropsGull3"
+      ],
+      "id": "object/brinecove/props-gull-3",
+      "model": "prop/brinecove/props-gull-3",
+      "models": [
+        "prop/brinecove/props-gull-3"
+      ]
+    },
+    "object/brinecove/props-gull-4": {
+      "groups": [
+        "SM_BC_PropsGull4"
+      ],
+      "id": "object/brinecove/props-gull-4",
+      "model": "prop/brinecove/props-gull-4",
+      "models": [
+        "prop/brinecove/props-gull-4"
+      ]
+    },
+    "object/brinecove/props-gull-5": {
+      "groups": [
+        "SM_BC_PropsGull5"
+      ],
+      "id": "object/brinecove/props-gull-5",
+      "model": "prop/brinecove/props-gull-5",
+      "models": [
+        "prop/brinecove/props-gull-5"
+      ]
+    },
+    "object/brinecove/props-gull-6": {
+      "groups": [
+        "SM_BC_PropsGull6"
+      ],
+      "id": "object/brinecove/props-gull-6",
+      "model": "prop/brinecove/props-gull-6",
+      "models": [
+        "prop/brinecove/props-gull-6"
+      ]
+    },
+    "object/brinecove/props-gull-7": {
+      "groups": [
+        "SM_BC_PropsGull7"
+      ],
+      "id": "object/brinecove/props-gull-7",
+      "model": "prop/brinecove/props-gull-7",
+      "models": [
+        "prop/brinecove/props-gull-7"
+      ]
+    },
+    "object/brinecove/props-gull-8": {
+      "groups": [
+        "SM_BC_PropsGull8"
+      ],
+      "id": "object/brinecove/props-gull-8",
+      "model": "prop/brinecove/props-gull-8",
+      "models": [
+        "prop/brinecove/props-gull-8"
+      ]
+    },
+    "object/brinecove/props-gull-9": {
+      "groups": [
+        "SM_BC_PropsGull9"
+      ],
+      "id": "object/brinecove/props-gull-9",
+      "model": "prop/brinecove/props-gull-9",
+      "models": [
+        "prop/brinecove/props-gull-9"
+      ]
+    },
     "object/brinecove/props-lantern-quay-e124": {
       "groups": [
         "SM_BC_PropsLanternQuayE124"
@@ -4915,6 +5025,36 @@
       "models": [
         "prop/brinecove/props-potted-palm-w40",
         "prop/brinecove/props-potted-palm-w40-soft"
+      ]
+    },
+    "object/brinecove/props-rope-coil-1": {
+      "groups": [
+        "SM_BC_PropsRopeCoil1"
+      ],
+      "id": "object/brinecove/props-rope-coil-1",
+      "model": "prop/brinecove/props-rope-coil-1",
+      "models": [
+        "prop/brinecove/props-rope-coil-1"
+      ]
+    },
+    "object/brinecove/props-rope-coil-2": {
+      "groups": [
+        "SM_BC_PropsRopeCoil2"
+      ],
+      "id": "object/brinecove/props-rope-coil-2",
+      "model": "prop/brinecove/props-rope-coil-2",
+      "models": [
+        "prop/brinecove/props-rope-coil-2"
+      ]
+    },
+    "object/brinecove/props-rope-coil-3": {
+      "groups": [
+        "SM_BC_PropsRopeCoil3"
+      ],
+      "id": "object/brinecove/props-rope-coil-3",
+      "model": "prop/brinecove/props-rope-coil-3",
+      "models": [
+        "prop/brinecove/props-rope-coil-3"
       ]
     },
     "object/brinecove/props-rowboat-e145": {

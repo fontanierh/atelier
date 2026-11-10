@@ -458,7 +458,7 @@ def test_check_for_the_groups_stage_allows_the_tile_record_to_remain(monkeypatch
 
 def test_batch_names_all_lists_and_checks_names():
     names = market.batch_names('all')
-    assert names[:4] == ['market1', 'market2', 'market3', 'town1'] and names[-7:] == ['town9', 'props1', 'props2', 'props3', 'harbor1', 'props4', 'props5'] and len(names) == 18
+    assert names[:4] == ['market1', 'market2', 'market3', 'town1'] and names[-8:] == ['town9', 'props1', 'props2', 'props3', 'harbor1', 'props4', 'props5', 'props6'] and len(names) == 19
     assert market.batch_names('town2, market1,town2') == ['town2', 'market1']
     with pytest.raises(market.MarketError, match='unknown batch town99'):
         market.batch_names('town99')
@@ -652,6 +652,34 @@ def test_donor_props4_barrels_and_crates_are_whole():
                 counts[name] = counts.get(name, 0) + len(members)
     assert set(counts) == set(market.BATCHES['props4'])
     assert {counts[n] for n in market.BATCHES['props4'] if '-barrel-' in n} == {128}
+
+
+def test_the_props6_batch_names_each_rope_coil_and_gull_once():
+    """props6: the three rope coils by the fish shed and the 18 gulls, each its loop body in procedural/props.py."""
+    names = market.BATCHES['props6']
+    assert len(names) == len(set(names)) == 21
+    assert names[:3] == ('props-rope-coil-1', 'props-rope-coil-2', 'props-rope-coil-3')
+    assert set(names[3:]) == {f'props-gull-{i}' for i in range(1, 19)}
+    assert not set(names) & {n for b in market.BATCHES if b != 'props6' for n in market.BATCHES[b]}
+    assert 'props6' not in market.REPLACES
+
+
+@pytest.mark.skipif(not DONOR or not Path(DONOR).is_dir(), reason='needs the donor export (YV2_DONOR_BUILD)')
+def test_donor_props6_rope_coils_and_gulls_are_whole():
+    """Each rope coil (a 12-sided ring) and each gull (a body and a wing quad) is matched whole."""
+    donor = Path(DONOR)
+    src = market.donor_source(donor)
+    prior = {'cannon-west', 'cannon-east', 'quay-anchor', 'net-rack-west', 'net-rack-east'}
+    done = market.compute(donor / 'brinecove' / 'glb', src, list(market.BATCHES['props6']), prior)
+    assert done['problems'] == []
+    counts = {}
+    for owned in done['owned'].values():
+        for name, members in owned.items():
+            if name:
+                counts[name] = counts.get(name, 0) + len(members)
+    assert set(counts) == set(market.BATCHES['props6'])
+    assert {counts[n] for n in market.BATCHES['props6'] if '-rope-coil-' in n} == {144}
+    assert {counts[n] for n in market.BATCHES['props6'] if '-gull-' in n} == {22}
 
 
 def test_the_props5_batch_splits_each_coarse_cargo_object_into_its_pieces():

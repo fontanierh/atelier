@@ -103,7 +103,8 @@ Remaining construction work:
   - #823 and #826 are merged; #827 is in review. Forecast **21:30**, low confidence, for its merge (review and CI on
     the exact head).
   - Useful-object splitting stays at **23:00**, low confidence. Brine Cove `props5` (the cargo re-split into 54 pieces,
-    with the pier generator) is merged (#823); the remaining residual fused scenery and patches are unsized.
+    with the pier generator) is merged (#823); `props6` (the 3 fish-shed rope coils and 18 gulls) is saved and in
+    review, and leaves no fused `Props` tile. The remaining residual fused scenery and patches are unsized.
 
 ## Runtime and ownership facts
 

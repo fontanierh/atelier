@@ -289,3 +289,17 @@ donor proof counts the later pieces in place of a retired coarse part.
 | `harbor-pier-east` | 3,180 | 2,448 | 8 |
 | `harbor-pier-west` | 2,868 | 2,136 | 8 |
 
+## Rope coils and gulls (`props6`)
+
+`props6` takes the last loose props of the fused `Props` component from `procedural/props.py`, each its loop body:
+- the three rope coils by the fish shed (`b.ring` at x = 330, 333 and 336), `props-rope-coil-1` to `3` (144 triangles each);
+- the 18 gulls over the harbour mouth (a body and a wing quad, placed by the shared RNG), `props-gull-1` to `18`
+  (22 triangles each).
+
+| Tiles touched | Triangles taken | Tiles remade | Tiles emptied | Records |
+|---|---|---|---|---|
+| 7 | 828 | none | 7 (`Props_2_2`, `2_3`, `3_2`, `3_3`, `4_2`, `4_3`, `5_3`) | 21 |
+
+The emptied tiles are retired with the three stages above (`--batch props6`). No fused `Props` tile remains: every
+triangle of the component belongs to an object.
+

@@ -73,6 +73,10 @@ SCOPES = (
     dict(component='Props', module='props', loop='for cx, cy in ((-250, 94), (-170, 94), (120, 94), (270, 94), (-60, 84), (60, 84)):',
          key="'cargo-%s%d' % ('w' if cx < 0 else 'e', abs(cx))"),
     dict(component='Props', module='props', loop='for i in range(7):', key="'fish-basket-%d' % (i + 1)"),
+    # The last loose props (props6): each of the three rope coils by the fish shed and each of the 18 gulls over the
+    # harbour mouth (a body and a wing quad) is its loop body.
+    dict(component='Props', module='props', loop='for i in range(3):', key="'rope-coil-%d' % (i + 1)"),
+    dict(component='Props', module='props', loop='for i in range(18):', key="'gull-%d' % (i + 1)"),
     # Street lighting: each quay lantern post and each upper-terrace lantern post is its loop body.
     dict(component='Props', module='props', loop='for x in range(-360, 361, 44):',
          key="'lantern-quay-%s%d' % ('w' if x < 0 else 'e', abs(x))"),
@@ -540,6 +544,8 @@ BATCHES['props5'] = tuple(f'{c}-{piece}' for c in _CARGO for piece in ('crate1',
     tuple(f'{p}-{kind}{t}' for p in _PIERS for t in (22, 52, 78) for kind in ('crate', 'barrel')) + \
     tuple(f'{p}-rope{t}' for p in _PIERS for t in (52, 78))
 REPLACES = {'props5': frozenset(_CARGO + _PIERS)}
+# The last loose props of the fused Props tiles: the three rope coils by the fish shed and the 18 gulls.
+BATCHES['props6'] = tuple(f'props-rope-coil-{i}' for i in range(1, 4)) + tuple(f'props-gull-{i}' for i in range(1, 19))
 
 COMPONENT_OF = {'market-': 'Market', 'town-lower-': 'TownLower', 'town-upper-': 'TownUpper', 'props-': 'Props', 'harbor-pier-': 'Harbor', 'harbor-palm-': 'Harbor'}
 ALL_OBJECTS = frozenset(o for names in BATCHES.values() for o in names)

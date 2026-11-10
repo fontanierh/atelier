@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/props-rope-coil-2",
+  "dependencies": {
+    "prop/brinecove/props-rope-coil-2": "a9a220b197a914ccf923668d3955914eca57c94e175a59ec03b00dac122a8dad"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/D/8C/U25FTPKQAJ6ZSBTPGSLWCW.uasset": "9af8ea5102462d526be0eea785809a528e4c0ddd79538fa22bde7fbe769d1fb1"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}
