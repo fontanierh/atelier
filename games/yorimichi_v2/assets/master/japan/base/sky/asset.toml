@@ -12,7 +12,7 @@ input_dependencies = ["texture/japan/sky"]
 
 [[sources]]
 path = "src/sky_painterly_masters.py"
-sha256 = "ba37a6280fbe9da9e76d88513c659eb9538fdad4c7c44a2936246317803af93d"
+sha256 = "4caaa61d999d31d1114dc38560fa8439edf6229d0031c7f6606a044a3e106f8f"
 
 [recipe]
 importer = "material-master"

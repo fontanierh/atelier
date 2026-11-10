@@ -7,9 +7,9 @@
   },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Materials/M_Foliage.uasset": "15ea3ef1f13ac0fe5999a64bc457813e72ec2f756cc6d2da19c265108b54221e"
+    "unreal/Content/Japan/Materials/M_Foliage.uasset": "cb084553bb177b661f7a584398d6a8e75aa5a1b59c03ce065d04e956b5f0df04"
   },
-  "input_fingerprint": "d86922e98a3883ffb634c94b1f665c6651796e085cca539c9739b76068ef1f5b",
+  "input_fingerprint": "6d6ad8dd65d28c1be60240c34c97cb50759deaf322f2ea75472ffb4d49a81b32",
   "kind": "imported",
   "schema": 1,
   "tool": "material-master@1"

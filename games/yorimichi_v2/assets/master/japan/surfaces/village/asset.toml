@@ -11,7 +11,7 @@ provenance = "donor generator games/yorimichi/unreal/Scripts at 7eec0f98dd (pins
 
 [[sources]]
 path = "src/japan_surface_masters.py"
-sha256 = "e8efd891daddf6dfaa3382b290a2619a733077cf2c6d881972c01ccc80150ca4"
+sha256 = "45d32fc3d7d07b9b7f76d1d1c0a82d5eb4ce190adf0f2c53dcc66fba4177d7ed"
 
 [[sources]]
 path = "src/master_haze.py"

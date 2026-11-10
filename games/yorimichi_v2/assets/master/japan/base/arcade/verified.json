@@ -5,9 +5,9 @@
   },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Materials/M_Arcade.uasset": "8fc42acca838ec262713eb25cea8fa35ecc0adaa87ae2067e499391e45048718"
+    "unreal/Content/Japan/Materials/M_Arcade.uasset": "91fb558a9c56cf61e7f869d953a5c21a09359d4147aac4e0d5161feed61d5c3c"
   },
-  "input_fingerprint": "2478e4f39095e2cc2f8e189a6e5df950fd0a34676b807a6f0f90c13f215ce5ce",
+  "input_fingerprint": "85e1c0afeb5ce276575d9ed271af5986fc6396623c81b2971670e34c7959c5c4",
   "kind": "imported",
   "schema": 1,
   "tool": "material-master@1"

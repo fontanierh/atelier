@@ -3,9 +3,9 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Materials/M_PondWater.uasset": "871484a76c35fdaad86947ae167866a501f2e7f8398e0100a07c5c00a9371dba"
+    "unreal/Content/Japan/Materials/M_PondWater.uasset": "9b19c6737258c5bbd57e3f342d5ef9a31d3c8b11eb67540eecc6ad1dc4510c31"
   },
-  "input_fingerprint": "5f3fcdeda21758da9b9086016c52f43d7c8ddcda2eaf711e11d71564b2b8cfa3",
+  "input_fingerprint": "adaa8e664f03312bfb35954126f5fc2d75f9a2c4638bb779b78a67632dd4dbcf",
   "kind": "imported",
   "schema": 1,
   "tool": "material-master@1"

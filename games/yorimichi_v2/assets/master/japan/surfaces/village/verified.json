@@ -3,9 +3,9 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Materials/M_Village.uasset": "b8aa356d3f0b8256b07a75e74c234551d08eea1c8f1d76cfe8c761d43874d28b"
+    "unreal/Content/Japan/Materials/M_Village.uasset": "23cdc434a97854a62eca4ee35d859fe9430921071f79f91afedf2288ceb86762"
   },
-  "input_fingerprint": "329769198167b56f5715ff3a4c0c16280680b7883900afff2de8fc350295d150",
+  "input_fingerprint": "f20e7d08ccf2a65d8b6c1fa21edf683671370232da0d5463fb5f6e3d71ef39d3",
   "kind": "imported",
   "schema": 1,
   "tool": "material-master@1"

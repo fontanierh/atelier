@@ -1,0 +1,30 @@
+# Recovered as a material master (tools/migrate/master_records.py): /Game/CraterPark/Cloud/M_CraterCloud.
+# The builder is src/crater_cloud_masters.py, pinned by sha256; the master is rebuilt by the V2 editor and read back
+# against its saved original, never edited by hand.
+schema = 1
+id = "master/craterpark/cloud"
+kind = "material-master"
+authority = "generated"
+owner = "shared/craterpark/cloud"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+provenance = "donor generator games/yorimichi/unreal/Scripts/crater_cloud_material.py at the V2 source baseline (docs/DECISIONS.md D01, D02), crater_cloud lines 45-131"
+
+[[sources]]
+path = "src/crater_cloud_masters.py"
+sha256 = "ded79bd1941f27976ecc764504067fd199b95b4487070cd626a38d91f60251b0"
+
+[[sources]]
+path = "src/master_haze.py"
+sha256 = "329f98441c026c766803a3ce1d1d5e1aba5e09927ee91e12fc51152b8b77a49b"
+
+[recipe]
+importer = "material-master"
+version = 1
+
+[recipe.settings]
+builder = "crater_cloud"
+reads = []
+arguments = { veil = false }
+
+[[outputs]]
+package = "/Game/CraterPark/Cloud/M_CraterCloud"

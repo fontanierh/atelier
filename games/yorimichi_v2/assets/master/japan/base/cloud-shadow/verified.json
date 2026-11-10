@@ -5,9 +5,9 @@
   },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Materials/M_CloudShadow.uasset": "3d8e354fe467805ac768fe9ca493f131dca01381de76cadd16819b8efbaa6e63"
+    "unreal/Content/Japan/Materials/M_CloudShadow.uasset": "d1d78dc35fdead930ab70bed6b55290274ae053cfb2f64dbdd9e8c446b3d3daa"
   },
-  "input_fingerprint": "c25a1a152a8700e7955a55e8a7ed7b70553eb4cf2fdc870345ec2338967c0dc4",
+  "input_fingerprint": "ea27affaf727d6c11acb44c6bd6a073281e1473f54c6f4d8b60002b5433d0be8",
   "kind": "imported",
   "schema": 1,
   "tool": "material-master@1"

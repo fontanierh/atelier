@@ -38,7 +38,7 @@ TRACES = {
     'forest_ground': '2cb491c6f0d500a4d2aac8b6e3a8b7695ad35c628ad9f8b6474235fa5c34ca89',
     'coast_rock': '4e0591e7ed5715adf5ea669b7c082c8a7dcbd585dcc85bc95b889bcf34625450',
     'north_gate': '5b2c5484c9a6f06634a5b6c6ac20c4b987075c9637a94ccd9ac306456a2909cd',
-    'north_mountains': 'db5d59e52d8f1fd297356688d4cf4399f13e22fb81c54487d584367b26959a4d',
+    'north_mountains': '868619365b943cd624414fe5ab0fde27e40d72c413b021716358755b28f82931',
 }
 
 
@@ -109,6 +109,17 @@ def test_each_builder_traces_as_its_donor_function(builder):
 def test_the_haze_is_the_donor_atmosphere_share_and_colour():
     assert builders.SHARE == 'saturate(1-exp(-max(D-3000.0,0)/900000.0))'
     assert builders.haze.COLOUR == (0.0932, 0.2301, 0.5328)
+
+
+def test_north_mountains_guards_triplanar_voronoi_and_crater_taps_behind_branches():
+    log = trace('north_mountains')
+    codes = [args[1] for name, args in log if name == 'set_editor_property' and args[0] == "'code'"]
+    assert '[branch] if(high>.001)' in codes[0]
+    assert '[branch] if(D<15000.)' in codes[0]
+    assert '[branch] if(D<250000.)' in codes[0]
+    assert '[branch] if(crater>.001)' in codes[0]
+    assert 'Texture2DSampleGrad(' in codes[0]
+    assert '[branch] if(high>.001 && Sun.w>.001)' in codes[1]
 
 
 def test_the_build_output_values_are_the_donor_export_values_and_agree_with_each_other():

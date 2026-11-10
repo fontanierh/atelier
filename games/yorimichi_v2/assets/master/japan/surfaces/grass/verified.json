@@ -7,9 +7,9 @@
   },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Materials/M_Grass.uasset": "cd11cb41fce8eea64bfe98d3b16e3a516b06f4613518be7f8fe6868f39dca562"
+    "unreal/Content/Japan/Materials/M_Grass.uasset": "adb94bea8d06d064ffe1c8bc2a6b4b16b3310811e160029ae78c1d321dc79cac"
   },
-  "input_fingerprint": "e02b866a6e86460cdaf3e84dc77200637ed9494778dcf1df47756cdf71aa26d8",
+  "input_fingerprint": "424967f8953a40a45ec3d5f1da8290c20e793824342c2edd2f2d99a1ba210313",
   "kind": "imported",
   "schema": 1,
   "tool": "material-master@1"

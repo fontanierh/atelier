@@ -55,9 +55,9 @@ def show(value):
 PLUMBING = {'get_asset_tools', 'save_loaded_asset', 'load_asset', 'load_object', 'does_asset_exist',
             'MaterialFactoryNew', 'create_asset', 'delete_all_material_expressions', 'recompile_material'}
 DONOR_TRACES = {'painted_material': (124, '8233a82fb754ee9f343dd3e979c13437123f2ac525910741471e48df035a34bd'),
- 'foliage_material': (295, '3336c19126a014377724872abd42f2a63861b3b9485fba1b35815c245cb85c9f'),
+ 'foliage_material': (326, 'c896c90fac7ee022bd7c41156815acf01c3b41684a0af1a8c38ff27234b0bf58'),
  'grass_material': (277, '15003655adb512ad2e1ff5b214fcaa94d4cc3f8435b03ddde7b960c7e47d17e4'),
- 'village_material': (61, 'cf0793f695f3463deae3b3ce5608c13817d6b1428bb5fa46eb29c6a7a7191c20')}
+ 'village_material': (73, 'efb79272fa645b94cd7b7690d7a55637d534d70538bf5c5a140f72f3a663144f')}
 VALUES = {'white': 'WHITE', 'wind': 'WIND', 'coverage': 'COVERAGE', 'see_through': 'SEE_THROUGH'}
 
 
@@ -134,11 +134,15 @@ def test_grass_keeps_upward_normals_temporal_coverage_and_gentle_wind():
 
 
 def test_foliage_keeps_the_wind_collection_and_both_parameter_names():
-    properties = named(trace('foliage_material'), 'set_editor_property')
+    log = trace('foliage_material')
+    properties = named(log, 'set_editor_property')
     assert properties.count(("'collection'", "'WIND'")) == 2
     assert ("'parameter_name'", "'Wind'") in properties
     assert ("'parameter_name'", "'PlayerPos'") in properties
     assert ("'opacity_mask_clip_value'", '0.4') in properties
+    assert ("'tangent_space_normal'", 'False') in properties
+    pins = [args[-1] for args in named(log, 'connect_material_property')]
+    assert '<MP_NORMAL>' in pins and '<MP_AMBIENT_OCCLUSION>' in pins and '<MP_SUBSURFACE_COLOR>' in pins
 
 
 def test_haze_keeps_the_donor_depth_and_colours():

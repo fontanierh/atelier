@@ -1,0 +1,26 @@
+# Recovered as a material master (tools/migrate/master_records.py): /Game/Japan/Treehouse/Materials/M_TH_Light.
+# The builder is src/treehouse_masters.py, pinned by sha256; the master is rebuilt by the V2 editor and read back
+# against its saved original, never edited by hand.
+schema = 1
+id = "master/treehouse/light"
+kind = "material-master"
+authority = "generated"
+owner = "shared/japan/treehouse/generator"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+provenance = "donor generator games/yorimichi/unreal/Scripts/import_treehouse.py and see_through.py at the V2 source baseline (docs/DECISIONS.md D01, D02), treehouse_light lines import_treehouse.py 129-166"
+
+[[sources]]
+path = "src/treehouse_masters.py"
+sha256 = "27ec104ab6f2b33534934a22422e60197df8ea5607c7d32db74d6ced1b1c3eae"
+
+[recipe]
+importer = "material-master"
+version = 1
+
+[recipe.settings]
+builder = "treehouse_light"
+reads = []
+arguments = {  }
+
+[[outputs]]
+package = "/Game/Japan/Treehouse/Materials/M_TH_Light"

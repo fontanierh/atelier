@@ -3,9 +3,9 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Materials/M_SailboatCloth.uasset": "31421cb3a4390e523509620a0f4463f71252dcfaa4ea4a6d09c086088a52b8bc"
+    "unreal/Content/Japan/Materials/M_SailboatCloth.uasset": "7f34cd386867da7df964bf6327f839825f257d8942fecb6bda6a869977969a9d"
   },
-  "input_fingerprint": "36b8991b6fd6bd4942f902d15adaaccd0557817f4be98a7c1f192680b78167f9",
+  "input_fingerprint": "3cf14e2986991e88ff7e33e0884ea96f33199266a0cedc586cc3e447a6ae804a",
   "kind": "imported",
   "schema": 1,
   "tool": "material-master@1"

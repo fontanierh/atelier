@@ -59,14 +59,21 @@ float lamp=step(.82,L.r)*step(.45,L.g)*step(L.g,.68)*step(L.b,.30);
 float canvas=step(.70,L.r)*step(L.r,.79)*step(.55,L.g)*step(.35,L.b);
 float leaf=step(.4,L.r)*step(.24,L.g)*step(L.b,.07);
 float shop=step(.18,L.r)*step(L.r,.22)*step(.08,L.g)*step(L.g,.11)*step(.02,L.b)*step(L.b,.04);
-return B*(.045+lamp*.9+canvas*.20+leaf*.38+shop*.15);
+float3 bounce=B*float3(.045,.034,.020)*saturate(-N.z);
+return B*(.045+lamp*.9+canvas*.20+leaf*.38+shop*.15)+bounce;
+'''
+
+AO_CODE = '''
+float hemi=lerp(.50,1.,saturate(N.z*.5+.5));
+float luma=dot(Texture2DSample(Tex,TexSampler,UV/Tile).rgb,float3(.3,.59,.11));
+float crevice=lerp(1.,clamp(.76+luma*.60,.68,1.),Strength);
+return saturate(hemi*crevice);
 '''
 
 
 def city_parent(package, reads, *, texture):
-    """donor parent(default), city_material.py lines 42-95: the textured parent of the Hidamari materials. `texture` is the
-    plaster texture the donor passes as `default` (city_material.py line 115: tex.get('plaster')), read from the adopted
-    texture record T_HD_plaster. The Tex parameter defaults to it; the instances set their own."""
+    """donor parent(default), city_material.py lines 42-95: the textured parent of the Hidamari materials, upgraded with
+    hemisphere + surface-crevice Forward SkyLight AO and warm eave ground bounce while preserving all parameters."""
     MEL = unreal.MaterialEditingLibrary
     default = reads[texture]
     m = _material(package)
@@ -78,8 +85,8 @@ def city_parent(package, reads, *, texture):
             e.set_editor_property(k, v)
         return e
 
-    def custom(x, y, code, inputs):
-        n = node(unreal.MaterialExpressionCustom, x, y, code=code, output_type=unreal.CustomMaterialOutputType.CMOT_FLOAT3)
+    def custom(x, y, code, inputs, kind=unreal.CustomMaterialOutputType.CMOT_FLOAT3):
+        n = node(unreal.MaterialExpressionCustom, x, y, code=code, output_type=kind)
         n.set_editor_property('inputs', _custom_inputs([name for name, _, _ in inputs]))
         for name, src, out in inputs:
             assert MEL.connect_material_expressions(src, out, n, name), name
@@ -93,12 +100,16 @@ def city_parent(package, reads, *, texture):
     strength = node(unreal.MaterialExpressionScalarParameter, -900, 600, parameter_name='Strength', default_value=1.)
     macro = node(unreal.MaterialExpressionScalarParameter, -900, 700, parameter_name='Macro', default_value=.5)
     gain = node(unreal.MaterialExpressionScalarParameter, -900, 800, parameter_name='Gain', default_value=1.)
+    vn = node(unreal.MaterialExpressionVertexNormalWS, -900, 900)
     base = custom(-450, 0, BASE_CODE, [('C', vc, ''), ('UV', uv, ''), ('P', pos, ''), ('Tex', tex, ''), ('Tile', tile, ''),
                                        ('Strength', strength, ''), ('Macro', macro, ''), ('Gain', gain, '')])
-    glow = custom(-200, 300, GLOW_CODE, [('C', vc, ''), ('B', base, '')])
+    glow = custom(-200, 300, GLOW_CODE, [('C', vc, ''), ('B', base, ''), ('N', vn, '')])
+    ao = custom(-200, 480, AO_CODE, [('N', vn, ''), ('UV', uv, ''), ('Tex', tex, ''), ('Tile', tile, ''),
+                                     ('Strength', strength, '')], unreal.CustomMaterialOutputType.CMOT_FLOAT1)
     b, g = haze.apply(unreal, m, base, glow, x=50, y=0)
     assert MEL.connect_material_property(b, '', unreal.MaterialProperty.MP_BASE_COLOR)
     assert MEL.connect_material_property(g, '', unreal.MaterialProperty.MP_EMISSIVE_COLOR)
+    assert MEL.connect_material_property(ao, '', unreal.MaterialProperty.MP_AMBIENT_OCCLUSION)
     for prop, value, y in ((unreal.MaterialProperty.MP_ROUGHNESS, .87, 600), (unreal.MaterialProperty.MP_SPECULAR, .12, 700)):
         c = node(unreal.MaterialExpressionConstant, 50, y, r=value)
         MEL.connect_material_property(c, '', prop)

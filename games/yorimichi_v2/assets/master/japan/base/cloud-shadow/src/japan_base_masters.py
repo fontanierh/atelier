@@ -143,6 +143,8 @@ float3 grain=Texture2DSample(Wood,WoodSampler,UV*.7).rgb;
 L*=lerp(1,clamp(dot(grain,float3(.3,.59,.11))/.22,.72,1.3),wood*.8);
 L=lerp(L,slabs*float3(.43,.35,.22),stone);
 L*=lerp(1,clamp(dot(slabs,float3(.3,.59,.11))/.30,.8,1.2),masonry*.65);
+float wet=1.-smoothstep(-15.,48.,P.z);
+L*=lerp(1.,.58,wet);
 return L;
 '''
 HARBOR_NORMAL = '''
@@ -153,12 +155,20 @@ float dx=dot(Texture2DSample(Stone,StoneSampler,q+e.xy).rgb-Texture2DSample(Ston
 float dy=dot(Texture2DSample(Stone,StoneSampler,q+e.yx).rgb-Texture2DSample(Stone,StoneSampler,q-e.yx).rgb,float3(.3,.59,.11));
 return normalize(float3(-dx*9,-dy*9,1));
 '''
+HARBOR_AO = '''
+float hemi=lerp(.48,1.,saturate(N.z*.5+.5));
+float slabLum=dot(Texture2DSample(Stone,StoneSampler,UV/2.4).rgb,float3(.3,.59,.11));
+float woodLum=dot(Texture2DSample(Wood,WoodSampler,UV*.7).rgb,float3(.3,.59,.11));
+float wood=1-step(.07,abs(A-.25));
+float stoneOrMasonry=saturate((1-step(.07,abs(A-.5)))+(1-step(.07,abs(A-.75))));
+float crevice=lerp(1.,clamp(.72+slabLum*.75,.66,1.),stoneOrMasonry)*lerp(1.,clamp(.76+woodLum*.85,.70,1.),wood);
+return saturate(hemi*crevice);
+'''
 
 
 def harbor_material(package, reads, *, paving, timber):
-    """donor material(water=False), harbor_material.py 39-61 (the shared head) and 143-176 (the non-water branch); the water
-    branch, 62-142, is not in this builder. `paving` and `timber` are the read packages of the two harbor texture records
-    (donor: texture('paving') and texture('timber'), lines 21-36, imported the same files)."""
+    """donor material(water=False), harbor_material.py 39-61 and 143-176, upgraded with wet quay waterline darkening/sheen
+    near z=0 and hemisphere + slab/timber crevice Forward SkyLight AO."""
     MEL = unreal.MaterialEditingLibrary
     m = _material(package)
     MEL.delete_all_material_expressions(m)
@@ -184,20 +194,24 @@ def harbor_material(package, reads, *, paving, timber):
 
     vc = node(unreal.MaterialExpressionVertexColor)
     uv = node(unreal.MaterialExpressionTextureCoordinate)
-    node(unreal.MaterialExpressionWorldPosition)   # donor line 60: created, never wired on this branch
-    node(unreal.MaterialExpressionTime)            # donor line 61: likewise
+    pos = node(unreal.MaterialExpressionWorldPosition)
+    vn = node(unreal.MaterialExpressionVertexNormalWS)
     paving_tex = node(unreal.MaterialExpressionTextureObject, texture=reads[paving])
     timber_tex = node(unreal.MaterialExpressionTextureObject, texture=reads[timber])
-    color = custom(HARBOR_COLOUR, [('C', vc, ''), ('A', vc, 'A'), ('UV', uv, ''), ('Stone', paving_tex, ''), ('Wood', timber_tex, '')])
+    color = custom(HARBOR_COLOUR, [('C', vc, ''), ('A', vc, 'A'), ('UV', uv, ''), ('P', pos, ''),
+                                   ('Stone', paving_tex, ''), ('Wood', timber_tex, '')])
     prop(color, unreal.MaterialProperty.MP_BASE_COLOR)
     normal = custom(HARBOR_NORMAL, [('A', vc, 'A'), ('UV', uv, ''), ('Stone', paving_tex, '')])
     prop(normal, unreal.MaterialProperty.MP_NORMAL)
-    rough = custom('return lerp(.83,.19,step(.95,A));', [('A', vc, 'A')], unreal.CustomMaterialOutputType.CMOT_FLOAT1)
+    rough = custom('float baseR=lerp(.83,.19,step(.95,A)); float wet=1.-smoothstep(-15.,48.,P.z); return lerp(baseR,.28,wet*.85);',
+                   [('A', vc, 'A'), ('P', pos, '')], unreal.CustomMaterialOutputType.CMOT_FLOAT1)
     prop(rough, unreal.MaterialProperty.MP_ROUGHNESS)
+    ao = custom(HARBOR_AO, [('N', vn, ''), ('A', vc, 'A'), ('UV', uv, ''), ('Stone', paving_tex, ''), ('Wood', timber_tex, '')],
+                unreal.CustomMaterialOutputType.CMOT_FLOAT1)
+    prop(ao, unreal.MaterialProperty.MP_AMBIENT_OCCLUSION)
     prop(node(unreal.MaterialExpressionConstant, r=.35), unreal.MaterialProperty.MP_SPECULAR)
-    # Restrained fill keeps readable contact shadows on this sunlit kit.
-    fill = node(unreal.MaterialExpressionMultiply, const_b=.025)
-    link(color, '', fill, 'A')
+    # Restrained fill plus warm underside quay bounce keeps readable contact shadows on this sunlit kit.
+    fill = custom('return B*(.025+float3(.035,.026,.016)*saturate(-N.z));', [('B', color, ''), ('N', vn, '')])
     prop(fill, unreal.MaterialProperty.MP_EMISSIVE_COLOR)
     m.set_editor_property('used_with_instanced_static_meshes', True)
     MEL.layout_material_expressions(m)

@@ -3,9 +3,9 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Materials/M_ZeppelinFabric.uasset": "d09b3b56399849923959154e506e2cb796e09199c4ba070a9afb98dc4694de0b"
+    "unreal/Content/Japan/Materials/M_ZeppelinFabric.uasset": "76e7a9cb1d9ef2301b790730a71fc7cf211aa156a6061fb5f2828f45aae5b606"
   },
-  "input_fingerprint": "d87fb8c6cc2fd9a3de45d0c4ed09bae229701f5be5da16a71db2f28c33b11328",
+  "input_fingerprint": "0c449b8806f57fcf5b934b418a1a50bd108d081873f64d372277e0b42150e150",
   "kind": "imported",
   "schema": 1,
   "tool": "material-master@1"

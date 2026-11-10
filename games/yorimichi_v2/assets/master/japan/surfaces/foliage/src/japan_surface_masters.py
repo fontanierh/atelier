@@ -100,7 +100,7 @@ def wind_graph(m, mpc):
     wpo = node(m, U.MaterialExpressionMultiply, -150, 1200); link(total, "", wpo, "A"); link(vcr, "", wpo, "B")
     MEL.connect_material_property(wpo, "", unreal.MaterialProperty.MP_WORLD_POSITION_OFFSET)
 
-def _shared_material(package, white, *, masked=False, mpc=None):
+def _shared_material(package, white, *, masked=False, mpc=None, foliage_lobe=False):
     """The lit branch of shared_materials.master, with its supplied white texture and optional wind collection."""
     MEL = unreal.MaterialEditingLibrary
     U = unreal
@@ -127,11 +127,58 @@ def _shared_material(package, white, *, masked=False, mpc=None):
         dark = node(m, U.MaterialExpressionMultiply, 200, 0)
         link(mul, '', dark, 'A')
         link(sh2, '', dark, 'B')
-        MEL.connect_material_property(dark, '', U.MaterialProperty.MP_BASE_COLOR)
-        m.set_editor_property('shading_model', U.MaterialShadingModel.MSM_TWO_SIDED_FOLIAGE)
-        ss = node(m, U.MaterialExpressionMultiply, 320, 120, const_b=0.22)
-        link(dark, '', ss, 'A')
-        MEL.connect_material_property(ss, '', U.MaterialProperty.MP_SUBSURFACE_COLOR)
+        if foliage_lobe:
+            m.set_editor_property('shading_model', U.MaterialShadingModel.MSM_TWO_SIDED_FOLIAGE)
+            # Authored spherical lobe normals live in VertexNormalWS: keep world-space normals so TwoSidedSign
+            # never flips backfacing leaf cards into dark ground-facing shadow noise.
+            m.set_editor_property('tangent_space_normal', False)
+            vn = node(m, U.MaterialExpressionVertexNormalWS, -200, -320)
+            MEL.connect_material_property(vn, '', U.MaterialProperty.MP_NORMAL)
+            crown = node(
+                m,
+                U.MaterialExpressionCustom,
+                420,
+                -40,
+                code=('float up = saturate(N.z * 0.5 + 0.5);'
+                      ' float3 grade = lerp(float3(0.90, 0.95, 1.03), float3(1.05, 1.02, 0.94), up);'
+                      ' return D * grade;'),
+                output_type=U.CustomMaterialOutputType.CMOT_FLOAT3,
+            )
+            crown.set_editor_property('inputs', haze.custom_inputs(U, ['D', 'N']))
+            link(dark, '', crown, 'D')
+            link(vn, '', crown, 'N')
+            MEL.connect_material_property(crown, '', U.MaterialProperty.MP_BASE_COLOR)
+            ss = node(
+                m,
+                U.MaterialExpressionCustom,
+                420,
+                110,
+                code=('float shell = smoothstep(0.45, 0.98, G);'
+                      ' return D * float3(0.36, 0.30, 0.16) * lerp(0.55, 1.15, shell);'),
+                output_type=U.CustomMaterialOutputType.CMOT_FLOAT3,
+            )
+            ss.set_editor_property('inputs', haze.custom_inputs(U, ['D', 'G']))
+            link(crown, '', ss, 'D')
+            link(gg, '', ss, 'G')
+            MEL.connect_material_property(ss, '', U.MaterialProperty.MP_SUBSURFACE_COLOR)
+            ao = node(
+                m,
+                U.MaterialExpressionCustom,
+                420,
+                250,
+                code='return saturate(G * lerp(0.68, 1.0, saturate(N.z * 0.5 + 0.5)));',
+                output_type=U.CustomMaterialOutputType.CMOT_FLOAT1,
+            )
+            ao.set_editor_property('inputs', haze.custom_inputs(U, ['G', 'N']))
+            link(gg, '', ao, 'G')
+            link(vn, '', ao, 'N')
+            MEL.connect_material_property(ao, '', U.MaterialProperty.MP_AMBIENT_OCCLUSION)
+        else:
+            MEL.connect_material_property(dark, '', U.MaterialProperty.MP_BASE_COLOR)
+            m.set_editor_property('shading_model', U.MaterialShadingModel.MSM_TWO_SIDED_FOLIAGE)
+            ss = node(m, U.MaterialExpressionMultiply, 320, 120, const_b=0.22)
+            link(dark, '', ss, 'A')
+            MEL.connect_material_property(ss, '', U.MaterialProperty.MP_SUBSURFACE_COLOR)
     else:
         MEL.connect_material_property(mul, '', U.MaterialProperty.MP_BASE_COLOR)
     rough = MEL.create_material_expression(m, U.MaterialExpressionConstant, -350, 350)
@@ -308,9 +355,9 @@ def painted_material(package, reads, *, white, see_through):
 
 
 def foliage_material(package, reads, *, white, wind, see_through):
-    """M_Foliage: two-sided foliage, distance fade and vertex-colour-scaled wind/player push."""
+    """M_Foliage: two-sided foliage with spherical world-space lobe normals, warm shell subsurface, canopy AO, distance fade and wind."""
     texture, collection, camera = reads[white], reads[wind], reads[see_through]
-    material = _shared_material(package, texture, masked=True, mpc=collection)
+    material = _shared_material(package, texture, masked=True, mpc=collection, foliage_lobe=True)
     _see_through(material, camera, scale=(1., 1., 2., 1.))
     return _finish(material)
 
@@ -364,12 +411,21 @@ def village_material(package, reads):
     spec=node(unreal.MaterialExpressionConstant,200,550,r=0.0)
     MEL.connect_material_property(rough,'',unreal.MaterialProperty.MP_ROUGHNESS)
     MEL.connect_material_property(spec,'',unreal.MaterialProperty.MP_SPECULAR)
-    # Only paper lights emit noticeably. A universal fill flattened the timber.
+    vn=node(unreal.MaterialExpressionVertexNormalWS,-430,250)
+    ao=node(unreal.MaterialExpressionCustom,200,320,
+        code='return lerp(0.52, 1.0, saturate(N.z * 0.5 + 0.5));',
+        output_type=unreal.CustomMaterialOutputType.CMOT_FLOAT1)
+    ao.set_editor_property('inputs',haze.custom_inputs(unreal,['N']))
+    link(vn,'',ao,'N')
+    assert MEL.connect_material_property(ao,'',unreal.MaterialProperty.MP_AMBIENT_OCCLUSION)
+    # Only paper lights emit noticeably, plus a subtle warm ground bounce into covered timber eaves.
     fill=node(unreal.MaterialExpressionCustom,200,650,
-        code='float lamp=step(.80,C.r)*step(.35,C.g)*step(C.g,.72)*step(C.b,.30); return C*(.06+lamp*.8);',
+        code=('float lamp=step(.80,C.r)*step(.35,C.g)*step(C.g,.72)*step(C.b,.30);'
+              ' float3 bounce=C*float3(.042,.030,.016)*saturate(-N.z);'
+              ' return C*(.06+lamp*.8)+bounce;'),
         output_type=unreal.CustomMaterialOutputType.CMOT_FLOAT3)
-    arg=unreal.CustomInput();arg.set_editor_property('input_name','C');fill.set_editor_property('inputs',[arg])
-    link(linear,'',fill,'C')
+    fill.set_editor_property('inputs',haze.custom_inputs(unreal,['C','N']))
+    link(linear,'',fill,'C');link(vn,'',fill,'N')
     # aerial perspective shared with the sea and the land (atmosphere.py)
     base,glow=haze.apply(unreal,m,linear,fill,x=420,y=0)
     assert MEL.connect_material_property(base,'',unreal.MaterialProperty.MP_BASE_COLOR)

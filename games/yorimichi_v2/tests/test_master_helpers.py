@@ -110,7 +110,7 @@ HAZE_GLOW = ('float h=saturate(1-exp(-max(D-3000.0,0)/900000.0)); '
 # the traced donor calls, pinned by sha256 (see the module docstring)
 CAMP_TRACE = '90c93082edf27e81390cab4c2f49fec1c8e808e2803ba8a1b59ed0af1c392394'
 RONIN_TRACE = 'f564c737d7c2a5549a3ce521e38fff2bc34822fafd38812622cb226f54705be4'
-CITY_TRACE = '1f2eb0c6a5b07d4128c0ddf4e14eac1988264ab154eadc114aa4fd819b3f35bd'
+CITY_TRACE = '18b54300c0c3dc326274f0642a4f0f7a6578405104a44cd073d3bb5e419e9a16'
 
 
 # --- the builders -----------------------------------------------------------------------------------------------------------
@@ -156,7 +156,7 @@ def test_the_ronin_body_traces_as_the_donor_build_ronin_body_material():
 
 def test_the_city_parent_traces_as_the_donor_parent():
     log = trace(city, 'city_parent', HDCITY, {PLASTER: 'DEFAULT'}, texture=PLASTER)
-    assert len(log) == 91 and digest(log) == CITY_TRACE
+    assert len(log) == 115 and digest(log) == CITY_TRACE
     parameters = [args for args in named(log, 'set_editor_property') if args[0] in ("'parameter_name'", "'default_value'")]
     assert parameters == [("'parameter_name'", "'Tex'"), ("'parameter_name'", "'Tile'"), ("'default_value'", '1.5'),
                           ("'parameter_name'", "'Strength'"), ("'default_value'", '1.0'),
@@ -164,6 +164,7 @@ def test_the_city_parent_traces_as_the_donor_parent():
                           ("'parameter_name'", "'Gain'"), ("'default_value'", '1.0')]
     assert ("'texture'", "'DEFAULT'") in named(log, 'set_editor_property')
     assert named(log, 'set_editor_property').count(("'used_with_instanced_static_meshes'", 'True')) == 1
+    assert any(args[-1] == '<MP_AMBIENT_OCCLUSION>' for args in named(log, 'connect_material_property'))
     constants = [args for args in named(log, 'set_editor_property') if args[0] == "'r'"]
     assert constants == [("'r'", '0.87'), ("'r'", '0.12')]
 

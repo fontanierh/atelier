@@ -28,10 +28,8 @@ spec = importlib.util.spec_from_file_location('v2_japan_sea_masters', MODULE)
 builders = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(builders)
 
-SEA_TRACE = '0e99c5ffcf5a08a1042a95268ddae34ebc44e53e5cbcf721d58e79878cd9297c'
-HARBOR_WATER_TRACE = 'feec71476fa209ea770d5b9e5a8f9ce28a3aaa508060a25e4e49672940f83f8f'
-# sha256 of the donor's sea_look.py lines 38-150 (the blob is ffae53cd...), the block copied between the SEA_LOOK markers
-SEA_LOOK_BLOCK = '4797b469edbb7f56d9d035e0ebe5547649f0c438a5c495ca144a7282ac39094e'
+SEA_TRACE = 'ee83d765b988477639bdbfbdd33a1d75bbaddb507bc267078642d1d0cc1574da'
+HARBOR_WATER_TRACE = '37fe610302c722ea972553bf9901aa972fbd83672b0171ca433a10f2bfb8c0dc'
 
 
 class Recorder:
@@ -95,12 +93,21 @@ def test_each_builder_traces_as_its_donor_function(builder, package, pin):
     assert ('save_loaded_asset', ) not in [entry[:1] for entry in log]
 
 
-def test_the_sea_look_block_is_the_donor_lines_byte_for_byte():
-    text = MODULE.read_text()
-    start = text.index('\n', text.index('# --- SEA_LOOK')) + 1
-    end = text.index('\n\n\n# --- end SEA_LOOK') + 1
-    assert hashlib.sha256(text[start:end].encode()).hexdigest() == SEA_LOOK_BLOCK
+def test_single_layer_water_wavelet_lod_and_quay_foam_contracts():
     assert builders.HARBOR_RECT == (300., -1600., 1800., 600.) and builders.SEA_RECT is builders.HARBOR_RECT
+    assert 'int nWaves=D<6000.?9:(D<22000.?7:6);' in builders.WAVES
+    assert '[branch] if(E>.005 && D<22000.)' in builders.HARBOR_NORMAL
+    assert 'MaterialExpressionSceneDepthWithoutWater(baseUV+' in builders.QUAY_FOAM_HLSL
+    assert 'ResolvedView.DirectionalLightDirection' in builders.LOOK
+    for builder, package in (('sea_material', '/Game/Japan/Materials/M_Sea'),
+                             ('harbor_water', '/Game/Japan/Materials/M_HarborWater')):
+        log = trace(builder, package)
+        props = [args for name, args in log if name == 'set_editor_property']
+        assert ("'blend_mode'", '<BLEND_OPAQUE>') in props
+        assert ("'shading_model'", '<MSM_SINGLE_LAYER_WATER>') in props
+        expr_classes = [args[1] for name, args in log if name == 'create_material_expression']
+        assert '<MaterialExpressionSceneDepthWithoutWater>' in expr_classes
+        assert '<MaterialExpressionSingleLayerWaterMaterialOutput>' in expr_classes
 
 
 def test_both_masters_write_the_fog_and_normal_settings_the_digest_compares():
@@ -110,10 +117,10 @@ def test_both_masters_write_the_fog_and_normal_settings_the_digest_compares():
     for builder, package in (('sea_material', '/Game/Japan/Materials/M_Sea'),
                              ('harbor_water', '/Game/Japan/Materials/M_HarborWater')):
         written = {args[0].strip("'") for name, args in trace(builder, package) if name == 'set_editor_property'
-                   and args[0].strip("'") in {'blend_mode', 'compute_fog_per_pixel', 'translucency_lighting_mode',
+                   and args[0].strip("'") in {'blend_mode', 'shading_model', 'compute_fog_per_pixel',
                                               'tangent_space_normal', 'used_with_instanced_static_meshes'}}
         assert written <= set(module.SETTINGS), builder
-        assert {'compute_fog_per_pixel', 'tangent_space_normal', 'blend_mode'} <= written, builder
+        assert {'compute_fog_per_pixel', 'tangent_space_normal', 'blend_mode', 'shading_model'} <= written, builder
 
 
 def test_the_family_shares_the_adopted_record_with_japan_base_and_the_keeps_are_disjoint():
