@@ -1939,42 +1939,6 @@ model = "prop/brinecove/props-rowboat-w270"
 about = "the props rowboat w270, cut from its fused tile (96 triangles)"
 
 [[objects]]
-id = "object/brinecove/props-cargo-e120"
-group = "SM_BC_PropsCargoE120"
-model = "prop/brinecove/props-cargo-e120"
-about = "the props cargo e120, cut from its fused tile (472 triangles)"
-
-[[objects]]
-id = "object/brinecove/props-cargo-e270"
-group = "SM_BC_PropsCargoE270"
-model = "prop/brinecove/props-cargo-e270"
-about = "the props cargo e270, cut from its fused tile (472 triangles)"
-
-[[objects]]
-id = "object/brinecove/props-cargo-e60"
-group = "SM_BC_PropsCargoE60"
-model = "prop/brinecove/props-cargo-e60"
-about = "the props cargo e60, cut from its fused tile (472 triangles)"
-
-[[objects]]
-id = "object/brinecove/props-cargo-w170"
-group = "SM_BC_PropsCargoW170"
-model = "prop/brinecove/props-cargo-w170"
-about = "the props cargo w170, cut from its fused tile (472 triangles)"
-
-[[objects]]
-id = "object/brinecove/props-cargo-w250"
-group = "SM_BC_PropsCargoW250"
-model = "prop/brinecove/props-cargo-w250"
-about = "the props cargo w250, cut from its fused tile (472 triangles)"
-
-[[objects]]
-id = "object/brinecove/props-cargo-w60"
-group = "SM_BC_PropsCargoW60"
-model = "prop/brinecove/props-cargo-w60"
-about = "the props cargo w60, cut from its fused tile (472 triangles)"
-
-[[objects]]
 id = "object/brinecove/props-fish-basket-1"
 group = "SM_BC_PropsFishBasket1"
 model = "prop/brinecove/props-fish-basket-1"
@@ -2284,19 +2248,19 @@ about = "the harbor palm w330, cut from its fused tile (242 triangles)"
 id = "object/brinecove/harbor-pier-central"
 group = "SM_BC_HarborPierCentral"
 model = "prop/brinecove/harbor-pier-central"
-about = "the harbor pier central, cut from its fused tile (3672 triangles)"
+about = "the harbor pier central, cut from its fused tile (2940 triangles)"
 
 [[objects]]
 id = "object/brinecove/harbor-pier-east"
 group = "SM_BC_HarborPierEast"
 model = "prop/brinecove/harbor-pier-east"
-about = "the harbor pier east, cut from its fused tile (3180 triangles)"
+about = "the harbor pier east, cut from its fused tile (2448 triangles)"
 
 [[objects]]
 id = "object/brinecove/harbor-pier-west"
 group = "SM_BC_HarborPierWest"
 model = "prop/brinecove/harbor-pier-west"
-about = "the harbor pier west, cut from its fused tile (2868 triangles)"
+about = "the harbor pier west, cut from its fused tile (2136 triangles)"
 
 [[objects]]
 id = "object/brinecove/props-barrel-pier-central-sea"
@@ -2567,6 +2531,330 @@ id = "object/brinecove/props-crate-upper-w250"
 group = "SM_BC_PropsCrateUpperW250"
 model = "prop/brinecove/props-crate-upper-w250"
 about = "the props crate upper w250, cut from its fused tile (36 triangles)"
+
+[[objects]]
+id = "object/brinecove/harbor-pier-central-barrel22"
+group = "SM_BC_HarborPierCentralBarrel22"
+model = "prop/brinecove/harbor-pier-central-barrel22"
+about = "the harbor pier central barrel22, cut from its fused tile (128 triangles)"
+
+[[objects]]
+id = "object/brinecove/harbor-pier-central-barrel52"
+group = "SM_BC_HarborPierCentralBarrel52"
+model = "prop/brinecove/harbor-pier-central-barrel52"
+about = "the harbor pier central barrel52, cut from its fused tile (128 triangles)"
+
+[[objects]]
+id = "object/brinecove/harbor-pier-central-barrel78"
+group = "SM_BC_HarborPierCentralBarrel78"
+model = "prop/brinecove/harbor-pier-central-barrel78"
+about = "the harbor pier central barrel78, cut from its fused tile (128 triangles)"
+
+[[objects]]
+id = "object/brinecove/harbor-pier-central-crate22"
+group = "SM_BC_HarborPierCentralCrate22"
+model = "prop/brinecove/harbor-pier-central-crate22"
+about = "the harbor pier central crate22, cut from its fused tile (36 triangles)"
+
+[[objects]]
+id = "object/brinecove/harbor-pier-central-crate52"
+group = "SM_BC_HarborPierCentralCrate52"
+model = "prop/brinecove/harbor-pier-central-crate52"
+about = "the harbor pier central crate52, cut from its fused tile (36 triangles)"
+
+[[objects]]
+id = "object/brinecove/harbor-pier-central-crate78"
+group = "SM_BC_HarborPierCentralCrate78"
+model = "prop/brinecove/harbor-pier-central-crate78"
+about = "the harbor pier central crate78, cut from its fused tile (36 triangles)"
+
+[[objects]]
+id = "object/brinecove/harbor-pier-central-rope52"
+group = "SM_BC_HarborPierCentralRope52"
+model = "prop/brinecove/harbor-pier-central-rope52"
+about = "the harbor pier central rope52, cut from its fused tile (120 triangles)"
+
+[[objects]]
+id = "object/brinecove/harbor-pier-central-rope78"
+group = "SM_BC_HarborPierCentralRope78"
+model = "prop/brinecove/harbor-pier-central-rope78"
+about = "the harbor pier central rope78, cut from its fused tile (120 triangles)"
+
+[[objects]]
+id = "object/brinecove/harbor-pier-east-barrel22"
+group = "SM_BC_HarborPierEastBarrel22"
+model = "prop/brinecove/harbor-pier-east-barrel22"
+about = "the harbor pier east barrel22, cut from its fused tile (128 triangles)"
+
+[[objects]]
+id = "object/brinecove/harbor-pier-east-barrel52"
+group = "SM_BC_HarborPierEastBarrel52"
+model = "prop/brinecove/harbor-pier-east-barrel52"
+about = "the harbor pier east barrel52, cut from its fused tile (128 triangles)"
+
+[[objects]]
+id = "object/brinecove/harbor-pier-east-barrel78"
+group = "SM_BC_HarborPierEastBarrel78"
+model = "prop/brinecove/harbor-pier-east-barrel78"
+about = "the harbor pier east barrel78, cut from its fused tile (128 triangles)"
+
+[[objects]]
+id = "object/brinecove/harbor-pier-east-crate22"
+group = "SM_BC_HarborPierEastCrate22"
+model = "prop/brinecove/harbor-pier-east-crate22"
+about = "the harbor pier east crate22, cut from its fused tile (36 triangles)"
+
+[[objects]]
+id = "object/brinecove/harbor-pier-east-crate52"
+group = "SM_BC_HarborPierEastCrate52"
+model = "prop/brinecove/harbor-pier-east-crate52"
+about = "the harbor pier east crate52, cut from its fused tile (36 triangles)"
+
+[[objects]]
+id = "object/brinecove/harbor-pier-east-crate78"
+group = "SM_BC_HarborPierEastCrate78"
+model = "prop/brinecove/harbor-pier-east-crate78"
+about = "the harbor pier east crate78, cut from its fused tile (36 triangles)"
+
+[[objects]]
+id = "object/brinecove/harbor-pier-east-rope52"
+group = "SM_BC_HarborPierEastRope52"
+model = "prop/brinecove/harbor-pier-east-rope52"
+about = "the harbor pier east rope52, cut from its fused tile (120 triangles)"
+
+[[objects]]
+id = "object/brinecove/harbor-pier-east-rope78"
+group = "SM_BC_HarborPierEastRope78"
+model = "prop/brinecove/harbor-pier-east-rope78"
+about = "the harbor pier east rope78, cut from its fused tile (120 triangles)"
+
+[[objects]]
+id = "object/brinecove/harbor-pier-west-barrel22"
+group = "SM_BC_HarborPierWestBarrel22"
+model = "prop/brinecove/harbor-pier-west-barrel22"
+about = "the harbor pier west barrel22, cut from its fused tile (128 triangles)"
+
+[[objects]]
+id = "object/brinecove/harbor-pier-west-barrel52"
+group = "SM_BC_HarborPierWestBarrel52"
+model = "prop/brinecove/harbor-pier-west-barrel52"
+about = "the harbor pier west barrel52, cut from its fused tile (128 triangles)"
+
+[[objects]]
+id = "object/brinecove/harbor-pier-west-barrel78"
+group = "SM_BC_HarborPierWestBarrel78"
+model = "prop/brinecove/harbor-pier-west-barrel78"
+about = "the harbor pier west barrel78, cut from its fused tile (128 triangles)"
+
+[[objects]]
+id = "object/brinecove/harbor-pier-west-crate22"
+group = "SM_BC_HarborPierWestCrate22"
+model = "prop/brinecove/harbor-pier-west-crate22"
+about = "the harbor pier west crate22, cut from its fused tile (36 triangles)"
+
+[[objects]]
+id = "object/brinecove/harbor-pier-west-crate52"
+group = "SM_BC_HarborPierWestCrate52"
+model = "prop/brinecove/harbor-pier-west-crate52"
+about = "the harbor pier west crate52, cut from its fused tile (36 triangles)"
+
+[[objects]]
+id = "object/brinecove/harbor-pier-west-crate78"
+group = "SM_BC_HarborPierWestCrate78"
+model = "prop/brinecove/harbor-pier-west-crate78"
+about = "the harbor pier west crate78, cut from its fused tile (36 triangles)"
+
+[[objects]]
+id = "object/brinecove/harbor-pier-west-rope52"
+group = "SM_BC_HarborPierWestRope52"
+model = "prop/brinecove/harbor-pier-west-rope52"
+about = "the harbor pier west rope52, cut from its fused tile (120 triangles)"
+
+[[objects]]
+id = "object/brinecove/harbor-pier-west-rope78"
+group = "SM_BC_HarborPierWestRope78"
+model = "prop/brinecove/harbor-pier-west-rope78"
+about = "the harbor pier west rope78, cut from its fused tile (120 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-cargo-e120-barrel1"
+group = "SM_BC_PropsCargoE120Barrel1"
+model = "prop/brinecove/props-cargo-e120-barrel1"
+about = "the props cargo e120 barrel1, cut from its fused tile (128 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-cargo-e120-barrel2"
+group = "SM_BC_PropsCargoE120Barrel2"
+model = "prop/brinecove/props-cargo-e120-barrel2"
+about = "the props cargo e120 barrel2, cut from its fused tile (128 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-cargo-e120-crate1"
+group = "SM_BC_PropsCargoE120Crate1"
+model = "prop/brinecove/props-cargo-e120-crate1"
+about = "the props cargo e120 crate1, cut from its fused tile (36 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-cargo-e120-crate2"
+group = "SM_BC_PropsCargoE120Crate2"
+model = "prop/brinecove/props-cargo-e120-crate2"
+about = "the props cargo e120 crate2, cut from its fused tile (36 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-cargo-e120-rope"
+group = "SM_BC_PropsCargoE120Rope"
+model = "prop/brinecove/props-cargo-e120-rope"
+about = "the props cargo e120 rope, cut from its fused tile (144 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-cargo-e270-barrel1"
+group = "SM_BC_PropsCargoE270Barrel1"
+model = "prop/brinecove/props-cargo-e270-barrel1"
+about = "the props cargo e270 barrel1, cut from its fused tile (128 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-cargo-e270-barrel2"
+group = "SM_BC_PropsCargoE270Barrel2"
+model = "prop/brinecove/props-cargo-e270-barrel2"
+about = "the props cargo e270 barrel2, cut from its fused tile (128 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-cargo-e270-crate1"
+group = "SM_BC_PropsCargoE270Crate1"
+model = "prop/brinecove/props-cargo-e270-crate1"
+about = "the props cargo e270 crate1, cut from its fused tile (36 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-cargo-e270-crate2"
+group = "SM_BC_PropsCargoE270Crate2"
+model = "prop/brinecove/props-cargo-e270-crate2"
+about = "the props cargo e270 crate2, cut from its fused tile (36 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-cargo-e270-rope"
+group = "SM_BC_PropsCargoE270Rope"
+model = "prop/brinecove/props-cargo-e270-rope"
+about = "the props cargo e270 rope, cut from its fused tile (144 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-cargo-e60-barrel1"
+group = "SM_BC_PropsCargoE60Barrel1"
+model = "prop/brinecove/props-cargo-e60-barrel1"
+about = "the props cargo e60 barrel1, cut from its fused tile (128 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-cargo-e60-barrel2"
+group = "SM_BC_PropsCargoE60Barrel2"
+model = "prop/brinecove/props-cargo-e60-barrel2"
+about = "the props cargo e60 barrel2, cut from its fused tile (128 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-cargo-e60-crate1"
+group = "SM_BC_PropsCargoE60Crate1"
+model = "prop/brinecove/props-cargo-e60-crate1"
+about = "the props cargo e60 crate1, cut from its fused tile (36 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-cargo-e60-crate2"
+group = "SM_BC_PropsCargoE60Crate2"
+model = "prop/brinecove/props-cargo-e60-crate2"
+about = "the props cargo e60 crate2, cut from its fused tile (36 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-cargo-e60-rope"
+group = "SM_BC_PropsCargoE60Rope"
+model = "prop/brinecove/props-cargo-e60-rope"
+about = "the props cargo e60 rope, cut from its fused tile (144 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-cargo-w170-barrel1"
+group = "SM_BC_PropsCargoW170Barrel1"
+model = "prop/brinecove/props-cargo-w170-barrel1"
+about = "the props cargo w170 barrel1, cut from its fused tile (128 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-cargo-w170-barrel2"
+group = "SM_BC_PropsCargoW170Barrel2"
+model = "prop/brinecove/props-cargo-w170-barrel2"
+about = "the props cargo w170 barrel2, cut from its fused tile (128 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-cargo-w170-crate1"
+group = "SM_BC_PropsCargoW170Crate1"
+model = "prop/brinecove/props-cargo-w170-crate1"
+about = "the props cargo w170 crate1, cut from its fused tile (36 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-cargo-w170-crate2"
+group = "SM_BC_PropsCargoW170Crate2"
+model = "prop/brinecove/props-cargo-w170-crate2"
+about = "the props cargo w170 crate2, cut from its fused tile (36 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-cargo-w170-rope"
+group = "SM_BC_PropsCargoW170Rope"
+model = "prop/brinecove/props-cargo-w170-rope"
+about = "the props cargo w170 rope, cut from its fused tile (144 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-cargo-w250-barrel1"
+group = "SM_BC_PropsCargoW250Barrel1"
+model = "prop/brinecove/props-cargo-w250-barrel1"
+about = "the props cargo w250 barrel1, cut from its fused tile (128 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-cargo-w250-barrel2"
+group = "SM_BC_PropsCargoW250Barrel2"
+model = "prop/brinecove/props-cargo-w250-barrel2"
+about = "the props cargo w250 barrel2, cut from its fused tile (128 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-cargo-w250-crate1"
+group = "SM_BC_PropsCargoW250Crate1"
+model = "prop/brinecove/props-cargo-w250-crate1"
+about = "the props cargo w250 crate1, cut from its fused tile (36 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-cargo-w250-crate2"
+group = "SM_BC_PropsCargoW250Crate2"
+model = "prop/brinecove/props-cargo-w250-crate2"
+about = "the props cargo w250 crate2, cut from its fused tile (36 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-cargo-w250-rope"
+group = "SM_BC_PropsCargoW250Rope"
+model = "prop/brinecove/props-cargo-w250-rope"
+about = "the props cargo w250 rope, cut from its fused tile (144 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-cargo-w60-barrel1"
+group = "SM_BC_PropsCargoW60Barrel1"
+model = "prop/brinecove/props-cargo-w60-barrel1"
+about = "the props cargo w60 barrel1, cut from its fused tile (128 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-cargo-w60-barrel2"
+group = "SM_BC_PropsCargoW60Barrel2"
+model = "prop/brinecove/props-cargo-w60-barrel2"
+about = "the props cargo w60 barrel2, cut from its fused tile (128 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-cargo-w60-crate1"
+group = "SM_BC_PropsCargoW60Crate1"
+model = "prop/brinecove/props-cargo-w60-crate1"
+about = "the props cargo w60 crate1, cut from its fused tile (36 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-cargo-w60-crate2"
+group = "SM_BC_PropsCargoW60Crate2"
+model = "prop/brinecove/props-cargo-w60-crate2"
+about = "the props cargo w60 crate2, cut from its fused tile (36 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-cargo-w60-rope"
+group = "SM_BC_PropsCargoW60Rope"
+model = "prop/brinecove/props-cargo-w60-rope"
+about = "the props cargo w60 rope, cut from its fused tile (144 triangles)"
 
 # --- Generated by tools/migrate/towns.py: every other runtime group of the region (rerun to regenerate) ---
 

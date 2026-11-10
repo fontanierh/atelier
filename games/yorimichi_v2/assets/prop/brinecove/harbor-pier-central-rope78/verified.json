@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/harbor-pier-central-rope78",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_HarborPierCentralRope78.uasset": "35122c4a8b87f0c06af62c9d2ee47929c6c6e76a5a9f23cfaa38ed603d08c82b"
+  },
+  "input_fingerprint": "4955d8072adada0aafe92d93334c22f57f5f5b79cc194c6fb89ec9ff71236855",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_HarborPierCentralRope78": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

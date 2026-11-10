@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/props-cargo-w170-rope",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_PropsCargoW170Rope.uasset": "5a1138ead350082de279915a5447b44e9779b6241e7f21613cfbcfdb2da2933b"
+  },
+  "input_fingerprint": "2264777922b3b1c1aecdce020a617fd1b5df2eae7a07c4769ceb4bcc2db64d92",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_PropsCargoW170Rope": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

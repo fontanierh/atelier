@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/harbor-pier-central-crate52",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_HarborPierCentralCrate52.uasset": "d85efa5eaed89629d4863ce9ebdf8d5c2133be9f1052fd51e0215c15c5210031"
+  },
+  "input_fingerprint": "7d4b9c20dad26be6b903098086469d40b28183b26d23a806209f8d4db24a1203",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_HarborPierCentralCrate52": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

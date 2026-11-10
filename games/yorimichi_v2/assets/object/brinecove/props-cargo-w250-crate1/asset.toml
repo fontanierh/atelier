@@ -1,0 +1,12 @@
+# One saved object of region/w09-brinecove (tools/migrate/objects.py, from its objects.toml): the props cargo w250 crate1, cut from its fused tile (36 triangles).
+# Its placement is this actor package; its model is prop/brinecove/props-cargo-w250-crate1. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/brinecove/props-cargo-w250-crate1"
+kind = "placement"
+authority = "editor"
+owner = "region/w09-brinecove"
+references = ["prop/brinecove/props-cargo-w250-crate1"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/4/LP/Q44Y10W3ZIC23YPGL6WZ6C"

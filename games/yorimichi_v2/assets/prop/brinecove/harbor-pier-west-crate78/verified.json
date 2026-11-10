@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/harbor-pier-west-crate78",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_HarborPierWestCrate78.uasset": "33c44304a8ede7a7068c7510bf2dd70822e547325266afb46fa12bb6c7e8e940"
+  },
+  "input_fingerprint": "26cfe7b89636cdb7826acf6a2c69f257a27002dc8009e12f4a49b099a843e686",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_HarborPierWestCrate78": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

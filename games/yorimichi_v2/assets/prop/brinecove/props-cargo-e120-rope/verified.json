@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/props-cargo-e120-rope",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_PropsCargoE120Rope.uasset": "8eadba4d878b06bb91bcd1b4dd41d7f7282cc7ba6e467448ae4569084f9bd95d"
+  },
+  "input_fingerprint": "700acd22b2c3a77f2c60ba47740741dbd50373ee10e49413fd6ebbaac89dff31",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_PropsCargoE120Rope": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

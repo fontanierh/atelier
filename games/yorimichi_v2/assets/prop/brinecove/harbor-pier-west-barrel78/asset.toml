@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_HarborPierWestBarrel78: the harbor pier west barrel78, cut from the fused tile(s) Harbor_3_3 (128 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/brinecove/harbor-pier-west-barrel78"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/brinecove/harbor-pier-west-barrel78"
+references = ["adopted/brinecove/materials"]
+
+[[sources]]
+path = "src/SM_BC_HarborPierWestBarrel78.glb"
+sha256 = "d7d02ea7d7b9a30ece487c7ca03b86a4c062eb70022fa8b072ae86c19f656e16"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Brinecove/Materials/MI_BC_metal", "/Game/Brinecove/Materials/MI_BC_wood"]
+triangles = 128
+collision = "complex"
+full_precision_uvs = true
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_HarborPierWestBarrel78"

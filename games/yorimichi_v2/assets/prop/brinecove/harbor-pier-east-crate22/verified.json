@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/harbor-pier-east-crate22",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_HarborPierEastCrate22.uasset": "f0a1c5c702b67c5a9d23c0491acc53ee12035907c5b2a12b3a60f9b92462e747"
+  },
+  "input_fingerprint": "7f0102ea44c5712c047f15878fd1ac4e5df5b93ae925654246805357324c4859",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_HarborPierEastCrate22": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

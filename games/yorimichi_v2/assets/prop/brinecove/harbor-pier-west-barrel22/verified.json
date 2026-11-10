@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/harbor-pier-west-barrel22",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_HarborPierWestBarrel22.uasset": "9c419f52056119fdd4cb2913d9853b8dae1ef3cc42d233f54abb4cc79525a829"
+  },
+  "input_fingerprint": "5b71e9c5d4ff9bb2bfdeeb10f5c48c6ecb83127406380c4451736dd13ccf992b",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_HarborPierWestBarrel22": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

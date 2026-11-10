@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/props-cargo-e60-barrel1",
+  "dependencies": {
+    "prop/brinecove/props-cargo-e60-barrel1": "5d938ee4a5c75ae17406bd335c7820f3cff793f539e82c221e52c6bee2bd1ef4"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/7/YB/AJZEWNDM37WEC1IWYE5SRD.uasset": "a2c692fcbf30e93d2cbbaa2d06bbf4add35decf2583d71a8e617131e3a016bc4"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_PropsCargoW250Barrel1: the props cargo w250 barrel1, cut from the fused tile(s) Props_3_3 (128 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/brinecove/props-cargo-w250-barrel1"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/brinecove/props-cargo-w250-barrel1"
+references = ["adopted/brinecove/materials"]
+
+[[sources]]
+path = "src/SM_BC_PropsCargoW250Barrel1.glb"
+sha256 = "fb1b6c576b7dba7e4a5baa4b75bb9cf5b5d40a4e453bd710c8c0ecca1f6b3810"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Brinecove/Materials/MI_BC_metal", "/Game/Brinecove/Materials/MI_BC_wood"]
+triangles = 128
+collision = "complex"
+full_precision_uvs = true
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_PropsCargoW250Barrel1"

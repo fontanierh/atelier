@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/harbor-pier-central-crate52",
+  "dependencies": {
+    "prop/brinecove/harbor-pier-central-crate52": "2c7d7e8962a5e2bca50bc80c8e14d82398dce159ea08d8de216d65878e669bb2"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/5/VJ/ISYSE7WPFZKCTJGWJIE92Z.uasset": "06db8683c3bdb9fba32cf02948e025a413ee0db7d7af115d19d2e46755989da7"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

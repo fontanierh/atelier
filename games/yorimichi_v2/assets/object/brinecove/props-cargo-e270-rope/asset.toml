@@ -1,0 +1,12 @@
+# One saved object of region/w09-brinecove (tools/migrate/objects.py, from its objects.toml): the props cargo e270 rope, cut from its fused tile (144 triangles).
+# Its placement is this actor package; its model is prop/brinecove/props-cargo-e270-rope. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/brinecove/props-cargo-e270-rope"
+kind = "placement"
+authority = "editor"
+owner = "region/w09-brinecove"
+references = ["prop/brinecove/props-cargo-e270-rope"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/E/AV/R6IM9B9U1LVJP3E55E5C1T"

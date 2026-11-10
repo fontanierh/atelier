@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/props-cargo-w60-barrel2",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_PropsCargoW60Barrel2.uasset": "4092c7e56654d2ddb2e6d5e106f8ee3f9be4de14e6e9f6fd53637353939d566e"
+  },
+  "input_fingerprint": "4e777e089bd6148b175d66d94229d373d0e38aa2d2934d3699ba54d556f8e382",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_PropsCargoW60Barrel2": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

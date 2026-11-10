@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/harbor-pier-east-barrel78",
+  "dependencies": {
+    "prop/brinecove/harbor-pier-east-barrel78": "53b021400d6b2e04bd4af68f2f8f280e72f6e8436d1b07520f86c3790c692c9a"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/3/WI/HPJICDC7E4UURGA8XS6G3U.uasset": "0e14c9deacbd8417a1c00e0ac7f92654d6885fe226ef6bea0f5209bcff8cb256"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}
