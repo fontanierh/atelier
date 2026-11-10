@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/props-cargo-e270-crate1",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_PropsCargoE270Crate1.uasset": "5b9540099ef9dc7d26d9b632b3b91b0acf8fef600508eb8f4a349385ccaa4b05"
+  },
+  "input_fingerprint": "285cd0d4645a7536245acbd8ed63f7d4db0e8684eab457b34179cb1acb48dd26",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_PropsCargoE270Crate1": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

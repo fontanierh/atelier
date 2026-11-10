@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/props-cargo-e60-rope",
+  "dependencies": {
+    "prop/brinecove/props-cargo-e60-rope": "7a2d77580996d51a5f09289352c5e8ec1fca36516b8718ce01f2703c00e35bb8"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/4/TP/95LBVGDH8VD247S3XKKTTB.uasset": "31c75ced594af3df125dbfa6ff3d11003735e795362b014eb255d793d65049e2"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

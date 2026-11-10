@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/harbor-pier-west-rope78",
+  "dependencies": {
+    "prop/brinecove/harbor-pier-west-rope78": "9a40f83da4f9d23d3369d28052f787f9cfacc83b1b75d1b9a3790b1fb263a817"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/9/KH/1ZTFO8XGCM7FVXF2KJDQ8X.uasset": "d86f3f40a9a0ce0af4a81c3916563294dc51d6c7c5f2b62f6d53de2238ebc883"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_HarborPierCentralRope78: the harbor pier central rope78, cut from the fused tile(s) Harbor_3_3 (120 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/brinecove/harbor-pier-central-rope78"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/brinecove/harbor-pier-central-rope78"
+references = ["adopted/brinecove/materials"]
+
+[[sources]]
+path = "src/SM_BC_HarborPierCentralRope78.glb"
+sha256 = "08c05156eed407c3fe3b279bea5b8273e07e5847e02c96ca645c15b8e3a3b90c"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Brinecove/Materials/MI_BC_rope"]
+triangles = 120
+collision = "complex"
+full_precision_uvs = true
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_HarborPierCentralRope78"

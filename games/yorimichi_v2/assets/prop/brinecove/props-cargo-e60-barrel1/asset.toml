@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_PropsCargoE60Barrel1: the props cargo e60 barrel1, cut from the fused tile(s) Props_4_3 (128 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/brinecove/props-cargo-e60-barrel1"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/brinecove/props-cargo-e60-barrel1"
+references = ["adopted/brinecove/materials"]
+
+[[sources]]
+path = "src/SM_BC_PropsCargoE60Barrel1.glb"
+sha256 = "eb07f694f1b55686c4623291f78ffdaa4cca2eb53771bf86f3426c482bd368f9"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Brinecove/Materials/MI_BC_metal", "/Game/Brinecove/Materials/MI_BC_wood"]
+triangles = 128
+collision = "complex"
+full_precision_uvs = true
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_PropsCargoE60Barrel1"

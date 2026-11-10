@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_HarborPierWestCrate52: the harbor pier west crate52, cut from the fused tile(s) Harbor_3_3 (36 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/brinecove/harbor-pier-west-crate52"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/brinecove/harbor-pier-west-crate52"
+references = ["adopted/brinecove/materials"]
+
+[[sources]]
+path = "src/SM_BC_HarborPierWestCrate52.glb"
+sha256 = "2016ebdbf8a04d1783dbcb2e647ad39f25b08f6bc304334dcfb871752dcbf706"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Brinecove/Materials/MI_BC_wood_dark", "/Game/Brinecove/Materials/MI_BC_wood_light"]
+triangles = 36
+collision = "complex"
+full_precision_uvs = true
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_HarborPierWestCrate52"

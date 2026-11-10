@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/harbor-pier-east-crate52",
+  "dependencies": {
+    "prop/brinecove/harbor-pier-east-crate52": "d4ae3fee98555457bc18555393ca316e525a667f47928a64559382736c760181"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/E/QX/00Y4T25HEWVADQX402TRLX.uasset": "676bd04eaed875c8d76161ec4f7abad4df53f9edd9e359e0e5bca2f34e21f872"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}
