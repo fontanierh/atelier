@@ -35,12 +35,12 @@ optional simply because a patch is legal to save.
 ## Source closure still to classify
 
 At this revision 51 open adopted records have no direct `[[sources]]` and no recipe. Three of them are the already
-linked Adventure/animation records. The other **48 records / 678 packages** comprise:
+linked Adventure/animation records. The other **48 records / 676 packages** comprise:
 
 | Family | Records | Packages |
 |---|---:|---:|
 | Residual Belmonte train packages | 7 | 459 |
-| Japan materials (41 prepared, 2 blocked: see below) | 7 | 43 |
+| Japan materials (41 prepared in seven adopted records; 2 used leaves are recipe records: see below) | 7 | 41 |
 | Brine Cove plants | 9 | 36 |
 | City tree residual packages | 1 | 36 |
 | Mega Park materials and standalone map | 4 | 25 |
@@ -81,16 +81,20 @@ the 14 standalone LOD1/LOD2 meshes and their packages are gone (473 to 459).
 Next step, not run here: textures remain prepared,
 for all 138 donor-backed ids, after the generator's own source record is pinned.
 
-## Japan materials: source closure (prepared, not applied)
+## Japan materials: source closure (leaves imported; the rest read-confirmed)
 
 The seven adopted records `adopted/japan/materials/{bark, buildings, foliage, ground, rock-concrete, sky-wind, water}`
-hold 43 packages, all `MI_*` material instances in `/Game/Japan/Materials`, all `authority = "editor"`. They have no
-`[[sources]]` and no recipe, and they stay that way: adding sources would make `check.py` report `STALE_IMPORT`.
+hold 41 packages, all `MI_*` material instances in `/Game/Japan/Materials`, all `authority = "editor"`. They have no
+`[[sources]]` and no recipe, and they stay that way: adding sources would make `check.py` report `STALE_IMPORT`. The
+two used leaves (`MI_LeafAmber`, `MI_LeafCrimson`) were moved out of `foliage` into their own `material-instance` records,
+`assets/material/japan/leaf-{amber,crimson}`, which carry a recipe (see "Recipe for the two used leaves").
 
 Result: **0** imported textures or meshes (a). **41** generator-built instances (b): **Prepared, read-confirmed**,
 the saved parent and parameters match the donor script on every row. **2** used leaf instances
-(`MI_LeafAmber`, `MI_LeafCrimson`): **Prepared, recipe recorded**. No row is Blocked. Nothing here is verified
-closure: the read confirms parameters only, and no import has been compared with the accepted packages.
+(`MI_LeafAmber`, `MI_LeafCrimson`): **Imported and verified** on 2026-11-10 from their recipe under claim task
+`LEAVES`. A read-only parameter read before and after the import is identical (parent `M_Foliage`, only `Tex`
+overridden, effective `FadeMode`, `CutScale` and `Tint` unchanged), and `check.py` accepts both records. No row is
+Blocked. The 41 (b) rows are not verified closure: their read confirms parameters only.
 
 Method. Each saved `.uasset` matches its `verified.json` sha256 in the full donor checkout and in the fix checkout
 (43 of 43). Parent and texture references were read from those bytes with `LC_ALL=C grep -a`. Every (b) package is
@@ -170,10 +174,10 @@ Parent and texture references come from the real package bytes:
 | `MI_FeatherDark` | `foliage` | Prepared, read-confirmed | `M_Painted` | `T_white` | shared_materials.py build_materials |
 | `MI_Flower` | `foliage` | Prepared, read-confirmed | `M_Foliage` | `T_flower` | shared_materials.py build_materials |
 | `MI_Grass` | `foliage` | Prepared, read-confirmed | `M_Grass` | `T_grass` | shared_materials.py build_materials |
-| `MI_LeafAmber` | `foliage` | Prepared, recipe recorded | `M_Foliage` | `T_leaf_amber` | recipe below (no donor builder) |
+| `MI_LeafAmber` | `material/japan/leaf-amber` | Prepared, recipe recorded | `M_Foliage` | `T_leaf_amber` | recipe below (no donor builder) |
 | `MI_LeafBroad` | `foliage` | Prepared, read-confirmed | `M_Foliage` | `T_leaf_broad` | shared_materials.py build_materials |
 | `MI_LeafCedar` | `foliage` | Prepared, read-confirmed | `M_Foliage` | `T_leaf_cedar` | shared_materials.py build_materials |
-| `MI_LeafCrimson` | `foliage` | Prepared, recipe recorded | `M_Foliage` | `T_leaf_crimson` | recipe below (no donor builder) |
+| `MI_LeafCrimson` | `material/japan/leaf-crimson` | Prepared, recipe recorded | `M_Foliage` | `T_leaf_crimson` | recipe below (no donor builder) |
 | `MI_LeafCypress` | `foliage` | Prepared, read-confirmed | `M_Foliage` | `T_LeafCypress` | import_forest.py (textures from tools/forest_textures.py) |
 | `MI_LeafGinkgo` | `foliage` | Prepared, read-confirmed | `M_Foliage` | `T_leaf_ginkgo` | shared_materials.py build_materials |
 | `MI_LeafMaple` | `foliage` | Prepared, read-confirmed | `M_Foliage` | `T_leaf_maple` | shared_materials.py build_materials |
@@ -202,12 +206,20 @@ Used leaves: `MI_LeafAmber` and `MI_LeafCrimson` are **used**: `assets/prop/japa
 and `tree-canopy-crimson/asset.toml` (recipe `slot_map`, line 20) bind their `LeafMaple` slot to them. No donor script
 builds them, so the original script is not found. Their image inputs are the treehouse generator's `T_leaf_amber.png`
 and `T_leaf_crimson.png` (`world/regions/treehouse/trees.py`, listed above). They are not relabelled as editor
-originals.
+originals. Their texture packages `T_leaf_amber` and `T_leaf_crimson` are already owned by the editor-saved record
+`adopted/japan/textures/leaf-atlases`, so the leaf records reference that record as an input and pin no PNG of their
+own (committing the derived PNG would need its rights settled first). That record's sources are the Tuscan leaf JPGs,
+not these two PNGs, so whether the saved `T_leaf_*` bytes match the PNGs above is not verified.
 
 ### Recipe for the two used leaves
 
-`material-instance` is a valid record kind (`tools/content/records.py`), but no record uses it and no recipe fields
-are defined for it, so the recipe is recorded here rather than as a new schema.
+`material-instance` now has a recipe schema (`tools/content/records.py`, `material_settings`): `[recipe]` with
+`importer = "material-instance"` and version 1, and `[recipe.settings]` with `parent` (a `/Game` package), `textures`
+(parameter to `/Game` texture package), `scalars` and `vectors`. Every package it reads must be owned by one of its
+`input_dependencies`. The records are `assets/material/japan/leaf-amber/asset.toml` and
+`assets/material/japan/leaf-crimson/asset.toml`, with inputs `adopted/japan/materials/base-materials` (the parent) and
+`adopted/japan/textures/leaf-atlases` (the texture). Neither has a verified state yet, so `check.py` reports each as
+`RECORD_MISSING` and its package as `UNOWNED` until the import below is run. The table is the recipe they state:
 
 | Field | `MI_LeafAmber` | `MI_LeafCrimson` |
 |---|---|---|
@@ -241,9 +253,19 @@ clip 0.5 on `MI_Bark`, `MI_RoofTile`, `MI_Tile`, `MI_Plaster`, `MI_Wood`, `MI_La
 `tests/test_japan_materials_read.py`.
 
 Still to do, not run here: (1) an editor reproduction of each generator row, compared with its accepted package;
-(2) an editor reproduction of the two leaf recipes, compared with their accepted packages; (3) a read of the
-base-property overrides of the 13 rows; (4) the texture imports listed above, compared with the saved parents.
-Counts are pinned by `tests/test_japan_materials_sources.py`.
+(2) the leaf import below, compared with the accepted packages; (3) a read of the base-property overrides of the 13
+rows; (4) the texture imports listed above, compared with the saved parents. Counts are pinned by
+`tests/test_japan_materials_sources.py`; the leaf schema, records and import route by `tests/test_material_records.py`.
+
+Native steps for the two leaves (prepared, not run; each needs an editor, claims and a clean LFS hydrate).
+`uv run python games/yorimichi_v2/tools/import/run.py material/japan/leaf-amber material/japan/leaf-crimson --plan`
+prints the plan. The import is `tools/import/run.py` with `--claim TASK`: an active claim on scopes
+`shared/japan/materials/leaf-amber` and `shared/japan/materials/leaf-crimson`, with the LFS locks on
+`unreal/Content/Japan/Materials/MI_LeafAmber.uasset`, `MI_LeafCrimson.uasset` and their companions. The
+`adopted/japan/materials/foliage` and `adopted/japan/textures/leaf-atlases` records are read, not written. Before the
+import, read the accepted parameters with `report_materials.py` (the editor read above). After it, read them again and
+compare both rows with `docs/inventory/japan-materials-read.json`: parent `M_Foliage`, `Tex` the texture, no overrides,
+and the same effective values. A record is accepted only once the importer writes its `verified.json`.
 
 Brine Cove's source-preservation route is applied by #787: 148 carved tile records keep their fused original and a
 carve selection, and each remainder derives byte-identically (see [sources.md](sources.md)). No accepted package changed.

@@ -181,6 +181,7 @@ def check(game: Path = GAME, *, full: bool = False, write_index: bool = True,
                 problems.append(Problem('SCHEMA', asset.id, str(error), 'regenerate the record through its owner route'))
     state = {aid: records.state_fingerprint(v) for aid, v in verified.items()}
 
+    outputs_of = {a.id: {o.package for o in a.outputs} for a in assets}
     for asset in assets:
         generated = asset.authority in ('generated', 'split')
         redo = _import_action(asset) if generated else _save_action(asset.id)
@@ -188,6 +189,8 @@ def check(game: Path = GAME, *, full: bool = False, write_index: bool = True,
             if dep not in by_id:
                 problems.append(Problem('DEPENDENCY', asset.id, f'depends on unknown asset {dep}',
                                         'add its record or remove the dependency'))
+        for detail in records.material_input_problems(asset, outputs_of):
+            problems.append(Problem('DEPENDENCY', asset.id, detail, 'add the owning record to input_dependencies'))
         for source in asset.sources:
             rel = records.content_relative(game, asset.folder / source.path)
             digest = _file(game, rel, asset.id, problems, hasher, missing_action='restore the committed source')

@@ -61,7 +61,7 @@
    ]
   },
   "foliage": {
-   "about": "Japan foliage materials (19 package(s))",
+   "about": "Japan foliage materials (17 package(s))",
    "references": [
     "adopted/japan/materials/base-materials"
    ]
@@ -177,10 +177,8 @@
   "/Game/Japan/Materials/MI_Grass": "foliage",
   "/Game/Japan/Materials/MI_Ground": "ground",
   "/Game/Japan/Materials/MI_Lattice": "buildings",
-  "/Game/Japan/Materials/MI_LeafAmber": "foliage",
   "/Game/Japan/Materials/MI_LeafBroad": "foliage",
   "/Game/Japan/Materials/MI_LeafCedar": "foliage",
-  "/Game/Japan/Materials/MI_LeafCrimson": "foliage",
   "/Game/Japan/Materials/MI_LeafCypress": "foliage",
   "/Game/Japan/Materials/MI_LeafGinkgo": "foliage",
   "/Game/Japan/Materials/MI_LeafMaple": "foliage",
