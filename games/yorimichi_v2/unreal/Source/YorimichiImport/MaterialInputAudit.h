@@ -1,8 +1,10 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
+#include "SceneTypes.h"
 #include "MaterialInputAudit.generated.h"
 
+class UMaterial;
 class UMaterialExpression;
 
 /** A read of one actual FExpressionInput, independent of Python's protected-property access. */
@@ -30,4 +32,8 @@ public:
      */
     UFUNCTION(BlueprintCallable, Category="V2|Authoring")
     static FMaterialInputAuditResult ReadInput(UMaterialExpression* Expression, int32 InputIndex);
+
+    /** Read a material property's root input under the same read-only/error rules as ReadInput. */
+    UFUNCTION(BlueprintCallable, Category="V2|Authoring")
+    static FMaterialInputAuditResult ReadPropertyInput(UMaterial* Material, EMaterialProperty Property);
 };

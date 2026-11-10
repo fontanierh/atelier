@@ -4,9 +4,9 @@ The digest records what a graph is, not how Unreal happens to list it: each expr
 (parameter name, default, texture, sampler, constants), each input connection (source expression and output, destination
 expression and input), each material property connection, and the blend mode, shading model and two-sided flag.
 Expression indices and object names are not recorded, since a rebuild in another package has other names. The three
-lists are compared as multisets for diagnostics. Version 2 also fingerprints the graph rooted at each material property,
-including each node's ordered input pins and upstream structure: identical local nodes must not hide different wiring.
-Older reports lack that structure and must be read again; their lossy connection labels cannot establish equivalence.
+lists are compared as multisets for diagnostics. Version 3 fingerprints the graph rooted at each material property,
+including each node's ordered input pins and upstream structure, plus each root's native output index and component masks.
+Older reports must be read again; lossy connection labels or roots without their masks cannot establish equivalence.
 
 The graph is what the master renders: the expressions reachable from its property pins. An expression wired to nothing
 compiles into no shader, so it is listed apart as `unwired` and not compared with historical originals. The importer clears
@@ -53,7 +53,7 @@ EXPRESSION_PROPERTIES = ('parameter_name', 'default_value', 'r', 'constant', 'co
 # MaterialExpressions.ini; GetExternalCodeReferencesHash reads it from class default objects, not authored node settings.
 LISTS = ('expressions', 'connections', 'property_connections')
 SETS = ('parameters',)
-TOPOLOGY_VERSION = 2
+TOPOLOGY_VERSION = 3
 
 
 def _norm(value):
@@ -82,7 +82,7 @@ def accept(saved, rebuilt):
     """@cc [owner:fontanierh,label:correctness] master-digest-equals-saved
     A rebuilt master is accepted only when its wiring digest equals the saved original's, with nothing missing on either side:
     the settings, rooted topology with ordered input pins, the rendered graph and every parameter. An unwired expression
-    is not compared, unless it carries a parameter. An unreadable or legacy digest without version 2 topology refuses;
+    is not compared, unless it carries a parameter. An unreadable or legacy digest without version 3 topology refuses;
     lossy local-node labels MUST NOT be used to invent that topology. Returns differences; empty means accepted."""
     for label, digest in (('saved original', saved), ('rebuilt master', rebuilt)):
         if 'error' in digest:
@@ -187,10 +187,8 @@ def _expression_text(expression):
     return json.dumps({'class': kind, 'props': props}, sort_keys=True)
 
 
-def _input_output(expression, index, source):
-    """Use the native read-only accessor: protected FExpressionInput members cannot be read through Python reflection.
-    The source-node lookup returns only the first matching connection, so every connected input is read by index."""
-    selected = U.MaterialInputAudit.read_input(expression, index)
+def _selected_output(selected, source):
+    """Validate and label the native source/output/masks of either an expression input or a material-property root."""
     if selected.error:
         raise ValueError(f'material input audit: {selected.error}')
     if selected.source_path != source.get_path_name():
@@ -203,6 +201,12 @@ def _input_output(expression, index, source):
     if len(mask) != 5:
         raise ValueError('native input audit has an incomplete component mask')
     return json.dumps({'index': output, 'name': str(names[output]), 'mask': mask}, sort_keys=True)
+
+
+def _input_output(expression, index, source):
+    """Use the native read-only accessor: protected FExpressionInput members cannot be read through Python reflection.
+    The source-node lookup returns only the first matching connection, so every connected input is read by index."""
+    return _selected_output(U.MaterialInputAudit.read_input(expression, index), source)
 
 
 def _digest(material):
@@ -254,9 +258,9 @@ def _digest(material):
         nodes[expression.get_path_name()] = (named(expression), inputs)
     property_connections, roots = [], {}
     for pin, node in pins.items():
-        out = MEL.get_material_property_input_node_output_name(material, getattr(U.MaterialProperty, pin))
+        out = _selected_output(U.MaterialInputAudit.read_property_input(material, getattr(U.MaterialProperty, pin)), node)
         property_connections.append(f'{pin} <- {named(node)}.{out}')
-        roots[pin] = (str(out or ''), node.get_path_name())
+        roots[pin] = (out, node.get_path_name())
     return {'settings': settings, 'expressions': [named(e) for e in expressions], 'connections': connections,
             'property_connections': property_connections, 'parameters': parameters, 'unwired': unwired,
             'topology': _rooted_topology(nodes, roots)}

@@ -40,6 +40,7 @@ def node(cls, name, *, inputs=(), **props):
 class Material:
     def __init__(self, nodes, roots):
         self.nodes, self.roots = nodes, roots
+        self.root_audit = {}
         self.settings = {key: False for key in digest.SETTINGS}
 
     def get_editor_property(self, key):
@@ -74,6 +75,14 @@ class NativeInputAudit:
             props = dict(Expression=source, OutputIndex=names.index(name), Mask=0, MaskR=0, MaskG=0, MaskB=0, MaskA=0)
         return SimpleNamespace(error='', source_path=props['Expression'].get_path_name(), output_index=props['OutputIndex'],
                                masks=[props[key] for key in ('Mask', 'MaskR', 'MaskG', 'MaskB', 'MaskA')])
+
+    @staticmethod
+    def read_property_input(material, pin):
+        source, name = material.roots[pin]
+        values = dict(error='', source_path=source.get_path_name(),
+                      output_index=Editing.get_material_expression_output_names(source).index(name),
+                      masks=[0, 0, 0, 0, 0])
+        return SimpleNamespace(**{**values, **material.root_audit.get(pin, {})})
 
 
 @pytest.fixture(autouse=True)
@@ -278,6 +287,42 @@ def test_known_connection_property_names_are_not_read_as_scalar_settings(cls, pi
     material = Material([expression], {'MP_EMISSIVE_COLOR': (expression, '')})
     result = digest.read(material)
     assert 'error' not in result and digest.accept(result, digest.read(material)) == []
+
+
+def test_material_root_component_masks_are_part_of_the_rendered_topology():
+    """Base Color selecting R cannot equal RGB from the same node/output, even with identical internal wiring."""
+    material = retail()
+    material.root_audit['MP_BASE_COLOR'] = {'masks': [1, 1, 1, 1, 0]}
+    saved = digest.read(material)
+    assert digest.accept(saved, digest.read(material)) == []
+    material.root_audit['MP_BASE_COLOR'] = {'masks': [1, 1, 0, 0, 0]}
+    changed = digest.read(material)
+    assert saved['expressions'] == changed['expressions'] and saved['connections'] == changed['connections']
+    assert 'rendered topology differs at MP_BASE_COLOR' in digest.accept(saved, changed)
+
+
+def test_material_root_output_index_is_kept_when_output_names_are_equal():
+    source = node('MaterialExpressionCustom', 'custom', code='return 0;', outputs=['Colour', 'Colour'])
+    material = Material([source], {'MP_BASE_COLOR': (source, 'Colour')})
+    saved = digest.read(material)
+    material.root_audit['MP_BASE_COLOR'] = {'output_index': 1}
+    assert 'rendered topology differs at MP_BASE_COLOR' in digest.accept(saved, digest.read(material))
+
+
+@pytest.mark.parametrize('failed_read', [{'error': 'unreadable root'}, {'masks': [1, 1, 0, 0]},
+                                       {'source_path': 'wrong-source'}, {'output_index': 99}])
+def test_material_root_native_read_failures_refuse(failed_read):
+    material = retail()
+    saved = digest.read(material)
+    material.root_audit['MP_BASE_COLOR'] = failed_read
+    failed = digest.read(material)
+    assert 'error' in failed and digest.accept(saved, failed) and digest.accept(failed, failed)
+
+
+def test_topology_without_material_root_masks_is_legacy_evidence():
+    legacy = digest.read(retail())
+    legacy['topology']['version'] = 2
+    assert 'lacks version 3 rooted topology' in digest.accept(legacy, legacy)[0]
 
 
 @pytest.mark.parametrize('setting', ['is_sky', 'blendable_location', 'dithered_lod_transition',
