@@ -8,6 +8,7 @@ FAMILY = {
     'owner': 'shared/swordcamp/materials',
     'license': 'owner-published (docs/DECISIONS.md D05 group 1)',
     'builder': 'swordcamp_masters.py',   # unreal/Scripts/material_masters/, copied into each record's src/
+    'helpers': ['master_haze.py'],   # copied and pinned after the entry builder in each record's sources
     'donor': 'games/yorimichi/unreal/Scripts/import_swordcamp.py',   # blob sha256 86ce7b5e...
     'donor_lines': {'build_material': '46-113', 'build_ronin_body_material': '116-171'},
     # The 14 static-mesh props that reference adopted/swordcamp/materials each name M_SwordCamp in slot_materials, so the
