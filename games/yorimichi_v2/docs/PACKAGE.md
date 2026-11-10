@@ -4,7 +4,27 @@ The package workflow is implemented. A normal build validates and compiles; cook
 below run from the repository root of an owned checkout at a stopped native-job boundary. Publication uses the
 existing verified package and the [release workflow](../../../docs/RELEASES.md), without another cook.
 
-## Current checkpoint (2026-11-10)
+## Integration package for #803 and #804 (2026-11-10)
+
+- **Built:** branch revision `7f43b4ccf3`: main `72a7033bf2` (with the packaging guard fix
+  [PR #807](https://github.com/fontanierh/atelier/pull/807)) plus [PR #803](https://github.com/fontanierh/atelier/pull/803)
+  and [PR #804](https://github.com/fontanierh/atelier/pull/804). The guarded `unreal.package` finished at 13:03 Paris in
+  243 s, with the cook up to date; the EPERM guard failure of the earlier attempts did not recur. Fingerprint
+  `88d415e733ec`, about 3.2 GB, extracted outside every checkout. It is a pre-merge package: it is not main's package.
+- **Automated checks:** all eight pass (identity, executable, signatures, audio entitlement, 14 bundled dependencies,
+  no excluded content, 62 runtime-data files unchanged).
+- **Observed launch:** `first_launch` and `shutdown` are recorded as passed for `88d415e733ec`. Guarded
+  `atelier playtest --app`: LoadMap of the Slice in 15.6 s, no error lines, guard peak 7.9 GiB; the Quit event exited
+  with code 0 and the broker released the reservation with a successful tree observation. The evidence is the log
+  and guard reports; that session could not capture the screen.
+- **Not in this package:** the multiplayer session map fix ([PR #808](https://github.com/fontanierh/atelier/pull/808)) and
+  the multiplayer content manifest ([PR #809](https://github.com/fontanierh/atelier/pull/809)). A later package from
+  `f276a40021` (with #808) passed the same automated checks and launch, but `HostGame` was refused: `This build has no
+  multiplayer content manifest`. No V2 package before #809 can host or join a session.
+- **Remaining manual checks:** `input`, `map_travel`, `gameplay`, `sound`, `settings_persistence` and
+  `save_persistence` are not recorded, so `verify` fails for this package as for the main package below.
+
+## Current main checkpoint (2026-11-10)
 
 - **Built:** main `7719234597` (after [PR #801](https://github.com/fontanierh/atelier/pull/801)), ready at 08:38 Paris.
   The step took 280 s because the cook reused the previous one; `check.py --full` reported 0 problems over 7,219

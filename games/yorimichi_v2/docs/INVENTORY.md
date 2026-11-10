@@ -28,6 +28,7 @@ The source baseline `7eec0f98dd` is documented separately in [features](inventor
 | Brine Cove individual objects | All 21 market stalls, all 265 town objects, the two harbour Soft fragments, eleven small props and three ship objects have saved placements in main ([PR #787](https://github.com/fontanierh/atelier/pull/787)). The signal mast and the shipyard slip are saved, merged and packaged ([PR #798](https://github.com/fontanierh/atelier/pull/798), [PR #800](https://github.com/fontanierh/atelier/pull/800)). Other scenery still includes fused models/patches. | [Brine Cove scope](inventory/brinecove-objects.md), [split work](inventory/brinecove-split.md), [remaining exceptions](inventory/exceptions.md). |
 | Transport objects | The 10 gondola pylons and 12 railway fittings are saved as their own objects; their fused groups and the train LOD records are retired. | [PR #790](https://github.com/fontanierh/atelier/pull/790), [exceptions](inventory/exceptions.md). |
 | Desktop package | Built 2026-11-10 08:38 Paris from main `7719234597` (fingerprint `0adbb5ab212e`). All automated checks pass; first launch (Slice in 15.7 s, peak 7.8 GiB, no error lines) and shutdown were observed passing. The previous `bb451f636160` (#797) app is kept. | [Package guide](PACKAGE.md). Human input, travel, gameplay, sound and persistence checks are not claimed complete. |
+| Integration package (#803, #804) | Built 2026-11-10 13:03 Paris from branch `7f43b4ccf3` (main `72a7033bf2` plus #803 and #804; fingerprint `88d415e733ec`). All automated checks pass; first launch (Slice in 15.6 s, peak 7.9 GiB, no error lines) and shutdown were observed passing. | [Package guide](PACKAGE.md#integration-package-for-803-and-804-2026-11-10). Pre-merge, and without the #808 session map and the #809 multiplayer manifest: it cannot host. The six manual checks are not recorded. |
 | Appearance | Whole-island captures exist, as well as the earlier slice route/package measurements. | [PARITY](PARITY.md) retains their exact revisions and limits; those earlier captures do not accept every later split. |
 
 ## Active work after this checkpoint
@@ -76,9 +77,11 @@ Remaining construction work:
   [sources](inventory/sources.md); an imported package with an unknown original stays unfinished.
 - Review and integrate the saved master follow-ups above. The earlier #799/#801 preparation and
   [master recovery design](inventory/master-sources.md) explain their provenance; they are not a second backlog.
-- Produce the next package checkpoint from accepted merged work and retain the existing package. The packaging
-  guard fix merged in [PR #805](https://github.com/fontanierh/atelier/pull/805) is separate from a successful native rerun;
-  no replacement package is claimed here. The six remaining manual acceptance checks and final owner-led
+- Produce the next package checkpoint from accepted merged work and retain the existing package. After the guard fixes
+  ([PR #805](https://github.com/fontanierh/atelier/pull/805), [PR #807](https://github.com/fontanierh/atelier/pull/807)) the
+  pre-merge integration package `88d415e733ec` built and launched (table above); the main package stays `0adbb5ab212e`
+  until #803/#804 merge. Packaged multiplayer needs [PR #809](https://github.com/fontanierh/atelier/pull/809): without
+  its content manifest a package refuses to host. The six remaining manual acceptance checks and final owner-led
   gameplay/multiplayer playtesting remain unrecorded. The last forecast was **14:00 Paris on 2026-11-10 for
   the held source set and 20:00 for useful-object splitting** (historical, unconfirmed). This documentation
   audit has not re-estimated it; package-guard and review work add uncertainty.
