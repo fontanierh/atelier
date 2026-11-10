@@ -140,6 +140,29 @@ def test_texture_coordinate_scale_changes_reject(axis):
     assert digest.accept(saved, digest.read(material))
 
 
+@pytest.mark.parametrize('axis', ['un_mirror_u', 'un_mirror_v'])
+def test_texture_coordinate_unmirror_changes_reject(axis):
+    """A rebuild must preserve whether either UV component removes mirrored texture coordinates."""
+    uv = node('MaterialExpressionTextureCoordinate', 'uv', coordinate_index=0, un_mirror_u=False, un_mirror_v=False)
+    texture = node('MaterialExpressionTextureSample', 'texture', texture=Asset('/Game/Surface'),
+                   inputs=[('UV', uv, '')])
+    material = Material([uv, texture], {'MP_BASE_COLOR': (texture, 'RGB')})
+    saved = digest.read(material)
+    assert digest.accept(saved, digest.read(material)) == []
+    uv.props[axis] = True
+    assert 'rendered topology differs at MP_BASE_COLOR' in digest.accept(saved, digest.read(material))
+
+
+def test_world_position_shader_offsets_change_rejects():
+    """World-position inputs must keep their offset mode even when the builder leaves its default untouched."""
+    world = node('MaterialExpressionWorldPosition', 'world', world_position_shader_offset='WPT_Default')
+    material = Material([world], {'MP_EMISSIVE_COLOR': (world, '')})
+    saved = digest.read(material)
+    assert digest.accept(saved, digest.read(material)) == []
+    world.props['world_position_shader_offset'] = 'WPT_ExcludeAllShaderOffsets'
+    assert 'rendered topology differs at MP_EMISSIVE_COLOR' in digest.accept(saved, digest.read(material))
+
+
 @pytest.mark.parametrize(('prop', 'changed'), [
     ('transform_source_type', 'TRANSFORMPOSSOURCE_LOCAL'),
     ('transform_type', 'TRANSFORMPOSSOURCE_WORLD'),

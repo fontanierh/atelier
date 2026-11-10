@@ -37,11 +37,11 @@ PROPERTY_PINS = ('MP_BASE_COLOR', 'MP_NORMAL', 'MP_ROUGHNESS', 'MP_METALLIC', 'M
                  'MP_PIXEL_DEPTH_OFFSET', 'MP_SUBSURFACE_COLOR', 'MP_CUSTOM_DATA0', 'MP_CUSTOM_DATA1', 'MP_TANGENT',
                  'MP_ANISOTROPY', 'MP_SHADING_MODEL')   # a pin this engine does not have is skipped on both sides alike
 EXPRESSION_PROPERTIES = ('parameter_name', 'default_value', 'r', 'constant', 'const_a', 'const_b', 'texture',
-                         'sampler_type', 'code', 'coordinate_index', 'u_tiling', 'v_tiling',
+                         'sampler_type', 'code', 'coordinate_index', 'u_tiling', 'v_tiling', 'un_mirror_u', 'un_mirror_v',
                          'output_type', 'data_index', 'const_default_value',
                          'inputs', 'scene_texture_id', 'collection', 'g', 'b', 'a', 'material_function',
                          'use_custom_primitive_data', 'primitive_data_index',
-                         'transform_source_type', 'transform_type',
+                         'transform_source_type', 'transform_type', 'world_position_shader_offset',
                          'ignore_pause', 'override_period', 'period')   # desc is editor-only metadata
 LISTS = ('expressions', 'connections', 'property_connections')
 SETS = ('parameters',)
