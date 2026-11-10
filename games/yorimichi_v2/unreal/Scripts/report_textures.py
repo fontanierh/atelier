@@ -55,8 +55,9 @@ def enum_name(value):
 
 
 def row(texture):
-    """The five settings of one texture, read through its accessors."""
+    """The settings of one texture (sRGB, max size, compression, LOD group, address modes), read through its accessors."""
     return dict(srgb=bool(texture.get_editor_property('srgb')),
+                max_texture_size=int(texture.get_editor_property('max_texture_size')),
                 compression=enum_name(texture.get_editor_property('compression_settings')),
                 lod_group=enum_name(texture.get_editor_property('lod_group')),
                 address_x=enum_name(texture.get_editor_property('address_x')),
