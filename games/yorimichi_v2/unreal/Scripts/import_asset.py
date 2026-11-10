@@ -367,14 +367,25 @@ def _undeclared_overrides(instance, settings):
 def _switch_value(MEL, instance, name):
     """A static switch's value as the editor reads it (the call may return the value alone or a (value, found) pair)."""
     got = MEL.get_material_instance_static_switch_parameter_value(instance, name)
-    return bool(got[0] if isinstance(got, tuple) else got)
+    if isinstance(got, tuple):
+        if len(got) > 1 and not got[1]:
+            raise RuntimeError(f'{instance.get_path_name()} has no static switch {name}')
+        got = got[0]
+    return bool(got)
+
+
+def unknown_switches(stated, names):
+    """Sorted switch names the row states that the instance does not have: a misspelt name would otherwise read back as
+    false, the editor's answer for a missing switch, and pass as verified."""
+    return sorted(set(stated) - set(names))
 
 
 def stale_switches(stated, own, inherited):
-    """Sorted names of the static switches the row does not state whose value differs from the parent's. `own` and
-    `inherited` map each switch name to the instance's and the parent's value. Such a switch is an earlier override the
-    record no longer asks for: UE 5.8's clear does not reach static switches, so the import refuses it instead."""
-    return sorted(n for n, v in own.items() if n not in stated and n in inherited and v != inherited[n])
+    """Sorted names of the static switches the row does not state whose value differs from the parent's, or whose parent
+    value cannot be read. `own` and `inherited` map each switch name to the instance's and the parent's value. Such a
+    switch may be an earlier override the record no longer asks for: UE 5.8's clear does not reach static switches, so
+    the import refuses it instead."""
+    return sorted(n for n, v in own.items() if n not in stated and (n not in inherited or v != inherited[n]))
 
 
 def _parent_switch_values(MEL, parent, names):
@@ -388,7 +399,7 @@ def _parent_switch_values(MEL, parent, names):
                 got = MEL.get_material_default_static_switch_parameter_value(parent, name)
                 out[name] = bool(got[0] if isinstance(got, tuple) else got)
         except Exception:
-            pass   # a switch the parent cannot report is left out, and no refusal rests on it
+            pass   # a switch the parent cannot report is left out; stale_switches then refuses it unless stated
     return out
 
 
@@ -430,6 +441,10 @@ def _material_instances(plan, settings):
             MEL.set_material_instance_scalar_parameter_value(instance, name, float(value))
         for name, value in sorted(row['vectors'].items()):
             MEL.set_material_instance_vector_parameter_value(instance, name, U.LinearColor(*map(float, value)))
+        names = {str(n) for n in MEL.get_static_switch_parameter_names(instance)}
+        unknown = unknown_switches(row['switches'], names)
+        if unknown:
+            raise RuntimeError(f'{package} has no static switch {", ".join(unknown)}; nothing is saved')
         for name, value in sorted(row['switches'].items()):
             MEL.set_material_instance_static_switch_parameter_value(instance, name, bool(value))
         MEL.update_material_instance(instance)
@@ -452,7 +467,6 @@ def _material_instances(plan, settings):
         for name, value in sorted(row['switches'].items()):
             if _switch_value(MEL, instance, name) != bool(value):
                 raise RuntimeError(f'{package} {name} reads {_switch_value(MEL, instance, name)} instead of {value}')
-        names = {str(n) for n in MEL.get_static_switch_parameter_names(instance)}
         own = {name: _switch_value(MEL, instance, name) for name in names}
         stale = stale_switches(row['switches'], own, _parent_switch_values(MEL, parent, names))
         if stale:
