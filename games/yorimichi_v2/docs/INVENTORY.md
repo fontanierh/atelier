@@ -90,17 +90,17 @@ Remaining construction work:
 - Retain the current package while the next source batch proceeds. The guard fixes (#805/#807), multiplayer
   manifest (#809) and host/leave check (#810) are merged. The six manual acceptance checks and final owner-led
   gameplay/two-machine playtesting remain open.
-- **Forecast updated 2026-11-10 16:00, Paris:**
-  - The 45-instance batch is done: it was merged in #812, ahead of its 17:30 target.
-  - Whole-source work is the 4 records / 5 packages in
-    [exceptions](inventory/exceptions.md#current-source-classification). That classification is not source closure.
-    Forecast **19:30**, low confidence, for these steps in order:
-    - the Mega Park standalone map's reference check (a native read);
-    - `MPC_SeeThrough` and `RuntimeData` routes;
-    - the bike wheels are done (claim `BCBIKE`): `prop/bike/wheel-front` and `wheel-rear` are imported from the pinned
-      generator `generator/bike/wheels` (`build.py` `wheel()`; `Bike.blend` is a review-scene output, not a source).
-  - Useful-object splitting stays at **23:00**, low confidence. Brine Cove `props2` (quay cargo and fish baskets) is in
-    progress; the remaining residual fused scenery and patches are unsized.
+- **Forecast updated 2026-11-10 20:30, Paris:**
+  - Done since 16:00: the Mega Park standalone map's reference check (#824) and the bike wheels (#820).
+  - The 19:30 target for the whole-source routes was missed. Their code is complete:
+    - `MPC_SeeThrough`: the parameter-collection importer (#826). The collection and its three masters are imported;
+      the 8 dependent material-instance imports remain.
+    - `RuntimeData`: the skate-runtime importer with its pinned inputs and read-back (#827). Its native import remains.
+    - The Brine Cove props5 pier generator (#823) still needs its 3 pier actors saved again.
+  - These native steps wait for the capacity broker to recover from a failed editor start; no grant is possible
+    until then. Forecast **21:30**, low confidence, conditional on that recovery.
+  - Useful-object splitting stays at **23:00**, low confidence. The remaining residual fused scenery and patches are
+    unsized.
 
 ## Runtime and ownership facts
 
