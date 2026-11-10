@@ -1212,3 +1212,38 @@ Blockers: no parameter read yet; the path-to-name mapping is only reproducible b
 | `MI_BM_fae8893ff89f` | `belmonte/shared-metal-glass` | need-read | Belmonte/Materials/M_Belmonte, Belmonte/Materials/M_Belmonte | `report_materials` (material list) |
 | `MI_BM_aadab9c1da71` | `belmonte/shared-water` | need-read | Belmonte/Materials/M_Belmonte, Belmonte/Materials/M_Belmonte | `report_materials` (material list) |
 | `MI_BM_f76f48666871` | `belmonte/shared-water` | need-read | Belmonte/Materials/M_Belmonte, Belmonte/Materials/M_Belmonte | `report_materials` (material list) |
+
+### FX residual packages (1 record, 7 packages)
+
+Donor evidence: `unreal/Scripts/import_combat_fx.py` builds the sprite masters `M_FX_Additive` (`:82`) and `M_FX_Dust` (`:83`) with
+`sprite_material` (`:52`), the instances `MI_FX_Glow`, `MI_FX_Spark`, `MI_FX_Ring` (parent `M_FX_Additive`) and `MI_FX_Dust`
+(parent `M_FX_Dust`) with `instance` (`:72`, list at `:84-85`), and the trail master `M_FX_Trail` (`:87`). The sprite
+textures are the donor's `build/yorimichi/combat_fx/T_FX_{Dust,Glow,Ring,Spark,Trail}.png`, imported by the five
+`texture/fx/*` records, and the donor keeps its import manifest beside them (`combat_fx/unreal_import.json`).
+
+Byte evidence: `M_FX_Additive` and `M_FX_Dust` reference `T_FX_Glow` and `T_FX_Dust` (owned by `texture/fx/glow` and
+`texture/fx/dust`). `M_FX_Trail` references no texture: it is the procedural slash-ribbon material (`:87`, vertex colour
+and alpha). The four instances each reference their master and their own texture.
+
+Status per record:
+- `adopted/fx` (seven packages): **need-read**. The instances are plain (parent plus `Tex`), so a material-instance recipe
+  fits once the parameters are read. The three masters are Unreal-script graphs, which have no importer in this tree
+  (the same blocker as the skatepark masters), so `M_FX_*` cannot be closed by recipe.
+
+Native reads still needed (read-only; editor and clean hydrate): the four instances through `report_materials.py`, with
+`V2_REPORT_PACKAGES` set to `docs/inventory/small-families-fx-materials.txt` and `V2_REPORT_OUT` under
+`build/yorimichi_v2/reports/`, as an `editor.run` step. A read of the three masters' graphs needs a new reader.
+
+Blockers: masters (`M_FX_Additive`, `M_FX_Dust`, `M_FX_Trail`) have no importer; the trail's ribbon graph has no native read.
+
+- `adopted/fx`: generator masters and instances (sprite materials). Evidence: unreal/Scripts/import_combat_fx.py:82-87 (sprite_material, instance). Status: **need-read**. the T_FX_* textures are owned by texture/fx records; the masters are script-built
+
+| Package | Record | Status | Inputs (owner records) | Native read still needed |
+|---|---|---|---|---|
+| `MI_FX_Dust` | `fx` | need-read | FX/M_FX_Dust, FX/M_FX_Dust, FX/Textures/T_FX_Dust | `report_materials` (material list) |
+| `MI_FX_Glow` | `fx` | need-read | FX/M_FX_Additive, FX/M_FX_Additive, FX/Textures/T_FX_Glow | `report_materials` (material list) |
+| `MI_FX_Ring` | `fx` | need-read | FX/M_FX_Additive, FX/M_FX_Additive, FX/Textures/T_FX_Ring | `report_materials` (material list) |
+| `MI_FX_Spark` | `fx` | need-read | FX/M_FX_Additive, FX/M_FX_Additive, FX/Textures/T_FX_Spark | `report_materials` (material list) |
+| `M_FX_Additive` | `fx` | need-read | FX/Textures/T_FX_Glow | `report_materials` (material list) |
+| `M_FX_Dust` | `fx` | need-read | FX/Textures/T_FX_Dust | `report_materials` (material list) |
+| `M_FX_Trail` | `fx` | need-read | FX/Textures/T_FX_Trail | `report_materials` (material list) |
