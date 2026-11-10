@@ -10,7 +10,7 @@
  "masters": [
   {
    "package": "/Game/Hippodrome/Materials/M_HD_Structure",
-   "record": "adopted/hippodrome/materials",
+   "record": "master/hippodrome/structure",
    "family": "hippodrome",
    "generator": {
     "path": "games/yorimichi/unreal/Scripts/import_hippodrome.py",
@@ -46,7 +46,7 @@
   },
   {
    "package": "/Game/Hippodrome/Materials/M_HD_Grass",
-   "record": "adopted/hippodrome/materials",
+   "record": "master/hippodrome/grass",
    "family": "hippodrome",
    "generator": {
     "path": "games/yorimichi/unreal/Scripts/import_hippodrome.py",
@@ -110,7 +110,7 @@
   },
   {
    "package": "/Game/Hippodrome/Materials/M_HD_Dirt",
-   "record": "adopted/hippodrome/materials",
+   "record": "master/hippodrome/dirt",
    "family": "hippodrome",
    "generator": {
     "path": "games/yorimichi/unreal/Scripts/import_hippodrome.py",
@@ -174,7 +174,7 @@
   },
   {
    "package": "/Game/Hippodrome/Materials/M_HD_Stone",
-   "record": "adopted/hippodrome/materials",
+   "record": "master/hippodrome/stone",
    "family": "hippodrome",
    "generator": {
     "path": "games/yorimichi/unreal/Scripts/import_hippodrome.py",
@@ -213,7 +213,7 @@
   },
   {
    "package": "/Game/Hippodrome/Materials/M_HD_Rail",
-   "record": "adopted/hippodrome/materials",
+   "record": "master/hippodrome/rail",
    "family": "hippodrome",
    "generator": {
     "path": "games/yorimichi/unreal/Scripts/import_hippodrome.py",

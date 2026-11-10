@@ -6,6 +6,12 @@ expression and input), each material property connection, and the blend mode, sh
 Expression indices and object names are not recorded, since a rebuild in another package has other names. The three
 lists are compared as multisets, so their order does not matter.
 
+The graph is what the master renders: the expressions reachable from its property pins. An expression wired to nothing
+compiles into no shader, so it is listed apart as `unwired` and not compared. The saved Hippodrome masters each carry two,
+which a rebuild over the original keeps (delete_all_material_expressions leaves them, in the donor as here) and the fresh
+transient build the importer checks first does not have. Its parameters still count, since a material instance can see every parameter
+of its parent, so `parameters` lists each distinct parameter expression of the whole graph, wired or not, and is compared.
+
 The pure functions (canonical, accept) run without the Unreal editor, and the tests use them. read() needs the editor and
 is the only part that touches it. A part that cannot be read makes the whole digest an error, which refuses the master:
 a partial digest never matches.
@@ -24,6 +30,7 @@ PROPERTY_PINS = ('MP_BASE_COLOR', 'MP_NORMAL', 'MP_ROUGHNESS', 'MP_METALLIC', 'M
 EXPRESSION_PROPERTIES = ('parameter_name', 'default_value', 'r', 'constant', 'const_a', 'const_b', 'texture',
                          'sampler_type', 'code', 'coordinate_index', 'output_type', 'data_index', 'const_default_value')
 LISTS = ('expressions', 'connections', 'property_connections')
+SETS = ('parameters',)
 
 
 def _norm(value):
@@ -42,13 +49,16 @@ def canonical(digest):
     return {'settings': {k: _norm(v) for k, v in sorted(digest['settings'].items())},
             'expressions': sorted(digest['expressions']),
             'connections': sorted(digest['connections']),
-            'property_connections': sorted(digest['property_connections'])}
+            'property_connections': sorted(digest['property_connections']),
+            'parameters': sorted(set(digest.get('parameters', ()))),
+            'unwired': sorted(digest.get('unwired', ()))}
 
 
 def accept(saved, rebuilt):
     """@cc [owner:fontanierh,label:correctness] master-digest-equals-saved
-    A rebuilt master is accepted only when its wiring digest equals the saved original's, with nothing missing on either side.
-    A digest that failed to read refuses. Returns the differences: empty exactly when the rebuilt master is accepted."""
+    A rebuilt master is accepted only when its wiring digest equals the saved original's, with nothing missing on either side:
+    the settings, the rendered graph and every parameter. An unwired expression is not compared, unless it carries a
+    parameter. A digest that failed to read refuses. Returns the differences: empty exactly when the rebuilt master is accepted."""
     for label, digest in (('saved original', saved), ('rebuilt master', rebuilt)):
         if 'error' in digest:
             return [f'{label} could not be read: {digest["error"]}']
@@ -63,6 +73,10 @@ def accept(saved, rebuilt):
             problems.append(f'{key} only in the saved original: {text}')
         for text in sorted((right - left).elements()):
             problems.append(f'{key} only in the rebuilt master: {text}')
+    for key in SETS:
+        left, right = set(a[key]), set(b[key])
+        problems += [f'{key} only in the saved original: {text}' for text in sorted(left - right)]
+        problems += [f'{key} only in the rebuilt master: {text}' for text in sorted(right - left)]
     return problems
 
 
@@ -92,13 +106,29 @@ def _digest(material):
     for key in SETTINGS:
         value = material.get_editor_property(key)
         settings[key] = value if isinstance(value, bool) else str(value)
-    expressions = list(MEL.get_material_expressions(material) or [])
+    every = list(MEL.get_material_expressions(material) or [])
     text = {}
-    for expression in expressions:
+    for expression in every:
         text[expression.get_path_name()] = _expression_text(expression)
 
     def named(expression):
         return text.get(expression.get_path_name()) or _expression_text(expression)
+
+    pins = {}
+    for pin in PROPERTY_PINS:
+        node = MEL.get_material_property_input_node(material, getattr(U.MaterialProperty, pin))
+        if node is not None:
+            pins[pin] = node
+    reached, todo = {}, list(pins.values())
+    while todo:   # the rendered graph: everything an output pin reaches through input connections
+        node = todo.pop()
+        if node.get_path_name() in reached:
+            continue
+        reached[node.get_path_name()] = node
+        todo += [s for s in (MEL.get_inputs_for_material_expression(material, node) or []) if s is not None]
+    expressions = list(reached.values())
+    unwired = [text[e.get_path_name()] for e in every if e.get_path_name() not in reached]
+    parameters = [text[e.get_path_name()] for e in every if json.loads(text[e.get_path_name()])['props'].get('parameter_name')]
 
     connections = []
     for expression in expressions:
@@ -112,15 +142,11 @@ def _digest(material):
             pin = (names[index] if index < len(names) else '') or f'#{index}'
             connections.append(f'{named(source)}.{out} -> {named(expression)}.{pin}')
     property_connections = []
-    for pin in PROPERTY_PINS:
-        prop = getattr(U.MaterialProperty, pin)
-        node = MEL.get_material_property_input_node(material, prop)
-        if node is None:
-            continue
-        out = MEL.get_material_property_input_node_output_name(material, prop)
+    for pin, node in pins.items():
+        out = MEL.get_material_property_input_node_output_name(material, getattr(U.MaterialProperty, pin))
         property_connections.append(f'{pin} <- {named(node)}.{out}')
-    return {'settings': settings, 'expressions': [text[k] for k in sorted(text)],
-            'connections': connections, 'property_connections': property_connections}
+    return {'settings': settings, 'expressions': [named(e) for e in expressions], 'connections': connections,
+            'property_connections': property_connections, 'parameters': parameters, 'unwired': unwired}
 
 
 def read(material):
@@ -159,6 +185,9 @@ def main(argv=None):
     result = compare_reports(saved, rebuilt)
     for package, problems in result.items():
         print(('accepted ' if not problems else 'DIFFERS  ') + package)
+        dropped = len(saved.get(package, {}).get('wiring', {}).get('unwired', ()))
+        if dropped:
+            print(f'    the saved original has {dropped} unwired expression(s), not compared')
         for problem in problems:
             print('    ' + problem)
     return 0 if all(not problems for problems in result.values()) else 1

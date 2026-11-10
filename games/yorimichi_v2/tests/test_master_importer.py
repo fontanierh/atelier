@@ -5,7 +5,6 @@ import hashlib
 import importlib.util
 import inspect
 import json
-import shutil
 import sys
 from pathlib import Path
 
@@ -189,6 +188,29 @@ def test_a_missing_expression_refuses():
     assert any('expressions only in the saved original' in p for p in digest.accept(a, b))
 
 
+def test_an_unwired_expression_of_the_saved_original_is_not_rebuilt_and_still_accepted():
+    """@cc [owner:fontanierh,label:correctness] master-digest-unwired-not-compared"""
+    saved = sample()
+    saved['unwired'] = ['{"class": "Constant", "props": {"r": 0.0}}']
+    assert digest.accept(saved, sample()) == []
+
+
+def test_a_parameter_only_on_an_unwired_expression_still_refuses():
+    """@cc [owner:fontanierh,label:correctness] master-digest-parameters-compared"""
+    param = '{"class": "TextureSampleParameter2D", "props": {"parameter_name": "Extra"}}'
+    saved = sample()
+    saved['unwired'], saved['parameters'] = [param], [param]
+    problems = digest.accept(saved, sample())
+    assert problems == [f'parameters only in the saved original: {param}']
+
+
+def test_a_parameter_repeated_on_an_unwired_copy_is_one_parameter():
+    param = '{"class": "TextureSampleParameter2D", "props": {"parameter_name": "BaseColorTexture"}}'
+    saved, rebuilt = sample(), sample()
+    saved['parameters'], rebuilt['parameters'] = [param, param], [param]
+    assert digest.accept(saved, rebuilt) == []
+
+
 def test_the_comparer_reads_two_reports_per_package(tmp_path):
     saved = {'/Game/Hippodrome/Materials/M_HD_Grass': {'wiring': sample()},
              '/Game/Hippodrome/Materials/M_HD_Dirt': {'wiring': sample(connections=('X -> Y.A',))}}
@@ -217,12 +239,14 @@ def test_the_report_names_the_wiring_digest_and_the_editor_reads_are_guarded():
 
 def make_game(tmp_path, *, adopted=True, records_present=()):
     game = tmp_path / 'game'
-    if adopted:
-        source = ROOT / 'assets' / planner.ADOPTED
+    if adopted:   # the adopted record as it stood before the migration retired it from the real tree
         dest = game / 'assets' / planner.ADOPTED
         dest.mkdir(parents=True)
-        for name in ('asset.toml', 'verified.json'):
-            shutil.copy(source / name, dest / name)
+        outputs = ''.join(f'\n[[outputs]]\npackage = "{m["package"]}"\n' for m in planner.MASTERS)
+        (dest / 'asset.toml').write_text(f'schema = 1\nid = "{planner.ADOPTED}"\nkind = "adopted"\nauthority = "editor"\n'
+                                         f'owner = "shared/hippodrome/materials"\nprovenance = "donor"\nlicense = "owner"\n'
+                                         + outputs)
+        (dest / 'verified.json').write_text('{}\n')
     for master in planner.MASTERS:
         if master['id'] in records_present:
             folder = game / 'assets' / master['id']
@@ -269,6 +293,30 @@ def test_the_planner_is_done_after_the_claim_and_then_writes_nothing(tmp_path):
     apply_ops(game, planner.claim_ops(game))
     assert not (game / f'assets/{planner.ADOPTED}/asset.toml').exists()
     assert planner.state(game) == 'done'
+    assert planner.claim_ops(game) == {'writes': {}, 'deletes': []}
+
+
+def referencing_record(game, slug, slot):
+    folder = game / 'assets' / 'prop' / 'hippodrome' / slug
+    folder.mkdir(parents=True)
+    (folder / 'asset.toml').write_text(
+        f'schema = 1\nid = "prop/hippodrome/{slug}"\nkind = "static-mesh"\nauthority = "generated"\n'
+        f'owner = "shared/hippodrome/{slug}"\nprovenance = "donor"\nlicense = "owner"\n'
+        f'references = ["{planner.ADOPTED}", "texture/hippodrome/dirt"]\n\n'
+        f'[[sources]]\npath = "src/x.glb"\nsha256 = "{"0" * 64}"\n\n'
+        f'[recipe]\nimporter = "static-mesh"\nversion = 1\n\n[recipe.settings]\nslot_materials = ["{slot}"]\n\n'
+        f'[[outputs]]\npackage = "/Game/Hippodrome/SM_{slug}"\n')
+    return folder / 'asset.toml'
+
+
+def test_the_claim_points_every_reference_at_the_masters_the_record_slots(tmp_path):
+    """@cc [owner:fontanierh,label:correctness] master-records-no-dangling-reference"""
+    game = make_game(tmp_path)
+    surface = referencing_record(game, 'lane', planner.MASTERS[2]['package'])
+    loose = referencing_record(game, 'tower', '/Game/Hippodrome/Meshes/SM_HD_Tower/HD_Tower')
+    apply_ops(game, planner.claim_ops(game))
+    assert records.load_asset(surface).references == ['master/hippodrome/dirt', 'texture/hippodrome/dirt']
+    assert records.load_asset(loose).references == [planner.STRUCTURE, 'texture/hippodrome/dirt']
     assert planner.claim_ops(game) == {'writes': {}, 'deletes': []}
 
 

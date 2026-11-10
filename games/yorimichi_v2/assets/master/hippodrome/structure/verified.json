@@ -1,0 +1,12 @@
+{
+  "asset": "master/hippodrome/structure",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Hippodrome/Materials/M_HD_Structure.uasset": "6503a295ed5f8b594424ff603615798a24d8a4b6e6efbf37460b129c44e883f1"
+  },
+  "input_fingerprint": "3711f449218576e791df3ac04cab92e6db1e5937f9c078efee1d27fe975ac46e",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "material-master@1"
+}

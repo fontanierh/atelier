@@ -1,0 +1,12 @@
+{
+  "asset": "master/hippodrome/stone",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Hippodrome/Materials/M_HD_Stone.uasset": "62f9da426ebdf4cbabaa825b9f11d48c9f0e7f697cbc0ef4f9e3784b50e5a0e7"
+  },
+  "input_fingerprint": "9586a2e67b166f4cb67d3ddc74932e6b3ad8515986d4422eb53337a77e903c38",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "material-master@1"
+}

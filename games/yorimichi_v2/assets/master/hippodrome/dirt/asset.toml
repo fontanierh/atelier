@@ -1,0 +1,27 @@
+# Recovered as a material master (tools/migrate/master_records.py): /Game/Hippodrome/Materials/M_HD_Dirt.
+# The builder is src/hippodrome_masters.py, pinned by sha256; the master is rebuilt by the V2 editor and read back
+# against its saved original, never edited by hand.
+schema = 1
+id = "master/hippodrome/dirt"
+kind = "material-master"
+authority = "generated"
+owner = "shared/hippodrome/materials"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+provenance = "donor generator games/yorimichi/unreal/Scripts/import_hippodrome.py at the V2 source baseline (docs/DECISIONS.md D01, D02), surface lines 36-55"
+input_dependencies = ["texture/hippodrome/dirt"]
+
+[[sources]]
+path = "src/hippodrome_masters.py"
+sha256 = "a28ad0ca7a113ef0d845899780fa1e2f11311adfddb306ec93f97ca6d41f79ec"
+
+[recipe]
+importer = "material-master"
+version = 1
+
+[recipe.settings]
+builder = "surface"
+reads = ["/Game/Hippodrome/Textures/T_Dirt"]
+arguments = { texture = "/Game/Hippodrome/Textures/T_Dirt", roughness = 0.95, two_sided = false }
+
+[[outputs]]
+package = "/Game/Hippodrome/Materials/M_HD_Dirt"

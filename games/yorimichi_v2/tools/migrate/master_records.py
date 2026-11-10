@@ -6,7 +6,8 @@
 
 The adopted record assets/adopted/hippodrome/materials owns five masters. Each becomes its own material-master record,
 with the builder module unreal/Scripts/material_masters/hippodrome_masters.py copied into its src/ and pinned by sha256.
-The adopted record gives up every package, so it is deleted with its verified.json. The records are not imported here:
+The adopted record gives up every package, so it is deleted with its verified.json, and every record that references it
+references the masters it uses instead (reference_rewrites). The records are not imported here:
 the V2 editor builds and reads back each master (unreal/Scripts/import_asset.py, material-master), and tools/import/run.py
 writes its verified.json.
 
@@ -17,6 +18,8 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import json
+import re
 import sys
 from pathlib import Path
 
@@ -64,6 +67,38 @@ MASTERS = [
 
 class PlanError(RuntimeError):
     pass
+
+
+STRUCTURE = 'master/hippodrome/structure'
+REFERENCES_LINE = re.compile(r'^references = (\[.*\])$', re.M)
+
+
+def reference_rewrites(game: Path) -> dict:
+    """{rel: bytes} for every record that references the adopted record: the reference becomes the masters the record's slot
+    materials name. A slot that is not a master is a mesh's own instance (the loose meshes, owned by adopted/hippodrome/meshes),
+    whose parent is M_HD_Structure. A references line this cannot rewrite refuses."""
+    by_package = {m['package']: m['id'] for m in MASTERS}
+    out = {}
+    for path in records.record_paths(game):
+        rel = path.relative_to(game).as_posix()
+        if rel == f'assets/{ADOPTED}/asset.toml':
+            continue
+        asset = records.load_asset(path)
+        if ADOPTED not in asset.references:
+            continue
+        text = path.read_text()
+        match = REFERENCES_LINE.search(text)
+        if match is None or json.loads(match.group(1)) != asset.references:
+            raise PlanError(f'{rel}: its references are not one rewritable line')
+        slots = (asset.recipe.get('settings') or {}).get('slot_materials') or []
+        masters = sorted({by_package.get(slot, STRUCTURE) for slot in slots}) or [STRUCTURE]
+        new = []
+        for ref in asset.references:
+            for item in (masters if ref == ADOPTED else [ref]):
+                if item not in new:
+                    new.append(item)
+        out[rel] = (text[:match.start(1)] + json.dumps(new) + text[match.end(1):]).encode()
+    return out
 
 
 def builder_sha() -> str:
@@ -114,9 +149,9 @@ def state(game: Path) -> str:
 def claim_ops(game: Path) -> dict:
     """The one write: {'writes': {rel: bytes}, 'deletes': [rel]}. Empty when the state is done."""
     if state(game) == 'done':
-        return {'writes': {}, 'deletes': []}
+        return {'writes': reference_rewrites(game), 'deletes': []}
     sha = builder_sha()
-    writes = {}
+    writes = reference_rewrites(game)
     for master in MASTERS:
         folder = f'assets/{master["id"]}'
         writes[f'{folder}/asset.toml'] = record_text(master, sha).encode()
@@ -135,7 +170,7 @@ def materialize(game: Path, claim: str, *, echo=print) -> None:
     apply.Journal(game).recover(claim)
     ops = claim_ops(game)
     if not ops['writes'] and not ops['deletes']:
-        echo('materialize: the hippodrome masters are already records; nothing written')
+        echo('materialize: the hippodrome masters are already records and nothing references the adopted record; nothing written')
         return
     paths = claim_paths(game)
     try:
@@ -144,7 +179,7 @@ def materialize(game: Path, claim: str, *, echo=print) -> None:
     except authority.Unauthorized as error:
         raise PlanError(str(error)) from None
     apply.execute(game, ops, scopes=[OWNER])
-    echo(f'materialize: {len(MASTERS)} material-master record(s) written; {len(paths)} path(s) under {claim}')
+    echo(f'materialize: {len(paths)} path(s) under {claim}')
 
 
 def main(argv=None) -> int:

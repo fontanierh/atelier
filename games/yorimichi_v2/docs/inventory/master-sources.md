@@ -31,11 +31,11 @@ Unreal change); **not recoverable** = none of the 23 is. Every texture input bel
 
 | Master | Record | Generator file:lines (builder) | Inputs (V2 owner) | Fit |
 |---|---|---|---|---|
-| `/Game/Hippodrome/Materials/M_HD_Structure` | `adopted/hippodrome/materials` | `unreal/Scripts/import_hippodrome.py`:59-78 (structure_material) | WhiteSquareTexture (engine) | direct |
-| `/Game/Hippodrome/Materials/M_HD_Grass` | `adopted/hippodrome/materials` | `unreal/Scripts/import_hippodrome.py`:36-55 (surface) | T_Grass (texture/hippodrome/grass); the donor texture helper only | direct |
-| `/Game/Hippodrome/Materials/M_HD_Dirt` | `adopted/hippodrome/materials` | `unreal/Scripts/import_hippodrome.py`:36-55 (surface) | T_Dirt (texture/hippodrome/dirt); the donor texture helper only | direct |
-| `/Game/Hippodrome/Materials/M_HD_Stone` | `adopted/hippodrome/materials` | `unreal/Scripts/import_hippodrome.py`:36-55 (surface) | none (constants) | direct |
-| `/Game/Hippodrome/Materials/M_HD_Rail` | `adopted/hippodrome/materials` | `unreal/Scripts/import_hippodrome.py`:36-55 (surface) | none (constants) | direct |
+| `/Game/Hippodrome/Materials/M_HD_Structure` | `master/hippodrome/structure` (imported, MASTERHD) | `unreal/Scripts/import_hippodrome.py`:59-78 (structure_material) | WhiteSquareTexture (engine) | direct |
+| `/Game/Hippodrome/Materials/M_HD_Grass` | `master/hippodrome/grass` (imported, MASTERHD) | `unreal/Scripts/import_hippodrome.py`:36-55 (surface) | T_Grass (texture/hippodrome/grass); the donor texture helper only | direct |
+| `/Game/Hippodrome/Materials/M_HD_Dirt` | `master/hippodrome/dirt` (imported, MASTERHD) | `unreal/Scripts/import_hippodrome.py`:36-55 (surface) | T_Dirt (texture/hippodrome/dirt); the donor texture helper only | direct |
+| `/Game/Hippodrome/Materials/M_HD_Stone` | `master/hippodrome/stone` (imported, MASTERHD) | `unreal/Scripts/import_hippodrome.py`:36-55 (surface) | none (constants) | direct |
+| `/Game/Hippodrome/Materials/M_HD_Rail` | `master/hippodrome/rail` (imported, MASTERHD) | `unreal/Scripts/import_hippodrome.py`:36-55 (surface) | none (constants) | direct |
 | `/Game/SkatePark/Materials/M_Pier_basalt` | `adopted/skatepark/materials` | `unreal/Scripts/import_skatepark.py`:132-174 (materials, per-key loop body) | T_Pier_basalt_albedo, _normal, _roughness (texture/skatepark/pier-basalt-*) | direct |
 | `/Game/SkatePark/Materials/M_Pier_ceramic` | `adopted/skatepark/materials` | `unreal/Scripts/import_skatepark.py`:132-174 | T_Pier_ceramic_albedo, _normal, _roughness (texture/skatepark/pier-ceramic-*) | direct |
 | `/Game/SkatePark/Materials/M_Pier_concrete` | `adopted/skatepark/materials` | `unreal/Scripts/import_skatepark.py`:132-174 | T_Pier_concrete_albedo, _normal, _roughness (texture/skatepark/pier-concrete-*) | direct |
