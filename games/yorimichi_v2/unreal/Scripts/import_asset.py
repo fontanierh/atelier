@@ -17,6 +17,7 @@ import unreal as U
 # editor session does): its helper modules beside it must import either way.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import import_settings  # noqa: E402
+import material_base  # noqa: E402
 import lod_preservation  # noqa: E402
 from mesh_materials import assign_materials  # noqa: E402
 import master_digest  # noqa: E402
@@ -449,12 +450,9 @@ def _parent_switch_values(MEL, parent, names):
 
 
 def _base_flags(overrides):
-    """The override_* flags of a FMaterialInstanceBasePropertyOverrides (UE 5.8's Python lists them as attributes). None
-    found means this editor cannot be read the way the record is written, so the import stops before any save."""
-    flags = sorted(n for n in dir(overrides) if n.startswith('override_'))
-    if not flags:
-        raise RuntimeError('base_property_overrides exposes no override flags; nothing is saved')
-    return flags
+    """The Python name of every bOverride_* flag (material_base.py); one that cannot be read stops the import before
+    any save."""
+    return material_base.flags(overrides)
 
 
 def base_value(value):

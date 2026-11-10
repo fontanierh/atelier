@@ -19,8 +19,13 @@ The vector rows carry the alpha channel too: an EmissiveFactor is reported as [r
 """
 import json
 import os
+import sys
+from pathlib import Path
 
 import unreal as U
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import material_base  # noqa: E402
 
 MARKER = 'V2 MATERIALS REPORTED'
 EAL = U.EditorAssetLibrary
@@ -176,10 +181,10 @@ def _switches(inst, parent):
 
 def _base(inst):
     """{name: value} of each base-property override the instance sets (blend mode by name); the same read import_asset.py
-    makes after a write. A flag whose value this Python cannot read reports null, never a guess."""
+    makes after a write. Every flag is probed (material_base.py); a value this Python cannot read reports null."""
     overrides = inst.get_editor_property('base_property_overrides')
     out = {}
-    for flag in sorted(n for n in dir(overrides) if n.startswith('override_')):
+    for flag in material_base.flags(overrides):
         if not overrides.get_editor_property(flag):
             continue
         name = flag[len('override_'):]
