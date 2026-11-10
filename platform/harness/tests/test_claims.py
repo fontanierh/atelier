@@ -485,6 +485,74 @@ def claims_cli_args(*argv):
     return make_parser().parse_args(['claims', *argv])
 
 
+@pytest.mark.parametrize('action', ['merged', 'task-cancel', 'cancel', 'unlock'])
+def test_cli_reports_incomplete_release_and_owner_can_retry(world, monkeypatch, capsys, action):
+    a, b = world.agent('a', 'alice'), world.agent('b', 'bob')
+    world.task(a, 'ta'), world.task(b, 'tb')
+    claim = world.request(a, 'ta', lock_paths=[BENCH, SEA])
+    view = acquire(a, claim['id'], a.locker)
+    blocked_id = next(lock['lock_id'] for lock in view['locks'] if lock['path'] == BENCH)
+    unlock = a.locker.unlock
+
+    def interrupted(lock_id, **kwargs):
+        if lock_id == blocked_id:
+            raise Unavailable('temporary unlock failure')
+        return unlock(lock_id, **kwargs)
+
+    monkeypatch.setattr(a.locker, 'unlock', interrupted)
+    monkeypatch.setattr(claims_cli, '_client', lambda args: a)
+    monkeypatch.setattr(claims_cli, '_locker', lambda args: a.locker)
+    commands = {
+        'merged': ['task', 'merged', 'ta', '--revision', world.base],
+        'task-cancel': ['task', 'cancel', 'ta', '--disposition', 'preserved', '--note', 'branch kept'],
+        'cancel': ['cancel', str(claim['id']), '--disposition', 'preserved', '--note', 'branch kept'],
+        'unlock': ['unlock', str(claim['id'])],
+    }
+    if action == 'unlock':
+        a.call('POST', '/tasks/ta/merged', {'revision': world.base})
+    assert claims_cli.main(claims_cli_args(*commands[action])) == 1
+    output = capsys.readouterr()
+    assert 'release incomplete' in output.err and f'claims unlock {claim["id"]}' in output.err
+    assert 'releasing' in output.out
+    assert world.lfs.at(BENCH) and not world.lfs.at(SEA)
+    refused('overlap', world.request, b, 'tb', lock_paths=[BENCH])
+    if action == 'merged':
+        assert a.call('GET', '/tasks/ta')['status'] == 'merged'
+
+    monkeypatch.setattr(a.locker, 'unlock', unlock)
+    assert claims_cli.main(claims_cli_args('unlock', str(claim['id']))) == 0
+    assert a.call('GET', f'/claims/{claim["id"]}')['state'] == 'released'
+    assert not world.lfs.at(BENCH)
+    assert world.request(b, 'tb', lock_paths=[BENCH])['state'] == 'pending'
+
+
+def test_cli_unlock_does_not_report_success_for_uncertain_or_late_locks(world, monkeypatch, capsys):
+    a, b = world.agent('a', 'alice'), world.agent('b', 'bob')
+    world.task(a, 'ta'), world.task(b, 'tb')
+    claim = world.request(a, 'ta', lock_paths=[SEA])
+    with pytest.raises(AcquireFailed):
+        acquire(a, claim['id'], Unanswered(world.lfs.url, {'Authorization': basic('alice')}))
+    monkeypatch.setattr(claims_cli, '_client', lambda args: a)
+    monkeypatch.setattr(claims_cli, '_locker', lambda args: a.locker)
+    args = claims_cli_args('unlock', str(claim['id']))
+    assert claims_cli.main(args) == 1
+    assert 'uncertain locks require reconciliation' in capsys.readouterr().err
+    refused('overlap', world.request, b, 'tb', lock_paths=[SEA])
+
+    world.clock.now += world.store.uncertain_settle + 1
+    world.client('lead').call('POST', '/reconcile')
+    other = world.request(b, 'tb', lock_paths=[SEA])
+    world.lfs.add(SEA, 'alice')
+    world.client('lead').call('POST', '/reconcile')
+    world.lfs.down = True
+    assert claims_cli.main(args) == 1  # ended claim, but its late lock still needs release
+    assert a.call('GET', f'/claims/{claim["id"]}')['state'] == 'failed'
+    assert holding(world, SEA) == [other['id']]
+    world.lfs.down = False
+    assert claims_cli.main(args) == 0
+    assert acquire(b, other['id'], b.locker)['state'] == 'active'
+
+
 @pytest.mark.parametrize('command, seconds', [(['reconcile'], 300), (['reconcile', '--timeout', '900'], 900),
                                               (['status'], 30)])
 def test_reconcile_timeout_reaches_the_transport_without_changing_other_commands(monkeypatch, command, seconds):
