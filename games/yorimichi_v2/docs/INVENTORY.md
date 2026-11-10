@@ -34,8 +34,8 @@ The source baseline `7eec0f98dd` is documented separately in [features](inventor
 ## Active work after this checkpoint
 
 Saved, prepared and packaged totals are kept separate:
-- **Saved and packaged:** everything in the table above is in the `0adbb5ab212e` package, which is main
-  `7719234597`. That includes the small-families batch (#797) and the Brine Cove signal mast and shipyard slip
+- **Saved and packaged:** everything in the table above, except the integration-package row, is in the `0adbb5ab212e`
+  package, which is main `7719234597`. That includes the small-families batch (#797) and the Brine Cove signal mast and shipyard slip
   (#798, #800). The package includes these imports:
   - The two used Japan leaf instances (MI_LeafAmber, MI_LeafCrimson) are material-instance records imported
     from their recipe ([PR #792](https://github.com/fontanierh/atelier/pull/792)). They read identical to the
