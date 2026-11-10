@@ -286,26 +286,32 @@ CRATER_PAINT=.5
 
 def crater_hlsl(meta):
     """HLSL setting `crater`: how much of the painted floor lies at P (the mask, north_crater.json's texel-centred
-    footprint), on flat enough ground, never on a loose rock (Caps)."""
+    footprint), on flat enough ground, never on a loose rock (Caps), skipping texture read outside caldera bounds."""
     x0,y0,_,_=meta['bounds']
     return (f'float2 craterUV=((float2(P.x,-P.y)/100.-float2({x0},{y0}))/{meta["step_m"]}+.5)/{meta["size"][0]}.;'
-            'float crater=Texture2DSampleLevel(Crater,CraterSampler,craterUV,0.).r*saturate((N.z-.72)/.16)*(1-Caps);')
+            'float craterFlat=saturate((N.z-.72)/.16)*(1.-Caps);'
+            'float crater=0.;'
+            '[branch] if(craterFlat>.001 && all(craterUV>0. && craterUV<1.)){'
+            'crater=Texture2DSampleLevel(Crater,CraterSampler,craterUV,0.).r*craterFlat;}')
 
 
 def floor_hlsl(metres,mean):
-    """HLSL laying the painting (Floor, sRGB mean `mean`) over `ground` by `crater`: on three axes at its own tile
-    (P/800 for 8 m), varied by a second, larger sample about its mean so its repeats do not show across the floor;
-    the vertex colour times the painting's variation about its mean, with CRATER_PAINT of the painting's own colour."""
+    """HLSL laying the painting (Floor, sRGB mean `mean`) over `ground` by `crater`, guarded by [branch] with explicit
+    precomputed gradients (dPdx, dPdy) so non-caldera pixels skip all 6 triplanar Floor texture fetches."""
     lin=[c/255./12.92 if c/255.<=.04045 else ((c/255.+.055)/1.055)**2.4 for c in mean]
-    def sample(q):
-        return ('(Texture2DSample(Floor,FloorSampler,%s.yz).rgb*cw.x+Texture2DSample(Floor,FloorSampler,%s.xz).rgb*cw.y'
-                '+Texture2DSample(Floor,FloorSampler,%s.xy).rgb*cw.z)'%(q,q,q))
-    return ('float3 cw=pow(abs(N),4);cw/=max(cw.x+cw.y+cw.z,.001);'
-            'float3 cp=P/%.1f;float3 cq=P/%.1f+.41;'%(metres*100,metres*100*2.9)
+    s1=metres*100.
+    s2=metres*100.*2.9
+    def sample(q, scale):
+        return (f'(Texture2DSampleGrad(Floor,FloorSampler,{q}.yz,dPdx.yz/{scale:.1f},dPdy.yz/{scale:.1f}).rgb*cw.x'
+                f'+Texture2DSampleGrad(Floor,FloorSampler,{q}.xz,dPdx.xz/{scale:.1f},dPdy.xz/{scale:.1f}).rgb*cw.y'
+                f'+Texture2DSampleGrad(Floor,FloorSampler,{q}.xy,dPdx.xy/{scale:.1f},dPdy.xy/{scale:.1f}).rgb*cw.z)')
+    return ('[branch] if(crater>.001){'
+            'float3 cw=pow(abs(N),4);cw/=max(cw.x+cw.y+cw.z,.001);'
+            +f'float3 cp=P/{s1:.1f};float3 cq=P/{s2:.1f}+.41;'
             +'float3 CFM=float3(%.5f,%.5f,%.5f);'%tuple(lin)
-            +'float3 floorTex=%s*sqrt(max(%s/CFM,.05));'%(sample('cp'),sample('cq'))
+            +f'float3 floorTex={sample("cp", s1)}*sqrt(max({sample("cq", s2)}/CFM,.05));'
             +'float3 painted=lerp(base*floorTex/CFM,floorTex,%s);'%CRATER_PAINT
-            +'ground=lerp(ground,painted,crater);')
+            +'ground=lerp(ground,painted,crater);}')
 
 
 
@@ -334,19 +340,19 @@ def north_mountains(package, reads, *, rock, ground_detail, snow_mask, crater_ma
     assert crater['size']==[1024,1024]   # the donor's check (mountain_material.py 89): the shaders' texel size
     step=snow['step_m']
     x0,y0,_,_=snow['bounds']
-    snow_code=(f'float2 snowUV=(float2(P.x,-P.y)/100.-float2({x0},{y0}))/{step};'
-               'snowUV=(snowUV+.5)/1024.;'
-               'float mip=clamp(log2(max(1e-6,max(max(abs(ddx(snowUV)).x,abs(ddy(snowUV)).x),'
-               'max(abs(ddx(snowUV)).y,abs(ddy(snowUV)).y)))*1024.),0.,3.);'
-               'float snowAlpha=Texture2DSampleLevel(Snow,SnowSampler,snowUV,mip).r;')
-    snow_code+=('float3 snowLum=float3(.299,.587,.114);'
-                'float edgeNoise=clamp(dot(Texture2DSampleLevel(Tex,TexSampler,P.xy/2600.+.61,6.5).rgb,snowLum)/.092-1.,-1.,1.);'
-                'float edge=lerp(5.,1.5,smoothstep(50000.,200000.,D));'
-                'float snowMask=saturate((snowAlpha-.5+edgeNoise*.15)*edge+.5);'
-                # A rock (Caps 1, rock_material) wears snow on its upward faces wherever snow lies round it, not the
-                # ground's mask cut across it: white blocks on snow and bare grey ones beside it read as no rock at all.
-                'float around=Texture2DSampleLevel(Snow,SnowSampler,snowUV,4.).r;'
-                'snowMask=lerp(snowMask,saturate((N.z-.88)/.07)*saturate((around-.3)*2.5)*saturate(edgeNoise*2.+1.2),Caps);')
+    snow_code=(f'float2 snowUV=((float2(P.x,-P.y)/100.-float2({x0},{y0}))/{step}+.5)/1024.;'
+               'float2 sdx=ddx(snowUV),sdy=ddy(snowUV);'
+               'float mip=clamp(log2(max(1e-6,max(max(abs(sdx.x),abs(sdy.x)),max(abs(sdx.y),abs(sdy.y)))*1024.)),0.,3.);'
+               'float snowMask=0.;'
+               '[branch] if(all(snowUV>0. && snowUV<1.)){'
+               'float snowAlpha=Texture2DSampleLevel(Snow,SnowSampler,snowUV,mip).r;'
+               'float around=Caps>.001?Texture2DSampleLevel(Snow,SnowSampler,snowUV,4.).r:0.;'
+               '[branch] if(snowAlpha>.02 || around>.15){'
+               'float3 snowLum=float3(.299,.587,.114);'
+               'float edgeNoise=clamp(dot(Texture2DSampleLevel(Tex,TexSampler,P.xy/2600.+.61,6.5).rgb,snowLum)/.092-1.,-1.,1.);'
+               'float edge=lerp(5.,1.5,smoothstep(50000.,200000.,D));'
+               'snowMask=saturate((snowAlpha-.5+edgeNoise*.15)*edge+.5);'
+               'snowMask=lerp(snowMask,saturate((N.z-.88)/.07)*saturate((around-.3)*2.5)*saturate(edgeNoise*2.+1.2),Caps);}}')
     crater_code=crater_hlsl(crater)
     floor_code=floor_hlsl(float(floor_metres),floor_mean)
     # The volcano's exposed-rock band and the join to Belmonte's palette, in centimetres (hidamari/mountains.py).
@@ -359,57 +365,70 @@ def north_mountains(package, reads, *, rock, ground_detail, snow_mask, crater_ma
     depth=l.create_material_expression(m,unreal.MaterialExpressionPixelDepth,-500,200)
     c=l.create_material_expression(m,unreal.MaterialExpressionCustom,-100,0)
     c.set_editor_property('code','''float3 base=lerp(C/12.92,pow((C+.055)/1.055,2.4),step(.04045,C));
-float3 w=pow(abs(N),4);w/=max(w.x+w.y+w.z,.001);
-float3 p=P/950.;
-float3 rock=Texture2DSample(Tex,TexSampler,p.yz).rgb*w.x
-          +Texture2DSample(Tex,TexSampler,p.xz).rgb*w.y
-          +Texture2DSample(Tex,TexSampler,p.xy).rgb*w.z;
-float3 macro=Texture2DSample(Tex,TexSampler,p.yz*.137+.23).rgb*w.x
-           +Texture2DSample(Tex,TexSampler,p.xz*.137+.23).rgb*w.y
-           +Texture2DSample(Tex,TexSampler,p.xy*.137+.23).rgb*w.z;
-float3 q=P/2310.+.37;
-float3 mid=Texture2DSample(Tex,TexSampler,q.yz).rgb*w.x
-         +Texture2DSample(Tex,TexSampler,q.xz).rgb*w.y
-         +Texture2DSample(Tex,TexSampler,q.xy).rgb*w.z;
-float3 lum=float3(.299,.587,.114);
-float g1=max(dot(rock,lum)/.092,.05),g2=max(dot(mid,lum)/.092,.05),g3=max(dot(macro,lum)/.092,.05);
-float3 fineP=P/240.;
-float3 fine=Texture2DSample(Tex,TexSampler,fineP.yz).rgb*w.x
-           +Texture2DSample(Tex,TexSampler,fineP.xz).rgb*w.y
-           +Texture2DSample(Tex,TexSampler,fineP.xy).rgb*w.z;
-float gFine=clamp(dot(fine,lum)/.092,.35,1.8);
-float distanceBlend=smoothstep(12000.,90000.,D);
-float grain=clamp(lerp(pow(g1,.55)*pow(g2,.45),pow(g2,.4)*pow(g3,.6),distanceBlend),.45,1.6);
+float3 dPdx=ddx(P),dPdy=ddy(P);
 '''+rock_band+'''
 '''+_ground_grain('Ground','GroundSampler','P')+'''
-float3 ground=base*lerp(groundDetail,float3(grain,grain,grain),high*.85);
-ground*=lerp(1.,pow(gFine,1.6),(1-smoothstep(3000.,15000.,D))*high*.45);
-float3 an=abs(N);
-float2 fp=an.z>max(an.x,an.y)?P.xy/2200.:(an.x>an.y?P.yz:P.xz)/float2(1500.,6000.);
-float2 fc=floor(fp);float best=9.;float2 id=fc;
-for(int j=-1;j<=1;j++)for(int i=-1;i<=1;i++){
-  float2 cell=fc+float2(i,j);
-  float2 o=frac(sin(float2(dot(cell,float2(127.1,311.7)),dot(cell,float2(269.5,183.3))))*43758.5453);
-  float2 d=cell+o-fp;float dd=dot(d,d);
-  if(dd<best){best=dd;id=cell;}
+float3 ground=base*groundDetail;
+float g3=1.;
+[branch] if(high>.001){
+  float3 w=pow(abs(N),4);w/=max(w.x+w.y+w.z,.001);
+  float3 p=P/950.;
+  float3 rock=Texture2DSampleGrad(Tex,TexSampler,p.yz,dPdx.yz/950.,dPdy.yz/950.).rgb*w.x
+            +Texture2DSampleGrad(Tex,TexSampler,p.xz,dPdx.xz/950.,dPdy.xz/950.).rgb*w.y
+            +Texture2DSampleGrad(Tex,TexSampler,p.xy,dPdx.xy/950.,dPdy.xy/950.).rgb*w.z;
+  float3 macro=Texture2DSampleGrad(Tex,TexSampler,p.yz*.137+.23,dPdx.yz*.0001442,dPdy.yz*.0001442).rgb*w.x
+             +Texture2DSampleGrad(Tex,TexSampler,p.xz*.137+.23,dPdx.xz*.0001442,dPdy.xz*.0001442).rgb*w.y
+             +Texture2DSampleGrad(Tex,TexSampler,p.xy*.137+.23,dPdx.xy*.0001442,dPdy.xy*.0001442).rgb*w.z;
+  float3 q=P/2310.+.37;
+  float3 mid=Texture2DSampleGrad(Tex,TexSampler,q.yz,dPdx.yz/2310.,dPdy.yz/2310.).rgb*w.x
+           +Texture2DSampleGrad(Tex,TexSampler,q.xz,dPdx.xz/2310.,dPdy.xz/2310.).rgb*w.y
+           +Texture2DSampleGrad(Tex,TexSampler,q.xy,dPdx.xy/2310.,dPdy.xy/2310.).rgb*w.z;
+  float3 lum=float3(.299,.587,.114);
+  float g1=max(dot(rock,lum)/.092,.05),g2=max(dot(mid,lum)/.092,.05);
+  g3=max(dot(macro,lum)/.092,.05);
+  float distanceBlend=smoothstep(12000.,90000.,D);
+  float grain=clamp(lerp(pow(g1,.55)*pow(g2,.45),pow(g2,.4)*pow(g3,.6),distanceBlend),.45,1.6);
+  ground=base*lerp(groundDetail,float3(grain,grain,grain),high*.85);
+  [branch] if(D<15000.){
+    float3 fineP=P/240.;
+    float3 fine=Texture2DSampleGrad(Tex,TexSampler,fineP.yz,dPdx.yz/240.,dPdy.yz/240.).rgb*w.x
+               +Texture2DSampleGrad(Tex,TexSampler,fineP.xz,dPdx.xz/240.,dPdy.xz/240.).rgb*w.y
+               +Texture2DSampleGrad(Tex,TexSampler,fineP.xy,dPdx.xy/240.,dPdy.xy/240.).rgb*w.z;
+    float gFine=clamp(dot(fine,lum)/.092,.35,1.8);
+    ground*=lerp(1.,pow(gFine,1.6),(1.-smoothstep(3000.,15000.,D))*high*.45);
+  }
+  [branch] if(D<250000.){
+    float3 an=abs(N);
+    float2 fp=an.z>max(an.x,an.y)?P.xy/2200.:(an.x>an.y?P.yz:P.xz)/float2(1500.,6000.);
+    float2 fc=floor(fp);float best=9.;float2 id=fc;
+    for(int j=-1;j<=1;j++)for(int i=-1;i<=1;i++){
+      float2 cell=fc+float2(i,j);
+      float2 o=frac(sin(float2(dot(cell,float2(127.1,311.7)),dot(cell,float2(269.5,183.3))))*43758.5453);
+      float2 d=cell+o-fp;float dd=dot(d,d);
+      if(dd<best){best=dd;id=cell;}
+    }
+    float3 h=frac(sin(float3(dot(id,float2(12.9898,78.233)),dot(id,float2(39.346,11.135)),dot(id,float2(73.156,52.235))))*43758.5453)-.5;
+    float3 h2=0.;
+    [branch] if(D<120000.){
+      float2 fp2=fp*3.1+.37;float2 fc2=floor(fp2);float best2=9.;float2 id2=fc2;
+      for(int j2=-1;j2<=1;j2++)for(int i2=-1;i2<=1;i2++){
+        float2 cell=fc2+float2(i2,j2);
+        float2 o=frac(sin(float2(dot(cell,float2(127.1,311.7)),dot(cell,float2(269.5,183.3))))*43758.5453);
+        float2 d=cell+o-fp2;float dd=dot(d,d);
+        if(dd<best2){best2=dd;id2=cell;}
+      }
+      h2=frac(sin(float3(dot(id2,float2(12.9898,78.233)),dot(id2,float2(39.346,11.135)),dot(id2,float2(73.156,52.235))))*43758.5453)-.5;
+    }
+    float3 sunDir=normalize(Sun.xyz);
+    float litFacet=saturate(dot(normalize(N+h*float3(1.1,1.1,.55)+h2*float3(.8,.8,.4)),sunDir)),litSmooth=saturate(dot(N,sunDir));
+    float3 facet=(.28+1.15*litFacet)/(.28+1.15*litSmooth)*lerp(float3(.92,.94,1.06),float3(1.08,1.02,.92),saturate(litFacet*1.4-.2));
+    ground*=lerp(float3(1.,1.,1.),facet,high*(1.-smoothstep(60000.,250000.,D)));
+  }
 }
-float3 h=frac(sin(float3(dot(id,float2(12.9898,78.233)),dot(id,float2(39.346,11.135)),dot(id,float2(73.156,52.235))))*43758.5453)-.5;
-float2 fp2=fp*3.1+.37;float2 fc2=floor(fp2);float best2=9.;float2 id2=fc2;
-for(int j2=-1;j2<=1;j2++)for(int i2=-1;i2<=1;i2++){
-  float2 cell=fc2+float2(i2,j2);
-  float2 o=frac(sin(float2(dot(cell,float2(127.1,311.7)),dot(cell,float2(269.5,183.3))))*43758.5453);
-  float2 d=cell+o-fp2;float dd=dot(d,d);
-  if(dd<best2){best2=dd;id2=cell;}
-}
-float3 h2=frac(sin(float3(dot(id2,float2(12.9898,78.233)),dot(id2,float2(39.346,11.135)),dot(id2,float2(73.156,52.235))))*43758.5453)-.5;
-float3 sunDir=normalize(Sun.xyz);
-float litFacet=saturate(dot(normalize(N+h*float3(1.1,1.1,.55)+h2*float3(.8,.8,.4)),sunDir)),litSmooth=saturate(dot(N,sunDir));
-float3 facet=(.28+1.15*litFacet)/(.28+1.15*litSmooth)*lerp(float3(.92,.94,1.06),float3(1.08,1.02,.92),saturate(litFacet*1.4-.2));
-ground*=lerp(float3(1.,1.,1.),facet,high*(1-smoothstep(60000.,250000.,D)));
 float strata=1.-.08*sin(P.z*.0021+sin(P.x*.0007)*2.)*(1-abs(N.z))*(1-smoothstep(35000.,100000.,D))*(1-join);
 '''+crater_code+floor_code+'''
-float3 snow=float3(.80,.83,.89)*lerp(.9,1.05,saturate((g3-.6)/.9))*lerp(1.,.92,saturate(1-N.z));
 '''+snow_code+'''
+float3 snow=float3(.80,.83,.89)*lerp(.9,1.05,saturate((g3-.6)/.9))*lerp(1.,.92,saturate(1-N.z));
 return lerp(ground*strata,snow,snowMask)*(1-'''+SHARE+');')
     c.set_editor_property('output_type',unreal.CustomMaterialOutputType.CMOT_FLOAT3)
     args=[]
@@ -440,8 +459,12 @@ return lerp(ground*strata,snow,snowMask)*(1-'''+SHARE+');')
     # woodland/collar joins, and snow retains its existing physical lighting.
     ambient=l.create_material_expression(m,unreal.MaterialExpressionCustom,200,150)
     ambient.set_editor_property('output_type',unreal.CustomMaterialOutputType.CMOT_FLOAT3)
-    ambient.set_editor_property('code',snow_code+rock_band+crater_code+'''
-float bounce=dot(Base,float3(.299,.587,.114))*.25*high*(1-snowMask)*(1-crater)*(1-saturate(dot(N,normalize(Sun.xyz))))*Sun.w;
+    ambient.set_editor_property('code',rock_band+'''
+float bounce=0.;
+[branch] if(high>.001 && Sun.w>.001){
+'''+snow_code+crater_code+'''
+  bounce=dot(Base,float3(.299,.587,.114))*.25*high*(1.-snowMask)*(1.-crater)*(1.-saturate(dot(N,normalize(Sun.xyz))))*Sun.w;
+}
 return float3(bounce,bounce,bounce);''')
     inputs=[]
     for key in ('Base','P','N','D','Snow','Tex','Sun','Caps','Crater'):

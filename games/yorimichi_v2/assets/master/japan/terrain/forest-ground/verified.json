@@ -5,9 +5,9 @@
   },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Materials/M_ForestGround.uasset": "828e07985513587dcf9e31dddd39e2fb3cb7d41d0621b13afa33153db1683cda"
+    "unreal/Content/Japan/Materials/M_ForestGround.uasset": "79612d5e80b68f2de482f96d212a9c458ad0a091556a5af924b4dce463256d06"
   },
-  "input_fingerprint": "cf5749cc91f2e2e86f911def4694659555c415eaee769467f90224dd60d65395",
+  "input_fingerprint": "d14b27619ad5a8eb7d374a1dd5beb7a6bc36a158cf8ad8d0b22bb80a63422927",
   "kind": "imported",
   "schema": 1,
   "tool": "material-master@1"

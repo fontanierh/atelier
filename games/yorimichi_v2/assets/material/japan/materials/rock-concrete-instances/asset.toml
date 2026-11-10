@@ -29,7 +29,6 @@ parent = "/Game/Japan/Materials/M_CoastRock"
 package = "/Game/Japan/Materials/MI_Concrete"
 parent = "/Game/Japan/Materials/M_Painted"
 textures = {Tex = "/Game/Japan/Textures/T_concrete"}
-base = {blend_mode = "BLEND_MASKED", opacity_mask_clip_value = 0.5}
 
 [[recipe.settings.instances]]
 package = "/Game/Japan/Materials/MI_NorthRockCaps"
@@ -47,7 +46,6 @@ package = "/Game/Japan/Materials/MI_Stone"
 parent = "/Game/Japan/Materials/M_Painted"
 textures = {Tex = "/Game/Japan/Textures/T_white"}
 vectors = {Tint = [0.5, 0.5, 0.47, 1.0]}
-base = {blend_mode = "BLEND_MASKED", opacity_mask_clip_value = 0.5}
 
 [[outputs]]
 package = "/Game/Japan/Materials/MI_Coast"

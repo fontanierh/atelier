@@ -50,11 +50,15 @@ def f3(c):
 HORIZON = (0.126, 0.311, 0.720)
 ZENITH = (0.0235, 0.113, 0.531)
 
-# The water's own colour: deep blue-teal, and a lighter teal over the first SHALLOW_M metres behind the surface.
-BODY = (0.004, 0.060, 0.130)
-SHALLOW = (0.024, 0.230, 0.205)
+# 3-stop Beer-Lambert coastal absorption ramp: luminous jade shallows -> cerulean-teal reef -> ultramarine deep sea.
+BODY = (0.004, 0.048, 0.132)
+MID_TEAL = (0.011, 0.140, 0.235)
+SHALLOW = (0.042, 0.305, 0.255)
 SHALLOW_M = 12.0
 FOAM = (1.20, 1.25, 1.30)
+SLW_SCATTERING = (0.00035, 0.00240, 0.00280)
+SLW_ABSORPTION = (0.00950, 0.00220, 0.00075)
+SLW_PHASE_G = 0.35
 
 # Share of the dome reflection: water's Fresnel term times REFLECT, rising to GRAZE where the view grazes the sea
 # (sin of the view's elevation under ~.01: beyond ~300 m from the beach, and near the horizon from anywhere).
@@ -89,14 +93,15 @@ SURF_AA_MAX_M = 1.0
 SURF_FAR = (2500.0, 4000.0)
 FLECK = 0.16
 
-# P: world position (cm), T: time (s) -> float3(slope x, slope y, crest). The crest is the short trains' sum, -1..1;
-# the flecks sit on its rare peaks.
+# P: world position (cm), T: time (s), D: depth (cm) -> float3(slope x, slope y, crest).
+# Distance LOD fades octaves from 9 near (< 60 m) -> 7 mid -> 6 far (> 220 m).
 WAVES = '''
 float2 p=P.xy*.01;
 float2 gx=ddx(p),gy=ddy(p);
 float2 slope=0;
 float crest=0;
-for(int i=0;i<9;i++)
+int nWaves=D<6000.?9:(D<22000.?7:6);
+[loop] for(int i=0;i<nWaves;i++)
 {
     float a=%(wind)s+.95*sin(i*2.39+.5);
     float2 d=float2(cos(a),sin(a));
@@ -108,15 +113,35 @@ for(int i=0;i<9;i++)
     slope+=d*(cos(ph)*%(a0)s*pow(.92,(float)i)*aa);
     if(i>2)crest+=sin(ph)*aa;
 }
-return float3(slope,crest/6);
+return float3(slope,crest/max((float)(nWaves-3),1.));
 ''' % dict(wind=num(WIND), k0=num(K0), a0=num(A0))
 
 # W: WAVES -> world-space normal (the material's tangent_space_normal is off)
 NORMAL = 'return normalize(float3(-W.xy,1));'
 
+# Shared vertical quay/pier/hull contact foam probe using SceneDepthWithoutWater at world-scaled screen offsets.
+QUAY_FOAM_HLSL = '''
+float quayFoam=0.;
+[branch] if(D<12000. && l>.35)
+{
+    float2 baseUV=ScreenAlignedPosition(GetScreenPosition(Parameters));
+    float2 uvRad=(32./max(D,160.))*float2(.56,1.);
+    float qMax=0.;
+    float2 offs[4]={float2(1.,0.),float2(-1.,0.),float2(0.,1.),float2(0.,-1.)};
+    [unroll] for(int qi=0;qi<4;qi++)
+    {
+        float zTap=MaterialExpressionSceneDepthWithoutWater(baseUV+offs[qi]*uvRad*(.75+.45*wob),1000000.);
+        float nearSurf=1.-saturate((zTap-(D+20.))/38.);
+        float notFg=1.-saturate(((D-zTap)-55.)/65.);
+        qMax=max(qMax,nearSurf*notFg);
+    }
+    float lap=.72+.28*sin(T*1.8+p.x*1.3-p.y*.9);
+    quayFoam=saturate(smoothstep(.15,.75,qMax)*lap);
+}
+'''
+
 # W: WAVES, V: camera vector (world, toward the camera), D: pixel depth (cm),
-# L: scene depth behind the surface (cm), P: world position (cm), T: time (s) -> emissive colour.
-# Harbor and open sea both supply real scene depth at their shared boundary.
+# L: scene depth without water behind the surface (cm), P: world position (cm), T: time (s) -> emissive colour.
 LOOK = '''
 float2 p=P.xy*.01;
 float3 N=normalize(float3(-W.xy,1));
@@ -127,24 +152,32 @@ float graze=pow(saturate(1-V.z),%(graze_power)s);
 float fres=(.02+.98*pow(1-nv,5))*lerp(%(reflect)s*(.8+.4*gust),%(graze)s,graze);
 float3 R=reflect(-V,N);
 float3 sky=lerp(%(horizon)s,%(zenith)s,pow(asin(saturate(R.z))/1.5708,.6));
-// Convert the view-depth interval into an approximate vertical water column.
-// Raw view depth erased the shallow band when looking along a beach.
+// Convert the view-depth interval into an approximate vertical water column, with 3-stop Beer-Lambert ramp.
 float l=max(0,L)*.01*max(V.z,.03);
-float3 c=lerp(lerp(%(shallow)s,%(body)s,saturate(l/%(shallow_m)s)),sky,fres);
-// surf: white at the waterline, fading over w metres behind the surface, with a wobbling edge and a slow wash
+float3 beer=lerp(%(body)s,lerp(%(mid_teal)s,%(shallow)s,exp(-l*.85)),exp(-l*.18));
+float slwVis=1.-smoothstep(8000.,22000.,D);
+float bodyWeight=lerp(1.,1.-exp(-l*.45),slwVis);
+float3 c=lerp(beer*bodyWeight,sky,fres);
+// Stylized Ghibli sun glints: smoothstepped dancing sparkles instead of sub-pixel capillary noise.
+float3 sunDir=normalize(ResolvedView.DirectionalLightDirection.xyz+float3(0,0,1e-5));
+float sunAlign=dot(R,sunDir);
+float glint=(smoothstep(.991,.9975,sunAlign)*1.55+pow(saturate(sunAlign),96.)*.16)*(1.-smoothstep(25000.,180000.,D));
+float3 sunTint=lerp(float3(1.,.92,.72),saturate(ResolvedView.DirectionalLightColor.rgb),.35);
+c+=glint*sunTint;
+// surf: sloped beach wash + vertical quay/pier/hull contact foam
 float fp=max(abs(ddx(l)),abs(ddy(l)));
-// A submerged mesh edge can have an enormous depth derivative. It is not
-// a waterline: bound AA in vertical metres so deep water never becomes foam.
 float w=%(surf_m)s+min(1.5*fp,%(surf_aa_max_m)s);
 float wob=.5+.25*sin(p.x*.83+p.y*.37+T*.6)+.25*sin(p.y*1.13-p.x*.51-T*.45);
 float edge=saturate(1-l/(w*(.55+.9*wob)));
 float surf=edge*edge*(3-2*edge)*(.7+.3*sin(T*1.2+l/w*4))*(1-smoothstep(%(far0)s,%(far1)s,D*.01));
+''' + QUAY_FOAM_HLSL + '''
 float fleck=smoothstep(.58,.84,W.z)*(.6+.8*gust)*%(fleck)s;
-c=lerp(c,%(foam)s,saturate(max(surf,fleck)));
+float foamMask=saturate(max(max(surf,quayFoam),fleck));
+c=lerp(c,%(foam)s,foamMask);
 return lerp(c,%(far)s,1-exp(-D/%(haze)s));
 ''' % dict(graze_power=num(GRAZE_POWER), reflect=num(REFLECT), graze=num(GRAZE), horizon=f3(HORIZON), zenith=f3(ZENITH),
-           shallow=f3(SHALLOW), body=f3(BODY), shallow_m=num(SHALLOW_M), surf_m=num(SURF_M), surf_aa_max_m=num(SURF_AA_MAX_M), far0=num(SURF_FAR[0]),
-           far1=num(SURF_FAR[1]), fleck=num(FLECK), foam=f3(FOAM), far=f3(FAR_COLOUR), haze=num(HAZE_CM))
+           shallow=f3(SHALLOW), mid_teal=f3(MID_TEAL), body=f3(BODY), surf_m=num(SURF_M), surf_aa_max_m=num(SURF_AA_MAX_M),
+           far0=num(SURF_FAR[0]), far1=num(SURF_FAR[1]), fleck=num(FLECK), foam=f3(FOAM), far=f3(FAR_COLOUR), haze=num(HAZE_CM))
 
 # D: pixel depth (cm) -> the haze's share, as in LOOK (the lit harbour water fades by it)
 HAZE = 'return 1-exp(-D/%s);' % num(HAZE_CM)
@@ -195,12 +228,11 @@ def sea_material(package, reads):
     ti = _node(U.MaterialExpressionTime, -900, 150)
     cam = _node(U.MaterialExpressionCameraVectorWS, -900, 300)
     pd = _node(U.MaterialExpressionPixelDepth, -900, 450)
-    # scene depth is only readable from translucent materials: translucent, fully opaque
-    sd = _node(U.MaterialExpressionSceneDepth, -900, 600)
+    sd = _node(U.MaterialExpressionSceneDepthWithoutWater, -900, 600, fallback_depth=1000000.0)
     behind = _node(U.MaterialExpressionSubtract, -700, 550)
     link(sd, behind, 'A')
     link(pd, behind, 'B')
-    waves = custom(WAVES, [('P', po), ('T', ti)], -600, 0)
+    waves = custom(WAVES, [('P', po), ('T', ti), ('D', pd)], -600, 0)
     prop(custom(NORMAL, [('W', waves)], -250, 0), U.MaterialProperty.MP_NORMAL)
     m.set_editor_property('tangent_space_normal', False)
     look = custom(LOOK, [('W', waves), ('V', cam), ('D', pd), ('L', behind), ('P', po), ('T', ti)], -250, 250)
@@ -208,14 +240,24 @@ def sea_material(package, reads):
     prop(_node(U.MaterialExpressionConstant3Vector, -250, 500, constant=U.LinearColor(*BASE, 1.0)),
          U.MaterialProperty.MP_BASE_COLOR)
     prop(_node(U.MaterialExpressionConstant, -250, 600, r=ROUGHNESS), U.MaterialProperty.MP_ROUGHNESS)
-    prop(custom('return %s*(1-H);' % num(SPECULAR), [('H', custom(HAZE, [('D', pd)], -600, 700, F1))], -250, 700, F1),
+    haze_node = custom(HAZE, [('D', pd)], -600, 700, F1)
+    prop(custom('return %s*(1-H);' % num(SPECULAR), [('H', haze_node)], -250, 700, F1),
          U.MaterialProperty.MP_SPECULAR)
-    prop(_node(U.MaterialExpressionConstant, -250, 800, r=1.0), U.MaterialProperty.MP_OPACITY)
-    m.set_editor_property('blend_mode', U.BlendMode.BLEND_TRANSLUCENT)
-    # Low-tessellation sea planes must evaluate the same fog at every pixel.
+    # SingleLayerWater Opacity is BaseMaterialCoverageOverWater (WaterVisibility = 1 - Opacity):
+    # 0 within 80 m enables Beer-Lambert seabed transmittance; 1 past 220 m skips 5 bilateral Gather4 reads on far sea!
+    prop(custom('return saturate(max(H,smoothstep(8000.,22000.,D)));', [('H', haze_node), ('D', pd)], -250, 800, F1),
+         U.MaterialProperty.MP_OPACITY)
+    slw = _node(U.MaterialExpressionSingleLayerWaterMaterialOutput, -250, 950)
+    scat = _node(U.MaterialExpressionConstant3Vector, -550, 900, constant=U.LinearColor(*SLW_SCATTERING, 1.0))
+    abso = _node(U.MaterialExpressionConstant3Vector, -550, 1000, constant=U.LinearColor(*SLW_ABSORPTION, 1.0))
+    phg = _node(U.MaterialExpressionConstant, -550, 1100, r=SLW_PHASE_G)
+    assert MEL.connect_material_expressions(scat, '', slw, 'ScatteringCoefficients')
+    assert MEL.connect_material_expressions(abso, '', slw, 'AbsorptionCoefficients')
+    assert MEL.connect_material_expressions(phg, '', slw, 'PhaseG')
+    m.set_editor_property('blend_mode', U.BlendMode.BLEND_OPAQUE)
+    m.set_editor_property('shading_model', U.MaterialShadingModel.MSM_SINGLE_LAYER_WATER)
+    m.set_editor_property('translucency_lighting_mode', U.TranslucencyLightingMode.TLM_VOLUMETRIC_NON_DIRECTIONAL)
     m.set_editor_property('compute_fog_per_pixel', True)
-    # forward shaded: the sun's specular on the wave normals gives the glints
-    m.set_editor_property('translucency_lighting_mode', U.TranslucencyLightingMode.TLM_SURFACE_PER_PIXEL_LIGHTING)
     MEL.recompile_material(m)
     return m
 
@@ -224,17 +266,24 @@ def sea_material(package, reads):
 
 HARBOR_NORMAL = '''
 float2 p=P.xy*.01;
-float2 slope=0;
-for(int i=0;i<9;i++) {
-    float a=.37+i*1.713;
-    float2 d=float2(cos(a),sin(a));
-    float k=1.4*pow(1.47,(float)i);
-    float footprint=k*max(length(ddx(p)),length(ddy(p)));
-    float amp=.14*pow(.84,(float)i)*exp(-footprint*footprint*.35);
-    float warp=sin(dot(p,float2(-d.y,d.x))*k*.53+T*.4+i)*2.7;
-    slope+=d*cos(dot(p,d)*k+warp+T*sqrt(9.81*k)+i*2.1)*amp;
+float2 gx=ddx(p),gy=ddy(p);
+float footBase=max(length(gx),length(gy));
+float2 slope=W.xy;
+[branch] if(E>.005 && D<22000.) {
+    slope=0;
+    int nh=D<6000.?9:4;
+    [loop] for(int i=0;i<nh;i++) {
+        float a=.37+i*1.713;
+        float2 d=float2(cos(a),sin(a));
+        float k=1.4*pow(1.47,(float)i);
+        float footprint=k*footBase;
+        float amp=.11*pow(.82,(float)i)*exp(-footprint*footprint*.42);
+        float warp=sin(dot(p,float2(-d.y,d.x))*k*.53+T*.4+i)*2.4;
+        slope+=d*cos(dot(p,d)*k+warp+T*sqrt(9.81*k)+i*2.1)*amp;
+    }
+    slope=lerp(W.xy,slope,E);
 }
-return normalize(float3(-lerp(W.xy,slope,E),1));
+return normalize(float3(-slope,1));
 '''
 HARBOR_COLOUR = '''
 float2 p=P.xy*.01;
@@ -242,29 +291,43 @@ float2 p=P.xy*.01;
 // lattice on the open water. A very slow tide term breaks up the remaining large scale.
 float swell=.5+.20*sin(p.x*.38+p.y*.61+T*.8)+.17*sin(p.x*.71-p.y*.37-T*.6)
              +.12*sin(p.x*.23-p.y*.17+T*.31)+.09*sin(p.y*1.13+p.x*.29-T*1.05);
-float3 water=lerp(float3(.002,.012,.040),float3(.006,.048,.115),saturate(swell));
+float3 water=lerp(float3(.004,.028,.075),float3(.010,.085,.165),saturate(swell));
 float tide=sin(p.x*.061-p.y*.048+T*.05)*.5+.5;
-return lerp(%s,water*lerp(.90,1.10,tide),E)*(1-H);
+return lerp(%s,water*lerp(.92,1.08,tide),E)*(1-H);
 '''
 HARBOR_EMISSIVE = '''
 float2 p=P.xy*.01;
+float3 N=normalize(N_in);
+float nv=saturate(dot(N,V));
+float3 R=reflect(-V,N);
+float fres=.025+.34*pow(1.-nv,4.);
+float3 sky=lerp(%(horizon)s,%(zenith)s,pow(asin(saturate(R.z))/1.5708,.6));
 float l=max(0,L)*.01*max(V.z,.03);
+float3 beer=lerp(%(body)s,lerp(%(mid_teal)s,%(shallow)s,exp(-l*.85)),exp(-l*.18));
+float slwVis=1.-smoothstep(8000.,22000.,D);
+float bodyWeight=lerp(1.,1.-exp(-l*.45),slwVis);
+float3 baseInner=lerp(beer*bodyWeight*.65,sky,fres);
+float3 sunDir=normalize(ResolvedView.DirectionalLightDirection.xyz+float3(0,0,1e-5));
+float sunAlign=dot(R,sunDir);
+float glint=(smoothstep(.990,.997,sunAlign)*1.45+pow(saturate(sunAlign),84.)*.14)*(1.-smoothstep(22000.,150000.,D));
+float3 sunTint=lerp(float3(1.,.92,.72),saturate(ResolvedView.DirectionalLightColor.rgb),.35);
+baseInner+=glint*sunTint;
 float fp=max(abs(ddx(l)),abs(ddy(l)));
 float w=%(surf_m)s+min(1.5*fp,%(surf_aa_max_m)s);
 float wob=.5+.25*sin(p.x*.83+p.y*.37+T*.6)+.25*sin(p.y*1.13-p.x*.51-T*.45);
 float s_edge=saturate(1-l/(w*(.55+.9*wob)));
 float surf=s_edge*s_edge*(3-2*s_edge)*(.7+.3*sin(T*1.2+l/w*4))*(1-smoothstep(%(far0)s,%(far1)s,D*.01));
+''' + QUAY_FOAM_HLSL + '''
 float fleck=smoothstep(.58,.84,W.z)*%(fleck)s*.5;
-float3 harbor_foam=lerp(%(shallow)s*(1-saturate(l/%(shallow_m)s))*.25,%(foam)s,saturate(max(surf,fleck)));
+float3 harbor_foam=lerp(baseInner,%(foam)s,saturate(max(max(surf,quayFoam),fleck)));
 float3 inner=lerp(harbor_foam,%(far)s,H);
 return lerp(C,inner,E);
 '''
 
 
 def harbor_water(package, reads):
-    """donor material(water=True), harbor_material.py 39-61 (the shared head), 62-142 (the water branch) and 174-176 (the
-    shared tail): on the rectangle's outline the open sea's waves and look, the harbour's own lit water EDGE m inward,
-    and the open sea again with distance (FAR_FADE)."""
+    """M_HarborWater upgraded to BLEND_Opaque + MSM_SingleLayerWater: 18 wavelet octaves near tapering to 6 far,
+    3-stop Beer-Lambert depth absorption, restored sky Fresnel, stylized Ghibli sun glints, and vertical quay contact foam."""
     MEL = unreal.MaterialEditingLibrary
     m = _material(package)
     MEL.delete_all_material_expressions(m)
@@ -288,18 +351,13 @@ def harbor_water(package, reads):
     def prop(n, p):
         assert MEL.connect_material_property(n, '', p)
 
-    node(unreal.MaterialExpressionVertexColor)          # donor line 58: created, never wired on this branch
-    node(unreal.MaterialExpressionTextureCoordinate)    # donor line 59: likewise
     pos = node(unreal.MaterialExpressionWorldPosition)
     time = node(unreal.MaterialExpressionTime)
     FLOAT1 = unreal.CustomMaterialOutputType.CMOT_FLOAT1
-    # Read the same underlying depth as the open sea. A constant "deep"
-    # depth here would leave a rectangular blue seam across turquoise bays.
-    m.set_editor_property('blend_mode', unreal.BlendMode.BLEND_TRANSLUCENT)
-    # Low-tessellation sea planes must evaluate the same fog at every pixel.
+    m.set_editor_property('blend_mode', unreal.BlendMode.BLEND_OPAQUE)
+    m.set_editor_property('shading_model', unreal.MaterialShadingModel.MSM_SINGLE_LAYER_WATER)
+    m.set_editor_property('translucency_lighting_mode', unreal.TranslucencyLightingMode.TLM_VOLUMETRIC_NON_DIRECTIONAL)
     m.set_editor_property('compute_fog_per_pixel', True)
-    m.set_editor_property('translucency_lighting_mode', unreal.TranslucencyLightingMode.TLM_SURFACE_PER_PIXEL_LIGHTING)
-    prop(node(unreal.MaterialExpressionConstant, r=1.), unreal.MaterialProperty.MP_OPACITY)
     # E: 0 on the rectangle's outline .. 1 once EDGE m inside; 0 again from FAR_FADE m away (harbor_material.py 70-84)
     x0, y0, x1, y1 = SEA_RECT
     depth = node(unreal.MaterialExpressionPixelDepth)
@@ -307,32 +365,37 @@ def harbor_water(package, reads):
 float x=P.x*.01, y=-P.y*.01;     // Blender metres: Unreal's y is negated
 return smoothstep(0,1,saturate(min(min(x-{num(x0)},{num(x1)}-x),min(y-({num(y0)}),{num(y1)}-y))/{num(EDGE)}))*(1-smoothstep({FAR_FADE[0]*100}.,{FAR_FADE[1]*100}.,D));
 ''', [('P', pos, ''), ('D', depth, '')], FLOAT1)
-    # H: with distance the lit water gives way to the same haze as the open sea's.
     haze = custom(HAZE, [('D', depth, '')], FLOAT1)
-    sea = custom(WAVES, [('P', pos, ''), ('T', time, '')])
-    # Analytic slope of crossing gravity/capillary waves; world-space normal
-    # avoids dependence on huge sea-plane UVs and animates without textures.
-    normal = custom(HARBOR_NORMAL, [('P', pos, ''), ('T', time, ''), ('E', edge, ''), ('W', sea, '')])
+    sea = custom(WAVES, [('P', pos, ''), ('T', time, ''), ('D', depth, '')])
+    normal = custom(HARBOR_NORMAL, [('P', pos, ''), ('T', time, ''), ('D', depth, ''), ('E', edge, ''), ('W', sea, '')])
     prop(normal, unreal.MaterialProperty.MP_NORMAL)
     m.set_editor_property('tangent_space_normal', False)
     color = custom(HARBOR_COLOUR % f3(BASE), [('P', pos, ''), ('T', time, ''), ('E', edge, ''), ('H', haze, '')])
     prop(color, unreal.MaterialProperty.MP_BASE_COLOR)
-    prop(custom(f'return lerp({num(ROUGHNESS)},.20,E);', [('E', edge, '')], FLOAT1), unreal.MaterialProperty.MP_ROUGHNESS)
-    prop(custom(f'return lerp({num(SPECULAR)},.5,E)*(1-H);', [('E', edge, ''), ('H', haze, '')], FLOAT1),
+    prop(custom(f'return lerp({num(ROUGHNESS)},.28,E);', [('E', edge, '')], FLOAT1), unreal.MaterialProperty.MP_ROUGHNESS)
+    prop(custom(f'return lerp({num(SPECULAR)},.24,E)*(1-H);', [('E', edge, ''), ('H', haze, '')], FLOAT1),
          unreal.MaterialProperty.MP_SPECULAR)
     prop(node(unreal.MaterialExpressionConstant, r=0.0), unreal.MaterialProperty.MP_METALLIC)
-    # Identical depth, surf and shallows on the shared open-water boundary;
-    # inward the harbor's calm lit surface keeps the waterline surf, hull/pile foam and shallow tint.
+    prop(custom('return saturate(max(H,smoothstep(8000.,22000.,D)));', [('H', haze, ''), ('D', depth, '')], FLOAT1),
+         unreal.MaterialProperty.MP_OPACITY)
+    slw = node(unreal.MaterialExpressionSingleLayerWaterMaterialOutput)
+    scat = node(unreal.MaterialExpressionConstant3Vector, constant=unreal.LinearColor(*SLW_SCATTERING, 1.0))
+    abso = node(unreal.MaterialExpressionConstant3Vector, constant=unreal.LinearColor(*SLW_ABSORPTION, 1.0))
+    phg = node(unreal.MaterialExpressionConstant, r=SLW_PHASE_G)
+    link(scat, '', slw, 'ScatteringCoefficients')
+    link(abso, '', slw, 'AbsorptionCoefficients')
+    link(phg, '', slw, 'PhaseG')
     behind = node(unreal.MaterialExpressionSubtract)
-    link(node(unreal.MaterialExpressionSceneDepth), '', behind, 'A')
+    link(node(unreal.MaterialExpressionSceneDepthWithoutWater, fallback_depth=1000000.0), '', behind, 'A')
     link(depth, '', behind, 'B')
     cam = node(unreal.MaterialExpressionCameraVectorWS)
     look = custom(LOOK, [('W', sea, ''), ('V', cam, ''), ('D', depth, ''), ('L', behind, ''), ('P', pos, ''), ('T', time, '')])
     emissive = custom(HARBOR_EMISSIVE % dict(
+        horizon=f3(HORIZON), zenith=f3(ZENITH), body=f3(BODY), mid_teal=f3(MID_TEAL),
         surf_m=num(SURF_M), surf_aa_max_m=num(SURF_AA_MAX_M), far0=num(SURF_FAR[0]), far1=num(SURF_FAR[1]),
-        fleck=num(FLECK), shallow=f3(SHALLOW), shallow_m=num(SHALLOW_M), foam=f3(FOAM), far=f3(FAR_COLOUR)),
-        [('C', look, ''), ('E', edge, ''), ('H', haze, ''), ('W', sea, ''), ('V', cam, ''), ('D', depth, ''),
-         ('L', behind, ''), ('P', pos, ''), ('T', time, '')])
+        fleck=num(FLECK), shallow=f3(SHALLOW), foam=f3(FOAM), far=f3(FAR_COLOUR)),
+        [('C', look, ''), ('E', edge, ''), ('H', haze, ''), ('W', sea, ''), ('N_in', normal, ''), ('V', cam, ''),
+         ('D', depth, ''), ('L', behind, ''), ('P', pos, ''), ('T', time, '')])
     prop(emissive, unreal.MaterialProperty.MP_EMISSIVE_COLOR)
     m.set_editor_property('used_with_instanced_static_meshes', True)
     MEL.layout_material_expressions(m)

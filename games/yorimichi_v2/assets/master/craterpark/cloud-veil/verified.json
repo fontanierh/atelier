@@ -1,0 +1,12 @@
+{
+  "asset": "master/craterpark/cloud-veil",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/CraterPark/Cloud/M_CraterCloudVeil.uasset": "7b1f0f5ee3c3495270d041e431018f068921e1ca1f4099e4e7fe291c9454ae44"
+  },
+  "input_fingerprint": "20e1a6848613374a8a7ee13b3981f4ccda6bb00f5d1b722c9b929ef7408a05d4",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "material-master@1"
+}

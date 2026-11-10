@@ -12,7 +12,7 @@ input_dependencies = ["texture/japan/cloudmask"]
 
 [[sources]]
 path = "src/japan_base_masters.py"
-sha256 = "ded8ca4345756472898e157a1a87155f8639909b7e865d02afb7bd300b6a4001"
+sha256 = "ff5b73d2461feb3dbf351c18a082aff58aa69ed86cfffbaa5969a46e0bab5833"
 
 [recipe]
 importer = "material-master"

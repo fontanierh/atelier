@@ -1,8 +1,10 @@
+# A generator record since its masters became material-master records (tools/migrate/master_records.py):
+# it keeps the region generator's pinned code and data, and owns no package.
 # Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
 # Ownership unit: Tree House generator: build graph, region scripts, texture and prop tools, Unreal import scripts and the base materials
 schema = 1
 id = "adopted/japan/treehouse/generator"
-kind = "adopted"
+kind = "generator"
 authority = "editor"
 owner = "shared/japan/treehouse/generator"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
@@ -195,9 +197,3 @@ sha256 = "1d0b480ccdaf12cd4ecafa58cedc87380315f98534d86f43da99297c0ca25e35"
 [[sources]]
 path = "source/world/yori.py"
 sha256 = "2abacfc5e937251ae247614d0caca9839ee39f68e67567a7b44ac49c6581e3bf"
-
-[[outputs]]
-package = "/Game/Japan/Treehouse/Materials/M_TH_Light"
-
-[[outputs]]
-package = "/Game/Japan/Treehouse/Materials/M_TreeHouse"

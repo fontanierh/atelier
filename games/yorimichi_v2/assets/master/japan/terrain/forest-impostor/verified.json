@@ -5,9 +5,9 @@
   },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Materials/M_ForestImpostor.uasset": "791187bd68ba16088c9a216610ce8c4d167c86e9c873e7a27fb90c709caf5514"
+    "unreal/Content/Japan/Materials/M_ForestImpostor.uasset": "bff8204d20ca51157f08456725ff73b6a732d2d1220151b9b9896f8312fcb3d4"
   },
-  "input_fingerprint": "1cde0d1aa8680bd780c607869df2bfa2c749387e600f55acc7ca4fb847d43415",
+  "input_fingerprint": "4c33d7612c8ee54431db7d05e8168d550f34ffcca725b07a4ee28ad7fab31707",
   "kind": "imported",
   "schema": 1,
   "tool": "material-master@1"

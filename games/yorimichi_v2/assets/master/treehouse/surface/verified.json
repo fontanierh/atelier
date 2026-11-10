@@ -1,0 +1,15 @@
+{
+  "asset": "master/treehouse/surface",
+  "dependencies": {
+    "adopted/japan/treehouse/surface-wood-plank": "38fc1685644e3a64743dbd3847032e39ff00d49117c4666e26884d45df130c29",
+    "material/seethrough/collection": "5d874079698cfb138f83a1eb8b24e3b96ca62a422d00c359aa64f0506ab79897"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Treehouse/Materials/M_TreeHouse.uasset": "cdb1001116e8f8a859af31ef54292d1f63cae1c38004309d906849675eb376f3"
+  },
+  "input_fingerprint": "4958b82b93f16be0cf74a2cebc50157792dcc0477ab343974975bc2d99efc96a",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "material-master@1"
+}

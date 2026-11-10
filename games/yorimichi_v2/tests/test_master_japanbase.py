@@ -203,8 +203,8 @@ def test_the_harbor_builds_the_non_water_branch_from_its_two_texture_reads():
     textures = [args[1] for args in calls(log, 'set_editor_property') if args[0] == "'texture'"]
     assert textures == ["'P'", "'T'"]
     assert codes(log)[:2] == [repr(builders.HARBOR_COLOUR), repr(builders.HARBOR_NORMAL)]
-    assert connected_properties(log) == ['MP_BASE_COLOR', 'MP_NORMAL', 'MP_ROUGHNESS', 'MP_SPECULAR', 'MP_EMISSIVE_COLOR']
-    assert ("'const_b'", '0.025') in calls(log, 'set_editor_property')
+    assert connected_properties(log) == ['MP_BASE_COLOR', 'MP_NORMAL', 'MP_ROUGHNESS', 'MP_AMBIENT_OCCLUSION', 'MP_SPECULAR', 'MP_EMISSIVE_COLOR']
+    assert 'smoothstep(-15.,48.,P.z)' in builders.HARBOR_COLOUR
 
 
 @pytest.mark.parametrize('pond', [False, True])

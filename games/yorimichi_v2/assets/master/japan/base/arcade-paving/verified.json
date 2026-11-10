@@ -5,9 +5,9 @@
   },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Materials/M_ArcadePaving.uasset": "ea4d4621b7c68c82ef24b25d27533a4559141dadced646ee909fb7d8200eb0ae"
+    "unreal/Content/Japan/Materials/M_ArcadePaving.uasset": "bcbb071009fd0d6e053f7a9f01e4b074fba015adc77a0ca05807d5e0f1bbf9e7"
   },
-  "input_fingerprint": "0c9c754686fc1c0683a8ccac3643efddd8fef7c58185449d6ebee2b646e320c3",
+  "input_fingerprint": "6c30703911401817967f7a740b53a57d188f99a5b8f600f832e7077e2db1d0f0",
   "kind": "imported",
   "schema": 1,
   "tool": "material-master@1"

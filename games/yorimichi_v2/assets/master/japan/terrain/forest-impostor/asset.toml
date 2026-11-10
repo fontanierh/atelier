@@ -12,7 +12,7 @@ input_dependencies = ["adopted/japan/textures/ground"]
 
 [[sources]]
 path = "src/japan_terrain_masters.py"
-sha256 = "9c09add91e61f8c1fdc97dd0d7f6efcc405441dad496a57ee5cf45ad4c5477ed"
+sha256 = "d19e4f934afc9409f5b1edc8d7af4e8732bcf567747d55efff545960c31696dc"
 
 [[sources]]
 path = "src/master_haze.py"

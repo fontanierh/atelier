@@ -88,18 +88,24 @@ def kernel():
 
 def painterly_shader():
     lines = [
-        "float3 outc = Scene;",
-        "if (Strength > 0.001) {",
+        "float3 outc = Scene.rgb;",
+        "float player = ((abs(Stencil.r - 1.0) < 0.5 || abs(Stencil.r - 2.0) < 0.5) && abs(CustomZ.r - SceneZ.r) < 2.0) ? 1.0 : 0.0;",
         # Simplify far woodland into painted masses while keeping nearby grass
         # and character silhouettes readable. SceneZ is linear depth in cm.
         "float distancePaint = smoothstep(1800.0, 14000.0, SceneZ.r);",
-        "float radius = clamp(Radius * (1.0 + distancePaint), 1.0, 8.0);",
         "float strength = lerp(Strength, Strength + (1.0 - Strength) * 0.25, distancePaint);",
+        "float weight = strength * (1.0 - player * 0.85);",
+        # Fast [branch] early-out on sky (> 500,000 cm) and near-zero effective weight: saves 23 scene reads/pixel!
+        "[branch] if (SceneZ.r > 500000.0 || SceneZ.r > SkyDepth * 0.85 || (weight <= 0.005 && Toon <= 0.005 && Outline <= 0.005)) {",
+        "    return Scene.rgb;",
+        "}",
+        "[branch] if (weight > 0.005) {",
+        "float radius = clamp(Radius * (1.0 + distancePaint), 1.0, 8.0);",
     ]
     for k in range(8):
         lines.append(f"float3 m{k} = 0, s{k} = 0;")
     for i, (x, y, weights) in enumerate(kernel()):
-        sample = "Scene" if x == 0 and y == 0 else f"SceneTextureLookup(clamp(uv + float2({x:.9f}, {y:.9f}) * radius * d, uvMin, uvMax), 14, true).rgb"
+        sample = "Scene.rgb" if x == 0 and y == 0 else f"SceneTextureLookup(clamp(uv + float2({x:.9f}, {y:.9f}) * radius * d, uvMin, uvMax), 14, true).rgb"
         lines.append(f"float3 c{i} = {sample};")
         lines.append(f"float3 c2_{i} = c{i} * c{i};")
         for k, weight in enumerate(weights):
@@ -114,7 +120,7 @@ def painterly_shader():
             f"float w{k} = rcp(1.0 + 65536.0 * v{k} * v{k});",
             f"acc += m{k} * w{k}; wt += w{k};",
         ])
-    lines.extend(["outc = lerp(Scene, acc / max(wt, 1e-8), strength);", "}"])
+    lines.extend(["outc = lerp(Scene.rgb, acc / max(wt, 1e-8), strength);", "}"])
     return "\n".join(lines)
 
 
@@ -145,11 +151,11 @@ float2 d = GetSceneTextureBufferSize(14).zw;
 float4 uvBounds = GetSceneTextureUVMinMax(14);
 float2 uvMin = uvBounds.xy, uvMax = uvBounds.zw;
 """ + painterly_shader() + """
-if (Toon > 0.001 || Outline > 0.001)
+[branch] if (Toon > 0.001 || Outline > 0.001)
 {
     float2 depthUV = GetDefaultSceneTextureUV(Parameters, 1);
     float2 depthD = GetSceneTextureBufferSize(1).zw;
-    float dc = SceneTextureLookup(depthUV, 1, false).r;
+    float dc = SceneZ.r;
     float notSky = 1.0 - saturate((dc - SkyDepth * 0.7) / (SkyDepth * 0.3));
     // soft bands: luminance snapped to the centre of its band, with a smooth step between bands
     float lum = dot(outc, float3(0.299, 0.587, 0.114));
@@ -169,11 +175,7 @@ if (Toon > 0.001 || Outline > 0.001)
     float far = 1.0 - saturate((dmin - 4000.0) / 60000.0);              // fade the ink with distance: far hills stay soft
     outc *= 1.0 - Outline * 0.75 * edge * far * notSky;
 }
-// Only visible player pixels retain their fine facial/cloth shading. Depth
-// agreement prevents a player behind a wall from changing the wall's treatment.
-// Character and equipped items keep the same original lighting treatment.
-float player = ((abs(Stencil.r - 1.0) < 0.5 || abs(Stencil.r - 2.0) < 0.5) && abs(CustomZ.r - SceneZ.r) < 2.0) ? 1.0 : 0.0;
-return lerp(outc, Scene, player * 0.85);
+return lerp(outc, Scene.rgb, player * 0.85);
 """
     cust = _node(m, U.MaterialExpressionCustom, -300, 100, code=code, output_type=U.CustomMaterialOutputType.CMOT_FLOAT3, description="Painterly")
     ins = []

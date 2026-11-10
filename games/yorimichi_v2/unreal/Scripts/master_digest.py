@@ -34,18 +34,20 @@ except ImportError:   # outside the editor only the pure functions are usable
 SETTINGS = ('blend_mode', 'shading_model', 'two_sided', 'material_domain', 'opacity_mask_clip_value',
             'used_with_instanced_static_meshes', 'used_with_skeletal_mesh', 'used_with_static_lighting',
             'translucency_lighting_mode', 'is_sky', 'blendable_location', 'dithered_lod_transition',
-            'tangent_space_normal', 'compute_fog_per_pixel', 'num_customized_u_vs')
+            'tangent_space_normal', 'compute_fog_per_pixel', 'num_customized_u_vs',
+            'max_world_position_offset_displacement', 'use_translucency_vertex_fog', 'output_translucent_velocity')
 PROPERTY_PINS = ('MP_BASE_COLOR', 'MP_NORMAL', 'MP_ROUGHNESS', 'MP_METALLIC', 'MP_SPECULAR', 'MP_EMISSIVE_COLOR',
                  'MP_OPACITY', 'MP_OPACITY_MASK', 'MP_AMBIENT_OCCLUSION', 'MP_WORLD_POSITION_OFFSET', 'MP_REFRACTION',
                  'MP_PIXEL_DEPTH_OFFSET', 'MP_SUBSURFACE_COLOR', 'MP_CUSTOM_DATA0', 'MP_CUSTOM_DATA1', 'MP_TANGENT',
                  'MP_ANISOTROPY', 'MP_SHADING_MODEL')   # a pin this engine does not have is skipped on both sides alike
+CUSTOM_OUTPUT_CLASSES = ('MaterialExpressionSingleLayerWaterMaterialOutput',)
 EXPRESSION_PROPERTIES = ('parameter_name', 'default_value', 'r', 'constant', 'const_a', 'const_b', 'texture',
                          'sampler_type', 'code', 'coordinate_index', 'u_tiling', 'v_tiling', 'un_mirror_u', 'un_mirror_v',
                          'output_type', 'data_index', 'const_default_value',
                          'inputs', 'scene_texture_id', 'filtered', 'collection', 'g', 'b', 'a', 'material_function',
                          'use_custom_primitive_data', 'primitive_data_index',
                          'transform_source_type', 'transform_type', 'world_position_shader_offset',
-                         'ignore_pause', 'override_period', 'period',
+                         'ignore_pause', 'override_period', 'period', 'input_mode', 'const_input', 'fallback_depth',
                          # Defaults matter too: these are the remaining rendering fields of the used UE 5.8 node classes.
                          'sampler_source', 'const_coordinate', 'mip_value_mode', 'const_mip_value',
                          'automatic_view_mip_bias', 'gather_mode', 'const_alpha', 'included_offsets', 'local_origin',
@@ -163,6 +165,8 @@ def _value(value):
         return value.get_path_name().split('.')[0]
     if hasattr(value, 'r') and hasattr(value, 'a'):
         return [float(value.r), float(value.g), float(value.b), float(value.a)]
+    if hasattr(value, 'x') and hasattr(value, 'y') and not hasattr(value, 'z'):
+        return [float(value.x), float(value.y)]
     return value
 
 
@@ -237,8 +241,10 @@ def _digest(material):
         node = MEL.get_material_property_input_node(material, getattr(U.MaterialProperty, pin))
         if node is not None:
             pins[pin] = node
-    reached, todo = {}, list(pins.values())
-    while todo:   # the rendered graph: everything an output pin reaches through input connections
+    custom_outputs = sorted([e for e in every if type(e).__name__ in CUSTOM_OUTPUT_CLASSES],
+                            key=lambda e: (type(e).__name__, named(e), e.get_path_name()))
+    reached, todo = {}, list(pins.values()) + custom_outputs
+    while todo:   # the rendered graph: everything an output pin or custom output reaches through input connections
         node = todo.pop()
         if node.get_path_name() in reached:
             continue
@@ -268,6 +274,10 @@ def _digest(material):
         out = _selected_output(U.MaterialInputAudit.read_property_input(material, getattr(U.MaterialProperty, pin)), node)
         property_connections.append(f'{pin} <- {named(node)}.{out}')
         roots[pin] = (out, node.get_path_name())
+    for index, node in enumerate(custom_outputs):
+        pin = f'CUSTOM_OUTPUT:{type(node).__name__}:{index}'
+        property_connections.append(f'{pin} <- {named(node)}')
+        roots[pin] = ('', node.get_path_name())
     return {'settings': settings, 'expressions': [named(e) for e in expressions], 'connections': connections,
             'property_connections': property_connections, 'parameters': parameters, 'unwired': unwired,
             'topology': _rooted_topology(nodes, roots)}

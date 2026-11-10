@@ -1,0 +1,12 @@
+{
+  "asset": "master/craterpark/cloud",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/CraterPark/Cloud/M_CraterCloud.uasset": "f289b15d724da86c0f9e13a00880f3f5da3d1424d7826091e79dd13cf89ceed4"
+  },
+  "input_fingerprint": "0b34b4f53938d616887fe4325f0f6ce7489958d5e9f0a81dcd39f93a59b5feb7",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "material-master@1"
+}

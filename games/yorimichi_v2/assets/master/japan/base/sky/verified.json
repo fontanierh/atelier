@@ -5,9 +5,9 @@
   },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Materials/M_Sky.uasset": "2330aef38d9480c8cf6fe1e24f743a3d097ff4ecc0be5b7465477870d95c3566"
+    "unreal/Content/Japan/Materials/M_Sky.uasset": "49c2669b71d49c7ad63612301dbc6d1a1aab5da9e0272eec7201e3702c5e3814"
   },
-  "input_fingerprint": "56c1e4d09f65d32df13785d328e6fb547875e0cdeca3b4dce02ba1f36f5e3b0d",
+  "input_fingerprint": "cb5755090fd92f40d5ca826d9813778e0baae23e48966f2ed75f7faa1f93f42c",
   "kind": "imported",
   "schema": 1,
   "tool": "material-master@1"

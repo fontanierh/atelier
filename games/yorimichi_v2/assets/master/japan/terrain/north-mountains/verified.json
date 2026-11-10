@@ -7,9 +7,9 @@
   },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Materials/M_NorthMountains.uasset": "7aafc1f3325b3f8b058970bd7569378273c34ddc7eade203dbba11e605236721"
+    "unreal/Content/Japan/Materials/M_NorthMountains.uasset": "8fa710882f2aa73e4d5fae4ef4340d0430553919cfc160300988fc01327a7fe1"
   },
-  "input_fingerprint": "68f592130dc80e3cdb489ae95c70245eee1a303ec170a56a67c518e401a7b87b",
+  "input_fingerprint": "c347940eb13ea5cd6563c3ef04d407834e382a62b32ceaad7eca43f3aa60a0e0",
   "kind": "imported",
   "schema": 1,
   "tool": "material-master@1"

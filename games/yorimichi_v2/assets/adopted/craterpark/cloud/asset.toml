@@ -1,8 +1,10 @@
+# A generator record since its masters became material-master records (tools/migrate/master_records.py):
+# it keeps the region generator's pinned code and data, and owns no package.
 # Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
 # Ownership unit: Crater Park lenticular cap cloud materials (cloud.py shells, ACraterCloud)
 schema = 1
 id = "adopted/craterpark/cloud"
-kind = "adopted"
+kind = "generator"
 authority = "editor"
 owner = "shared/craterpark/cloud"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
@@ -20,9 +22,3 @@ sha256 = "05436e83902c60df472f31bf5b4b108bbdbd25942d2241726eac5d161187dd56"
 [[sources]]
 path = "source/world/regions/craterpark/cloud_build.py"
 sha256 = "9f7dc2743a5eaa0c672492545b897064234adca6fb45f01b86cdf7149a287d62"
-
-[[outputs]]
-package = "/Game/CraterPark/Cloud/M_CraterCloud"
-
-[[outputs]]
-package = "/Game/CraterPark/Cloud/M_CraterCloudVeil"

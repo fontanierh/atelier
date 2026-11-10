@@ -3,9 +3,9 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Materials/M_Painterly.uasset": "262a1b45cb8681fa2dfe99afb2f89537cd5242adaa0bf0d7f6799309b90e69fa"
+    "unreal/Content/Japan/Materials/M_Painterly.uasset": "4b98b3b40d9199c9e19952dea843ece8f9e5e0496bb6a6e6e70691df2e553617"
   },
-  "input_fingerprint": "4e47a76b6d58b16ddb138a2e829611948dca4bc9ecc9d0f6c8ba063dbd0d925a",
+  "input_fingerprint": "46cf98c841a034c2a05e9dbfa3a9ec1eb8472d5542ec345d1ab7c9a1e71b3c01",
   "kind": "imported",
   "schema": 1,
   "tool": "material-master@1"

@@ -3,9 +3,9 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Materials/M_PlazaWater.uasset": "2c22ccb75e5d38b65591cad4098857c4935757be8b6b8977a74bd0eceecbf1a4"
+    "unreal/Content/Japan/Materials/M_PlazaWater.uasset": "fe8ea7aef608ab67a68d952ee31bd432d4a19277ae173cca71947506c4aad054"
   },
-  "input_fingerprint": "7869af52c0c04015dd0fabdf39bdca490dd72a9585912d819a6aca1f2237295c",
+  "input_fingerprint": "eea1ee775f1f154b08c6f622b0dd77a3fc7f39a50cbd4e7a82333dfba8a58464",
   "kind": "imported",
   "schema": 1,
   "tool": "material-master@1"

@@ -6,9 +6,9 @@
   },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Materials/M_Harbor.uasset": "b4424ef0caf7ad9981f492b36ffd0165e372802b74984968180e7feeb8c05f13"
+    "unreal/Content/Japan/Materials/M_Harbor.uasset": "01f74b9675123f2d5e8cb7ac2dc51ff5c68e50688c7fdf63bf88836df4814242"
   },
-  "input_fingerprint": "dc8e1c080472bf69be4a9d1a70de2bc12f7a58766d5927c6933e420adae290ce",
+  "input_fingerprint": "4cc9b64ea1e29866653608e03002b72f6c335351526652429047351b50793ed7",
   "kind": "imported",
   "schema": 1,
   "tool": "material-master@1"

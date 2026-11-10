@@ -486,3 +486,52 @@ def test_missing_or_failed_native_reader_never_falls_back_to_source_only_lookup(
     monkeypatch.setattr(digest.U, 'MaterialInputAudit', SimpleNamespace(
         read_input=lambda *args: SimpleNamespace(error='invalid native input')), raising=False)
     assert 'invalid native input' in digest.read(retail())['error']
+
+
+def test_single_layer_water_custom_output_and_scene_depth_without_water_are_rooted():
+    scat = node('MaterialExpressionConstant3Vector', 'scat', constant=[0.00035, 0.0024, 0.0028, 1.0])
+    abso = node('MaterialExpressionConstant3Vector', 'abso', constant=[0.0095, 0.0022, 0.00075, 1.0])
+    phg = node('MaterialExpressionConstant', 'phg', r=0.35)
+    slw = node('MaterialExpressionSingleLayerWaterMaterialOutput', 'slw',
+               inputs=[('ScatteringCoefficients', scat, ''), ('AbsorptionCoefficients', abso, ''), ('PhaseG', phg, '')])
+    sd = node('MaterialExpressionSceneDepthWithoutWater', 'sd', fallback_depth=1000000.0,
+              const_input=SimpleNamespace(x=0.0, y=0.0))
+    material = Material([scat, abso, phg, slw, sd], {'MP_OPACITY': (sd, '')})
+    saved = digest.read(material)
+    assert 'error' not in saved and saved['unwired'] == []
+    assert 'CUSTOM_OUTPUT:MaterialExpressionSingleLayerWaterMaterialOutput:0' in saved['topology']['roots']
+    assert digest.accept(saved, digest.read(material)) == []
+    phg.props['r'] = 0.5
+    assert 'CUSTOM_OUTPUT:MaterialExpressionSingleLayerWaterMaterialOutput:0' in ' '.join(
+        digest.accept(saved, digest.read(material)))
+
+
+def test_treehouse_and_crater_cloud_builders_preserve_parameters_and_tbdr_contracts():
+    import sys
+    root = Path(__file__).resolve().parents[1]
+    sys.path.insert(0, str(root / 'tools/migrate'))
+    sys.path.insert(0, str(root / 'unreal/Scripts'))
+    import master_records as planner
+    import master_sources
+    from test_master_skatepark import World, Token, fake_unreal
+
+    families = planner.load_families()
+    for fname in ('treehouse', 'craterpark_cloud'):
+        family = families[fname]
+        for master in family['masters']:
+            world = World()
+            with master_sources.builder(planner.builder_sources(family), master['builder']) as fn:
+                mod = sys.modules[fn.__module__]
+                mod.unreal = fake_unreal(world)
+                reads = {pkg: Token(world, pkg) for pkg in master['reads']}
+                fn(master['package'], reads, **master['arguments'])
+            props = [args for name, _, args in world.log if name == 'set_editor_property']
+            if master['id'] == 'master/treehouse/surface':
+                assert ("'blend_mode'", 'unreal.BlendMode.BLEND_OPAQUE') in props
+                param_names = {args[1] for p_key, *rest in [args for name, _, args in world.log if name == 'set_editor_property']
+                               for args in [(p_key, *rest)] if p_key == "'parameter_name'"}
+                assert {'Tex', 'Gain', 'Glow', 'FadeMode', 'CutScale', 'RoomCut'} <= {n.strip("'") for n in param_names}
+            elif master['id'] == 'master/craterpark/cloud-veil':
+                exprs = [args[1] for name, _, args in world.log if name == 'create_material_expression']
+                assert exprs.count('unreal.MaterialExpressionSceneColor') == 4
+                assert exprs.count('unreal.MaterialExpressionSceneDepth') == 4

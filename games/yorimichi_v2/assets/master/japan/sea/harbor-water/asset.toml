@@ -11,7 +11,7 @@ provenance = "donor generator games/yorimichi/unreal/Scripts (one file per build
 
 [[sources]]
 path = "src/japan_sea_masters.py"
-sha256 = "884c37bb2e068d75a3a74e46e621cc005fe147ddc01e7a2698ede7e0438754a6"
+sha256 = "dc19129eed95ddd98bad99c0b24a2503466fe7c228cb428d43266c88a3897567"
 
 [recipe]
 importer = "material-master"

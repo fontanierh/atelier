@@ -73,17 +73,21 @@ def builder_graph(builder, monkeypatch):
     return graph(world.log), world.log
 
 
-@pytest.mark.parametrize('builder', ['sky_material', 'painterly_material'])
-def test_prepared_graph_equals_the_pinned_original(builder, monkeypatch):
+def test_sky_graph_equals_the_pinned_original_and_painterly_keeps_all_nodes_and_parameters(monkeypatch):
     """@cc [owner:fontanierh,label:correctness] sky-painterly-original-graph
-    Both prepared graphs preserve the donor's node identities, property values, named connections and compilation.
-    Painterly also compares the complete generated HLSL, not just its expression count or declared parameters.
+    M_Sky matches the donor graph verbatim; M_Painterly preserves every donor SceneTexture, runtime scalar parameter,
+    named connection and compilation while adding [branch] sky and near-zero weight early-outs to the Custom HLSL.
     """
-    actual, calls = builder_graph(builder, monkeypatch)
-    assert actual == donor_graph(builder)
+    actual_sky, sky_calls = builder_graph('sky_material', monkeypatch)
+    assert actual_sky == donor_graph('sky_material')
+    actual_paint, paint_calls = builder_graph('painterly_material', monkeypatch)
+    donor_paint = donor_graph('painterly_material')
+    strip_code = lambda entries: [e for e in entries if not (e[0] == 'set_editor_property' and e[2][0] == "'code'")]
+    assert strip_code(actual_paint) == strip_code(donor_paint)
     forbidden = {'save_loaded_asset', 'save_asset', 'import_asset_tasks', 'import_asset', 'AssetImportTask', 'load_asset'}
-    assert not forbidden & {name for name, _, _ in calls}
-    assert [name for name, _, _ in calls].count('recompile_material') == 1
+    for calls in (sky_calls, paint_calls):
+        assert not forbidden & {name for name, _, _ in calls}
+        assert [name for name, _, _ in calls].count('recompile_material') == 1
 
 
 def test_sky_requires_its_declared_texture_before_touching_the_destination(monkeypatch):
@@ -95,11 +99,13 @@ def test_sky_requires_its_declared_texture_before_touching_the_destination(monke
     assert world.log == []
 
 
-def test_painterly_preserves_the_donor_kernel_and_shader():
+def test_painterly_preserves_the_donor_kernel_and_adds_sky_and_weight_early_outs():
     namespace = {'math': math}
     exec(donor_functions('painterly_kernel.py', 'kernel', 'shader'), namespace)
     assert BUILDERS.kernel() == namespace['kernel']()
-    assert BUILDERS.painterly_shader() == namespace['shader']()
+    shader = BUILDERS.painterly_shader()
+    assert '[branch] if (SceneZ.r > 500000.0 || SceneZ.r > SkyDepth * 0.85 || (weight <= 0.005' in shader
+    assert '[branch] if (weight > 0.005)' in shader
     taps = BUILDERS.kernel()
     assert len(taps) == 21
     assert all(sum(weights[sector] for _, _, weights in taps) == pytest.approx(1.0) for sector in range(8))

@@ -5,9 +5,9 @@
   },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Materials/M_NorthGate.uasset": "b5493c8a2c39931ca92207622aad54f8d9812d879d224418f766687281a06119"
+    "unreal/Content/Japan/Materials/M_NorthGate.uasset": "36f1384c543afa60ba6e5b999ec9c0e75bdb11190e869fe6be119b581f7b1899"
   },
-  "input_fingerprint": "2d5ee9d4c042cdf73e6283098470643ca5d31b79dfbfcbd66241fc4268f7d4a9",
+  "input_fingerprint": "cc17e8e0c7a88fb1f49964d4bbaba156344bf07b684d5ece2f0bf0e1e6fde5c7",
   "kind": "imported",
   "schema": 1,
   "tool": "material-master@1"

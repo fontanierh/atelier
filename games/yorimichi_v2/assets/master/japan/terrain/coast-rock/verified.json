@@ -5,9 +5,9 @@
   },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Materials/M_CoastRock.uasset": "8a6d9c2cded9159fc625ccc603df90dc5fe7a5d215587fd37eba8fe3369a6a9c"
+    "unreal/Content/Japan/Materials/M_CoastRock.uasset": "fa6ad7d3f54ddf4993c2c558602cf504abf5b9967b195dba14ab17ffd3b0bc15"
   },
-  "input_fingerprint": "427f2a781aef645b254f1a4cc862e8a57114c41ae668ccb2b9e6dbbae02efba6",
+  "input_fingerprint": "519f1101afad93ecf3d2372580cf6ceefb6543b1a8cedbf07169aff3b1c5ffe6",
   "kind": "imported",
   "schema": 1,
   "tool": "material-master@1"

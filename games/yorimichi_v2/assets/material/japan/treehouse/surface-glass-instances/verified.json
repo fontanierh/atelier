@@ -1,14 +1,14 @@
 {
   "asset": "material/japan/treehouse/surface-glass-instances",
   "dependencies": {
-    "adopted/japan/treehouse/generator": "283b0fa2fda1ed26f2502dc8dc8bee831d9a85d78887d4381260d2ef4993547e",
+    "master/treehouse/surface": "2e1604b3d09751e99ab236d6cc8b5099686e749293a1a77c80d7b82d9d07a5ef",
     "texture/japan/treehouse-glass": "ab6996edf89ee23909fc96c86ebe55a0dd8d472602646a7c2efa9ceb66e5377c"
   },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Treehouse/Materials/MI_TH_glass.uasset": "65fba075479ae5deac9afe76a07e84d0ab5885b58bc884b704b7a920b9e5afb5"
+    "unreal/Content/Japan/Treehouse/Materials/MI_TH_glass.uasset": "8b676a3f6951a968bb44a16b413291275790b4ce7ec309c45512f1f0c106a6a0"
   },
-  "input_fingerprint": "e863edc5ec8124b08569ba62f177f5b010cdfaee82592d7a4b35bcb44c2d90c5",
+  "input_fingerprint": "3ac680129b99420e2634d4492a15fc6530961ee14db1d625717ff9bc307264cd",
   "kind": "imported",
   "schema": 1,
   "tool": "material-instance@2"
