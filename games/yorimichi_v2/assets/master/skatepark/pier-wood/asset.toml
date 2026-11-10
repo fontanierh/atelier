@@ -1,0 +1,27 @@
+# Recovered as a material master (tools/migrate/master_records.py): /Game/SkatePark/Materials/M_Pier_wood.
+# The builder is src/skatepark_masters.py, pinned by sha256; the master is rebuilt by the V2 editor and read back
+# against its saved original, never edited by hand.
+schema = 1
+id = "master/skatepark/pier-wood"
+kind = "material-master"
+authority = "generated"
+owner = "shared/skatepark/materials"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+provenance = "donor generator games/yorimichi/unreal/Scripts/import_skatepark.py at the V2 source baseline (docs/DECISIONS.md D01, D02), pier_material lines 132-174"
+input_dependencies = ["texture/skatepark/pier-wood-albedo", "texture/skatepark/pier-wood-normal", "texture/skatepark/pier-wood-roughness"]
+
+[[sources]]
+path = "src/skatepark_masters.py"
+sha256 = "91a7cc6b1619143100baf66b3764026d6c29ed043b916d26b465595128db1cf0"
+
+[recipe]
+importer = "material-master"
+version = 1
+
+[recipe.settings]
+builder = "pier_material"
+reads = ["/Game/SkatePark/Textures/T_Pier_wood_albedo", "/Game/SkatePark/Textures/T_Pier_wood_normal", "/Game/SkatePark/Textures/T_Pier_wood_roughness"]
+arguments = { key = "wood", metallic = 0.0 }
+
+[[outputs]]
+package = "/Game/SkatePark/Materials/M_Pier_wood"

@@ -6,7 +6,7 @@ id = "prop/citysurfaces/harbor-cell-7-m1"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/citysurfaces/harbor-cell-7-m1"
-references = ["adopted/japan/materials/base-materials"]
+references = ["master/japan/base/harbor"]
 
 [[sources]]
 path = "src/HD_Harbor_cell_7_-1.fbx"

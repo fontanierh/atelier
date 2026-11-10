@@ -6,7 +6,7 @@ id = "prop/citysurfaces/arcade-floor"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/citysurfaces/arcade-floor"
-references = ["adopted/japan/materials/base-materials"]
+references = ["master/japan/base/arcade-paving"]
 
 [[sources]]
 path = "src/HD_ArcadeFloor.fbx"

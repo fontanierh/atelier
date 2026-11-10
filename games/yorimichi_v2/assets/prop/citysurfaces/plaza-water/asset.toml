@@ -6,7 +6,7 @@ id = "prop/citysurfaces/plaza-water"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/citysurfaces/plaza-water"
-references = ["adopted/japan/materials/base-materials"]
+references = ["master/japan/base/plaza-water"]
 
 [[sources]]
 path = "src/HD_PlazaWater.fbx"

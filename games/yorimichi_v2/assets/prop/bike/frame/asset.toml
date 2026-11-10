@@ -6,7 +6,7 @@ id = "prop/bike/frame"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/bike/frame"
-references = ["adopted/japan/materials/base-materials"]
+references = ["master/japan/base/bike"]
 
 [[sources]]
 path = "src/BK_Frame.fbx"

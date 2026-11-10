@@ -6,7 +6,7 @@ id = "prop/skatepark/skate-path"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/skatepark/skate-path"
-references = ["adopted/skatepark/materials"]
+references = ["master/skatepark/pier-basalt", "master/skatepark/pier-concrete", "master/skatepark/pier-painted"]
 
 [[sources]]
 path = "src/SM_SkatePath.fbx"

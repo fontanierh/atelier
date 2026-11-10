@@ -1,8 +1,10 @@
+# A generator record since its masters became material-master records (tools/migrate/master_records.py):
+# it keeps the region generator's pinned code and data, and owns no package.
 # Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
 # Ownership unit: Mega Park retail base materials (opaque, masked, translucent) and their textures
 schema = 1
 id = "adopted/megapark/base-materials"
-kind = "adopted"
+kind = "generator"
 authority = "editor"
 owner = "shared/megapark/base-materials"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
@@ -179,12 +181,3 @@ sha256 = "45a8436b1416b9f60df88334a8da8c6ee060763ea17d3979bef26365e3922637"
 [[sources]]
 path = "source/world/regions/megapark/verify_source.py"
 sha256 = "35e80038ba9dedd7c4b3d0b0272dae30cc5c50c6eeabd2106d31c40310271622"
-
-[[outputs]]
-package = "/Game/MegaPark/Materials/M_RetailMasked"
-
-[[outputs]]
-package = "/Game/MegaPark/Materials/M_RetailOpaque"
-
-[[outputs]]
-package = "/Game/MegaPark/Materials/M_RetailTranslucent"

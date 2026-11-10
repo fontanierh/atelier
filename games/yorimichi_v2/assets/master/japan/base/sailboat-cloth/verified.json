@@ -1,0 +1,12 @@
+{
+  "asset": "master/japan/base/sailboat-cloth",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Materials/M_SailboatCloth.uasset": "31421cb3a4390e523509620a0f4463f71252dcfaa4ea4a6d09c086088a52b8bc"
+  },
+  "input_fingerprint": "36b8991b6fd6bd4942f902d15adaaccd0557817f4be98a7c1f192680b78167f9",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "material-master@1"
+}

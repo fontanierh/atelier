@@ -1,0 +1,12 @@
+{
+  "asset": "master/japan/base/village-resident",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Materials/M_VillageResident.uasset": "fad28a34fdaa8f5d906789a64b7652142ef2384700141d1d105b0fed67dc4793"
+  },
+  "input_fingerprint": "58a773e39888218a10d39c5519437c120ba1847fc5afcf1cc0583439d15108f0",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "material-master@1"
+}

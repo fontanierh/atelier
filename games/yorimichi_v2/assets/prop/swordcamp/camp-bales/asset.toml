@@ -6,7 +6,7 @@ id = "prop/swordcamp/camp-bales"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/swordcamp/camp-bales"
-references = ["adopted/swordcamp/materials"]
+references = ["master/swordcamp/camp"]
 
 [[sources]]
 path = "src/SM_CampBales.fbx"

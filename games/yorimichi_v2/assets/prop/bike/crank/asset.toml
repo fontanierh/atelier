@@ -6,7 +6,7 @@ id = "prop/bike/crank"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/bike/crank"
-references = ["adopted/japan/materials/base-materials"]
+references = ["master/japan/base/bike"]
 
 [[sources]]
 path = "src/BK_Crank.fbx"

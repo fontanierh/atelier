@@ -6,7 +6,7 @@ id = "prop/hippodrome/skirt"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/hippodrome/skirt"
-references = ["adopted/hippodrome/materials"]
+references = ["master/hippodrome/stone"]
 
 [[sources]]
 path = "src/SM_HD_Skirt.glb"

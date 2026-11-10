@@ -6,7 +6,7 @@ id = "prop/swordcamp/ronin-sashimono"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/swordcamp/ronin-sashimono"
-references = ["adopted/swordcamp/materials"]
+references = ["master/swordcamp/camp"]
 
 [[sources]]
 path = "src/SM_RoninSashimono.fbx"

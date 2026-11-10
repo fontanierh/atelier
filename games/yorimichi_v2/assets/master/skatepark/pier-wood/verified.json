@@ -1,0 +1,16 @@
+{
+  "asset": "master/skatepark/pier-wood",
+  "dependencies": {
+    "texture/skatepark/pier-wood-albedo": "5f3b72be48cf936adbc5e6c7c712229cfa52fb6fc460285f21cb04a665593332",
+    "texture/skatepark/pier-wood-normal": "0591dcb48c7cdbeec8d1eaafa89287a6b457209b5d33a965e02ea7c1348eb77b",
+    "texture/skatepark/pier-wood-roughness": "49f69f668ea31d3e64d2a181322767d38acbbd5bc2378d69368865e2af9d71e3"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkatePark/Materials/M_Pier_wood.uasset": "2ccab52f52f341d22bc0bc1f035fe5c8e0cfc69fca1d41b5d6fa0152d74e6e73"
+  },
+  "input_fingerprint": "f11e36cdd44998aaf278eab5a5ee9ca99b9b347c4896de8e6a2431e38dd7c2a2",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "material-master@1"
+}

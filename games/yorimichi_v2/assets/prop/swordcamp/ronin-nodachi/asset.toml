@@ -6,7 +6,7 @@ id = "prop/swordcamp/ronin-nodachi"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/swordcamp/ronin-nodachi"
-references = ["adopted/swordcamp/materials"]
+references = ["master/swordcamp/camp"]
 
 [[sources]]
 path = "src/SM_RoninNodachi.fbx"

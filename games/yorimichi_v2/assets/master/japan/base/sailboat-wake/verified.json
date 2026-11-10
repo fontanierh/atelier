@@ -1,0 +1,12 @@
+{
+  "asset": "master/japan/base/sailboat-wake",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Materials/M_SailboatWake.uasset": "137614f6abbe3c55b210ae9066ede7ec1ea1e7bad4434c0050ef63ae6715c122"
+  },
+  "input_fingerprint": "fd0f8b6c033daa9ab900a9b500947615d89f25c53abf2aa6e277a943427f1e49",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "material-master@1"
+}

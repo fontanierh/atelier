@@ -6,7 +6,7 @@ id = "prop/skatepark/skate-park-features-piecefa03a0dfce6ed909"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/skatepark/skate-park-features-piecefa03a0dfce6ed909"
-references = ["adopted/skatepark/materials"]
+references = ["master/skatepark/pier-ceramic", "master/skatepark/pier-concrete", "master/skatepark/pier-painted"]
 
 [[sources]]
 path = "src/SM_SkateParkFeatures_Piecefa03a0dfce6ed909.fbx"

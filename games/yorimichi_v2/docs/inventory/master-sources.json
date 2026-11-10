@@ -10,7 +10,7 @@
  "masters": [
   {
    "package": "/Game/Hippodrome/Materials/M_HD_Structure",
-   "record": "adopted/hippodrome/materials",
+   "record": "master/hippodrome/structure",
    "family": "hippodrome",
    "generator": {
     "path": "games/yorimichi/unreal/Scripts/import_hippodrome.py",
@@ -42,11 +42,12 @@
    ],
    "helpers": [],
    "fit": "direct",
-   "reason": "Graph is fully built in-script; only an engine texture default."
+   "reason": "Graph is fully built in-script; only an engine texture default.",
+   "status": "imported (family hippodrome, MASTERHD)"
   },
   {
    "package": "/Game/Hippodrome/Materials/M_HD_Grass",
-   "record": "adopted/hippodrome/materials",
+   "record": "master/hippodrome/grass",
    "family": "hippodrome",
    "generator": {
     "path": "games/yorimichi/unreal/Scripts/import_hippodrome.py",
@@ -106,11 +107,12 @@
    "reason": "Colour map from a texture record; the rest is constants. The runpy helper is the donor texture import, not a graph helper.",
    "reads": [
     "/Game/Hippodrome/Textures/T_Grass"
-   ]
+   ],
+   "status": "imported (family hippodrome, MASTERHD)"
   },
   {
    "package": "/Game/Hippodrome/Materials/M_HD_Dirt",
-   "record": "adopted/hippodrome/materials",
+   "record": "master/hippodrome/dirt",
    "family": "hippodrome",
    "generator": {
     "path": "games/yorimichi/unreal/Scripts/import_hippodrome.py",
@@ -170,11 +172,12 @@
    "reason": "Colour map from a texture record; the rest is constants. The runpy helper is the donor texture import, not a graph helper.",
    "reads": [
     "/Game/Hippodrome/Textures/T_Dirt"
-   ]
+   ],
+   "status": "imported (family hippodrome, MASTERHD)"
   },
   {
    "package": "/Game/Hippodrome/Materials/M_HD_Stone",
-   "record": "adopted/hippodrome/materials",
+   "record": "master/hippodrome/stone",
    "family": "hippodrome",
    "generator": {
     "path": "games/yorimichi/unreal/Scripts/import_hippodrome.py",
@@ -209,11 +212,12 @@
    "helpers": [],
    "fit": "direct",
    "reason": "Constant base colour; no texture input.",
-   "reads": []
+   "reads": [],
+   "status": "imported (family hippodrome, MASTERHD)"
   },
   {
    "package": "/Game/Hippodrome/Materials/M_HD_Rail",
-   "record": "adopted/hippodrome/materials",
+   "record": "master/hippodrome/rail",
    "family": "hippodrome",
    "generator": {
     "path": "games/yorimichi/unreal/Scripts/import_hippodrome.py",
@@ -248,12 +252,14 @@
    "helpers": [],
    "fit": "direct",
    "reason": "Constant base colour; no texture input.",
-   "reads": []
+   "reads": [],
+   "status": "imported (family hippodrome, MASTERHD)"
   },
   {
    "package": "/Game/SkatePark/Materials/M_Pier_basalt",
-   "record": "adopted/skatepark/materials",
+   "record": "master/skatepark/pier-basalt",
    "family": "skatepark",
+   "status": "imported (family skatepark)",
    "generator": {
     "path": "games/yorimichi/unreal/Scripts/import_skatepark.py",
     "lines": [
@@ -324,8 +330,9 @@
   },
   {
    "package": "/Game/SkatePark/Materials/M_Pier_ceramic",
-   "record": "adopted/skatepark/materials",
+   "record": "master/skatepark/pier-ceramic",
    "family": "skatepark",
+   "status": "imported (family skatepark)",
    "generator": {
     "path": "games/yorimichi/unreal/Scripts/import_skatepark.py",
     "lines": [
@@ -396,8 +403,9 @@
   },
   {
    "package": "/Game/SkatePark/Materials/M_Pier_concrete",
-   "record": "adopted/skatepark/materials",
+   "record": "master/skatepark/pier-concrete",
    "family": "skatepark",
+   "status": "imported (family skatepark)",
    "generator": {
     "path": "games/yorimichi/unreal/Scripts/import_skatepark.py",
     "lines": [
@@ -468,8 +476,9 @@
   },
   {
    "package": "/Game/SkatePark/Materials/M_Pier_mural",
-   "record": "adopted/skatepark/materials",
+   "record": "master/skatepark/pier-mural",
    "family": "skatepark",
+   "status": "imported (family skatepark)",
    "generator": {
     "path": "games/yorimichi/unreal/Scripts/import_skatepark.py",
     "lines": [
@@ -524,8 +533,9 @@
   },
   {
    "package": "/Game/SkatePark/Materials/M_Pier_painted",
-   "record": "adopted/skatepark/materials",
+   "record": "master/skatepark/pier-painted",
    "family": "skatepark",
+   "status": "imported (family skatepark)",
    "generator": {
     "path": "games/yorimichi/unreal/Scripts/import_skatepark.py",
     "lines": [
@@ -596,8 +606,9 @@
   },
   {
    "package": "/Game/SkatePark/Materials/M_Pier_steel",
-   "record": "adopted/skatepark/materials",
+   "record": "master/skatepark/pier-steel",
    "family": "skatepark",
+   "status": "imported (family skatepark)",
    "generator": {
     "path": "games/yorimichi/unreal/Scripts/import_skatepark.py",
     "lines": [
@@ -668,8 +679,9 @@
   },
   {
    "package": "/Game/SkatePark/Materials/M_Pier_wood",
-   "record": "adopted/skatepark/materials",
+   "record": "master/skatepark/pier-wood",
    "family": "skatepark",
+   "status": "imported (family skatepark)",
    "generator": {
     "path": "games/yorimichi/unreal/Scripts/import_skatepark.py",
     "lines": [
@@ -740,8 +752,9 @@
   },
   {
    "package": "/Game/SkatePark/Board/M_BoardDissolve",
-   "record": "adopted/skatepark/board",
-   "family": "skatepark",
+   "record": "master/skatepark/board-dissolve",
+   "family": "skatepark_board",
+   "status": "imported (family skatepark_board)",
    "generator": {
     "path": "games/yorimichi/unreal/Scripts/board_dissolve_material.py",
     "lines": [
@@ -781,7 +794,7 @@
   },
   {
    "package": "/Game/SwordCamp/Materials/M_SwordCamp",
-   "record": "adopted/swordcamp/materials",
+   "record": "master/swordcamp/camp",
    "family": "swordcamp",
    "generator": {
     "path": "games/yorimichi/unreal/Scripts/import_swordcamp.py",
@@ -864,11 +877,12 @@
    "reason": "Haze comes from atmosphere.py, which imports sea_look.py; a V2 port needs the haze constants and the two formatters (not the whole sea_look module).",
    "reads": [
     "/Game/SwordCamp/Textures/T_SwordCampAtlas"
-   ]
+   ],
+   "status": "imported (family swordcamp)"
   },
   {
    "package": "/Game/SwordCamp/Materials/M_RoninBody",
-   "record": "adopted/swordcamp/materials",
+   "record": "master/swordcamp/ronin-body",
    "family": "swordcamp",
    "generator": {
     "path": "games/yorimichi/unreal/Scripts/import_swordcamp.py",
@@ -917,11 +931,12 @@
    "reason": "Skeletal-mesh material with a recolour custom node; no donor helper.",
    "reads": [
     "/Game/SwordCamp/Textures/T_SwordCampAtlas"
-   ]
+   ],
+   "status": "imported (family swordcamp)"
   },
   {
    "package": "/Game/Racing/M_RacingTv",
-   "record": "adopted/racing",
+   "record": "master/racing/tv",
    "family": "racing",
    "generator": {
     "path": "games/yorimichi/unreal/Scripts/racing_tv_material.py",
@@ -970,11 +985,12 @@
    "helpers": [],
    "fit": "direct",
    "reason": "No texture is built by the generator; the Picture parameter is a runtime render target, so the read-back checks the graph and defaults only. The EyeAdaptationInverse pin name depends on the engine version.",
-   "reads": []
+   "reads": [],
+   "status": "imported (family racing)"
   },
   {
    "package": "/Game/FX/M_FX_Additive",
-   "record": "adopted/fx",
+   "record": "master/fx/additive",
    "family": "fx",
    "generator": {
     "path": "games/yorimichi/unreal/Scripts/import_combat_fx.py",
@@ -1025,11 +1041,12 @@
    "reason": "Unlit additive sprite master; the Sprite texture is the only input.",
    "reads": [
     "/Game/FX/Textures/T_FX_Glow"
-   ]
+   ],
+   "status": "imported (family fx)"
   },
   {
    "package": "/Game/FX/M_FX_Dust",
-   "record": "adopted/fx",
+   "record": "master/fx/dust",
    "family": "fx",
    "generator": {
     "path": "games/yorimichi/unreal/Scripts/import_combat_fx.py",
@@ -1066,11 +1083,12 @@
    "reason": "Translucent branch: opacity = saturate(mask) (import_combat_fx.py:66-67).",
    "reads": [
     "/Game/FX/Textures/T_FX_Dust"
-   ]
+   ],
+   "status": "imported (family fx)"
   },
   {
    "package": "/Game/FX/M_FX_Trail",
-   "record": "adopted/fx",
+   "record": "master/fx/trail",
    "family": "fx",
    "generator": {
     "path": "games/yorimichi/unreal/Scripts/import_combat_fx.py",
@@ -1102,11 +1120,12 @@
    "reason": "Vertex colour x vertex alpha x streak texture x Intensity; no helper. Module-body builder (wrap as a function).",
    "reads": [
     "/Game/FX/Textures/T_FX_Trail"
-   ]
+   ],
+   "status": "imported (family fx)"
   },
   {
    "package": "/Game/MegaPark/Materials/M_RetailOpaque",
-   "record": "adopted/megapark/base-materials",
+   "record": "master/megapark/opaque",
    "family": "megapark",
    "generator": {
     "path": "games/yorimichi/unreal/Scripts/import_megapark.py",
@@ -1168,11 +1187,12 @@
     "/Game/MegaPark/Textures/T_DefaultLinear",
     "/Game/MegaPark/Textures/T_DefaultBlack",
     "/Game/MegaPark/Textures/T_DefaultNormal"
-   ]
+   ],
+   "status": "imported (family megapark)"
   },
   {
    "package": "/Game/MegaPark/Materials/M_RetailMasked",
-   "record": "adopted/megapark/base-materials",
+   "record": "master/megapark/masked",
    "family": "megapark",
    "generator": {
     "path": "games/yorimichi/unreal/Scripts/import_megapark.py",
@@ -1234,11 +1254,12 @@
     "/Game/MegaPark/Textures/T_DefaultLinear",
     "/Game/MegaPark/Textures/T_DefaultBlack",
     "/Game/MegaPark/Textures/T_DefaultNormal"
-   ]
+   ],
+   "status": "imported (family megapark)"
   },
   {
    "package": "/Game/MegaPark/Materials/M_RetailTranslucent",
-   "record": "adopted/megapark/base-materials",
+   "record": "master/megapark/translucent",
    "family": "megapark",
    "generator": {
     "path": "games/yorimichi/unreal/Scripts/import_megapark.py",
@@ -1300,11 +1321,12 @@
     "/Game/MegaPark/Textures/T_DefaultLinear",
     "/Game/MegaPark/Textures/T_DefaultBlack",
     "/Game/MegaPark/Textures/T_DefaultNormal"
-   ]
+   ],
+   "status": "imported (family megapark)"
   },
   {
    "package": "/Game/Japan/Hidamari/Materials/M_HDCity",
-   "record": "adopted/japan/hidamari/generator",
+   "record": "master/hidamari/city",
    "family": "hidamari",
    "generator": {
     "path": "games/yorimichi/unreal/Scripts/city_material.py",
@@ -1397,12 +1419,13 @@
    "reason": "Same haze helper as M_SwordCamp. The glow and detail graph is self-contained. M_HDCity keeps its own generator record (adopted/japan/hidamari/generator).",
    "reads": [
     "/Game/Japan/Hidamari/Textures/T_HD_plaster"
-   ]
+   ],
+   "status": "imported (family hidamari_city)"
   },
   {
    "package": "/Game/Japan/Materials/M_Arcade",
-   "record": "adopted/japan/materials/base-materials",
-   "family": "plaza",
+   "record": "master/japan/base/arcade",
+   "family": "japan_base",
    "generator": {
     "path": "games/yorimichi/unreal/Scripts/arcade_material.py",
     "lines": [
@@ -1458,12 +1481,13 @@
    "reason": "Graph is built in one function; its only texture is the timber owner, and the glow, tint and constants are literal code. The texture import (lines 7-21) becomes the texture record, not the builder.",
    "reads": [
     "/Game/Japan/Textures/T_Arcade_timber"
-   ]
+   ],
+   "status": "imported (family japan_base)"
   },
   {
    "package": "/Game/Japan/Materials/M_ArcadePaving",
-   "record": "adopted/japan/materials/base-materials",
-   "family": "plaza",
+   "record": "master/japan/base/arcade-paving",
+   "family": "japan_base",
    "generator": {
     "path": "games/yorimichi/unreal/Scripts/arcade_material.py",
     "lines": [
@@ -1523,12 +1547,13 @@
    "reason": "Same function as M_Arcade with paving=True: the colour code is replaced (line 45) and the glow and constants are shared. The only texture is the paving owner.",
    "reads": [
     "/Game/Japan/Textures/T_Arcade_paving"
-   ]
+   ],
+   "status": "imported (family japan_base)"
   },
   {
    "package": "/Game/Japan/Materials/M_Harbor",
-   "record": "adopted/japan/materials/base-materials",
-   "family": "plaza",
+   "record": "master/japan/base/harbor",
+   "family": "japan_base",
    "generator": {
     "path": "games/yorimichi/unreal/Scripts/harbor_material.py",
     "lines": [
@@ -1601,12 +1626,13 @@
    "reads": [
     "/Game/Japan/Textures/T_Harbor_paving",
     "/Game/Japan/Textures/T_Harbor_timber"
-   ]
+   ],
+   "status": "imported (family japan_base)"
   },
   {
    "package": "/Game/Japan/Materials/M_HarborWater",
    "record": "adopted/japan/materials/base-materials",
-   "family": "plaza",
+   "family": "japan_base",
    "generator": {
     "path": "games/yorimichi/unreal/Scripts/harbor_material.py",
     "lines": [
@@ -1691,7 +1717,8 @@
    ],
    "fit": "needs helper",
    "reason": "The water branch reads sea_look (the open-sea waves, look and haze) and coast_water.HARBOR_RECT. Both are pure code with no Unreal calls, and their bytes are already pinned in V2 (adopted/japan/materials/base-materials and adopted/brinecove/materials); the port is wiring them into the master record.",
-   "reads": []
+   "reads": [],
+   "status": "kept in adopted/japan/materials/base-materials (family japan_base keeps it: needs helper sea_look and coast_water)"
   }
  ],
  "helper_files": [
@@ -1992,6 +2019,829 @@
     "status": "wire-dependency",
     "recovery": "Bytes are pinned in adopted/brinecove/materials (asset.toml line 92). Pin in the master src (6 lines).",
     "evidence": "harbor_material.py:16 SEA_RECT = coast_water.HARBOR_RECT; coast_water.py:6 gives (300., -1600., 1800., 600.)."
+   }
+  ]
+ },
+ "japan_base": {
+  "record": "adopted/japan/materials/base-materials",
+  "family": "japan_base",
+  "note": "The 27 packages the adopted record owns (docs/inventory/master-sources.md, section 10). Planned rows are the thirteen masters of tools/migrate/master_families/japan_base.py; kept rows stay in the record until the planner has a keeps mechanism.",
+  "fallback": "master/japan/base/forest-lake-water",
+  "kept": [
+   "/Game/Japan/Materials/MPC_Wind",
+   "/Game/Japan/Materials/M_CoastRock",
+   "/Game/Japan/Materials/M_Foliage",
+   "/Game/Japan/Materials/M_ForestGround",
+   "/Game/Japan/Materials/M_ForestImpostor",
+   "/Game/Japan/Materials/M_Grass",
+   "/Game/Japan/Materials/M_HarborWater",
+   "/Game/Japan/Materials/M_NorthGate",
+   "/Game/Japan/Materials/M_NorthMountains",
+   "/Game/Japan/Materials/M_Painted",
+   "/Game/Japan/Materials/M_Painterly",
+   "/Game/Japan/Materials/M_Sea",
+   "/Game/Japan/Materials/M_Sky",
+   "/Game/Japan/Materials/M_Village"
+  ],
+  "masters": [
+   {
+    "package": "/Game/Japan/Materials/MPC_Wind",
+    "generator": {
+     "path": "games/yorimichi/unreal/Scripts/shared_materials.py",
+     "lines": [
+      21,
+      34
+     ],
+     "function": "make_mpc",
+     "sha256": "8cf144f9752bffe771bbddfe984091ad4c288259bc00abba4a64fad5d6678720"
+    },
+    "inputs": [],
+    "helpers": [],
+    "fit": "not a material master",
+    "record": null,
+    "status": "kept",
+    "reason": "MaterialParameterCollection; the importer handles class Material only"
+   },
+   {
+    "package": "/Game/Japan/Materials/M_Arcade",
+    "generator": {
+     "path": "games/yorimichi/unreal/Scripts/arcade_material.py",
+     "lines": [
+      24,
+      63
+     ],
+     "function": "material(paving=False)",
+     "sha256": "21ca3cbc06b18defbc95f7d5ae9a4c580027126bdcd90214d09d0eed016d10ab"
+    },
+    "inputs": [
+     {
+      "kind": "texture",
+      "name": "/Game/Japan/Textures/T_Arcade_timber",
+      "owner": "texture/japan/arcade-timber"
+     }
+    ],
+    "helpers": [],
+    "fit": "direct",
+    "record": "master/japan/base/arcade",
+    "status": "imported (family japan_base)",
+    "reason": "graph in the donor function; texture read"
+   },
+   {
+    "package": "/Game/Japan/Materials/M_ArcadePaving",
+    "generator": {
+     "path": "games/yorimichi/unreal/Scripts/arcade_material.py",
+     "lines": [
+      24,
+      63
+     ],
+     "function": "material(paving=True)",
+     "sha256": "21ca3cbc06b18defbc95f7d5ae9a4c580027126bdcd90214d09d0eed016d10ab"
+    },
+    "inputs": [
+     {
+      "kind": "texture",
+      "name": "/Game/Japan/Textures/T_Arcade_paving",
+      "owner": "texture/japan/arcade-paving"
+     }
+    ],
+    "helpers": [],
+    "fit": "direct",
+    "record": "master/japan/base/arcade-paving",
+    "status": "imported (family japan_base)",
+    "reason": "paving changes colour code, donor line 45"
+   },
+   {
+    "package": "/Game/Japan/Materials/M_Bike",
+    "generator": {
+     "path": "games/yorimichi/unreal/Scripts/bike_material.py",
+     "lines": [
+      6,
+      32
+     ],
+     "function": "material",
+     "sha256": "0750998b3bbac5a9b4461860480852f2473c4af01ada8566890ae79fa19b2a68"
+    },
+    "inputs": [],
+    "helpers": [],
+    "fit": "direct",
+    "record": "master/japan/base/bike",
+    "status": "imported (family japan_base)",
+    "reason": "constants only"
+   },
+   {
+    "package": "/Game/Japan/Materials/M_CloudShadow",
+    "generator": {
+     "path": "games/yorimichi/unreal/Scripts/shared_materials.py",
+     "lines": [
+      84,
+      100
+     ],
+     "function": "cloud_shadow_material",
+     "sha256": "8cf144f9752bffe771bbddfe984091ad4c288259bc00abba4a64fad5d6678720"
+    },
+    "inputs": [
+     {
+      "kind": "texture",
+      "name": "/Game/Japan/Textures/T_cloudmask",
+      "owner": "texture/japan/cloudmask"
+     }
+    ],
+    "helpers": [
+     {
+      "path": "games/yorimichi/unreal/Scripts/material_assets.py",
+      "lines": [
+       34,
+       42
+      ],
+      "function": "node, link",
+      "sha256": "4f48db1203b44c5abca932291ce323f7247a655753167a5f72dfefe5ac4be50f"
+     }
+    ],
+    "fit": "direct",
+    "record": "master/japan/base/cloud-shadow",
+    "status": "imported (family japan_base)",
+    "reason": "node and link copied from material_assets"
+   },
+   {
+    "package": "/Game/Japan/Materials/M_CoastRock",
+    "generator": {
+     "path": "games/yorimichi/unreal/Scripts/forest_ground.py",
+     "lines": [
+      62,
+      112
+     ],
+     "function": "rock_material",
+     "sha256": "90c1256d9cf521e484a6d1ed8027056849a14ab3f4fc1ddaebb275d563d8f4f3"
+    },
+    "inputs": [
+     {
+      "kind": "texture",
+      "name": "/Game/Japan/Textures/T_CoastRock",
+      "owner": "adopted/japan/textures/rock"
+     }
+    ],
+    "helpers": [
+     {
+      "path": "games/yorimichi/unreal/Scripts/atmosphere.py",
+      "lines": [
+       1,
+       62
+      ],
+      "function": "module",
+      "sha256": "b59478df43df83b8c7386e7ff7c097f32faf647716fdacb804f3cf0c99336ebf"
+     },
+     {
+      "path": "games/yorimichi/unreal/Scripts/coast_rock_look.py",
+      "lines": [
+       1,
+       27
+      ],
+      "function": "module",
+      "sha256": "cff84c03670b05745133050997f02fd7b6da3f6d161c29f5c1f9dcb0d03f60e3"
+     }
+    ],
+    "fit": "needs helper",
+    "record": null,
+    "status": "kept",
+    "reason": "atmosphere (aerial perspective) and the pinned coast_rock_look code"
+   },
+   {
+    "package": "/Game/Japan/Materials/M_Foliage",
+    "generator": {
+     "path": "games/yorimichi/unreal/Scripts/shared_materials.py",
+     "lines": [
+      169,
+      223
+     ],
+     "function": "master(masked=True)",
+     "sha256": "8cf144f9752bffe771bbddfe984091ad4c288259bc00abba4a64fad5d6678720"
+    },
+    "inputs": [
+     {
+      "kind": "texture",
+      "name": "/Game/Japan/Textures/T_white",
+      "owner": "texture/japan/white"
+     },
+     {
+      "kind": "collection",
+      "name": "/Game/Japan/Materials/MPC_Wind",
+      "owner": "MPC_Wind (kept)"
+     }
+    ],
+    "helpers": [
+     {
+      "path": "games/yorimichi/unreal/Scripts/atmosphere.py",
+      "lines": [
+       1,
+       62
+      ],
+      "function": "module",
+      "sha256": "b59478df43df83b8c7386e7ff7c097f32faf647716fdacb804f3cf0c99336ebf"
+     }
+    ],
+    "fit": "needs helper",
+    "record": null,
+    "status": "kept",
+    "reason": "shared master(); atmosphere, lit path"
+   },
+   {
+    "package": "/Game/Japan/Materials/M_ForestGround",
+    "generator": {
+     "path": "games/yorimichi/unreal/Scripts/forest_ground.py",
+     "lines": [
+      16,
+      59
+     ],
+     "function": "material",
+     "sha256": "90c1256d9cf521e484a6d1ed8027056849a14ab3f4fc1ddaebb275d563d8f4f3"
+    },
+    "inputs": [
+     {
+      "kind": "texture",
+      "name": "/Game/Japan/Textures/T_ground",
+      "owner": "adopted/japan/textures/ground"
+     },
+     {
+      "kind": "texture",
+      "name": "/Game/Japan/Textures/T_ground_detail",
+      "owner": "adopted/japan/textures/ground"
+     }
+    ],
+    "helpers": [
+     {
+      "path": "games/yorimichi/unreal/Scripts/atmosphere.py",
+      "lines": [
+       1,
+       62
+      ],
+      "function": "module",
+      "sha256": "b59478df43df83b8c7386e7ff7c097f32faf647716fdacb804f3cf0c99336ebf"
+     },
+     {
+      "path": "games/yorimichi/unreal/Scripts/ground_grain.py",
+      "lines": [
+       1,
+       8
+      ],
+      "function": "code",
+      "sha256": "c802eea4323f749fd84b5b99cb3d0a1e6196d79f2c7ce99d8e468d2feead6206"
+     }
+    ],
+    "fit": "needs helper",
+    "record": null,
+    "status": "kept",
+    "reason": "atmosphere and ground_grain"
+   },
+   {
+    "package": "/Game/Japan/Materials/M_ForestImpostor",
+    "generator": {
+     "path": "games/yorimichi/unreal/Scripts/forest_impostor_material.py",
+     "lines": [
+      6,
+      53
+     ],
+     "function": "parent",
+     "sha256": "c7aa76c7b9b9385129b19937fdb639d5d6eff8d57ec0b84ccd9e92164e76c505"
+    },
+    "inputs": [
+     {
+      "kind": "engine",
+      "name": "/Engine/EngineResources/WhiteSquareTexture",
+      "owner": "engine"
+     },
+     {
+      "kind": "texture",
+      "name": "default normal (passed by the caller)",
+      "owner": "caller, not a record"
+     }
+    ],
+    "helpers": [
+     {
+      "path": "games/yorimichi/unreal/Scripts/atmosphere.py",
+      "lines": [
+       1,
+       62
+      ],
+      "function": "module",
+      "sha256": "b59478df43df83b8c7386e7ff7c097f32faf647716fdacb804f3cf0c99336ebf"
+     }
+    ],
+    "fit": "needs helper",
+    "record": null,
+    "status": "kept",
+    "reason": "atmosphere; the default normal is a caller argument"
+   },
+   {
+    "package": "/Game/Japan/Materials/M_ForestLakeWater",
+    "generator": {
+     "path": "games/yorimichi/unreal/Scripts/forest_lake_material.py",
+     "lines": [
+      20,
+      86
+     ],
+     "function": "RIPPLE, create",
+     "sha256": "0a5a3ac62cde21e3cc5174a19e2067c41eeb9cb1e5a8a8de52fc127fe4e8674d"
+    },
+    "inputs": [],
+    "helpers": [],
+    "fit": "direct",
+    "record": "master/japan/base/forest-lake-water",
+    "status": "imported (family japan_base)",
+    "reason": "ripple constant lines 20-36 with the create body"
+   },
+   {
+    "package": "/Game/Japan/Materials/M_Grass",
+    "generator": {
+     "path": "games/yorimichi/unreal/Scripts/shared_materials.py",
+     "lines": [
+      224,
+      250
+     ],
+     "function": "grass_material",
+     "sha256": "8cf144f9752bffe771bbddfe984091ad4c288259bc00abba4a64fad5d6678720"
+    },
+    "inputs": [
+     {
+      "kind": "texture",
+      "name": "/Game/Japan/Textures/T_grass",
+      "owner": "adopted/japan/textures/ground"
+     },
+     {
+      "kind": "texture",
+      "name": "/Game/Japan/Textures/T_white",
+      "owner": "texture/japan/white"
+     },
+     {
+      "kind": "collection",
+      "name": "/Game/Japan/Materials/MPC_Wind",
+      "owner": "MPC_Wind (kept)"
+     }
+    ],
+    "helpers": [
+     {
+      "path": "games/yorimichi/unreal/Scripts/atmosphere.py",
+      "lines": [
+       1,
+       62
+      ],
+      "function": "module",
+      "sha256": "b59478df43df83b8c7386e7ff7c097f32faf647716fdacb804f3cf0c99336ebf"
+     }
+    ],
+    "fit": "needs helper",
+    "record": null,
+    "status": "kept",
+    "reason": "calls the shared master(masked=True)"
+   },
+   {
+    "package": "/Game/Japan/Materials/M_Harbor",
+    "generator": {
+     "path": "games/yorimichi/unreal/Scripts/harbor_material.py",
+     "lines": [
+      39,
+      61
+     ],
+     "function": "material(water=False), head",
+     "sha256": "7681f25484a4d5589b0fbc366203391039a6747ccc07ca8ec90dcc801acc59ad"
+    },
+    "inputs": [
+     {
+      "kind": "texture",
+      "name": "/Game/Japan/Textures/T_Harbor_paving",
+      "owner": "texture/japan/harbor-paving"
+     },
+     {
+      "kind": "texture",
+      "name": "/Game/Japan/Textures/T_Harbor_timber",
+      "owner": "texture/japan/harbor-timber"
+     }
+    ],
+    "helpers": [],
+    "fit": "direct",
+    "record": "master/japan/base/harbor",
+    "status": "imported (family japan_base)",
+    "reason": "head 39-61 and the non-water branch 143-176"
+   },
+   {
+    "package": "/Game/Japan/Materials/M_HarborWater",
+    "generator": {
+     "path": "games/yorimichi/unreal/Scripts/harbor_material.py",
+     "lines": [
+      39,
+      142
+     ],
+     "function": "material(water=True)",
+     "sha256": "7681f25484a4d5589b0fbc366203391039a6747ccc07ca8ec90dcc801acc59ad"
+    },
+    "inputs": [],
+    "helpers": [
+     {
+      "path": "games/yorimichi/unreal/Scripts/sea_look.py",
+      "lines": [
+       1,
+       150
+      ],
+      "function": "module",
+      "sha256": "ffae53cded2bb461534c88c100bc75d3f93ec3bf396eb303e5d4ec3ad4dbb4fa"
+     },
+     {
+      "path": "games/yorimichi/world/coast_water.py",
+      "lines": [
+       1,
+       6
+      ],
+      "function": "HARBOR_RECT",
+      "sha256": "a7f9b6f40ae171526aa86999b17f4f3a48ebe35cce6dff4c305baa644c5d9381"
+     }
+    ],
+    "fit": "needs helper",
+    "record": null,
+    "status": "kept",
+    "reason": "sea_look and coast_water.HARBOR_RECT; no V2 texture"
+   },
+   {
+    "package": "/Game/Japan/Materials/M_NorthGate",
+    "generator": {
+     "path": "games/yorimichi/unreal/Scripts/mountain_material.py",
+     "lines": [
+      257,
+      296
+     ],
+     "function": "gate_material",
+     "sha256": "21238502c415c255cb5081801368871b0c96e9d81b1315812ae1a63d39087185"
+    },
+    "inputs": [
+     {
+      "kind": "texture",
+      "name": "/Game/Japan/Textures/T_ground",
+      "owner": "adopted/japan/textures/ground"
+     }
+    ],
+    "helpers": [
+     {
+      "path": "games/yorimichi/unreal/Scripts/atmosphere.py",
+      "lines": [
+       1,
+       62
+      ],
+      "function": "module",
+      "sha256": "b59478df43df83b8c7386e7ff7c097f32faf647716fdacb804f3cf0c99336ebf"
+     },
+     {
+      "path": "games/yorimichi/unreal/Scripts/mountain_material.py",
+      "lines": [
+       249,
+       255
+      ],
+      "function": "_seamless",
+      "sha256": "21238502c415c255cb5081801368871b0c96e9d81b1315812ae1a63d39087185"
+     }
+    ],
+    "fit": "needs helper",
+    "record": null,
+    "status": "kept",
+    "reason": "atmosphere (SHARE and glow)"
+   },
+   {
+    "package": "/Game/Japan/Materials/M_NorthMountains",
+    "generator": {
+     "path": "games/yorimichi/unreal/Scripts/mountain_material.py",
+     "lines": [
+      42,
+      233
+     ],
+     "function": "material",
+     "sha256": "21238502c415c255cb5081801368871b0c96e9d81b1315812ae1a63d39087185"
+    },
+    "inputs": [
+     {
+      "kind": "texture",
+      "name": "/Game/Japan/Textures/T_VolcanicRock",
+      "owner": "adopted/japan/textures/rock"
+     },
+     {
+      "kind": "texture",
+      "name": "/Game/Japan/Textures/T_NorthSnowMask",
+      "owner": "adopted/japan/textures/rock"
+     },
+     {
+      "kind": "texture",
+      "name": "/Game/Japan/Textures/T_NorthCraterMask",
+      "owner": "adopted/japan/textures/rock"
+     },
+     {
+      "kind": "texture",
+      "name": "/Game/Japan/Textures/T_NorthCraterFloor",
+      "owner": "adopted/japan/textures/rock"
+     }
+    ],
+    "helpers": [
+     {
+      "path": "games/yorimichi/unreal/Scripts/atmosphere.py",
+      "lines": [
+       1,
+       62
+      ],
+      "function": "module",
+      "sha256": "b59478df43df83b8c7386e7ff7c097f32faf647716fdacb804f3cf0c99336ebf"
+     },
+     {
+      "path": "games/yorimichi/unreal/Scripts/mountain_material.py",
+      "lines": [
+       18,
+       40
+      ],
+      "function": "crater_hlsl, floor_hlsl",
+      "sha256": "21238502c415c255cb5081801368871b0c96e9d81b1315812ae1a63d39087185"
+     },
+     {
+      "path": "games/yorimichi/unreal/Scripts/ground_grain.py",
+      "lines": [
+       1,
+       8
+      ],
+      "function": "code",
+      "sha256": "c802eea4323f749fd84b5b99cb3d0a1e6196d79f2c7ce99d8e468d2feead6206"
+     }
+    ],
+    "fit": "needs helper",
+    "record": null,
+    "status": "kept",
+    "reason": "atmosphere; crater and floor HLSL; reads hidamari build metadata (north_snow.json, not pinned)"
+   },
+   {
+    "package": "/Game/Japan/Materials/M_Painted",
+    "generator": {
+     "path": "games/yorimichi/unreal/Scripts/shared_materials.py",
+     "lines": [
+      169,
+      223
+     ],
+     "function": "master(masked=False)",
+     "sha256": "8cf144f9752bffe771bbddfe984091ad4c288259bc00abba4a64fad5d6678720"
+    },
+    "inputs": [
+     {
+      "kind": "texture",
+      "name": "/Game/Japan/Textures/T_white",
+      "owner": "texture/japan/white"
+     }
+    ],
+    "helpers": [
+     {
+      "path": "games/yorimichi/unreal/Scripts/atmosphere.py",
+      "lines": [
+       1,
+       62
+      ],
+      "function": "module",
+      "sha256": "b59478df43df83b8c7386e7ff7c097f32faf647716fdacb804f3cf0c99336ebf"
+     }
+    ],
+    "fit": "needs helper",
+    "record": null,
+    "status": "kept",
+    "reason": "shared master(); atmosphere, lit path"
+   },
+   {
+    "package": "/Game/Japan/Materials/M_Painterly",
+    "generator": {
+     "path": "games/yorimichi/unreal/Scripts/shared_materials.py",
+     "lines": [
+      103,
+      166
+     ],
+     "function": "painterly_material",
+     "sha256": "8cf144f9752bffe771bbddfe984091ad4c288259bc00abba4a64fad5d6678720"
+    },
+    "inputs": [],
+    "helpers": [
+     {
+      "path": "games/yorimichi/unreal/Scripts/painterly_kernel.py",
+      "lines": [
+       1,
+       57
+      ],
+      "function": "shader",
+      "sha256": "70f9be7d03f23727829837b2334f3a84691de5bda4189a164c09868feac48077"
+     }
+    ],
+    "fit": "needs helper",
+    "record": null,
+    "status": "kept",
+    "reason": "post-process; the Kuwahara kernel is pinned in painterly_kernel.py"
+   },
+   {
+    "package": "/Game/Japan/Materials/M_PlazaPaving",
+    "generator": {
+     "path": "games/yorimichi/unreal/Scripts/plaza_material.py",
+     "lines": [
+      37,
+      68
+     ],
+     "function": "paving_material",
+     "sha256": "c25bcab39975ab556a564ef3b3725a62ca296eb0f9f406ac0573c26c89c3b85e"
+    },
+    "inputs": [
+     {
+      "kind": "texture",
+      "name": "/Game/Japan/Textures/T_Arcade_paving",
+      "owner": "texture/japan/arcade-paving"
+     }
+    ],
+    "helpers": [],
+    "fit": "direct",
+    "record": "master/japan/base/plaza-paving",
+    "status": "imported (family japan_base)",
+    "reason": "reads the arcade paving texture (donor line 45 of arcade)"
+   },
+   {
+    "package": "/Game/Japan/Materials/M_PlazaWater",
+    "generator": {
+     "path": "games/yorimichi/unreal/Scripts/plaza_material.py",
+     "lines": [
+      5,
+      34
+     ],
+     "function": "water_material(pond=False)",
+     "sha256": "c25bcab39975ab556a564ef3b3725a62ca296eb0f9f406ac0573c26c89c3b85e"
+    },
+    "inputs": [],
+    "helpers": [],
+    "fit": "direct",
+    "record": "master/japan/base/plaza-water",
+    "status": "imported (family japan_base)",
+    "reason": "constants and time"
+   },
+   {
+    "package": "/Game/Japan/Materials/M_PondWater",
+    "generator": {
+     "path": "games/yorimichi/unreal/Scripts/plaza_material.py",
+     "lines": [
+      5,
+      34
+     ],
+     "function": "water_material(pond=True)",
+     "sha256": "c25bcab39975ab556a564ef3b3725a62ca296eb0f9f406ac0573c26c89c3b85e"
+    },
+    "inputs": [],
+    "helpers": [],
+    "fit": "direct",
+    "record": "master/japan/base/pond-water",
+    "status": "imported (family japan_base)",
+    "reason": "pond overrides, donor lines 16 and 22"
+   },
+   {
+    "package": "/Game/Japan/Materials/M_SailboatCloth",
+    "generator": {
+     "path": "games/yorimichi/unreal/Scripts/sailboat_material.py",
+     "lines": [
+      5,
+      40
+     ],
+     "function": "material(wake=False)",
+     "sha256": "fd875fedff8a95be85906b95904844536037b95717017b040b634b09712b7b8e"
+    },
+    "inputs": [],
+    "helpers": [],
+    "fit": "direct",
+    "record": "master/japan/base/sailboat-cloth",
+    "status": "imported (family japan_base)",
+    "reason": "parameters SailFill and FlutterDirection"
+   },
+   {
+    "package": "/Game/Japan/Materials/M_SailboatWake",
+    "generator": {
+     "path": "games/yorimichi/unreal/Scripts/sailboat_material.py",
+     "lines": [
+      5,
+      40
+     ],
+     "function": "material(wake=True)",
+     "sha256": "fd875fedff8a95be85906b95904844536037b95717017b040b634b09712b7b8e"
+    },
+    "inputs": [],
+    "helpers": [],
+    "fit": "direct",
+    "record": "master/japan/base/sailboat-wake",
+    "status": "imported (family japan_base)",
+    "reason": "parameter WakeAmount; translucent"
+   },
+   {
+    "package": "/Game/Japan/Materials/M_Sea",
+    "generator": {
+     "path": "games/yorimichi/unreal/Scripts/import_southwest.py",
+     "lines": [
+      32,
+      70
+     ],
+     "function": "sea_material",
+     "sha256": "2c7377af142b19e5bd3457a93f7fa19bc4526934b2f66b15409a53d143180e45"
+    },
+    "inputs": [],
+    "helpers": [
+     {
+      "path": "games/yorimichi/unreal/Scripts/sea_look.py",
+      "lines": [
+       1,
+       150
+      ],
+      "function": "module",
+      "sha256": "ffae53cded2bb461534c88c100bc75d3f93ec3bf396eb303e5d4ec3ad4dbb4fa"
+     }
+    ],
+    "fit": "needs helper",
+    "record": null,
+    "status": "kept",
+    "reason": "sea_look WAVES, LOOK, HAZE and constants"
+   },
+   {
+    "package": "/Game/Japan/Materials/M_Sky",
+    "generator": {
+     "path": "games/yorimichi/unreal/Scripts/shared_materials.py",
+     "lines": [
+      169,
+      223
+     ],
+     "function": "master(unlit=True, fixed_tex=T_sky)",
+     "sha256": "8cf144f9752bffe771bbddfe984091ad4c288259bc00abba4a64fad5d6678720"
+    },
+    "inputs": [
+     {
+      "kind": "texture",
+      "name": "/Game/Japan/Textures/T_sky",
+      "owner": "texture/japan/sky"
+     }
+    ],
+    "helpers": [],
+    "fit": "direct",
+    "record": null,
+    "status": "kept",
+    "reason": "unlit path skips atmosphere; fits once master() is split out"
+   },
+   {
+    "package": "/Game/Japan/Materials/M_Village",
+    "generator": {
+     "path": "games/yorimichi/unreal/Scripts/import_village.py",
+     "lines": [
+      17,
+      60
+     ],
+     "function": "material",
+     "sha256": "fccc0aae775eb8ae84d7010344f37900e6e654168a50502f5fb89d38048ea17c"
+    },
+    "inputs": [],
+    "helpers": [
+     {
+      "path": "games/yorimichi/unreal/Scripts/atmosphere.py",
+      "lines": [
+       1,
+       62
+      ],
+      "function": "module",
+      "sha256": "b59478df43df83b8c7386e7ff7c097f32faf647716fdacb804f3cf0c99336ebf"
+     }
+    ],
+    "fit": "needs helper",
+    "record": null,
+    "status": "kept",
+    "reason": "atmosphere.apply on the lit base and glow"
+   },
+   {
+    "package": "/Game/Japan/Materials/M_VillageResident",
+    "generator": {
+     "path": "games/yorimichi/unreal/Scripts/import_village.py",
+     "lines": [
+      63,
+      85
+     ],
+     "function": "resident_material",
+     "sha256": "fccc0aae775eb8ae84d7010344f37900e6e654168a50502f5fb89d38048ea17c"
+    },
+    "inputs": [],
+    "helpers": [],
+    "fit": "direct",
+    "record": "master/japan/base/village-resident",
+    "status": "imported (family japan_base)",
+    "reason": "ClothTint parameter; skeletal mesh"
+   },
+   {
+    "package": "/Game/Japan/Materials/M_ZeppelinFabric",
+    "generator": {
+     "path": "games/yorimichi/unreal/Scripts/import_zeppelin.py",
+     "lines": [
+      13,
+      30
+     ],
+     "function": "fabric_material",
+     "sha256": "0896301eea5b9449ff750fe6302ed8275b71c2e9ae5a64bde8830108a6e7b2bc"
+    },
+    "inputs": [],
+    "helpers": [],
+    "fit": "direct",
+    "record": "master/japan/base/zeppelin-fabric",
+    "status": "imported (family japan_base)",
+    "reason": "SunDirection parameter; unlit"
    }
   ]
  }

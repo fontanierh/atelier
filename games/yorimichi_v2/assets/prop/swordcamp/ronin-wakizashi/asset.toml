@@ -6,7 +6,7 @@ id = "prop/swordcamp/ronin-wakizashi"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/swordcamp/ronin-wakizashi"
-references = ["adopted/swordcamp/materials"]
+references = ["master/swordcamp/camp"]
 
 [[sources]]
 path = "src/SM_RoninWakizashi.fbx"

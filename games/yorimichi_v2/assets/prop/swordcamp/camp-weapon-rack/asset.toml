@@ -6,7 +6,7 @@ id = "prop/swordcamp/camp-weapon-rack"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/swordcamp/camp-weapon-rack"
-references = ["adopted/swordcamp/materials"]
+references = ["master/swordcamp/camp"]
 
 [[sources]]
 path = "src/SM_CampWeaponRack.fbx"

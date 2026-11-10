@@ -10,7 +10,9 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'tools' / 'content'))
+sys.path.insert(0, str(ROOT / 'tools' / 'migrate'))
 import records  # noqa: E402
+import master_records as planner  # noqa: E402
 
 INVENTORY = ROOT / 'docs/inventory/master-sources.json'
 SMALL_MASTERS = ROOT / 'docs/inventory/small-families-masters.txt'
@@ -77,8 +79,8 @@ def test_arguments_may_be_strings_numbers_and_booleans(tmp_path):
     (dict(settings='reads = []\n'), 'builder'),
     (dict(settings='builder = "Surface"\n'), 'lower-case'),
     (dict(settings='builder = "surface"\nextra = 1\n'), 'unknown key'),
-    (dict(settings='builder = "surface"\nreads = ["Grass"]\n'), 'distinct /Game packages'),
-    (dict(settings='builder = "surface"\nreads = ["/Game/Hippodrome/Textures/T_Grass", "/Game/Hippodrome/Textures/T_Grass"]\n'), 'distinct /Game packages'),
+    (dict(settings='builder = "surface"\nreads = ["Grass"]\n'), 'distinct /Game or /Engine packages'),
+    (dict(settings='builder = "surface"\nreads = ["/Game/Hippodrome/Textures/T_Grass", "/Game/Hippodrome/Textures/T_Grass"]\n'), 'distinct /Game or /Engine packages'),
     (dict(settings='builder = "surface"\narguments = { roughness = [0.9] }\n'), 'plain scalar'),
     (dict(settings='builder = "surface"\narguments = { "bad name" = 1 }\n'), 'plain scalar'),
     (dict(settings='builder = "surface"\narguments = "roughness"\n'), 'table of name = value'),
@@ -120,8 +122,17 @@ def test_the_inventory_covers_the_held_small_family_masters():
 
 
 def test_every_master_has_a_fit_a_record_and_the_package_as_its_output():
+    planned = {}
+    for family in planner.load_families().values():
+        for entry in family['masters']:
+            planned[entry['id']] = entry['package']
     for master in load_inventory()['masters']:
         assert master['fit'] in FITS, master['package']
+        if master.get('status', '').startswith('planned'):
+            # a planned row names the record its family will create: the family plans that record for this package, and the
+            # record is written only by the claimed planner run, so it need not exist yet
+            assert planned.get(master['record']) == master['package'], master['package']
+            continue
         asset = records.load_asset(ROOT / 'assets' / master['record'] / 'asset.toml')
         assert master['package'] in {output.package for output in asset.outputs}, master['package']
 

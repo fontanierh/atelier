@@ -6,7 +6,7 @@ id = "prop/swordcamp/ronin-kasa"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/swordcamp/ronin-kasa"
-references = ["adopted/swordcamp/materials"]
+references = ["master/swordcamp/camp"]
 
 [[sources]]
 path = "src/SM_RoninKasa.fbx"

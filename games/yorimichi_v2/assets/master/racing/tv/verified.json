@@ -1,0 +1,12 @@
+{
+  "asset": "master/racing/tv",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Racing/M_RacingTv.uasset": "f3b8d01f57dab08272363966fd2cf50da3b654388670de42146d468248ce74fe"
+  },
+  "input_fingerprint": "1b77f4a166f625346117d0ec28c8bd89e0f7e9d198e07122f05eafa6e951e467",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "material-master@1"
+}

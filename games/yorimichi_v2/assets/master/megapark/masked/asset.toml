@@ -1,0 +1,27 @@
+# Recovered as a material master (tools/migrate/master_records.py): /Game/MegaPark/Materials/M_RetailMasked.
+# The builder is src/megapark_masters.py, pinned by sha256; the master is rebuilt by the V2 editor and read back
+# against its saved original, never edited by hand.
+schema = 1
+id = "master/megapark/masked"
+kind = "material-master"
+authority = "generated"
+owner = "shared/megapark/base-materials"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+provenance = "donor generator games/yorimichi/unreal/Scripts/import_megapark.py at the V2 source baseline (docs/DECISIONS.md D01, D02), retail_material lines 68-163"
+input_dependencies = ["adopted/megapark/shared-textures-common"]
+
+[[sources]]
+path = "src/megapark_masters.py"
+sha256 = "e8922d0db461328bf5afbfaee22e73ca5a35adfc218b8c4599236a38dc51e938"
+
+[recipe]
+importer = "material-master"
+version = 1
+
+[recipe.settings]
+builder = "retail_material"
+reads = ["/Game/MegaPark/Textures/T_DefaultWhite", "/Game/MegaPark/Textures/T_DefaultLinear", "/Game/MegaPark/Textures/T_DefaultBlack", "/Game/MegaPark/Textures/T_DefaultNormal"]
+arguments = { alpha = 1 }
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/M_RetailMasked"

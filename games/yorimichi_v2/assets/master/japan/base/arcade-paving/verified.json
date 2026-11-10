@@ -1,0 +1,14 @@
+{
+  "asset": "master/japan/base/arcade-paving",
+  "dependencies": {
+    "texture/japan/arcade-paving": "787446f1d6de859c39f65be2af0c1406debdf388c2462be621ae818d11766296"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Materials/M_ArcadePaving.uasset": "ea4d4621b7c68c82ef24b25d27533a4559141dadced646ee909fb7d8200eb0ae"
+  },
+  "input_fingerprint": "0c9c754686fc1c0683a8ccac3643efddd8fef7c58185449d6ebee2b646e320c3",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "material-master@1"
+}

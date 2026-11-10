@@ -6,7 +6,7 @@ id = "prop/swordcamp/camp-jinmaku"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/swordcamp/camp-jinmaku"
-references = ["adopted/swordcamp/materials"]
+references = ["master/swordcamp/camp"]
 
 [[sources]]
 path = "src/SM_CampJinmaku.fbx"

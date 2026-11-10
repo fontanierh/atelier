@@ -1,0 +1,14 @@
+{
+  "asset": "master/fx/dust",
+  "dependencies": {
+    "texture/fx/dust": "194011be7bd208c00cc2c73d55db65cc9006d24e7f88298460ec6ce5cf5d59ea"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/FX/M_FX_Dust.uasset": "27b7120c407ca80c76e6fae9c8c13b3bc962b19377052f2afd934c74ead0b1fa"
+  },
+  "input_fingerprint": "80a3d1d416450bad4f374e6d02d33ed0ac388a80da7c984e94a3f968cd64bd50",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "material-master@1"
+}

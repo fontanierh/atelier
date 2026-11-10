@@ -6,7 +6,7 @@ id = "prop/citysurfaces/plaza-floor-cell-5-1"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/citysurfaces/plaza-floor-cell-5-1"
-references = ["adopted/japan/materials/base-materials"]
+references = ["master/japan/base/plaza-paving"]
 
 [[sources]]
 path = "src/HD_PlazaFloor_cell_5_1.fbx"

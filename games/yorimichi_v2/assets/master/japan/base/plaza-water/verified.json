@@ -1,0 +1,12 @@
+{
+  "asset": "master/japan/base/plaza-water",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Materials/M_PlazaWater.uasset": "2c22ccb75e5d38b65591cad4098857c4935757be8b6b8977a74bd0eceecbf1a4"
+  },
+  "input_fingerprint": "7869af52c0c04015dd0fabdf39bdca490dd72a9585912d819a6aca1f2237295c",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "material-master@1"
+}

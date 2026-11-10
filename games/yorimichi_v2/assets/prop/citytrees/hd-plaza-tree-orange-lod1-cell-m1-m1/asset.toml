@@ -6,7 +6,7 @@ id = "prop/citytrees/hd-plaza-tree-orange-lod1-cell-m1-m1"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/experiments/citytrees"
-references = ["adopted/japan/materials/base-materials"]
+references = ["master/japan/base/arcade"]
 
 [[sources]]
 path = "src/HD_PlazaTreeOrange_LOD1_cell_-1_-1.fbx"

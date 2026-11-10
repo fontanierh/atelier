@@ -1,8 +1,10 @@
+# A generator record since its masters became material-master records (tools/migrate/master_records.py):
+# it keeps the region generator's pinned code and data, and owns no package.
 # Adopted once from the donor (tools/migrate/adopt.py); editor-owned from now on.
 # Ownership unit: Hidamari prop and surface generator: build graph, roster, texture tool, Unreal import scripts and the city base material
 schema = 1
 id = "adopted/japan/hidamari/generator"
-kind = "adopted"
+kind = "generator"
 authority = "editor"
 owner = "shared/japan/hidamari/generator"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
@@ -127,6 +129,3 @@ sha256 = "092dbb9ddfcd01a969cbc688d24ba8130e7ce63d7ddc149332b56513cb25add5"
 [[sources]]
 path = "source/world/yori.py"
 sha256 = "2abacfc5e937251ae247614d0caca9839ee39f68e67567a7b44ac49c6581e3bf"
-
-[[outputs]]
-package = "/Game/Japan/Hidamari/Materials/M_HDCity"

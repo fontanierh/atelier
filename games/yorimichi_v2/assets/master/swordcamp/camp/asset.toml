@@ -1,0 +1,31 @@
+# Recovered as a material master (tools/migrate/master_records.py): /Game/SwordCamp/Materials/M_SwordCamp.
+# The builder is src/swordcamp_masters.py, pinned by sha256; the master is rebuilt by the V2 editor and read back
+# against its saved original, never edited by hand.
+schema = 1
+id = "master/swordcamp/camp"
+kind = "material-master"
+authority = "generated"
+owner = "shared/swordcamp/materials"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+provenance = "donor generator games/yorimichi/unreal/Scripts/import_swordcamp.py at the V2 source baseline (docs/DECISIONS.md D01, D02), build_material lines 46-113"
+input_dependencies = ["texture/swordcamp/atlas"]
+
+[[sources]]
+path = "src/swordcamp_masters.py"
+sha256 = "75b50e78a7fd332dbcb3f1f5ab0fe65d0651fff3403067ff983fbbeda34261e8"
+
+[[sources]]
+path = "src/master_haze.py"
+sha256 = "329f98441c026c766803a3ce1d1d5e1aba5e09927ee91e12fc51152b8b77a49b"
+
+[recipe]
+importer = "material-master"
+version = 1
+
+[recipe.settings]
+builder = "build_material"
+reads = ["/Game/SwordCamp/Textures/T_SwordCampAtlas"]
+arguments = { texture = "/Game/SwordCamp/Textures/T_SwordCampAtlas" }
+
+[[outputs]]
+package = "/Game/SwordCamp/Materials/M_SwordCamp"

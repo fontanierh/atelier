@@ -1,0 +1,15 @@
+{
+  "asset": "master/japan/base/harbor",
+  "dependencies": {
+    "texture/japan/harbor-paving": "d7080294e4efe18fa081c563c386a0f4fc67533483c5129a5481b39883862e05",
+    "texture/japan/harbor-timber": "40b1df880065aacae98cefc9ff95de761b6526c3da0ee251d7d445c8bc9a93aa"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Materials/M_Harbor.uasset": "b4424ef0caf7ad9981f492b36ffd0165e372802b74984968180e7feeb8c05f13"
+  },
+  "input_fingerprint": "dc8e1c080472bf69be4a9d1a70de2bc12f7a58766d5927c6933e420adae290ce",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "material-master@1"
+}

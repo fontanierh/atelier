@@ -1,0 +1,12 @@
+{
+  "asset": "master/hippodrome/rail",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Hippodrome/Materials/M_HD_Rail.uasset": "db65350f7a038cabf9241d1d09a263ac23ddbeb3936c6627b74f09a21c42284f"
+  },
+  "input_fingerprint": "0c3df0904f1c75ae96cce27828771c5678bceaae36b20166c2b0fb79a8f1234a",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "material-master@1"
+}

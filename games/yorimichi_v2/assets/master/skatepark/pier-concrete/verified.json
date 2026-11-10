@@ -1,0 +1,16 @@
+{
+  "asset": "master/skatepark/pier-concrete",
+  "dependencies": {
+    "texture/skatepark/pier-concrete-albedo": "d98e44de8ea3756c4e8f55c0652a695207a1eb43fd70986f242a380ca9b3db2c",
+    "texture/skatepark/pier-concrete-normal": "364f52824648be208748b8dfb3495bcda59f8511fa421b8b734e698c7d1b5c2c",
+    "texture/skatepark/pier-concrete-roughness": "aec78b259d822423c635080db51381cb04e6adcdf9f80c5084d9122b290dd2b4"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkatePark/Materials/M_Pier_concrete.uasset": "d5b162381549e0b2826aab9633a005ec9b7ecd00e6ac51763ccb7871664a2592"
+  },
+  "input_fingerprint": "d5b4ca0c02104dfaf34f4b6350ecf3b8879b56b1ec893ed612276e93ff161279",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "material-master@1"
+}

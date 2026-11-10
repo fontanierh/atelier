@@ -45,6 +45,7 @@ IMPORTERS = {   # asset kind -> importer name and version understood by unreal/S
     'static-mesh': ('static-mesh', 1),
     'texture': ('texture', 1),
     'material-instance': ('material-instance', 2),   # 2: earlier overrides are cleared, strays refused
+    'material-master': ('material-master', 1),       # 1: the pinned builder rebuilds, is read back, and must match the saved master
 }
 BOOTSTRAP_WRITER = authority.BOOTSTRAP_WRITER
 LOD_RESULT = 'lod-result.json'   # written beside the plan by unreal/Scripts/import_asset.py
@@ -289,11 +290,22 @@ def recorded_files(game, asset, write_set) -> dict:
     return files
 
 
+def check_master_pins(asset):
+    """@cc [owner:fontanierh,label:correctness] master-builder-source-pinned
+    A material master's builder is its own pinned source: a file that differs from its sha256 is refused before any
+    planning or write, so the editor never builds from bytes the record does not name."""
+    for source in asset.sources:
+        if records.sha256_file(asset.folder / source.path) != source.sha256:
+            raise ImportError_(f'{asset.id}: builder source {source.path} differs from its pinned sha256')
+
+
 def import_one(game, asset, by_id, *, engine, claim, importer=native_import, echo=print):
     deps = {d: state_of(by_id, d) for d in asset.input_dependencies}
     stale = [d for d, s in deps.items() if s is None]
     if stale:
         raise ImportError_(f'{asset.id}: input dependencies {stale} have no verified state; import them first')
+    if asset.kind == 'material-master':
+        check_master_pins(asset)
     hashes = current_source_hashes(asset)
     fingerprint = fingerprint_with_sources(asset, hashes, deps)
     if up_to_date(game, asset, fingerprint):
@@ -433,6 +445,8 @@ def _prepare_batch(game, asset, by_id, *, claim, echo, authorized=False):
     stale = [d for d, s in deps.items() if s is None]
     if stale:
         raise ImportError_(f'{asset.id}: input dependencies {stale} have no verified state; import them first')
+    if asset.kind == 'material-master':
+        check_master_pins(asset)
     hashes = current_source_hashes(asset)
     fingerprint = fingerprint_with_sources(asset, hashes, deps)
     if up_to_date(game, asset, fingerprint):

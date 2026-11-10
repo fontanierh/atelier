@@ -2,8 +2,9 @@
 
 **Historical recovery design, prepared in #799/#801.** [INVENTORY](../INVENTORY.md) owns current progress.
 The following 27-master design and its “not done” statements describe that preparation checkpoint, not the
-current import backlog. #803 contains 36 saved material-master records; #804 adds 13 Japan masters (49 total).
-Those PRs are not merged at main checkpoint `028bc6243b` and are not in package `0adbb5ab212e`.
+current import backlog. #803 includes 36 saved material-master records with this change; #804 adds 13 Japan masters
+(49 total) and remains pending integration. Neither PR was merged at historical main checkpoint `028bc6243b`;
+neither is in package `0adbb5ab212e`.
 The machine-readable [master-sources.json](master-sources.json) and
 [small-families-masters.txt](small-families-masters.txt) retain their original scope and donor evidence;
 they are not current owner lists or instructions to re-import accepted masters.
@@ -36,29 +37,29 @@ Unreal change); **not recoverable** = none of the 23 is. Every texture input bel
 
 | Master | Record | Generator file:lines (builder) | Inputs (V2 owner) | Fit |
 |---|---|---|---|---|
-| `/Game/Hippodrome/Materials/M_HD_Structure` | `adopted/hippodrome/materials` | `unreal/Scripts/import_hippodrome.py`:59-78 (structure_material) | WhiteSquareTexture (engine) | direct |
-| `/Game/Hippodrome/Materials/M_HD_Grass` | `adopted/hippodrome/materials` | `unreal/Scripts/import_hippodrome.py`:36-55 (surface) | T_Grass (texture/hippodrome/grass); the donor texture helper only | direct |
-| `/Game/Hippodrome/Materials/M_HD_Dirt` | `adopted/hippodrome/materials` | `unreal/Scripts/import_hippodrome.py`:36-55 (surface) | T_Dirt (texture/hippodrome/dirt); the donor texture helper only | direct |
-| `/Game/Hippodrome/Materials/M_HD_Stone` | `adopted/hippodrome/materials` | `unreal/Scripts/import_hippodrome.py`:36-55 (surface) | none (constants) | direct |
-| `/Game/Hippodrome/Materials/M_HD_Rail` | `adopted/hippodrome/materials` | `unreal/Scripts/import_hippodrome.py`:36-55 (surface) | none (constants) | direct |
-| `/Game/SkatePark/Materials/M_Pier_basalt` | `adopted/skatepark/materials` | `unreal/Scripts/import_skatepark.py`:132-174 (materials, per-key loop body) | T_Pier_basalt_albedo, _normal, _roughness (texture/skatepark/pier-basalt-*) | direct |
-| `/Game/SkatePark/Materials/M_Pier_ceramic` | `adopted/skatepark/materials` | `unreal/Scripts/import_skatepark.py`:132-174 | T_Pier_ceramic_albedo, _normal, _roughness (texture/skatepark/pier-ceramic-*) | direct |
-| `/Game/SkatePark/Materials/M_Pier_concrete` | `adopted/skatepark/materials` | `unreal/Scripts/import_skatepark.py`:132-174 | T_Pier_concrete_albedo, _normal, _roughness (texture/skatepark/pier-concrete-*) | direct |
-| `/Game/SkatePark/Materials/M_Pier_mural` | `adopted/skatepark/materials` | `unreal/Scripts/import_skatepark.py`:132-174 | T_Pier_mural_albedo (texture/skatepark/pier-mural-albedo) | direct |
-| `/Game/SkatePark/Materials/M_Pier_painted` | `adopted/skatepark/materials` | `unreal/Scripts/import_skatepark.py`:132-174 (metallic 0, line 134) | T_Pier_painted_albedo, _normal, _roughness (texture/skatepark/pier-painted-*) | direct |
-| `/Game/SkatePark/Materials/M_Pier_steel` | `adopted/skatepark/materials` | `unreal/Scripts/import_skatepark.py`:132-174 | T_Pier_steel_albedo, _normal, _roughness (texture/skatepark/pier-steel-*) | direct |
-| `/Game/SkatePark/Materials/M_Pier_wood` | `adopted/skatepark/materials` | `unreal/Scripts/import_skatepark.py`:132-174 | T_Pier_wood_albedo, _normal, _roughness (texture/skatepark/pier-wood-*) | direct |
-| `/Game/SkatePark/Board/M_BoardDissolve` | `adopted/skatepark/board` | `unreal/Scripts/board_dissolve_material.py`:1-95 (module body) | none (constants and Dissolve scalar) | direct |
-| `/Game/SwordCamp/Materials/M_SwordCamp` | `adopted/swordcamp/materials` | `unreal/Scripts/import_swordcamp.py`:46-113 (build_material) | T_SwordCampAtlas (texture/swordcamp/atlas); helper atmosphere.py | needs helper |
-| `/Game/SwordCamp/Materials/M_RoninBody` | `adopted/swordcamp/materials` | `unreal/Scripts/import_swordcamp.py`:116-171 (build_ronin_body_material) | T_SwordCampAtlas (texture/swordcamp/atlas) | direct |
-| `/Game/Racing/M_RacingTv` | `adopted/racing` | `unreal/Scripts/racing_tv_material.py`:1-57 (module body) | Black (engine); Picture is a runtime render target | direct |
-| `/Game/FX/M_FX_Additive` | `adopted/fx` | `unreal/Scripts/import_combat_fx.py`:52-70 (sprite_material) | T_FX_Glow (texture/fx/glow) | direct |
-| `/Game/FX/M_FX_Dust` | `adopted/fx` | `unreal/Scripts/import_combat_fx.py`:52-70 (sprite_material) | T_FX_Dust (texture/fx/dust) | direct |
-| `/Game/FX/M_FX_Trail` | `adopted/fx` | `unreal/Scripts/import_combat_fx.py`:87-96 (module body) | T_FX_Trail (texture/fx/trail) | direct |
-| `/Game/MegaPark/Materials/M_RetailOpaque` | `adopted/megapark/base-materials` | `unreal/Scripts/import_megapark.py`:68-163 (material, alpha 0) | T_DefaultWhite, T_DefaultLinear, T_DefaultBlack, T_DefaultNormal (adopted/megapark/shared-textures-common) | direct |
-| `/Game/MegaPark/Materials/M_RetailMasked` | `adopted/megapark/base-materials` | `unreal/Scripts/import_megapark.py`:68-163 (material, alpha 1) | as above | direct |
-| `/Game/MegaPark/Materials/M_RetailTranslucent` | `adopted/megapark/base-materials` | `unreal/Scripts/import_megapark.py`:68-163 (material, alpha 2) | as above | direct |
-| `/Game/Japan/Hidamari/Materials/M_HDCity` | `adopted/japan/hidamari/generator` | `unreal/Scripts/city_material.py`:42-95 (parent) | T_HD_plaster (adopted/japan/hidamari/surface-plaster); helper atmosphere.py | needs helper |
+| `/Game/Hippodrome/Materials/M_HD_Structure` | `master/hippodrome/structure` (imported, MASTERHD) | `unreal/Scripts/import_hippodrome.py`:59-78 (structure_material) | WhiteSquareTexture (engine) | direct |
+| `/Game/Hippodrome/Materials/M_HD_Grass` | `master/hippodrome/grass` (imported, MASTERHD) | `unreal/Scripts/import_hippodrome.py`:36-55 (surface) | T_Grass (texture/hippodrome/grass); the donor texture helper only | direct |
+| `/Game/Hippodrome/Materials/M_HD_Dirt` | `master/hippodrome/dirt` (imported, MASTERHD) | `unreal/Scripts/import_hippodrome.py`:36-55 (surface) | T_Dirt (texture/hippodrome/dirt); the donor texture helper only | direct |
+| `/Game/Hippodrome/Materials/M_HD_Stone` | `master/hippodrome/stone` (imported, MASTERHD) | `unreal/Scripts/import_hippodrome.py`:36-55 (surface) | none (constants) | direct |
+| `/Game/Hippodrome/Materials/M_HD_Rail` | `master/hippodrome/rail` (imported, MASTERHD) | `unreal/Scripts/import_hippodrome.py`:36-55 (surface) | none (constants) | direct |
+| `/Game/SkatePark/Materials/M_Pier_basalt` | `master/skatepark/pier-basalt` imported (family skatepark) | `unreal/Scripts/import_skatepark.py`:132-174 (materials, per-key loop body) | T_Pier_basalt_albedo, _normal, _roughness (texture/skatepark/pier-basalt-*) | direct |
+| `/Game/SkatePark/Materials/M_Pier_ceramic` | `master/skatepark/pier-ceramic` imported (family skatepark) | `unreal/Scripts/import_skatepark.py`:132-174 | T_Pier_ceramic_albedo, _normal, _roughness (texture/skatepark/pier-ceramic-*) | direct |
+| `/Game/SkatePark/Materials/M_Pier_concrete` | `master/skatepark/pier-concrete` imported (family skatepark) | `unreal/Scripts/import_skatepark.py`:132-174 | T_Pier_concrete_albedo, _normal, _roughness (texture/skatepark/pier-concrete-*) | direct |
+| `/Game/SkatePark/Materials/M_Pier_mural` | `master/skatepark/pier-mural` imported (family skatepark) | `unreal/Scripts/import_skatepark.py`:132-174 | T_Pier_mural_albedo (texture/skatepark/pier-mural-albedo) | direct |
+| `/Game/SkatePark/Materials/M_Pier_painted` | `master/skatepark/pier-painted` imported (family skatepark) | `unreal/Scripts/import_skatepark.py`:132-174 (metallic 0, line 134) | T_Pier_painted_albedo, _normal, _roughness (texture/skatepark/pier-painted-*) | direct |
+| `/Game/SkatePark/Materials/M_Pier_steel` | `master/skatepark/pier-steel` imported (family skatepark) | `unreal/Scripts/import_skatepark.py`:132-174 | T_Pier_steel_albedo, _normal, _roughness (texture/skatepark/pier-steel-*) | direct |
+| `/Game/SkatePark/Materials/M_Pier_wood` | `master/skatepark/pier-wood` imported (family skatepark) | `unreal/Scripts/import_skatepark.py`:132-174 | T_Pier_wood_albedo, _normal, _roughness (texture/skatepark/pier-wood-*) | direct |
+| `/Game/SkatePark/Board/M_BoardDissolve` | `master/skatepark/board-dissolve` imported (family skatepark_board) | `unreal/Scripts/board_dissolve_material.py`:1-95 (module body) | none (constants and Dissolve scalar) | direct |
+| `/Game/SwordCamp/Materials/M_SwordCamp` | `master/swordcamp/camp` imported (family swordcamp) | `unreal/Scripts/import_swordcamp.py`:46-113 (build_material) | T_SwordCampAtlas (texture/swordcamp/atlas); helper atmosphere.py | needs helper |
+| `/Game/SwordCamp/Materials/M_RoninBody` | `master/swordcamp/ronin-body` imported (family swordcamp) | `unreal/Scripts/import_swordcamp.py`:116-171 (build_ronin_body_material) | T_SwordCampAtlas (texture/swordcamp/atlas) | direct |
+| `/Game/Racing/M_RacingTv` | `master/racing/tv` imported (family racing) | `unreal/Scripts/racing_tv_material.py`:1-57 (module body) | Black (engine); Picture is a runtime render target | direct |
+| `/Game/FX/M_FX_Additive` | `master/fx/additive` imported (family fx) | `unreal/Scripts/import_combat_fx.py`:52-70 (sprite_material) | T_FX_Glow (texture/fx/glow) | direct |
+| `/Game/FX/M_FX_Dust` | `master/fx/dust` imported (family fx) | `unreal/Scripts/import_combat_fx.py`:52-70 (sprite_material) | T_FX_Dust (texture/fx/dust) | direct |
+| `/Game/FX/M_FX_Trail` | `master/fx/trail` imported (family fx) | `unreal/Scripts/import_combat_fx.py`:87-96 (module body) | T_FX_Trail (texture/fx/trail) | direct |
+| `/Game/MegaPark/Materials/M_RetailOpaque` | `master/megapark/opaque` imported (family megapark) | `unreal/Scripts/import_megapark.py`:68-163 (material, alpha 0) | T_DefaultWhite, T_DefaultLinear, T_DefaultBlack, T_DefaultNormal (adopted/megapark/shared-textures-common) | direct |
+| `/Game/MegaPark/Materials/M_RetailMasked` | `master/megapark/masked` imported (family megapark) | `unreal/Scripts/import_megapark.py`:68-163 (material, alpha 1) | as above | direct |
+| `/Game/MegaPark/Materials/M_RetailTranslucent` | `master/megapark/translucent` imported (family megapark) | `unreal/Scripts/import_megapark.py`:68-163 (material, alpha 2) | as above | direct |
+| `/Game/Japan/Hidamari/Materials/M_HDCity` | `master/hidamari/city` imported (family hidamari_city) | `unreal/Scripts/city_material.py`:42-95 (parent) | T_HD_plaster (adopted/japan/hidamari/surface-plaster); helper atmosphere.py | needs helper |
 | `/Game/Japan/Materials/M_Arcade` | `adopted/japan/materials/base-materials` | `unreal/Scripts/arcade_material.py`:24-63 (material, paving=False) | T_Arcade_timber (texture/japan/arcade-timber); roughness .87, specular .12 | direct |
 | `/Game/Japan/Materials/M_ArcadePaving` | `adopted/japan/materials/base-materials` | `unreal/Scripts/arcade_material.py`:24-63 (material, paving=True; colour override 44-45) | T_Arcade_paving (texture/japan/arcade-paving); roughness .87, specular .12 | direct |
 | `/Game/Japan/Materials/M_Harbor` | `adopted/japan/materials/base-materials` | `unreal/Scripts/harbor_material.py`:39-176 (material, water=False; branch 143-173) | T_Harbor_paving (texture/japan/harbor-paving), T_Harbor_timber (texture/japan/harbor-timber); roughness .83/.19, specular .35, fill .025 | direct |
@@ -67,6 +68,8 @@ Unreal change); **not recoverable** = none of the 23 is. Every texture input bel
 Counts: **24 direct, 3 needs helper, 0 not recoverable.**
 
 ### 2a. The four plaza masters
+
+Family status: **superseded by section 10**: `M_Arcade`, `M_ArcadePaving` and `M_Harbor` are imported in `japan_base`; `M_HarborWater` stays in the record. `adopted/japan/materials/base-materials` owns 27 packages, not only these four. The planner refuses an adopted record that owns more than its family's masters, so no `plaza` family is written. The other 23 are `MPC_Wind`, `M_Bike`, `M_CloudShadow`, `M_CoastRock`, `M_Foliage`, `M_ForestGround`, `M_ForestImpostor`, `M_ForestLakeWater`, `M_Grass`, `M_NorthGate`, `M_NorthMountains`, `M_Painted`, `M_Painterly`, `M_PlazaPaving`, `M_PlazaWater`, `M_PondWater`, `M_SailboatCloth`, `M_SailboatWake`, `M_Sea`, `M_Sky`, `M_Village`, `M_VillageResident`, `M_ZeppelinFabric`. The record is not split by hand: its other packages stay in it, as section 10 lists (the japan_base family keeps them).
 
 Pins: `arcade_material.py` sha256 `21ca3cbc06b18defbc95f7d5ae9a4c580027126bdcd90214d09d0eed016d10ab` (63 lines);
 `harbor_material.py` sha256 `7681f25484a4d5589b0fbc366203391039a6747ccc07ca8ec90dcc801acc59ad` (176 lines);
@@ -181,7 +184,27 @@ Per family:
 The recipe's `reads` and `input_dependencies` are the texture records already in V2, so nothing new is imported to
 make a master recoverable.
 
-## 5. The importer and the read-back
+## 5. Historical importer proposal
+
+The steps and limitations below describe the pre-implementation proposal. The current route is
+`tools/import/run.py` with `unreal/Scripts/import_asset.py`: both cold authorization and the editor load boundary
+match the prepared plan to its canonical recipe, ordered source paths and outputs, then check every pinned source.
+The loader executes those verified byte snapshots; the existing claim, journal and save guard remain in force.
+`/Game` reads need an input owner; `/Engine` reads are supplied by the engine. A transient rebuild is compared against the saved original before a
+save, then read back. Every old expression is removed before the in-place rebuild to prevent accumulating leftovers.
+
+The current digest compares material settings, parameter definitions and rooted wiring, including ordered input
+pins, output selections, TextureCoordinate U/V tiling, TransformPosition source/destination spaces and Time-node
+pause/period settings. Earlier reports omit these later fields and do not prove those settings equal; use fresh
+read-only reports when making that comparison. Equal local-node multisets alone cannot prove the same graph.
+Historical reports without this topology remain historical evidence; obtain a fresh read-only report when this stronger comparison is needed,
+without automatically reimporting or discarding completed packages.
+
+`MaterialInputAudit` in the existing editor-only `YorimichiImport` module reads each connection by its input index.
+This uses Unreal's public native input API: the Python properties for Custom inputs and DotProduct inputs are protected,
+and the older source-node lookup cannot distinguish two channels from the same node. The accessor changes no material.
+After taking this code at a stopped editor/caller boundary, run the normal guarded editor compile before using the
+new digest. A missing or failed native reader refuses acceptance; it does not fall back to the lossy lookup.
 
 `material-master` runs inside the V2 editor. Its phases:
 
@@ -202,7 +225,7 @@ wiring. Two graphs with equal counts and textures can differ in connections. `re
 with a wiring digest (each expression's class, its properties and its input links, sorted) and run it on all 23 masters.
 That extension is a separate change, not part of this preparation.
 
-## 6. Changes this design needs (not written here)
+## 6. Historical implementation checklist (implemented in PR #803)
 
 `unreal/Scripts/import_asset.py` is not changed in this preparation. The change it needs, for review:
 
@@ -215,7 +238,10 @@ That extension is a separate change, not part of this preparation.
 
 `tools/import/run.py` and `build_batches.py` are not touched by this preparation.
 
-## 7. Owner decisions
+## 7. Historical owner decisions (covered by standing migration authorization)
+
+The migration proceeds with generated authority and pinned sources, declared engine reads, and recipe arguments for
+variants. These original recommendations are retained as design history, not a request for another approval.
 
 1. **Keep or convert the two constant-only masters.** `M_RacingTv` and `M_BoardDissolve` have no texture input and few
    parameters. Converting them to editor-owned would let the owner edit them directly, and nothing would be lost from the
@@ -233,7 +259,7 @@ That extension is a separate change, not part of this preparation.
 5. **Painted pier metallic.** The `painted` master uses the steel maps with metallic 0. Recommendation: state it as an
    argument (`metallic = 0.0`), not as a second builder.
 
-## 8. What was not done
+## 8. What the original preparation did not do
 
 - No donor file was copied into V2 `src/` (the copies are the recovery step, not the inventory).
 - The code changes are the validator (`tools/content/records.py`), the published kind enum
@@ -286,3 +312,82 @@ pinned helper bytes.
 What the importer pilot must decide (not decided here): the owner of T_HD_plaster, given that the adopted record already
 outputs it; whether helper bytes are copied into each master's src or read through a dependency on base-materials or
 brinecove; and whether the megapark defaults are re-homed to a generated texture record or stay in shared-textures-common.
+
+## 10. The japan base family: the 27 packages of `adopted/japan/materials/base-materials`
+
+Family `japan_base` (tools/migrate/master_families/japan_base.py, builders in unreal/Scripts/material_masters/japan_base_masters.py).
+The inventory rows are `japan_base` in [master-sources.json](master-sources.json); the four plaza rows of section 2a point at
+their imported records there. Hashes are the sha256 of the donor blob at `7eec0f98dd`. Line ranges are the donor's, not V2's.
+
+Counts: **14 direct, 12 needs helper, 1 not a material master**. Imported (MASTERS2, `run.py --batch 13`, each digest-accepted against its original): **13** (the 13 direct masters below, except
+`M_Sky`). Kept in the record: **14** (`MPC_Wind` and the 13 others).
+
+| Package | Donor generator (file:lines, function) | Blob sha256 (prefix) | Inputs (V2 owner) | Helpers | Fit | Record |
+|---|---|---|---|---|---|---|
+| `MPC_Wind` | shared_materials.py:21-34 `make_mpc` | 8cf144f9 | none | - | not a material master (a collection) | kept |
+| `M_Arcade` | arcade_material.py:24-63 `material(paving=False)` | 21ca3cbc | T_Arcade_timber (texture/japan/arcade-timber) | - | direct | imported `master/japan/base/arcade` (MASTERS2) |
+| `M_ArcadePaving` | arcade_material.py:24-63 `material(paving=True)`, colour at 45 | 21ca3cbc | T_Arcade_paving (texture/japan/arcade-paving) | - | direct | imported `master/japan/base/arcade-paving` (MASTERS2) |
+| `M_Bike` | bike_material.py:6-32 `material` | 0750998b | none | - | direct | imported `master/japan/base/bike` (MASTERS2) |
+| `M_CloudShadow` | shared_materials.py:84-100 `cloud_shadow_material` | 8cf144f9 | T_cloudmask (texture/japan/cloudmask) | material_assets.py:34-42 node, link (copied) | direct | imported `master/japan/base/cloud-shadow` (MASTERS2) |
+| `M_CoastRock` | forest_ground.py:62-112 `rock_material` | 90c1256d | T_CoastRock (adopted/japan/textures/rock) | atmosphere.py; coast_rock_look.py | needs helper | kept |
+| `M_Foliage` | shared_materials.py:169-223 `master(masked=True)` | 8cf144f9 | T_white (texture/japan/white); MPC_Wind (kept) | atmosphere.py | needs helper | kept |
+| `M_ForestGround` | forest_ground.py:16-59 `material` | 90c1256d | T_ground, T_ground_detail (adopted/japan/textures/ground) | atmosphere.py; ground_grain.py | needs helper | kept |
+| `M_ForestImpostor` | forest_impostor_material.py:6-53 `parent` | c7aa76c7 | WhiteSquareTexture (engine); default normal from the caller | atmosphere.py | needs helper | kept |
+| `M_ForestLakeWater` | forest_lake_material.py:20-36 RIPPLE, 39-86 `create` | 0a5a3ac6 | none | - | direct | imported `master/japan/base/forest-lake-water` (MASTERS2) |
+| `M_Grass` | shared_materials.py:224-250 `grass_material` (calls `master`) | 8cf144f9 | T_grass (adopted/japan/textures/ground); T_white; MPC_Wind (kept) | atmosphere.py | needs helper | kept |
+| `M_Harbor` | harbor_material.py:39-61 and 143-176 `material(water=False)` | 7681f254 | T_Harbor_paving, T_Harbor_timber (texture/japan/harbor-paving, harbor-timber) | - | direct | imported `master/japan/base/harbor` (MASTERS2) |
+| `M_HarborWater` | harbor_material.py:39-61 and 62-142 `material(water=True)` | 7681f254 | none (constants) | sea_look.py; world/coast_water.py (HARBOR_RECT) | needs helper | kept |
+| `M_NorthGate` | mountain_material.py:257-296 `gate_material`, _seamless 249-255 | 21238502 | T_ground (adopted/japan/textures/ground) | atmosphere.py | needs helper | kept |
+| `M_NorthMountains` | mountain_material.py:42-233 `material`; crater_hlsl and floor_hlsl 18-40 | 21238502 | T_VolcanicRock, T_NorthSnowMask, T_NorthCraterMask, T_NorthCraterFloor (adopted/japan/textures/rock) | atmosphere.py; ground_grain.py | needs helper | kept |
+| `M_Painted` | shared_materials.py:169-223 `master(masked=False)` | 8cf144f9 | T_white (texture/japan/white) | atmosphere.py | needs helper | kept |
+| `M_Painterly` | shared_materials.py:103-166 `painterly_material` | 8cf144f9 | none | painterly_kernel.py:1-57 | needs helper | kept |
+| `M_PlazaPaving` | plaza_material.py:37-68 `paving_material` | c25bcab3 | T_Arcade_paving (texture/japan/arcade-paving) | - | direct | imported `master/japan/base/plaza-paving` (MASTERS2) |
+| `M_PlazaWater` | plaza_material.py:5-34 `water_material(pond=False)` | c25bcab3 | none | - | direct | imported `master/japan/base/plaza-water` (MASTERS2) |
+| `M_PondWater` | plaza_material.py:5-34 `water_material(pond=True)`, overrides 16, 22 | c25bcab3 | none | - | direct | imported `master/japan/base/pond-water` (MASTERS2) |
+| `M_SailboatCloth` | sailboat_material.py:5-40 `material(wake=False)` | fd875fed | none | - | direct | imported `master/japan/base/sailboat-cloth` (MASTERS2) |
+| `M_SailboatWake` | sailboat_material.py:5-40 `material(wake=True)` | fd875fed | none | - | direct | imported `master/japan/base/sailboat-wake` (MASTERS2) |
+| `M_Sea` | import_southwest.py:32-70 `sea_material` | 2c7377af | none | sea_look.py | needs helper | kept |
+| `M_Sky` | shared_materials.py:169-223 `master(unlit=True, fixed_tex=T_sky)` | 8cf144f9 | T_sky (texture/japan/sky) | none (unlit skips atmosphere) | direct | kept (fits once `master` is split) |
+| `M_Village` | import_village.py:17-60 `material` | fccc0aae | none | atmosphere.py | needs helper | kept |
+| `M_VillageResident` | import_village.py:63-85 `resident_material` | fccc0aae | none | - | direct | imported `master/japan/base/village-resident` (MASTERS2) |
+| `M_ZeppelinFabric` | import_zeppelin.py:13-30 `fabric_material` | 0896301e | none | - | direct | imported `master/japan/base/zeppelin-fabric` (MASTERS2) |
+
+Helper pins (blob sha256, prefix): atmosphere.py `b59478df`, sea_look.py `ffae53cd`, coast_water.py `a7f9b6f4`,
+ground_grain.py `c802eea4`, painterly_kernel.py `70f9be7d`, coast_rock_look.py `cff84c03`, material_assets.py `4f48db12`.
+
+### 10.1 What was ported, and how it was checked
+
+- 13 masters in one family, `japan_base`, each with its own donor function and line pin in `donor_lines`. The donor code
+  strings are copied verbatim: a check over the builder module finds all 39 string literals of 13 characters or more in the
+  donor blobs.
+- The builders never save, load or import. Every texture arrives through `reads`. Every read is an output of its input record.
+- `tests/test_master_japanbase.py` traces each builder against the Recorder and asserts its property pins, codes, settings
+  and texture reads, and that nothing is saved or imported. It also checks that the planner loads the family and that each
+  read is an output of an input record on disk.
+- The 13-master native batch was imported under MASTERS2 and accepted by the then-current digest. Its saved results
+  remain evidence for that revision; the stronger rooted comparison described above is not retroactively claimed.
+
+### 10.2 What stays in `adopted/japan/materials/base-materials`, and why
+
+- `MPC_Wind`: a MaterialParameterCollection. The material-master importer handles class Material only.
+- The 12 "needs helper" masters use atmosphere.py (aerial perspective, 9 of them), sea_look.py (`M_Sea`, `M_HarborWater`),
+  coast_water.py, painterly_kernel.py, or the craterpark and hidamari build metadata (`M_NorthMountains`, `north_snow.json`,
+  not pinned). Their helpers are not yet copied into a builder.
+- `M_Sky` is direct, but it shares `master()` with `M_Painted`, `M_Foliage` and `M_Grass`. It waits until `master()` is split.
+
+The implemented `keeps` route retains these 14 packages and their existing source pins while the 13 moved masters
+become separate generated records. References to retained packages stay with the adopted record.
+
+### 10.3 Original design questions (resolved by `keeps`)
+
+These questions motivated the implemented route; they are not migration blockers or new approval requests.
+
+1. **A keeps mechanism is required before any claim.** A dry run of `reference_rewrites` rewrites 939 referencing records.
+   809 of them name a kept master, most of them `M_NorthMountains` (675 by first match) and `M_Village` (126), then `M_NorthGate`
+   and others (`M_Foliage`, `M_Sky`, `M_Painted` and so on). Each would be pointed at a family master, which is wrong: their material is kept, so their reference to
+   the record must stay. Without keeps, the planner would retarget them to the fallback.
+2. **Fallback.** `master/japan/base/forest-lake-water` is a stand-in, not a derived choice. 49 adopted records (tree, bark,
+   ground, rock and water materials) name no master and reference the record only as their generator unit. Those records
+   have no instance parent in the record. A keeps mechanism that leaves `references` alone would make this choice unnecessary.
+3. The donor field of the family names no single file: one donor file per builder, in `donor_lines`. The provenance line
+   reads `donor generator games/yorimichi/unreal/Scripts (one file per builder, see donor_lines)`.

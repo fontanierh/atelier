@@ -6,7 +6,7 @@ id = "prop/swordcamp/camp-fire-pit"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/swordcamp/camp-fire-pit"
-references = ["adopted/swordcamp/materials"]
+references = ["master/swordcamp/camp"]
 
 [[sources]]
 path = "src/SM_CampFirePit.fbx"

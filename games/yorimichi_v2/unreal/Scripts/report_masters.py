@@ -11,6 +11,7 @@ Each row is keyed by the master's package path:
                graph exposes it
   expressions  the number of expressions in the graph
   textures     the texture paths the graph samples or parameterises, sorted
+  wiring       the master_digest.read() digest: settings, expressions, connections, property connections (or 'error')
   error        present only when that master could not be read; the other rows are still written
 
 The parameter kinds come from the expression classes (MaterialExpressionScalarParameter and so on), not from
@@ -18,8 +19,14 @@ MaterialEditingLibrary name lists, so nothing is guessed: a missing property is 
 """
 import json
 import os
+import sys
+from pathlib import Path
 
 import unreal as U
+
+# master_digest.py beside this file: loaded from its folder, so the report and the importer share one digest.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import master_digest  # noqa: E402
 
 MARKER = 'V2 MASTERS REPORTED'
 EAL = U.EditorAssetLibrary
@@ -109,7 +116,7 @@ def describe(expressions):
 def read_expressions(material):
     """(class name, {property: value}) for every expression of the master's graph."""
     out = []
-    for expression in material.get_editor_property('expressions') or []:
+    for expression in U.MaterialEditingLibrary.get_material_expressions(material) or []:
         props = {}
         for prop in ('parameter_name', 'default_value', 'texture'):
             try:
@@ -144,6 +151,8 @@ def report(path):
     row = settings(material)
     row.update(described)
     row['expressions'] = len(expressions)
+    # The wiring digest (master_digest.py): what the graph connects, order-insensitive. A master is accepted on it.
+    row['wiring'] = master_digest.read(material)
     return row
 
 

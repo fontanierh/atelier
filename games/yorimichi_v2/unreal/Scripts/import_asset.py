@@ -19,6 +19,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import import_settings  # noqa: E402
 import lod_preservation  # noqa: E402
 from mesh_materials import assign_materials  # noqa: E402
+import master_digest  # noqa: E402
+from master_sources import builder as _master_builder, checked_sources as _checked_master_sources  # noqa: E402
 
 MARKER = 'V2 IMPORT DONE'
 LOD_RESULT = 'lod-result.json'   # beside the plan: each static-mesh package's LOD chain before and after
@@ -527,11 +529,81 @@ def _material_instances(plan, settings):
         U.log(f'V2 import wrote {package} from parent {parent_path}')
 
 
+def _material_master(plan):
+    """@cc [owner:fontanierh,label:correctness] importer-writes-only-record-outputs
+    Rebuild one generator master from its pinned builder and save it only when its wiring digest equals the saved original's
+    (master_digest.accept). The rebuild first goes to a transient package, which is compared and deleted and never saved. Only
+    an accepted rebuild is saved, into the record's one output package, and read back against the same digest. Nothing else is
+    written: a builder error, a difference, or an unreadable digest refuses before the save.
+
+    Before the rebuild over the original, every expression of the original is deleted one by one and the graph is checked
+    empty: delete_all_material_expressions leaves some unwired leftovers in 5.8, and a rebuild over them would grow the
+    package on every import. The saved master is therefore the fresh build, and its read-back has exactly the fresh
+    build's unwired expressions."""
+    if not plan['sources'] or len(plan['packages']) != 1:
+        raise RuntimeError('a material master names an entry builder with optional helpers and builds one package')
+    game = Path(__file__).resolve().parents[2]
+    sys.path.insert(0, str(game / 'tools/content'))
+    import authority
+    asset = authority.discovered(game).by_id.get(plan['asset'])
+    contents = _checked_master_sources(game, asset, plan)
+    with _master_builder(plan['sources'], plan['settings']['builder'], source_bytes=contents) as builder:
+        _material_master_with_builder(plan, builder)
+
+
+def _material_master_with_builder(plan, builder):
+    """The existing scratch, save and read-back route while this record's source namespace remains loaded."""
+    settings = plan['settings']
+    reads = {}
+    for path in settings.get('reads', []):
+        loaded = U.load_asset(path) if path.startswith('/Engine/') else EAL.load_asset(path)
+        if loaded is None:
+            raise RuntimeError(f'read {path} is not in the project')
+        reads[path] = loaded
+    package = plan['packages'][0]
+    arguments = dict(settings.get('arguments', {}))
+    if not EAL.does_asset_exist(package):
+        raise RuntimeError(f'{package} has no saved original to compare with; a master is rebuilt only over its original')
+    saved = master_digest.read(EAL.load_asset(package))
+    scratch = f'{TRANSIENT}/MasterCheck/{package.rsplit("/", 1)[1]}'
+    if EAL.does_asset_exist(scratch):
+        EAL.delete_asset(scratch)
+    try:
+        fresh = master_digest.read(builder(scratch, reads, **arguments))
+        problems = master_digest.accept(saved, fresh)
+    finally:
+        if EAL.does_asset_exist(scratch):
+            EAL.delete_asset(scratch)
+    if problems:
+        raise RuntimeError(f'{package} is not accepted: ' + '; '.join(problems[:8]))
+    original = EAL.load_asset(package)
+    MEL = U.MaterialEditingLibrary
+    for expression in list(MEL.get_material_expressions(original) or []):
+        MEL.delete_material_expression(original, expression)
+    if MEL.get_num_material_expressions(original):
+        raise RuntimeError(f'{package}: {MEL.get_num_material_expressions(original)} expression(s) survive deletion; nothing saved')
+    builder(package, reads, **arguments)
+    if not EAL.save_asset(package, only_if_is_dirty=False):
+        raise RuntimeError(f'could not save {package}')
+    back = master_digest.read(EAL.load_asset(package))
+    problems = master_digest.accept(saved, back)
+    if 'error' not in back and sorted(back.get('unwired', [])) != sorted(fresh.get('unwired', [])):
+        problems.append(f'{len(back.get("unwired", []))} unwired expression(s) after the save, the fresh build has '
+                        f'{len(fresh.get("unwired", []))}')
+    if problems:
+        raise RuntimeError(f'{package} reads back different from its saved original: ' + '; '.join(problems[:8]))
+    U.log(f'V2 import wrote {package} from {plan["portable_sources"][0]}')
+
+
 def main():
     if not U.V2SaveGuard.is_active():
         raise RuntimeError('the V2 save guard is not active (V2_SAVE_ALLOW); an import runs only through its build step')
     plan = json.loads(open(os.environ['V2_IMPORT_PLAN']).read())
     settings = plan['settings']
+    if plan['importer'] == 'material-master':
+        _material_master(plan)
+        U.log(MARKER)
+        return
     if plan['importer'] == 'material-instance':
         # A material instance pins no source file: its inputs are the parent and textures already in the project.
         _material_instances(plan, settings)

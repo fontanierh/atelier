@@ -1,0 +1,12 @@
+{
+  "asset": "master/japan/base/bike",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Materials/M_Bike.uasset": "3955c6fcff1a19364488468735bbee80f2927be2e9a3f77aeb610b1ce6221cdb"
+  },
+  "input_fingerprint": "9a8ff9d3774350b43348a83e0af45f6c4578e79ee6c8a563688c625c7b76f94f",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "material-master@1"
+}

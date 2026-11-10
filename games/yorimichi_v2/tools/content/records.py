@@ -28,7 +28,10 @@ KINDS = ('static-mesh', 'skeletal-mesh', 'skeleton', 'animation', 'material', 'm
          'adopted',
          # One saved object of a map (its actor package): an editing unit of its own inside its region, recorded and
          # validated apart from the region's other actors (tools/migrate/objects.py).
-         'placement')
+         'placement',
+         # A region generator's pinned code and data, with no package of its own: what its records were generated from,
+         # kept recoverable after the packages it once owned moved to their own records (tools/migrate/master_records.py).
+         'generator')
 VERIFIED_KINDS = ('imported', 'editor-saved')
 LFS_POINTER = b'version https://git-lfs.github.com/spec/v1'
 ID = re.compile(r'^[a-z0-9][a-z0-9-]*(/[a-z0-9][a-z0-9._-]*)+$')
@@ -293,13 +296,16 @@ def material_settings(recipe: dict, where: Path, inputs: list[str], outputs: lis
 MASTER_IMPORTER = ('material-master', 1)
 MASTER_SETTINGS = {'builder', 'reads', 'arguments'}
 MASTER_BUILDER = re.compile(r'^[a-z][a-z0-9_]*$')
+# An engine asset a master may read (a default texture such as WhiteSquareTexture): owned by no record, like ENGINE_PARENTS.
+ENGINE_PACKAGE = re.compile(r'^/Engine(/[A-Za-z0-9_.-]+)+$')
 
 
 def material_master_settings(recipe: dict, where: Path, authority: str, sources: list, outputs: list[str]) -> dict:
     """@cc [owner:fontanierh,label:correctness] material-master-generator-pinned
     Validate a material-master [recipe]: `importer = "material-master"`, version 1, and [recipe.settings] with `builder`
-    (the lower-case name of the generator function that builds the graph), `reads` (optional: the /Game packages the graph
-    samples, each an output of an input dependency; see material_master_input_problems) and `arguments` (optional: one plain
+    (the lower-case name of the generator function that builds the graph), `reads` (optional: packages the graph samples;
+    each /Game package is an output of an input dependency, while /Engine packages are supplied by the engine and need
+    no game owner; see material_master_input_problems) and `arguments` (optional: one plain
     scalar or string per builder argument; lists and tables are refused). A master is generator-built, so its authority is
     generated and its generator is one or more pinned .py [[sources]]: the recipe names a builder, it does not restate the
     graph. Each output is a /Game package named M_<name>."""
@@ -319,8 +325,9 @@ def material_master_settings(recipe: dict, where: Path, authority: str, sources:
         raise RecordError(f'{where}: builder {builder!r} must be a lower-case function name')
     reads = settings.get('reads', [])
     if not isinstance(reads, list) or len(set(reads)) != len(reads) \
-            or any(not isinstance(package, str) or not PACKAGE.match(package) for package in reads):
-        raise RecordError(f'{where}: reads must be a list of distinct /Game packages')
+            or any(not isinstance(package, str) or not (PACKAGE.match(package) or ENGINE_PACKAGE.match(package))
+                   for package in reads):
+        raise RecordError(f'{where}: reads must be a list of distinct /Game or /Engine packages')
     arguments = settings.get('arguments', {})
     if not isinstance(arguments, dict):
         raise RecordError(f'{where}: arguments must be a table of name = value')
@@ -334,7 +341,7 @@ def material_master_settings(recipe: dict, where: Path, authority: str, sources:
 
 
 def material_master_reads(asset: 'Asset') -> list[str]:
-    """The /Game packages a material master's graph samples, in the order its record states them."""
+    """The /Game and /Engine packages a material master's graph samples, in the order its record states them."""
     return list((asset.recipe or {}).get('settings', {}).get('reads', []))
 
 
@@ -361,7 +368,7 @@ def material_input_problems(asset: 'Asset', outputs_of: dict[str, set[str]]) -> 
     """Each package a material instance or master reads must be an output of one of its input_dependencies; [] when all
     are. `outputs_of` maps every record ID to the set of its /Game output packages."""
     if asset.kind == 'material-master':
-        wanted = material_master_reads(asset)
+        wanted = [package for package in material_master_reads(asset) if not ENGINE_PACKAGE.match(package)]
     elif asset.kind == 'material-instance':
         wanted = material_inputs(asset)
     else:
@@ -446,7 +453,10 @@ def load_asset(path: Path) -> Asset:
         if writer not in ('generated', 'editor'):
             raise RecordError(f'{path}: output {package} writer must be generated or editor')
         outputs.append(Output(package, writer))
-    if not outputs:
+    if kind == 'generator':
+        if outputs or recipe is not None or not sources:
+            raise RecordError(f'{path}: a generator record names pinned [[sources]] and no outputs or recipe')
+    elif not outputs:
         raise RecordError(f'{path}: an asset needs at least one output package')
     if len({o.package for o in outputs}) != len(outputs):
         raise RecordError(f'{path}: duplicate output package')
