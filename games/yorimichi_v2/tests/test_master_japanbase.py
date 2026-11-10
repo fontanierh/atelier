@@ -24,16 +24,18 @@ spec = importlib.util.spec_from_file_location('v2_japan_base_masters', SCRIPTS /
 builders = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(builders)
 
-# The fourteen packages the record keeps: MPC_Wind is a MaterialParameterCollection (not a Material), and the others have a
-# donor helper (atmosphere, sea_look, coast_water, painterly_kernel, the craterpark build outputs) that is not yet ported.
+# The twelve packages the record keeps: MPC_Wind is a MaterialParameterCollection (not a Material), and the others have a
+# donor helper (atmosphere, painterly_kernel, the craterpark build outputs) that is not yet ported. M_Sea and M_HarborWater,
+# the sea_look pair, moved on to the japan_sea family (test_master_japansea.py).
 KEPT = {
     '/Game/Japan/Materials/MPC_Wind', '/Game/Japan/Materials/M_CoastRock', '/Game/Japan/Materials/M_Foliage',
     '/Game/Japan/Materials/M_ForestGround', '/Game/Japan/Materials/M_ForestImpostor', '/Game/Japan/Materials/M_Grass',
-    '/Game/Japan/Materials/M_HarborWater', '/Game/Japan/Materials/M_NorthGate', '/Game/Japan/Materials/M_NorthMountains',
-    '/Game/Japan/Materials/M_Painted', '/Game/Japan/Materials/M_Painterly', '/Game/Japan/Materials/M_Sea',
+    '/Game/Japan/Materials/M_NorthGate', '/Game/Japan/Materials/M_NorthMountains',
+    '/Game/Japan/Materials/M_Painted', '/Game/Japan/Materials/M_Painterly',
     '/Game/Japan/Materials/M_Sky', '/Game/Japan/Materials/M_Village',
 }
-ADOPTED_PACKAGES = KEPT | set(MASTERS)
+SEA = {'/Game/Japan/Materials/M_Sea', '/Game/Japan/Materials/M_HarborWater'}
+ADOPTED_PACKAGES = KEPT | SEA | set(MASTERS)
 
 
 class Recorder:
@@ -130,7 +132,7 @@ def test_every_master_package_moved_out_and_the_adopted_record_lists_exactly_the
     adopted = records.load_asset(ROOT / 'assets' / FAMILY['adopted'] / 'asset.toml')
     listed = {o.package for o in adopted.outputs}
     assert listed == set(KEPT) and not set(MASTERS) & listed
-    assert set(MASTERS) | listed == ADOPTED_PACKAGES, sorted((set(MASTERS) | listed) ^ ADOPTED_PACKAGES)
+    assert set(MASTERS) | listed | SEA == ADOPTED_PACKAGES, sorted((set(MASTERS) | listed | SEA) ^ ADOPTED_PACKAGES)
     for master in FAMILY['masters']:
         record = records.load_asset(ROOT / 'assets' / master['id'] / 'asset.toml')
         assert [o.package for o in record.outputs] == [master['package']]

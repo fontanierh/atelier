@@ -1631,8 +1631,8 @@
   },
   {
    "package": "/Game/Japan/Materials/M_HarborWater",
-   "record": "adopted/japan/materials/base-materials",
-   "family": "japan_base",
+   "record": "master/japan/sea/harbor-water",
+   "family": "japan_sea",
    "generator": {
     "path": "games/yorimichi/unreal/Scripts/harbor_material.py",
     "lines": [
@@ -1718,7 +1718,7 @@
    "fit": "needs helper",
    "reason": "The water branch reads sea_look (the open-sea waves, look and haze) and coast_water.HARBOR_RECT. Both are pure code with no Unreal calls, and their bytes are already pinned in V2 (adopted/japan/materials/base-materials and adopted/brinecove/materials); the port is wiring them into the master record.",
    "reads": [],
-   "status": "kept in adopted/japan/materials/base-materials (family japan_base keeps it: needs helper sea_look and coast_water)"
+   "status": "imported (family japan_sea)"
   }
  ],
  "helper_files": [
@@ -2034,12 +2034,10 @@
    "/Game/Japan/Materials/M_ForestGround",
    "/Game/Japan/Materials/M_ForestImpostor",
    "/Game/Japan/Materials/M_Grass",
-   "/Game/Japan/Materials/M_HarborWater",
    "/Game/Japan/Materials/M_NorthGate",
    "/Game/Japan/Materials/M_NorthMountains",
    "/Game/Japan/Materials/M_Painted",
    "/Game/Japan/Materials/M_Painterly",
-   "/Game/Japan/Materials/M_Sea",
    "/Game/Japan/Materials/M_Sky",
    "/Game/Japan/Materials/M_Village"
   ],
@@ -2455,8 +2453,8 @@
      }
     ],
     "fit": "needs helper",
-    "record": null,
-    "status": "kept",
+    "record": "master/japan/sea/harbor-water",
+    "status": "imported (family japan_sea)",
     "reason": "sea_look and coast_water.HARBOR_RECT; no V2 texture"
    },
    {
@@ -2751,8 +2749,8 @@
      }
     ],
     "fit": "needs helper",
-    "record": null,
-    "status": "kept",
+    "record": "master/japan/sea/open-sea",
+    "status": "imported (family japan_sea)",
     "reason": "sea_look WAVES, LOOK, HAZE and constants"
    },
    {

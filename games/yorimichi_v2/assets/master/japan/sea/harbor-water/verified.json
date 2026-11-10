@@ -1,0 +1,12 @@
+{
+  "asset": "master/japan/sea/harbor-water",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Materials/M_HarborWater.uasset": "a9231cb5119f9cf7d8af1fd13d7c3faf637d60c6b643cd4c3d8f3b298e1f24e6"
+  },
+  "input_fingerprint": "91ffcad0eb1949648821e9ca404725c2cc2a0f1913a4cc03b443b28f68c28267",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "material-master@1"
+}

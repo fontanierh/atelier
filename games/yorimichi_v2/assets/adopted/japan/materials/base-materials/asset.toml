@@ -195,9 +195,6 @@ package = "/Game/Japan/Materials/M_ForestImpostor"
 package = "/Game/Japan/Materials/M_Grass"
 
 [[outputs]]
-package = "/Game/Japan/Materials/M_HarborWater"
-
-[[outputs]]
 package = "/Game/Japan/Materials/M_NorthGate"
 
 [[outputs]]
@@ -208,9 +205,6 @@ package = "/Game/Japan/Materials/M_Painted"
 
 [[outputs]]
 package = "/Game/Japan/Materials/M_Painterly"
-
-[[outputs]]
-package = "/Game/Japan/Materials/M_Sea"
 
 [[outputs]]
 package = "/Game/Japan/Materials/M_Sky"

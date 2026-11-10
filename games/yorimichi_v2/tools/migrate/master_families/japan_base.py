@@ -33,12 +33,13 @@ FAMILY = {
     # owner's to change; keeping the record's packages (section 10) avoids the choice entirely.
     'fallback': 'master/japan/base/forest-lake-water',
     # The packages the adopted record keeps: the planner's keeps mechanism leaves them in the record, and referencing
-    # records keep their adopted reference (see docs/inventory/master-sources.md, section 10).
+    # records keep their adopted reference (see docs/inventory/master-sources.md, section 10). M_Sea and M_HarborWater,
+    # kept here at first, moved later to the japan_sea family.
     'keeps': [
         '/Game/Japan/Materials/MPC_Wind', '/Game/Japan/Materials/M_CoastRock', '/Game/Japan/Materials/M_Foliage',
         '/Game/Japan/Materials/M_ForestGround', '/Game/Japan/Materials/M_ForestImpostor', '/Game/Japan/Materials/M_Grass',
-        '/Game/Japan/Materials/M_HarborWater', '/Game/Japan/Materials/M_NorthGate', '/Game/Japan/Materials/M_NorthMountains',
-        '/Game/Japan/Materials/M_Painted', '/Game/Japan/Materials/M_Painterly', '/Game/Japan/Materials/M_Sea',
+        '/Game/Japan/Materials/M_NorthGate', '/Game/Japan/Materials/M_NorthMountains',
+        '/Game/Japan/Materials/M_Painted', '/Game/Japan/Materials/M_Painterly',
         '/Game/Japan/Materials/M_Sky', '/Game/Japan/Materials/M_Village',
     ],
     'masters': [

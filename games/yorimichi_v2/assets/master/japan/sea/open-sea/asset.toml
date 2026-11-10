@@ -1,0 +1,26 @@
+# Recovered as a material master (tools/migrate/master_records.py): /Game/Japan/Materials/M_Sea.
+# The builder is src/japan_sea_masters.py, pinned by sha256; the master is rebuilt by the V2 editor and read back
+# against its saved original, never edited by hand.
+schema = 1
+id = "master/japan/sea/open-sea"
+kind = "material-master"
+authority = "generated"
+owner = "shared/japan/materials/base-materials"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+provenance = "donor generator games/yorimichi/unreal/Scripts (one file per builder, see donor_lines); sea_look.py 38-150; games/yorimichi/world/coast_water.py 6 at the V2 source baseline (docs/DECISIONS.md D01, D02), sea_material lines import_southwest.py 14-19, 32-70"
+
+[[sources]]
+path = "src/japan_sea_masters.py"
+sha256 = "884c37bb2e068d75a3a74e46e621cc005fe147ddc01e7a2698ede7e0438754a6"
+
+[recipe]
+importer = "material-master"
+version = 1
+
+[recipe.settings]
+builder = "sea_material"
+reads = []
+arguments = {  }
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_Sea"

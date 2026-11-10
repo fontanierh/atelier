@@ -207,7 +207,7 @@ def state(game: Path, family: dict) -> str:
                         'name them in keeps')
     if not present and listed == packages | kept:
         return 'unprepared'
-    if len(present) == len(masters) and listed == kept:
+    if len(present) == len(masters) and listed <= kept:   # a kept package may since have moved to a later family
         return 'done'
     raise PlanError(f'the {family["name"]} masters are half-moved: records {present}, adopted still lists '
                     f'{sorted(listed & packages)}; resolve by hand')
