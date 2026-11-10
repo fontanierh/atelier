@@ -43,7 +43,7 @@ can still need recoverable inputs and an accepted import. See [sources](sources.
 | Main owner(s) | Records / packages | Current disposition |
 |---|---:|---|
 | `adopted/megapark/standalone-level` | 1 / 1 | Saved Unreal map; reference check remains. This is not an imported-model source gap |
-| `adopted/japan/assets/bike` | 1 / 2 | `BK_WheelFront` and `BK_WheelRear`: the donor reads exist, but the `Bike.blend` generator is not recorded; recovery remains open |
+| `adopted/japan/assets/bike` | 1 / 2 | `BK_WheelFront` and `BK_WheelRear`: the generator is pinned as `generator/bike/wheels`; the claimed write and import remain (see "Bike residual packages") |
 | `adopted/seethrough`, `adopted/skateruntime` | 2 / 2 | `MPC_SeeThrough` and `RuntimeData` still need recoverable generator/settings/input routes; the earlier reads do not establish source closure |
 
 **Closed by claim `JAPANMI` (branch `jim5/yv2-japan-instances`, not yet in a package): 10 records / 45 instances.**
@@ -1283,18 +1283,20 @@ Byte evidence: `BK_WheelFront` and `BK_WheelRear` are 550 KB each and reference 
 
 Donor FBX pins (sha256, `build/yorimichi/bike/assets/`): `BK_WheelFront.fbx` `b9d91c3ff4143f67…`, `BK_WheelRear.fbx` `5a62e75f11e02be6…`.
 
-Status: **blocked** (`adopted/japan/assets/bike`). The generator, `Bike.blend`, is not tracked in the donor: `git ls-files` finds no `.blend` under the bike build, and the FBX files sit in a git-ignored build folder. An FBX with no recorded generator cannot be pinned as its original, as the generated-art rule requires, so the wheels are not claimed. The importer itself takes FBX and the static-mesh recipe can state the wheel settings (`allow_cpu_access`, `full_precision_uvs`, as `prop/megapark/seam-collision` already does), so the block is the generator alone. Recording a tracked generator would unblock the rows.
+Status: **planned** (`adopted/japan/assets/bike`). The generator is pinned as `generator/bike/wheels` (`kind = "generator"`, editor-owned, no outputs): six donor sources copied into its `src/` and pinned by sha256: `games/yorimichi/assets/vehicles/bike/build.py` (`wheel(name, hub_half)` at line 237; the wheel settings `.048` and `.050` for `BK_WheelFront` and `BK_WheelRear` at line 733), `world/bike_sources.py` (one independent constructor per part; the wheel half widths at lines 69-70), `world/vehicle_sources.py` and `vehicle_atomic_build.py` (the exporter that writes each part's source data and FBX), and `region_exports.py` and `world/yori.py` (what those import). All six hash identically at `7eec0f98dd` and on `main`. The earlier diagnosis was wrong: `Bike.blend` is a review-scene output of `vehicle_atomic_build.py` (its lines 45-50), not a source. The FBX pins are the donor's atomic exports (`atomic_regions/vehicle_bike/assets/manifest.json`, sha256 `b9d91c3f…` and `5a62e75f…`, 26060 triangles each). The V2 importer takes `allow_cpu_access` (`unreal/Scripts/import_settings.py`, applied at `unreal/Scripts/import_asset.py:115-117`), so the wheel settings fit the static-mesh recipe.
 
-Native read done (`docs/inventory/small-families-reads/bike-meshes.json`): one `BikePalette` slot bound to `M_Bike`, one LOD of 26060 triangles, matching the manifest. The block stands on the generator alone.
+Not done: (1) the claimed write that moves both wheels out of `adopted/japan/assets/bike` into `prop/bike/wheel-front` and `prop/bike/wheel-rear` (`tools/migrate/recover.py japan/assets --apply`; each references `generator/bike/wheels`), (2) the claimed Unreal import of both records, and (3) the native equality check of the imported wheels against `docs/inventory/small-families-reads/bike-meshes.json`.
 
-Native read run earlier: the wheels' saved settings and the `M_Bike` slot. The read is `unreal/Scripts/report_meshes.py` with `docs/inventory/small-families-bike-meshes.txt` (`BK_WheelFront`, `BK_WheelRear`), `V2_REPORT_OUT` under `build/yorimichi_v2/reports/`, as an `editor.run` step. It is listed for when the generator is recorded; the block stands until then.
+Native read done (`docs/inventory/small-families-reads/bike-meshes.json`): one `BikePalette` slot bound to `M_Bike`, one LOD of 26060 triangles, matching the manifest. It is the reference for the native equality check after the claimed import.
 
-- `adopted/japan/assets/bike`: generated wheel static meshes (Blender bike build). Evidence: import_bike.py:36-46 (manifest parts, FBX per part under build/yorimichi/bike/assets). Status: **blocked**. Bike.blend, the generator, is not tracked in the donor (git ls-files finds no .blend under the bike build): the FBX has no recorded generator, so it cannot be pinned. M_Bike is owned by adopted/japan/materials/base-materials
+Native read run earlier: the wheels' saved settings and the `M_Bike` slot. The read is `unreal/Scripts/report_meshes.py` with `docs/inventory/small-families-bike-meshes.txt` (`BK_WheelFront`, `BK_WheelRear`), `V2_REPORT_OUT` under `build/yorimichi_v2/reports/`, as an `editor.run` step. It is listed for the same equality check.
+
+- `adopted/japan/assets/bike`: generated wheel static meshes (donor wheel constructors, `build.py` `wheel()`). Evidence: import_bike.py:36-46 (manifest parts, FBX per part under build/yorimichi/bike/assets). Status: **planned**. Generator pinned as `generator/bike/wheels`; the claimed write and import remain. M_Bike is owned by adopted/japan/materials/base-materials
 
 | Package | Record | Status | Inputs (owner records) | Native read still needed |
 |---|---|---|---|---|
-| `BK_WheelFront` | `japan/assets/bike` | blocked | Japan/Materials/M_Bike, Japan/Materials/M_Bike | no reader in this tree |
-| `BK_WheelRear` | `japan/assets/bike` | blocked | Japan/Materials/M_Bike, Japan/Materials/M_Bike | no reader in this tree |
+| `BK_WheelFront` | `japan/assets/bike` | planned (generator pinned) | Japan/Materials/M_Bike, generator/bike/wheels | native equality after the claimed import |
+| `BK_WheelRear` | `japan/assets/bike` | planned (generator pinned) | Japan/Materials/M_Bike, generator/bike/wheels | native equality after the claimed import |
 
 ### Sword camp materials (1 record, 2 packages)
 

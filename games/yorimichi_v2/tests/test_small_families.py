@@ -406,3 +406,16 @@ def test_a_migrated_record_that_is_still_present_is_refused(tmp_path, monkeypatc
     monkeypatch.setattr(sf, 'MIGRATED', frozenset({record}))
     with pytest.raises(sf.FamilyError, match='still present'):
         sf.classify(tmp_path)
+
+
+def test_bike_wheels_are_planned_on_the_pinned_generator_not_blocked():
+    """The wheel row is planned: its generator record pins the donor wheel sources, and each pin is the tracked file."""
+    _, _, _, status, note = sf.REGISTRY['adopted/japan/assets/bike']
+    assert status == 'planned' and 'generator/bike/wheels' in note
+    generator = records.load_asset(sf.GAME / 'assets/generator/bike/wheels/asset.toml')
+    assert generator.kind == 'generator' and generator.outputs == []
+    assert [s.path for s in generator.sources] == [f'src/{Path(rel).name}' for rel in sf.recover.BIKE_GENERATOR_SOURCES]
+    for rel, source in zip(sf.recover.BIKE_GENERATOR_SOURCES, generator.sources):
+        assert sf.sha256_file(sf.recover.DONOR_GAME / rel) == source.sha256
+        assert sf.sha256_file(sf.GAME / 'assets/generator/bike/wheels' / source.path) == source.sha256
+    assert generator.sources[0].sha256 == '460f61c1cfb60fa810f1b32a2a61fd33617107c12e0c9bf45e1ec5ecdcf61084'
