@@ -164,10 +164,14 @@ def record_helpers(pid,started,path,seen):
             helpers=list(seen.values())),indent=2)+'\n');temp.replace(path)
 
 def usage(pid):
+    """@cc [owner:fontanierh,label:safety] process-telemetry-error-identity
+    Darwin sampling failures MUST retain their errno-selected exception class. Only ESRCH
+    may report ProcessLookupError; refused or broken telemetry MUST NOT certify an exit.
+    """
     if not DARWIN:return _procfs_usage(pid)
     value=Usage()
     if LIB.proc_pid_rusage(pid,2,ctypes.byref(value)):
-        raise ProcessLookupError(ctypes.get_errno(), 'Cannot sample process',pid)
+        raise OSError(ctypes.get_errno(), 'Cannot sample process',pid)
     return value
 
 def _guard(pid,limit_bytes,report,interval=1.,duration=None,expected_start=None):
