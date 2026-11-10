@@ -26,7 +26,8 @@ except ImportError:   # outside the editor only the pure functions are usable
 
 # Every material-level property a builder writes, plus the domain: a cutoff or a usage flag that differs refuses.
 SETTINGS = ('blend_mode', 'shading_model', 'two_sided', 'material_domain', 'opacity_mask_clip_value',
-            'used_with_instanced_static_meshes', 'used_with_skeletal_mesh', 'used_with_static_lighting')
+            'used_with_instanced_static_meshes', 'used_with_skeletal_mesh', 'used_with_static_lighting',
+            'translucency_lighting_mode')   # written by the translucent sailboat wake (japan_base_masters.sailboat_material)
 PROPERTY_PINS = ('MP_BASE_COLOR', 'MP_NORMAL', 'MP_ROUGHNESS', 'MP_METALLIC', 'MP_SPECULAR', 'MP_EMISSIVE_COLOR',
                  'MP_OPACITY', 'MP_OPACITY_MASK', 'MP_AMBIENT_OCCLUSION', 'MP_WORLD_POSITION_OFFSET', 'MP_REFRACTION',
                  'MP_PIXEL_DEPTH_OFFSET', 'MP_SUBSURFACE_COLOR', 'MP_CUSTOM_DATA0', 'MP_CUSTOM_DATA1', 'MP_TANGENT',
