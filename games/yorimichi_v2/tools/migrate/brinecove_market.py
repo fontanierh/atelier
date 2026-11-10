@@ -766,9 +766,11 @@ def retire(game: Path, plan: dict, claim: str | None, batch: str, stage: str = '
     saved again, `records` deletes the tile records and packages."""
     apply_ = _apply()
     # records: the groups stage is done, the tiles not yet. A groups rerun (its runtime part already done) checks the same.
-    names = apply_.group_names(json.loads((game / 'unreal' / 'Content' / apply_.RUNTIME).read_text()))
-    rerun = stage == 'groups' and emptied(plan) and not any(f'SM_BC_{s}' in names for s in emptied(plan))
-    problems = check(game, donor, batch, groups=(stage == 'records' or bool(rerun)))
+    runtime, rerun = game / 'unreal' / 'Content' / apply_.RUNTIME, False
+    if stage == 'groups' and runtime.is_file() and emptied(plan):
+        names = apply_.group_names(json.loads(runtime.read_text()))
+        rerun = not any(f'SM_BC_{s}' in names for s in emptied(plan))
+    problems = check(game, donor, batch, groups=(stage == 'records' or rerun))
     if problems:
         raise apply_.SplitError('refusing to retire before the import and check pass: ' + '; '.join(problems[:3]))
     set_batch(batch).require_applied_plan(game, plan)   # the checked batch, not a fresh selection under its name
