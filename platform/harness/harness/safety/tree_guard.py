@@ -331,8 +331,10 @@ def run_child(pid, started, report, duration=None, limit_gib=10., controller=Non
     engine services and their descendants, except explicitly gated invocation-owned service roots.
     Failure or launcher exit MUST stop the retained pinned
     tree, and successful terminal receipts MUST require observed tree exit. Cleanup that cannot
-    complete within its bound MUST fail; PID reuse MUST NOT transfer ownership. A bound controller
-    disappearing MUST stop the owned tree and publish controller_exited with post-drain cleanup,
+    complete within its bound MUST fail; PID reuse MUST NOT transfer ownership.
+    A sample/identity exception MUST attempt a failure receipt after bounded pinned cleanup;
+    a verified later drain MUST NOT turn that telemetry failure into successful completion.
+    A bound controller disappearing MUST stop the owned tree and publish controller_exited with post-drain cleanup,
     never successful completion. Independent guards MUST outlive the controller process group.
     That bounded terminal outcome is the job's result. An opt-in custody monitor MUST publish it
     unchanged, then MAY continue without a time bound, keeping its checkout custody descriptors
@@ -350,6 +352,7 @@ def run_child(pid, started, report, duration=None, limit_gib=10., controller=Non
     limit = int(limit_gib * 1024**3)
     terminated = []
     monitor = None
+    samples = []
     if custody:
         # Installed before the first readiness receipt: TERM/HUP drain the owned tree and never
         # end a custodian. Default monitors keep their ordinary signal behaviour.
@@ -449,26 +452,34 @@ def run_child(pid, started, report, duration=None, limit_gib=10., controller=Non
                 pass
         if not custody:
             cleaned = drain_owned(tree)
+            # Preserve a failure receipt for ordinary monitors too. A failed sample is
+            # unknown, not an empty tree, even if the retained pinned cleanup succeeded.
+            failed = dict(owner=pid, owner_started=started, state='cleanup_incomplete',
+                          termination_reason='monitor_error', error_type=type(error).__name__,
+                          error=_text(error), elapsed_seconds=time.monotonic()-began,
+                          cleanup_complete=False, time=time.time(), observed_monotonic=time.monotonic(),
+                          footprint_bytes=sum(p['footprint_bytes'] for p in samples),
+                          peak_bytes=peak, limit_bytes=limit, processes=samples)
+            if controller is not None:
+                failed['controller'] = list(controller)
             if service_control is not None:
                 # Control/registration errors must leave failure evidence rather
                 # than a stale running receipt. Never infer an empty tree after
                 # failed observation or erase an unsupported helper identity.
                 from .owned_service import unsupported
-                failed = dict(owner=pid, owner_started=started,
-                              state='controller_exited' if lost_controller else 'private_service_error',
-                              error_type=type(error).__name__, cleanup_complete=False,
+                failed.update(state='controller_exited' if lost_controller else 'private_service_error',
                               owned_services=tree.services.evidence(),
                               unsupported_services=[list(key) for key in unsupported(
-                                  tree.shared, tree.parents, tree.services)],
-                              time=time.time(), observed_monotonic=time.monotonic(),
-                              footprint_bytes=0, peak_bytes=peak, limit_bytes=limit, processes=[])
-                def record_failure():
-                    remaining = tree.sample()
-                    failed.update(processes=remaining,
-                                  footprint_bytes=sum(p['footprint_bytes'] for p in remaining),
-                                  cleanup_complete=cleaned and not remaining)
-                _quietly(record_failure)
-                _quietly(lambda: write_report(report, failed))
+                                  tree.shared, tree.parents, tree.services)])
+            def record_failure():
+                remaining = tree.sample()
+                failed.update(cleanup_processes=remaining,
+                              cleanup_footprint_bytes=sum(p['footprint_bytes'] for p in remaining),
+                              cleanup_complete=cleaned and not remaining)
+                if service_control is not None:
+                    failed.update(processes=remaining, footprint_bytes=failed['cleanup_footprint_bytes'])
+            _quietly(record_failure)
+            _quietly(lambda: write_report(report, failed))
             raise
         failed = dict(state='cleanup_incomplete',
                       termination_reason='controller_exited' if lost_controller else 'monitor_error',

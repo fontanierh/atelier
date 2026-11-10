@@ -135,8 +135,10 @@ def test_process_identity_sampling_failure_is_not_an_exit(monkeypatch):
 def test_darwin_identity_only_treats_missing_process_as_exited(monkeypatch, error):
     """The native sampler must preserve errno classification before identity checks handle absence."""
     monkeypatch.setattr(memory_guard, 'DARWIN', True)
-    monkeypatch.setattr(memory_guard, 'LIB', SimpleNamespace(proc_pid_rusage=lambda *args: -1))
+    monkeypatch.setattr(memory_guard, 'LIB', SimpleNamespace(
+        proc_pid_rusage=lambda *args: -1, proc_pidinfo=lambda *args: 0))
     monkeypatch.setattr(memory_guard.ctypes, 'get_errno', lambda: error)
+    monkeypatch.setattr(memory_guard.time, 'sleep', lambda delay: None)
     if error == errno.ESRCH:
         assert process_tree.started(77) is None
     else:
