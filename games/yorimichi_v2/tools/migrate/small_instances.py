@@ -164,12 +164,20 @@ def agreement(family: str, donor: Path) -> dict:
         eff = row.get('effective', {})
         if row['parent'].split('.')[0].split('/')[-1] != want['parent'].split('/')[-1]:
             held.append(f'parent {row["parent"]} is not {want["parent"]}')
+        # Every stated value needs read evidence: the effective value, or the package's own stored override (an
+        # opaque Mega Park instance stores HasTransparent although its parent declares no such parameter).
+        own = row.get('overrides', {})
         for name, value in want['scalars'].items():
-            if name in eff.get('scalar', {}) and not _close(eff['scalar'][name], value):
-                held.append(f'scalar {name} reads {eff["scalar"][name]}, not {round(value, 4)}')
+            got = eff.get('scalar', {}).get(name, own.get('scalar', {}).get(name))
+            if got is None:
+                held.append(f'scalar {name} is stated but the read does not show it')
+            elif not _close(got, value):
+                held.append(f'scalar {name} reads {got}, not {round(value, 4)}')
         for name, value in want['vectors'].items():
-            got = eff.get('vector', {}).get(name)
-            if got is not None and any(not _close(g, v, 1e-3) for g, v in zip(got[:3], value[:3])):
+            got = eff.get('vector', {}).get(name, own.get('vector', {}).get(name))
+            if got is None:
+                held.append(f'vector {name} is stated but the read does not show it')
+            elif any(not _close(g, v, 1e-3) for g, v in zip(got[:3], value[:3])):
                 held.append(f'vector {name} reads {got}, not {value}')
         for name, package_path in want['textures'].items():
             if package_path is None:

@@ -6,19 +6,26 @@ existing verified package and the [release workflow](../../../docs/RELEASES.md),
 
 ## Current checkpoint (2026-11-10)
 
-- **Built:** integration head `a363050d3d` of [PR #790](https://github.com/fontanierh/atelier/pull/790), ready at
-  02:36 Paris; the step took 1476 s. Main `91658129cd` differs from that head only in migration tools, tests and
-  one inventory line, none of which is packaged, so the app's content is that of main. The extracted app is about
-  3.2 GB; package fingerprint `f5947da8e8c2`.
+- **Built:** head `2850d8e498` of [PR #797](https://github.com/fontanierh/atelier/pull/797), ready at 06:12 Paris.
+  The step took 248 s because the cook reused the previous one; only the changed packages were cooked and staged.
+  That head is main `5d29a3644a` plus the small-families records, their imports and docs. The extracted app is
+  about 3.2 GB; package fingerprint `bb451f636160`. The previous checkpoint app (`f5947da8e8c2`, #790) is kept
+  beside it.
 - **Automated checks:** all pass on the extracted app: bundle identity `com.atelier.yorimichiv2`, executable,
   signatures, audio entitlement, 14 bundled dependencies, excluded phone/kart content absent, and 62 runtime-data
   files with no missing or changed bytes.
-- **Observed launch:** `first_launch` and `shutdown` are recorded as passed for `f5947da8e8c2` (guarded launch,
-  LoadMap of the Slice in 16.4 s, no error lines, clean exit on the Quit event). The other manual items (input,
-  map travel, gameplay, sound, settings and save persistence) are not recorded for this app.
-- **Content scope:** see [INVENTORY.md](INVENTORY.md). This package is the first to include the Brine Cove market
-  and town split of [PR #787](https://github.com/fontanierh/atelier/pull/787) and the railway fittings, gondola
-  pylons and train LOD split of #790.
+- **Observed launch:** `first_launch` and `shutdown` are recorded as passed for `bb451f636160`:
+  - guarded launch, with a peak of 7.8 GB;
+  - LoadMap of the Slice in 15.9 s, with no error lines;
+  - clean exit on the Quit event.
+
+  The other manual items (input, map travel, gameplay, sound, settings and save persistence) are not recorded
+  for this app.
+- **Content scope:** see [INVENTORY.md](INVENTORY.md). This package is the first to include:
+  - the Japan leaf instances ([PR #792](https://github.com/fontanierh/atelier/pull/792));
+  - the 72 Brine Cove plants and city tree residuals ([PR #794](https://github.com/fontanierh/atelier/pull/794));
+  - the 459-package Belmonte train material batch ([PR #796](https://github.com/fontanierh/atelier/pull/796));
+  - the first small-families batch (#797).
 - **Staging time:** UAT reads one Zen attachment per oplog entry with a blocking request inside a parallel loop,
   so staging (about 15 000 entries) spends most of its time on .NET thread-pool growth. The log shows a single
   "Reading oplog" line for that whole time; that is progress, not a hang, while Zen keeps listening on 8558.

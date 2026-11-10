@@ -80,3 +80,29 @@ def test_every_planned_instance_record_loads_and_names_its_outputs(tmp_path):
         asset = records.load_asset(path)
         assert asset.kind == 'material-instance' and asset.authority == 'generated'
         assert sorted(r['package'] for r in rec.instances) == sorted(rec.outputs)
+
+
+def test_a_stated_value_without_read_evidence_holds_the_instance(tmp_path, monkeypatch):
+    """A scalar or vector the generator states holds the instance unless the read shows it, as an effective value or as
+    the package's own stored override."""
+    read = {'/Game/F/MI_Shown': {'parent': '/Game/F/M_Base.M_Base', 'effective': {'scalar': {'Gloss': .5}, 'vector': {}, 'texture': {}}},
+            '/Game/F/MI_Unread': {'parent': '/Game/F/M_Base.M_Base', 'effective': {'scalar': {'Gloss': .5}, 'vector': {}, 'texture': {}}},
+            '/Game/F/MI_NoTint': {'parent': '/Game/F/M_Base.M_Base', 'effective': {'scalar': {}, 'vector': {}, 'texture': {}}},
+            '/Game/F/MI_Stored': {'parent': '/Game/F/M_Base.M_Base', 'effective': {'scalar': {}, 'vector': {}, 'texture': {}},
+                                  'overrides': {'scalar': {'HasTransparent': 0.}}}}
+    (tmp_path / 'fake.json').write_text(json.dumps(read))
+    want = {'/Game/F/MI_Shown': {'parent': '/Game/F/M_Base', 'textures': {}, 'scalars': {'Gloss': .5}, 'vectors': {}},
+            '/Game/F/MI_Unread': {'parent': '/Game/F/M_Base', 'textures': {}, 'scalars': {'Gloss': .5, 'HasTransparent': 0.},
+                                  'vectors': {}},
+            '/Game/F/MI_NoTint': {'parent': '/Game/F/M_Base', 'textures': {}, 'scalars': {}, 'vectors': {'Tint': [1, 1, 1, 1]}},
+            '/Game/F/MI_Stored': {'parent': '/Game/F/M_Base', 'textures': {}, 'scalars': {'HasTransparent': 0.}, 'vectors': {}}}
+    for row in want.values():
+        row.update(natural=False, seam=False)
+    monkeypatch.setattr(si, 'READS', tmp_path)
+    monkeypatch.setitem(si.READ_FILE, 'fake', 'fake')
+    monkeypatch.setitem(si.EXPECTED, 'fake', lambda donor: want)
+    verdict = si.agreement('fake', None)
+    assert verdict['/Game/F/MI_Shown'] == {'agree': True, 'held': []}
+    assert verdict['/Game/F/MI_Unread']['held'] == ['scalar HasTransparent is stated but the read does not show it']
+    assert verdict['/Game/F/MI_NoTint']['held'] == ['vector Tint is stated but the read does not show it']
+    assert verdict['/Game/F/MI_Stored'] == {'agree': True, 'held': []}   # the package's own stored override is evidence
