@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_PropsCratePierCentralSea: the props crate pier central sea, cut from the fused tile(s) Props_3_2 (36 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/brinecove/props-crate-pier-central-sea"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/brinecove/props-crate-pier-central-sea"
+references = ["adopted/brinecove/materials"]
+
+[[sources]]
+path = "src/SM_BC_PropsCratePierCentralSea.glb"
+sha256 = "14b6a55be2248f9d2c17b41bd53505c02fb312e961d31ffc411543b816cff2fd"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Brinecove/Materials/MI_BC_wood_dark", "/Game/Brinecove/Materials/MI_BC_wood_light"]
+triangles = 36
+collision = "complex"
+full_precision_uvs = true
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_PropsCratePierCentralSea"

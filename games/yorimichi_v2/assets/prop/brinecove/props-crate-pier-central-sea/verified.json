@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/props-crate-pier-central-sea",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_PropsCratePierCentralSea.uasset": "fc3f5c154c3a965d2146e6df25e857e5637663999ba05461326958d4d9ea95e5"
+  },
+  "input_fingerprint": "fc523302309c291134a838be18c13a8d3659beea110b32518e1ee8022ffda46a",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_PropsCratePierCentralSea": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/props-crate-upper-e190",
+  "dependencies": {
+    "prop/brinecove/props-crate-upper-e190": "8cea30d3b2f0d66de2f318b1a454b3603c3ec47ef4dacfa1d76cc1d42c79754b"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/A/9B/1XLJEDKPP7IZ6MMYFB3Q79.uasset": "c6551b9bd6c0762ef3f71aca574e55a5569a6f8bcfd8e869526f37a28d260efd"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

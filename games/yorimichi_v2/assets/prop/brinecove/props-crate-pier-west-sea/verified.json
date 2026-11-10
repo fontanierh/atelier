@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/props-crate-pier-west-sea",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_PropsCratePierWestSea.uasset": "fd61c0c91590c0031a9e4cb7778cb20c5801c12366d840a15086a643a8c47955"
+  },
+  "input_fingerprint": "c340322bff0f3a3008310e1ecf509f3ef23143357ed87837691adbbd3c258e05",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_PropsCratePierWestSea": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

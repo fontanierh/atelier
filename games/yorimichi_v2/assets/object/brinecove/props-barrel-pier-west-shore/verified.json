@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/props-barrel-pier-west-shore",
+  "dependencies": {
+    "prop/brinecove/props-barrel-pier-west-shore": "e7fc2a34f546a6d5f4b901cd7d594acf948770884b1b26eabf453ed4a4959598"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/6/YL/M79I4AYB77FO5UZJTXSO46.uasset": "a7524d78685f538fed5ccd56bca7234f03eeb6d35c21c0dfd72ed960e1d4ec83"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

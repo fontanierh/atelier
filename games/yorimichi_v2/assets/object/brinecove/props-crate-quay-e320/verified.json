@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/props-crate-quay-e320",
+  "dependencies": {
+    "prop/brinecove/props-crate-quay-e320": "a16c22a10ce737e76f836f543795cebe525cd3c8e67c19dc9a389b9ec3beab1f"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/1/FD/15Q6YFUSZZSPYKV3OYDH9K.uasset": "d4604746a37dd2ecbc83d17077e0f3d58a62ca82c7fa12b598fc5608f6dd29dd"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

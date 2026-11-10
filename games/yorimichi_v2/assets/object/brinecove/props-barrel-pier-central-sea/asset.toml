@@ -1,0 +1,12 @@
+# One saved object of region/w09-brinecove (tools/migrate/objects.py, from its objects.toml): the props barrel pier central sea, cut from its fused tile (128 triangles).
+# Its placement is this actor package; its model is prop/brinecove/props-barrel-pier-central-sea. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/brinecove/props-barrel-pier-central-sea"
+kind = "placement"
+authority = "editor"
+owner = "region/w09-brinecove"
+references = ["prop/brinecove/props-barrel-pier-central-sea"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/E/HV/LSLY9PFI8I5V0K8BJSKN38"

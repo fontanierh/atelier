@@ -3367,16 +3367,6 @@
         "prop/brinecove/props-2-3"
       ]
     },
-    "object/brinecove/props-2-4": {
-      "groups": [
-        "SM_BC_Props_2_4"
-      ],
-      "id": "object/brinecove/props-2-4",
-      "model": "prop/brinecove/props-2-4",
-      "models": [
-        "prop/brinecove/props-2-4"
-      ]
-    },
     "object/brinecove/props-3-2": {
       "groups": [
         "SM_BC_Props_3_2"
@@ -3395,26 +3385,6 @@
       "model": "prop/brinecove/props-3-3",
       "models": [
         "prop/brinecove/props-3-3"
-      ]
-    },
-    "object/brinecove/props-3-4": {
-      "groups": [
-        "SM_BC_Props_3_4"
-      ],
-      "id": "object/brinecove/props-3-4",
-      "model": "prop/brinecove/props-3-4",
-      "models": [
-        "prop/brinecove/props-3-4"
-      ]
-    },
-    "object/brinecove/props-3-5": {
-      "groups": [
-        "SM_BC_Props_3_5"
-      ],
-      "id": "object/brinecove/props-3-5",
-      "model": "prop/brinecove/props-3-5",
-      "models": [
-        "prop/brinecove/props-3-5"
       ]
     },
     "object/brinecove/props-4-2": {
@@ -3437,26 +3407,6 @@
         "prop/brinecove/props-4-3"
       ]
     },
-    "object/brinecove/props-4-4": {
-      "groups": [
-        "SM_BC_Props_4_4"
-      ],
-      "id": "object/brinecove/props-4-4",
-      "model": "prop/brinecove/props-4-4",
-      "models": [
-        "prop/brinecove/props-4-4"
-      ]
-    },
-    "object/brinecove/props-4-5": {
-      "groups": [
-        "SM_BC_Props_4_5"
-      ],
-      "id": "object/brinecove/props-4-5",
-      "model": "prop/brinecove/props-4-5",
-      "models": [
-        "prop/brinecove/props-4-5"
-      ]
-    },
     "object/brinecove/props-5-3": {
       "groups": [
         "SM_BC_Props_5_3"
@@ -3467,14 +3417,264 @@
         "prop/brinecove/props-5-3"
       ]
     },
-    "object/brinecove/props-5-4": {
+    "object/brinecove/props-barrel-pier-central-sea": {
       "groups": [
-        "SM_BC_Props_5_4"
+        "SM_BC_PropsBarrelPierCentralSea"
       ],
-      "id": "object/brinecove/props-5-4",
-      "model": "prop/brinecove/props-5-4",
+      "id": "object/brinecove/props-barrel-pier-central-sea",
+      "model": "prop/brinecove/props-barrel-pier-central-sea",
       "models": [
-        "prop/brinecove/props-5-4"
+        "prop/brinecove/props-barrel-pier-central-sea"
+      ]
+    },
+    "object/brinecove/props-barrel-pier-central-shore": {
+      "groups": [
+        "SM_BC_PropsBarrelPierCentralShore"
+      ],
+      "id": "object/brinecove/props-barrel-pier-central-shore",
+      "model": "prop/brinecove/props-barrel-pier-central-shore",
+      "models": [
+        "prop/brinecove/props-barrel-pier-central-shore"
+      ]
+    },
+    "object/brinecove/props-barrel-pier-east-sea": {
+      "groups": [
+        "SM_BC_PropsBarrelPierEastSea"
+      ],
+      "id": "object/brinecove/props-barrel-pier-east-sea",
+      "model": "prop/brinecove/props-barrel-pier-east-sea",
+      "models": [
+        "prop/brinecove/props-barrel-pier-east-sea"
+      ]
+    },
+    "object/brinecove/props-barrel-pier-east-shore": {
+      "groups": [
+        "SM_BC_PropsBarrelPierEastShore"
+      ],
+      "id": "object/brinecove/props-barrel-pier-east-shore",
+      "model": "prop/brinecove/props-barrel-pier-east-shore",
+      "models": [
+        "prop/brinecove/props-barrel-pier-east-shore"
+      ]
+    },
+    "object/brinecove/props-barrel-pier-west-sea": {
+      "groups": [
+        "SM_BC_PropsBarrelPierWestSea"
+      ],
+      "id": "object/brinecove/props-barrel-pier-west-sea",
+      "model": "prop/brinecove/props-barrel-pier-west-sea",
+      "models": [
+        "prop/brinecove/props-barrel-pier-west-sea"
+      ]
+    },
+    "object/brinecove/props-barrel-pier-west-shore": {
+      "groups": [
+        "SM_BC_PropsBarrelPierWestShore"
+      ],
+      "id": "object/brinecove/props-barrel-pier-west-shore",
+      "model": "prop/brinecove/props-barrel-pier-west-shore",
+      "models": [
+        "prop/brinecove/props-barrel-pier-west-shore"
+      ]
+    },
+    "object/brinecove/props-barrel-quay-e150-146": {
+      "groups": [
+        "SM_BC_PropsBarrelQuayE150146"
+      ],
+      "id": "object/brinecove/props-barrel-quay-e150-146",
+      "model": "prop/brinecove/props-barrel-quay-e150-146",
+      "models": [
+        "prop/brinecove/props-barrel-quay-e150-146"
+      ]
+    },
+    "object/brinecove/props-barrel-quay-e150-184": {
+      "groups": [
+        "SM_BC_PropsBarrelQuayE150184"
+      ],
+      "id": "object/brinecove/props-barrel-quay-e150-184",
+      "model": "prop/brinecove/props-barrel-quay-e150-184",
+      "models": [
+        "prop/brinecove/props-barrel-quay-e150-184"
+      ]
+    },
+    "object/brinecove/props-barrel-quay-e205-146": {
+      "groups": [
+        "SM_BC_PropsBarrelQuayE205146"
+      ],
+      "id": "object/brinecove/props-barrel-quay-e205-146",
+      "model": "prop/brinecove/props-barrel-quay-e205-146",
+      "models": [
+        "prop/brinecove/props-barrel-quay-e205-146"
+      ]
+    },
+    "object/brinecove/props-barrel-quay-e205-184": {
+      "groups": [
+        "SM_BC_PropsBarrelQuayE205184"
+      ],
+      "id": "object/brinecove/props-barrel-quay-e205-184",
+      "model": "prop/brinecove/props-barrel-quay-e205-184",
+      "models": [
+        "prop/brinecove/props-barrel-quay-e205-184"
+      ]
+    },
+    "object/brinecove/props-barrel-quay-e270-146": {
+      "groups": [
+        "SM_BC_PropsBarrelQuayE270146"
+      ],
+      "id": "object/brinecove/props-barrel-quay-e270-146",
+      "model": "prop/brinecove/props-barrel-quay-e270-146",
+      "models": [
+        "prop/brinecove/props-barrel-quay-e270-146"
+      ]
+    },
+    "object/brinecove/props-barrel-quay-e270-184": {
+      "groups": [
+        "SM_BC_PropsBarrelQuayE270184"
+      ],
+      "id": "object/brinecove/props-barrel-quay-e270-184",
+      "model": "prop/brinecove/props-barrel-quay-e270-184",
+      "models": [
+        "prop/brinecove/props-barrel-quay-e270-184"
+      ]
+    },
+    "object/brinecove/props-barrel-quay-e320-146": {
+      "groups": [
+        "SM_BC_PropsBarrelQuayE320146"
+      ],
+      "id": "object/brinecove/props-barrel-quay-e320-146",
+      "model": "prop/brinecove/props-barrel-quay-e320-146",
+      "models": [
+        "prop/brinecove/props-barrel-quay-e320-146"
+      ]
+    },
+    "object/brinecove/props-barrel-quay-e320-184": {
+      "groups": [
+        "SM_BC_PropsBarrelQuayE320184"
+      ],
+      "id": "object/brinecove/props-barrel-quay-e320-184",
+      "model": "prop/brinecove/props-barrel-quay-e320-184",
+      "models": [
+        "prop/brinecove/props-barrel-quay-e320-184"
+      ]
+    },
+    "object/brinecove/props-barrel-quay-w210-146": {
+      "groups": [
+        "SM_BC_PropsBarrelQuayW210146"
+      ],
+      "id": "object/brinecove/props-barrel-quay-w210-146",
+      "model": "prop/brinecove/props-barrel-quay-w210-146",
+      "models": [
+        "prop/brinecove/props-barrel-quay-w210-146"
+      ]
+    },
+    "object/brinecove/props-barrel-quay-w210-184": {
+      "groups": [
+        "SM_BC_PropsBarrelQuayW210184"
+      ],
+      "id": "object/brinecove/props-barrel-quay-w210-184",
+      "model": "prop/brinecove/props-barrel-quay-w210-184",
+      "models": [
+        "prop/brinecove/props-barrel-quay-w210-184"
+      ]
+    },
+    "object/brinecove/props-barrel-quay-w270-146": {
+      "groups": [
+        "SM_BC_PropsBarrelQuayW270146"
+      ],
+      "id": "object/brinecove/props-barrel-quay-w270-146",
+      "model": "prop/brinecove/props-barrel-quay-w270-146",
+      "models": [
+        "prop/brinecove/props-barrel-quay-w270-146"
+      ]
+    },
+    "object/brinecove/props-barrel-quay-w270-184": {
+      "groups": [
+        "SM_BC_PropsBarrelQuayW270184"
+      ],
+      "id": "object/brinecove/props-barrel-quay-w270-184",
+      "model": "prop/brinecove/props-barrel-quay-w270-184",
+      "models": [
+        "prop/brinecove/props-barrel-quay-w270-184"
+      ]
+    },
+    "object/brinecove/props-barrel-quay-w320-146": {
+      "groups": [
+        "SM_BC_PropsBarrelQuayW320146"
+      ],
+      "id": "object/brinecove/props-barrel-quay-w320-146",
+      "model": "prop/brinecove/props-barrel-quay-w320-146",
+      "models": [
+        "prop/brinecove/props-barrel-quay-w320-146"
+      ]
+    },
+    "object/brinecove/props-barrel-quay-w320-184": {
+      "groups": [
+        "SM_BC_PropsBarrelQuayW320184"
+      ],
+      "id": "object/brinecove/props-barrel-quay-w320-184",
+      "model": "prop/brinecove/props-barrel-quay-w320-184",
+      "models": [
+        "prop/brinecove/props-barrel-quay-w320-184"
+      ]
+    },
+    "object/brinecove/props-barrel-upper-e130": {
+      "groups": [
+        "SM_BC_PropsBarrelUpperE130"
+      ],
+      "id": "object/brinecove/props-barrel-upper-e130",
+      "model": "prop/brinecove/props-barrel-upper-e130",
+      "models": [
+        "prop/brinecove/props-barrel-upper-e130"
+      ]
+    },
+    "object/brinecove/props-barrel-upper-e190": {
+      "groups": [
+        "SM_BC_PropsBarrelUpperE190"
+      ],
+      "id": "object/brinecove/props-barrel-upper-e190",
+      "model": "prop/brinecove/props-barrel-upper-e190",
+      "models": [
+        "prop/brinecove/props-barrel-upper-e190"
+      ]
+    },
+    "object/brinecove/props-barrel-upper-e250": {
+      "groups": [
+        "SM_BC_PropsBarrelUpperE250"
+      ],
+      "id": "object/brinecove/props-barrel-upper-e250",
+      "model": "prop/brinecove/props-barrel-upper-e250",
+      "models": [
+        "prop/brinecove/props-barrel-upper-e250"
+      ]
+    },
+    "object/brinecove/props-barrel-upper-e70": {
+      "groups": [
+        "SM_BC_PropsBarrelUpperE70"
+      ],
+      "id": "object/brinecove/props-barrel-upper-e70",
+      "model": "prop/brinecove/props-barrel-upper-e70",
+      "models": [
+        "prop/brinecove/props-barrel-upper-e70"
+      ]
+    },
+    "object/brinecove/props-barrel-upper-w190": {
+      "groups": [
+        "SM_BC_PropsBarrelUpperW190"
+      ],
+      "id": "object/brinecove/props-barrel-upper-w190",
+      "model": "prop/brinecove/props-barrel-upper-w190",
+      "models": [
+        "prop/brinecove/props-barrel-upper-w190"
+      ]
+    },
+    "object/brinecove/props-barrel-upper-w250": {
+      "groups": [
+        "SM_BC_PropsBarrelUpperW250"
+      ],
+      "id": "object/brinecove/props-barrel-upper-w250",
+      "model": "prop/brinecove/props-barrel-upper-w250",
+      "models": [
+        "prop/brinecove/props-barrel-upper-w250"
       ]
     },
     "object/brinecove/props-buoy-e190": {
@@ -3565,6 +3765,196 @@
       "model": "prop/brinecove/props-cargo-w60",
       "models": [
         "prop/brinecove/props-cargo-w60"
+      ]
+    },
+    "object/brinecove/props-crate-pier-central-sea": {
+      "groups": [
+        "SM_BC_PropsCratePierCentralSea"
+      ],
+      "id": "object/brinecove/props-crate-pier-central-sea",
+      "model": "prop/brinecove/props-crate-pier-central-sea",
+      "models": [
+        "prop/brinecove/props-crate-pier-central-sea"
+      ]
+    },
+    "object/brinecove/props-crate-pier-central-shore": {
+      "groups": [
+        "SM_BC_PropsCratePierCentralShore"
+      ],
+      "id": "object/brinecove/props-crate-pier-central-shore",
+      "model": "prop/brinecove/props-crate-pier-central-shore",
+      "models": [
+        "prop/brinecove/props-crate-pier-central-shore"
+      ]
+    },
+    "object/brinecove/props-crate-pier-east-sea": {
+      "groups": [
+        "SM_BC_PropsCratePierEastSea"
+      ],
+      "id": "object/brinecove/props-crate-pier-east-sea",
+      "model": "prop/brinecove/props-crate-pier-east-sea",
+      "models": [
+        "prop/brinecove/props-crate-pier-east-sea"
+      ]
+    },
+    "object/brinecove/props-crate-pier-east-shore": {
+      "groups": [
+        "SM_BC_PropsCratePierEastShore"
+      ],
+      "id": "object/brinecove/props-crate-pier-east-shore",
+      "model": "prop/brinecove/props-crate-pier-east-shore",
+      "models": [
+        "prop/brinecove/props-crate-pier-east-shore"
+      ]
+    },
+    "object/brinecove/props-crate-pier-west-sea": {
+      "groups": [
+        "SM_BC_PropsCratePierWestSea"
+      ],
+      "id": "object/brinecove/props-crate-pier-west-sea",
+      "model": "prop/brinecove/props-crate-pier-west-sea",
+      "models": [
+        "prop/brinecove/props-crate-pier-west-sea"
+      ]
+    },
+    "object/brinecove/props-crate-pier-west-shore": {
+      "groups": [
+        "SM_BC_PropsCratePierWestShore"
+      ],
+      "id": "object/brinecove/props-crate-pier-west-shore",
+      "model": "prop/brinecove/props-crate-pier-west-shore",
+      "models": [
+        "prop/brinecove/props-crate-pier-west-shore"
+      ]
+    },
+    "object/brinecove/props-crate-quay-e150": {
+      "groups": [
+        "SM_BC_PropsCrateQuayE150"
+      ],
+      "id": "object/brinecove/props-crate-quay-e150",
+      "model": "prop/brinecove/props-crate-quay-e150",
+      "models": [
+        "prop/brinecove/props-crate-quay-e150"
+      ]
+    },
+    "object/brinecove/props-crate-quay-e205": {
+      "groups": [
+        "SM_BC_PropsCrateQuayE205"
+      ],
+      "id": "object/brinecove/props-crate-quay-e205",
+      "model": "prop/brinecove/props-crate-quay-e205",
+      "models": [
+        "prop/brinecove/props-crate-quay-e205"
+      ]
+    },
+    "object/brinecove/props-crate-quay-e270": {
+      "groups": [
+        "SM_BC_PropsCrateQuayE270"
+      ],
+      "id": "object/brinecove/props-crate-quay-e270",
+      "model": "prop/brinecove/props-crate-quay-e270",
+      "models": [
+        "prop/brinecove/props-crate-quay-e270"
+      ]
+    },
+    "object/brinecove/props-crate-quay-e320": {
+      "groups": [
+        "SM_BC_PropsCrateQuayE320"
+      ],
+      "id": "object/brinecove/props-crate-quay-e320",
+      "model": "prop/brinecove/props-crate-quay-e320",
+      "models": [
+        "prop/brinecove/props-crate-quay-e320"
+      ]
+    },
+    "object/brinecove/props-crate-quay-w210": {
+      "groups": [
+        "SM_BC_PropsCrateQuayW210"
+      ],
+      "id": "object/brinecove/props-crate-quay-w210",
+      "model": "prop/brinecove/props-crate-quay-w210",
+      "models": [
+        "prop/brinecove/props-crate-quay-w210"
+      ]
+    },
+    "object/brinecove/props-crate-quay-w270": {
+      "groups": [
+        "SM_BC_PropsCrateQuayW270"
+      ],
+      "id": "object/brinecove/props-crate-quay-w270",
+      "model": "prop/brinecove/props-crate-quay-w270",
+      "models": [
+        "prop/brinecove/props-crate-quay-w270"
+      ]
+    },
+    "object/brinecove/props-crate-quay-w320": {
+      "groups": [
+        "SM_BC_PropsCrateQuayW320"
+      ],
+      "id": "object/brinecove/props-crate-quay-w320",
+      "model": "prop/brinecove/props-crate-quay-w320",
+      "models": [
+        "prop/brinecove/props-crate-quay-w320"
+      ]
+    },
+    "object/brinecove/props-crate-upper-e130": {
+      "groups": [
+        "SM_BC_PropsCrateUpperE130"
+      ],
+      "id": "object/brinecove/props-crate-upper-e130",
+      "model": "prop/brinecove/props-crate-upper-e130",
+      "models": [
+        "prop/brinecove/props-crate-upper-e130"
+      ]
+    },
+    "object/brinecove/props-crate-upper-e190": {
+      "groups": [
+        "SM_BC_PropsCrateUpperE190"
+      ],
+      "id": "object/brinecove/props-crate-upper-e190",
+      "model": "prop/brinecove/props-crate-upper-e190",
+      "models": [
+        "prop/brinecove/props-crate-upper-e190"
+      ]
+    },
+    "object/brinecove/props-crate-upper-e250": {
+      "groups": [
+        "SM_BC_PropsCrateUpperE250"
+      ],
+      "id": "object/brinecove/props-crate-upper-e250",
+      "model": "prop/brinecove/props-crate-upper-e250",
+      "models": [
+        "prop/brinecove/props-crate-upper-e250"
+      ]
+    },
+    "object/brinecove/props-crate-upper-e70": {
+      "groups": [
+        "SM_BC_PropsCrateUpperE70"
+      ],
+      "id": "object/brinecove/props-crate-upper-e70",
+      "model": "prop/brinecove/props-crate-upper-e70",
+      "models": [
+        "prop/brinecove/props-crate-upper-e70"
+      ]
+    },
+    "object/brinecove/props-crate-upper-w190": {
+      "groups": [
+        "SM_BC_PropsCrateUpperW190"
+      ],
+      "id": "object/brinecove/props-crate-upper-w190",
+      "model": "prop/brinecove/props-crate-upper-w190",
+      "models": [
+        "prop/brinecove/props-crate-upper-w190"
+      ]
+    },
+    "object/brinecove/props-crate-upper-w250": {
+      "groups": [
+        "SM_BC_PropsCrateUpperW250"
+      ],
+      "id": "object/brinecove/props-crate-upper-w250",
+      "model": "prop/brinecove/props-crate-upper-w250",
+      "models": [
+        "prop/brinecove/props-crate-upper-w250"
       ]
     },
     "object/brinecove/props-fish-basket-1": {

@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/props-crate-pier-west-sea",
+  "dependencies": {
+    "prop/brinecove/props-crate-pier-west-sea": "0a94d5e407b62d0d07d2eb909fcc4da489f7beecba7e33ffc0b4934d11ec2953"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/4/RJ/X8PE36M5E5L3LIDX9TZXF7.uasset": "4109821f074d5f336b68ccbd0f00f7048bd14195e5b1c9f08a26f57ddc806075"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

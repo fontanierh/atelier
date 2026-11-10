@@ -458,7 +458,7 @@ def test_check_for_the_groups_stage_allows_the_tile_record_to_remain(monkeypatch
 
 def test_batch_names_all_lists_and_checks_names():
     names = market.batch_names('all')
-    assert names[:4] == ['market1', 'market2', 'market3', 'town1'] and names[-5:] == ['town9', 'props1', 'props2', 'props3', 'harbor1'] and len(names) == 16
+    assert names[:4] == ['market1', 'market2', 'market3', 'town1'] and names[-6:] == ['town9', 'props1', 'props2', 'props3', 'harbor1', 'props4'] and len(names) == 17
     assert market.batch_names('town2, market1,town2') == ['town2', 'market1']
     with pytest.raises(market.MarketError, match='unknown batch town99'):
         market.batch_names('town99')
@@ -597,3 +597,58 @@ def test_compute_refuses_an_earlier_part_it_cannot_find(monkeypatch):
     _fake_tile(monkeypatch, ['harbor-pier-west', None])
     done = market.compute(Path('unused'), Path('unused'), ['harbor-pier-west'], {'shipyard-slip'})
     assert any('no way to find the earlier part shipyard-slip' in p for p in done['problems'])
+
+
+CALL_SOURCE = """def props():
+    for x in (1, 2):
+        barrel(b, x, 3)
+        crate(b, x, 4)
+    for y in (5,):
+        crate(b, y,
+              6)
+"""
+
+
+def test_call_scopes_own_one_statement_and_the_innermost_scope_wins():
+    """A `call` scope is the statement that starts with its text (all its lines); inside a scoped loop the call owns its
+    statement, so the ranges come outermost first."""
+    loop = dict(loop='for x in (1, 2):', key='x')
+    barrel = dict(call='barrel(b, x, 3)', key='x')
+    crate = dict(call='crate(b, y,', key='y')
+    ranges = market.loop_ranges(CALL_SOURCE, [barrel, loop, crate])
+    assert [(a, b, s['key']) for a, b, s in ranges] == [(3, 4, 'x'), (6, 7, 'y'), (3, 3, 'x')]
+    assert ranges[-1][2] is barrel and ranges[0][2] is loop
+
+
+def test_a_call_scope_found_twice_or_not_at_all_is_refused():
+    with pytest.raises(market.MarketError, match='not found exactly once'):
+        market.loop_ranges(CALL_SOURCE, [dict(call='crate(b, x', key='x'), dict(call='crate(b, z', key='z')])
+    with pytest.raises(market.MarketError, match='not found exactly once'):
+        market.loop_ranges(CALL_SOURCE + CALL_SOURCE.replace('def props', 'def again'), [dict(call='barrel(b, x, 3)', key='x')])
+
+
+def test_the_props4_batch_names_each_loose_barrel_and_crate_once():
+    """props4: 14 quay barrels, 7 quay crates, 6 upper barrel/crate pairs and a barrel and a crate at each end of the
+    three piers, every one its own `barrel(...)` / `crate(...)` call."""
+    names = market.BATCHES['props4']
+    assert len(names) == len(set(names)) == 45
+    assert sum('-barrel-' in n for n in names) == 14 + 6 + 6 and sum('-crate-' in n for n in names) == 7 + 6 + 6
+    assert 'props-barrel-pier-central-shore' in names and 'props-crate-quay-w320' in names
+    assert not set(names) & {n for b in ('props1', 'props2', 'props3') for n in market.BATCHES[b]}
+
+
+@pytest.mark.skipif(not DONOR or not Path(DONOR).is_dir(), reason='needs the donor export (YV2_DONOR_BUILD)')
+def test_donor_props4_barrels_and_crates_are_whole():
+    """Each loose barrel and crate is matched whole, with batch 1's cuts taken first."""
+    donor = Path(DONOR)
+    src = market.donor_source(donor)
+    prior = {'cannon-west', 'cannon-east', 'quay-anchor', 'net-rack-west', 'net-rack-east'}
+    done = market.compute(donor / 'brinecove' / 'glb', src, list(market.BATCHES['props4']), prior)
+    assert done['problems'] == []
+    counts = {}
+    for owned in done['owned'].values():
+        for name, members in owned.items():
+            if name:
+                counts[name] = counts.get(name, 0) + len(members)
+    assert set(counts) == set(market.BATCHES['props4'])
+    assert {counts[n] for n in market.BATCHES['props4'] if '-barrel-' in n} == {128}

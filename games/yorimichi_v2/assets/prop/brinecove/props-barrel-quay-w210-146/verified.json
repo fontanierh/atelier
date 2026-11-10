@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/props-barrel-quay-w210-146",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_PropsBarrelQuayW210146.uasset": "cf480e1bfcab8548ed5f3474e7e787d94c77d31b076b38b7f72ec26ea2a568d7"
+  },
+  "input_fingerprint": "c89a2acc34adec697a710198375f8fe7e3853feb1e518b0fab499e28a59e0149",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_PropsBarrelQuayW210146": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}
