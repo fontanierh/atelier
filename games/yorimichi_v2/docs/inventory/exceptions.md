@@ -1138,3 +1138,38 @@ Blockers: the two-sided override on the natural rows (recipe v2 has no field for
 | `MI_b4686eeb54647811_Seam` | `megapark/seam` | need-read | MegaPark/Materials/M_RetailOpaque, MegaPark/Materials/M_RetailOpaque, MegaPark/Textures/T_0000043d03e3870a ... | `report_materials` (material list) |
 | `MI_99622005a8467a13` | `megapark/shared-materials-pavement` | need-read | MegaPark/Materials/M_RetailOpaque, MegaPark/Materials/M_RetailOpaque, MegaPark/Textures/T_00008ccc03e3870a ... | `report_materials` (material list) |
 | `SuperUltraMegaPark` | `megapark/standalone-level` | unreal-authored | Japan/Maps/Slice, MegaPark/Meshes/SM_MP_04CCB1FDB63D6C87, MegaPark/Meshes/SM_MP_072BEA8B3D376763 ... | no reader in this tree |
+
+### Skatepark board and materials (2 records, 8 packages)
+
+Donor evidence: `unreal/Scripts/board_dissolve_material.py` builds `/Game/SkatePark/Board/M_BoardDissolve` (`:11` FOLDER and
+NAME, `:15` create_asset, graph from `:22-29`), and `unreal/Scripts/import_skatepark.py` builds the seven `M_Pier_<surface>`
+masters (`:137`, with `T_Pier_<surface>_<role>` textures at `:148`). Both are Unreal-script graphs, not imports.
+
+Byte evidence: the seven masters name `T_Pier_<surface>_{albedo,normal,roughness}` textures (`mural` has albedo only).
+Those textures are owned by the 19 `texture/skatepark/pier-*` records, which are outside this family. `M_BoardDissolve`
+names no other package.
+
+Status per record:
+- `skatepark/board` (`M_BoardDissolve`): **blocked**. A material master has no importer in this tree, and its graph has never been read natively. The donor's `build.py` and
+  `unreal/Config/DefaultGame.ini` name it as the board's dissolve material.
+- `skatepark/materials` (seven `M_Pier_*`): **blocked** for the same reason. Their texture inputs are determined (owned by
+  `texture/skatepark/*`), so only the graph read is missing.
+
+Native reads still needed: a read of each master's graph and its texture parameters. No reader for masters or graphs is
+in this tree (`report_materials.py` reads material instances), so the read is a new read-only script, not a command.
+
+Blockers: no importer kind for material masters; no native read of the graphs.
+
+- `adopted/skatepark/board`: generator master M_BoardDissolve. Evidence: board_dissolve_material.py:11-15. Status: **blocked**. no importer for material masters; native read of the graph needed
+- `adopted/skatepark/materials`: generator masters M_Pier_<surface>. Evidence: import_skatepark.py:137-173 (M_Pier_ and T_Pier_ textures). Status: **blocked**. no importer for material masters; their textures are owned by texture/skatepark records
+
+| Package | Record | Status | Inputs (owner records) | Native read still needed |
+|---|---|---|---|---|
+| `M_BoardDissolve` | `skatepark/board` | blocked | - | `report_materials` (material list) |
+| `M_Pier_basalt` | `skatepark/materials` | blocked | SkatePark/Textures/T_Pier_basalt_albedo, SkatePark/Textures/T_Pier_basalt_normal, SkatePark/Textures/T_Pier_basalt_roughness | `report_materials` (material list) |
+| `M_Pier_ceramic` | `skatepark/materials` | blocked | SkatePark/Textures/T_Pier_ceramic_albedo, SkatePark/Textures/T_Pier_ceramic_normal, SkatePark/Textures/T_Pier_ceramic_roughness | `report_materials` (material list) |
+| `M_Pier_concrete` | `skatepark/materials` | blocked | SkatePark/Textures/T_Pier_concrete_albedo, SkatePark/Textures/T_Pier_concrete_normal, SkatePark/Textures/T_Pier_concrete_roughness | `report_materials` (material list) |
+| `M_Pier_mural` | `skatepark/materials` | blocked | SkatePark/Textures/T_Pier_mural_albedo | `report_materials` (material list) |
+| `M_Pier_painted` | `skatepark/materials` | blocked | SkatePark/Textures/T_Pier_painted_albedo, SkatePark/Textures/T_Pier_painted_normal, SkatePark/Textures/T_Pier_painted_roughness | `report_materials` (material list) |
+| `M_Pier_steel` | `skatepark/materials` | blocked | SkatePark/Textures/T_Pier_steel_albedo, SkatePark/Textures/T_Pier_steel_normal, SkatePark/Textures/T_Pier_steel_roughness | `report_materials` (material list) |
+| `M_Pier_wood` | `skatepark/materials` | blocked | SkatePark/Textures/T_Pier_wood_albedo, SkatePark/Textures/T_Pier_wood_normal, SkatePark/Textures/T_Pier_wood_roughness | `report_materials` (material list) |
