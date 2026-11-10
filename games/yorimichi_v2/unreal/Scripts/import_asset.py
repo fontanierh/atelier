@@ -318,11 +318,66 @@ def _build_lod_chain(asset, settings, resolve):
                                f'{asset.get_num_triangles(level)} triangles, the record {sections} and {triangles}')
 
 
+def _material_instances(plan, settings):
+    """Write each planned material instance in place: its parent and the parameter values the record states, nothing
+    else. A new package is created; an existing one keeps its object path, so references to it survive. The values
+    are read back before the save, because UE 5.8's setters report False (tint_material.py), so the read is the proof."""
+    MEL = U.MaterialEditingLibrary
+    parent_path = settings['parent']
+    parent = EAL.load_asset(parent_path)
+    if parent is None:
+        raise RuntimeError(f'the parent {parent_path} is not in the project')
+    for package in plan['packages']:
+        if EAL.does_asset_exist(package):
+            instance = EAL.load_asset(package)
+        else:
+            folder, name = package.rsplit('/', 1)
+            instance = TOOLS.create_asset(name, folder, U.MaterialInstanceConstant,
+                                          U.MaterialInstanceConstantFactoryNew())
+        if not isinstance(instance, U.MaterialInstanceConstant):
+            raise RuntimeError(f'{package} is not a material instance')
+        instance.set_editor_property('parent', parent)   # the editable parent property, as the saved records hold it
+        for name, texture_path in sorted(settings.get('textures', {}).items()):
+            texture = EAL.load_asset(texture_path)
+            if texture is None:
+                raise RuntimeError(f'texture {texture_path} is not in the project')
+            MEL.set_material_instance_texture_parameter_value(instance, name, texture)
+        for name, value in sorted(settings.get('scalars', {}).items()):
+            MEL.set_material_instance_scalar_parameter_value(instance, name, float(value))
+        for name, value in sorted(settings.get('vectors', {}).items()):
+            MEL.set_material_instance_vector_parameter_value(instance, name, U.LinearColor(*map(float, value)))
+        MEL.update_material_instance(instance)
+        # The read-back: the parent and every value the record states, and no other override.
+        if instance.get_editor_property('parent') != parent:
+            raise RuntimeError(f'{package} does not read back its parent {parent_path}')
+        for name, texture_path in sorted(settings.get('textures', {}).items()):
+            got = MEL.get_material_instance_texture_parameter_value(instance, name)
+            if got is None or got.get_path_name().split('.')[0] != texture_path:
+                raise RuntimeError(f'{package} {name} reads {got} instead of {texture_path}')
+        for name, value in sorted(settings.get('scalars', {}).items()):
+            got = float(MEL.get_material_instance_scalar_parameter_value(instance, name))
+            if abs(got - float(value)) > 1e-4:
+                raise RuntimeError(f'{package} {name} reads {got} instead of {value}')
+        for name, value in sorted(settings.get('vectors', {}).items()):
+            got = MEL.get_material_instance_vector_parameter_value(instance, name)
+            want = list(map(float, value))
+            if max(abs(a - b) for a, b in zip([got.r, got.g, got.b, got.a], want)) > 1e-4:
+                raise RuntimeError(f'{package} {name} reads {got} instead of {value}')
+        if not EAL.save_asset(package, only_if_is_dirty=False):
+            raise RuntimeError(f'could not save {package}')
+        U.log(f'V2 import wrote {package} from parent {parent_path}')
+
+
 def main():
     if not U.V2SaveGuard.is_active():
         raise RuntimeError('the V2 save guard is not active (V2_SAVE_ALLOW); an import runs only through its build step')
     plan = json.loads(open(os.environ['V2_IMPORT_PLAN']).read())
     settings = plan['settings']
+    if plan['importer'] == 'material-instance':
+        # A material instance pins no source file: its inputs are the parent and textures already in the project.
+        _material_instances(plan, settings)
+        U.log(MARKER)
+        return
     jobs = list(zip(plan['sources'], plan['portable_sources'], plan['packages']))
     resolve = None
     if 'lod_chain' in settings:

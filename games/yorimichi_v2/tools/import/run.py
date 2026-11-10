@@ -44,6 +44,7 @@ BUILD = REPO / 'build' / 'yorimichi_v2'   # where a carved record's derived rema
 IMPORTERS = {   # asset kind -> importer name and version understood by unreal/Scripts/import_asset.py
     'static-mesh': ('static-mesh', 1),
     'texture': ('texture', 1),
+    'material-instance': ('material-instance', 1),
 }
 BOOTSTRAP_WRITER = authority.BOOTSTRAP_WRITER
 LOD_RESULT = 'lod-result.json'   # written beside the plan by unreal/Scripts/import_asset.py
@@ -86,9 +87,13 @@ def plan(game: Path, wanted: list[str]):
         ordered.append(by_id[asset_id])
     for asset_id in sorted(selected):
         visit(asset_id)
+    outputs_of = {a.id: {o.package for o in a.outputs} for a in assets}
     for asset in ordered:
         if asset.authority == 'editor':
             raise ImportError_(f'{asset.id} is editor-owned: it is saved in the editor and save-validated, never imported')
+        problems = records.material_input_problems(asset, outputs_of)
+        if problems:
+            raise ImportError_(problems[0])
     return ordered, by_id
 
 
