@@ -30,8 +30,9 @@ accepted package bytes. Neither by itself proves gameplay or that every useful i
   set, including its environment companions. Keep one controller per mutable editor checkout.
 - Restricted storage is a supported editable route. `restricted.originals.json` on main links 6,768 restricted
   packages and 124 Adventure/animation packages; do not revive the old request to locate every clip library.
-- Rendering batches may remain. An actor or record that bundles several useful objects still needs an editing
-  boundary for those objects. Terrain and scatter counts are not counts of missing objects.
+- Rendering batches may remain. Since the owner's 2026-11-10 migration closure, create a bundled object's editing
+  boundary on demand for the selected edit. Before changing generated geometry, first make its generator select
+  that model before unrelated construction. Terrain and scatter counts are not counts of missing objects.
 - Imported binaries with unknown originals remain unfinished until recovered or replaced. They cannot become
   Unreal-authored merely by changing an authority label.
 

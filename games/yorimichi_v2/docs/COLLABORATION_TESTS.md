@@ -3,9 +3,9 @@
 One row per test: the revision it ran at, the workspaces and commands, and the evidence. A failed test stays
 listed until its fix and rerun are linked. "Blocked" names the missing prerequisite (DECISIONS D03: no second
 machine was available for those runs). These are revision-bound results, not instructions to repeat the suite.
-Human-editor and actual second-machine proofs remain open; owner direction allows independent migration to
-continue, and human/multiplayer playtesting follows construction. See [INVENTORY.md](INVENTORY.md) for current
-content and [PACKAGE.md](PACKAGE.md) for the current package.
+Human-editor and actual second-machine proofs remain open after the owner's 2026-11-10 migration closure.
+These are separate acceptance items, not a new migration queue. See [INVENTORY.md](INVENTORY.md) for current
+content and [PACKAGE.md](PACKAGE.md#testing-the-final-handoff) for package age and the testing handoff.
 
 | Test | Status | Revision | Evidence |
 | --- | --- | --- | --- |
@@ -32,7 +32,7 @@ content and [PACKAGE.md](PACKAGE.md) for the current package.
 | C21 claimed new actors after D04 closes | pass (native, one machine) | main fa63a342cd plus the claims change of PR #739, in a scratch branch | Unit: `tests/test_d04.py`. Native run with Unreal and the real claims service and GitHub LFS locks, recorded under "C21 native run" below. |
 
 Unit rows establish only the behavior they exercise. Keep unrun native/human/multi-machine cases explicit;
-reuse completed native evidence instead of launching a new campaign before migration can continue.
+reuse completed native evidence and run checks only for changed behavior or a specific unresolved acceptance item.
 
 ## Warm queues and supported overlap (2026-11-08–09)
 

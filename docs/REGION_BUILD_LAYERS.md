@@ -1,5 +1,11 @@
 # Region build layers
 
+**Historical V1 generated-world design.** The region steps, rollout notes and pending work below describe the
+retired donor pipeline. They are not additional Yorimichi V2 migration tasks. V2's migration is complete;
+use its [targeted authoring guide](../games/yorimichi_v2/README.md) and
+[on-demand backlog](../games/yorimichi_v2/docs/INVENTORY.md) for a selected edit. Preserve these donor products
+and their recorded limits as reference; do not rerun retired builds or tests to satisfy this old roadmap.
+
 A region publishes separate geometry, material, placement, terrain and clearance products. Consumers read the products they use. Run the ordinary `atelier build GAME TARGET --plan --explain` command to inspect the graph; the normal build performs verified reuse and executes the remaining work.
 
 ## Brinecove consumer boundaries

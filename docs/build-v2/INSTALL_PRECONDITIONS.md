@@ -1,5 +1,9 @@
 # Install precondition and fault evidence
 
+**Retired experiment.** This page describes `platform/build-v2`, not Yorimichi V2. Its tests are disabled,
+and the roadmap items below are historical, not current development requirements. Use the
+[active game guide](../../games/yorimichi_v2/README.md) for normal authoring, builds and tests.
+
 `RestorePlan::commit_with` is nonblocking. It acquires exclusive content custody before creating
 the install journal. A live shared reader can therefore return `InstallError::Lock(Busy)` before
 any transaction starts. The old checkout stays readable and no journal is created. This is a

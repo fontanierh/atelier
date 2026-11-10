@@ -206,6 +206,8 @@ to stay at runtime.
 
 ## D11 — Finish the full port with recoverable, independently editable content (2026-11-07–09)
 
+This records the migration policy at that time. D12 supersedes the requirement to finish every object split.
+
 The owner authorized the full original-game migration in small playable increments. Perfect slice measurements,
 unavailable collaborators and later human playtests do not block independent content work. Keep guards,
 claims, targeted imports, separate mutable checkouts and one controller per editor. Phone streaming and go-kart
@@ -226,3 +228,21 @@ On 2026-11-09 the owner explicitly placed human and multiplayer playtesting afte
 multiplayer session with his brother. Human-editor and actual second-machine proofs remain open acceptance
 items, not development gates. Track merged, saved, packaged and play-verified work separately in
 [INVENTORY.md](INVENTORY.md), updating it with each completed batch.
+
+## D12 — Migration complete; split on demand (2026-11-10)
+
+The owner closed the migration and asked the implementer to finish only the running harbor2 batch and merge
+its wrap-up. That handoff is main `1abaab9d70` (#831). No further whole-world splitting campaign or completion
+forecast is required. Remaining fused objects stay listed in INVENTORY as an on-demand authoring backlog.
+
+Before changing a generated model's geometry, first make it independently generatable: select it before
+unrelated construction by parameterizing the generator or extracting its own script, keeping shared helpers
+shared. Preserve the accepted result during that refactor. A separate exported mesh or post-generation cut
+alone is insufficient. Imported and hand-authored assets instead need an independent editable original and
+targeted preparation/import route. Source pins, claims and required machine protections stay in force.
+
+Migration closure does not certify human gameplay, appearance, human-editor use or an actual two-machine
+session. The available package predates the final handoff; [PACKAGE.md](PACKAGE.md#testing-the-final-handoff)
+names its revision and the remaining acceptance work. New features and testing can proceed without completing
+the authoring backlog. Reopen a specific migration defect when evidence identifies one, not because an old
+rollout checklist still contains a pending item.

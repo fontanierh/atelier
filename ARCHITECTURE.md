@@ -75,7 +75,9 @@ Unreal discovery and reflected type compatibility.
 Yorimichi V2 commits its editable Unreal packages in Git LFS. Its normal build validates and compiles;
 explicit targeted import/save routes own package changes, with claims and verification records. It does not
 use whole-game generation/reuse as an authoring substitute. The [V2 README](games/yorimichi_v2/README.md)
-and [inventory](games/yorimichi_v2/docs/INVENTORY.md) describe its current workflow and remaining migration.
+and [inventory](games/yorimichi_v2/docs/INVENTORY.md) describe the completed migration, on-demand authoring and
+remaining gameplay/visual acceptance. A recovered source or saved object is not a claim that its model already
+has an independent generator; that route is required before changing the selected generated model's geometry.
 The generated-product mechanisms below remain relevant to the sandbox and other retained platform uses.
 
 The [recipe guide](docs/BUILD_RECIPES.md) covers named products, content-based read dependencies and read-only build

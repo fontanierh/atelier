@@ -70,8 +70,11 @@ npm run check --prefix platform/harness/web/app
 
 `npm run build --prefix platform/harness/web/app` regenerates the committed browser bundle.
 The server builds from `web/server/`, with products kept in the repository's ignored `build/board-server/`.
-Hosted CI collects all Python tests, groups board tests separately, and builds/tests the Rust server on its board job.
-Use focused local tests for changed behavior; native workloads still require normal guarded admission.
+Hosted CI separates board tests from the active Studio and game tests. The macOS-only board job, including its
+Rust server checks, is deferred to final validation by owner direction; the required current aggregate is
+`Studio Python / Linux (macOS deferred)`. Retired game/build-experiment suites stay disabled.
+Use focused local tests for changed behavior; native workloads still require normal guarded admission,
+including [standalone Rust/server compilation](../../docs/BUILD_CAPACITY.md#standalone-native-tool-builds).
 
 ## Documentation screenshots
 

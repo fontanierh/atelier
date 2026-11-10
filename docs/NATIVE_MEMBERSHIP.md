@@ -1,5 +1,10 @@
 # Superseded native model membership
 
+**Historical generated-content workflow.** The Belmonte/Brine Cove rollout and pending native proof below
+describe the retired V1 pipeline, not a V2 task. V2 keeps committed packages and uses claimed, selected
+retirement with saved-placement checks; start from [its authoring guide](../games/yorimichi_v2/README.md).
+The shared membership rule remains useful to generated-content callers; do not run retired suites for this note.
+
 Belmonte and Brinecove reserve their respective `Meshes` folders and `SM_BM_` /
 `SM_BC_` model-name prefixes for generated region models and collision companions.
 The importer inventories this exact generated membership before work. After every

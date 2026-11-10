@@ -1,5 +1,9 @@
 # Build v2 summaries and reasons
 
+**Retired experiment.** This page describes `platform/build-v2`, not Yorimichi V2. Its tests are disabled,
+and the roadmap items below are historical, not current development requirements. Use the
+[active game guide](../../games/yorimichi_v2/README.md) for normal authoring, builds and tests.
+
 The unused library's `explain` module records why work was reused or requested. It does not change
 normal build output or provide a new command. Wiring `why`, cache reports and normal CLI summaries
 belongs to I2/I1.

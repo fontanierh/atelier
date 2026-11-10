@@ -1,5 +1,10 @@
 # Incremental builds
 
+**Scope:** these shared mechanisms serve generated-content games such as the sandbox. Yorimichi V2 commits
+its editable packages: normal build/play validates and compiles, and preparation/import is explicit and
+targeted. Use the [V2 guide](../games/yorimichi_v2/README.md) for that workflow; do not apply generated-workspace
+restoration or whole-world rebuild instructions to committed V2 content.
+
 Run `atelier build GAME [TASK ...]`. It preserves current results, checks per-task caches before native work,
 and stops unknown or expensive misses before they become an accidental full rebuild.
 

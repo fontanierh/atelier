@@ -1,5 +1,9 @@
 # Sky and painterly source preparation
 
+**Historical preparation.** Both masters were subsequently imported, merged in #804 and included in package
+`c89f535441be`. The planned owner moves below describe the earlier handoff; do not recreate them or re-import
+accepted content. See [INVENTORY](../INVENTORY.md) for current status and evidence limits.
+
 **Prepared only**, from the PR803 checkpoint `085749fd1d`: two family entries and their self-contained builder.
 No asset records, receipts, original sources or saved packages changed in this preparation. Native acceptance and
 the claimed record move remain with the integration owner.

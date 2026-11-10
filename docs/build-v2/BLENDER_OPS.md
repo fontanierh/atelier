@@ -1,5 +1,9 @@
 # Blender op contracts (unused library)
 
+**Retired experiment.** This page describes `platform/build-v2`, not Yorimichi V2. Its tests are disabled,
+and the roadmap items below are historical, not current development requirements. Use the
+[active game guide](../../games/yorimichi_v2/README.md) for normal authoring, builds and tests.
+
 D2 defines `blender_plan` and `blender_export_piece`, version 1. They are not wired into the
 production recipes or a dynamic backend. This first route supports existing MeshIR schema 2 to
 one FBX render mesh with its explicitly owned UCX hulls, plus `export.json`. MeshSet, encoded GLB,

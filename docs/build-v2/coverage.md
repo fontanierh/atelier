@@ -1,5 +1,9 @@
 # Build v2 recipe coverage and unit design
 
+**Retired experiment.** This page describes `platform/build-v2`, not Yorimichi V2. Its tests are disabled,
+and the roadmap items below are historical, not current development requirements. Use the
+[active game guide](../../games/yorimichi_v2/README.md) for normal authoring, builds and tests.
+
 E0a documentation snapshot, 2026-10-23. This ledger maps the v1 production surface to migration tasks;
 it does not turn on v2 or attest a native cutover. Task IDs refer to the build-v2 delivery plan, draft 7.
 The design baseline is draft 8 and the testing baseline draft 7. Those planning documents remain separately owned.

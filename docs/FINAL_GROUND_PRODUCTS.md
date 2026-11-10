@@ -1,5 +1,10 @@
 # Whole final queries and bounded native ground
 
+**Historical V1 implementation note.** The producer sizes, rollout conditions and pending native validation
+below describe the retired generated-content pipeline. They are not a current V2 backlog. The active
+[V2 authoring guide](../games/yorimichi_v2/README.md) and [inventory](../games/yorimichi_v2/docs/INVENTORY.md)
+govern selected edits; existing source and measurement evidence remains tied to its original revision.
+
 Belmonte's generated NorthCountry and NorthApron contain more than one million and
 160,000 triangles respectively in the inspected production report. Splitting only
 committed buildings leaves these preparation monoliths untouched.
