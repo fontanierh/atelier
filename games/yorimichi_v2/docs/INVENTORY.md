@@ -88,11 +88,12 @@ Remaining construction work:
 - Retain the current package while the next source batch proceeds. The guard fixes (#805/#807), multiplayer
   manifest (#809) and host/leave check (#810) are merged. The six manual acceptance checks and final owner-led
   gameplay/two-machine playtesting remain open.
-- **Forecast updated 2026-11-10, Paris:** the previous 14:00 source target was missed. The author now estimates
-  **17:30 for the 45 material instances** (41 Japan, `MI_HD_flat`, `MI_TH_pane`, two Mega Park seams), conditional
-  on the batch following #804. This is not an ETA for the bike, runtime/collection and other complete-source gaps.
-  Useful-object splitting moved from **20:00 to 23:00**, with low confidence: residual fused Brine Cove scenery
-  and patches are still unsized. Re-estimate after that instance batch; no complete-source finish date is confirmed.
+- **Forecast updated 2026-11-10 15:00, Paris:** the 45 material instances (41 Japan, `MI_HD_flat`, `MI_TH_pane`, two
+  Mega Park seams) are imported on the branch, ahead of the 17:30 estimate; they still need review, merge and a
+  package. The remaining source gaps are the 4 records / 5 packages in
+  [exceptions](inventory/exceptions.md#current-source-classification); they are unsized, so no complete-source date is
+  confirmed. Useful-object splitting stays at **23:00**, low confidence: residual fused scenery and patches are still
+  unsized.
 
 ## Runtime and ownership facts
 
