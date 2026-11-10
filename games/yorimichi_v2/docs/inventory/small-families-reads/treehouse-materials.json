@@ -1,0 +1,81 @@
+{
+ "instances": {
+  "MI_TH_flat": {
+   "parent": "M_TreeHouse",
+   "scalars": [
+    "FadeMode",
+    "Gain",
+    "Glow",
+    "RoomCut"
+   ],
+   "switches": {},
+   "textures": [
+    "Tex"
+   ],
+   "vectors": [
+    "CutScale"
+   ]
+  },
+  "MI_TH_glass": {
+   "parent": "M_TreeHouse",
+   "scalars": [
+    "FadeMode",
+    "Gain",
+    "Glow",
+    "RoomCut"
+   ],
+   "switches": {},
+   "textures": [
+    "Tex"
+   ],
+   "vectors": [
+    "CutScale"
+   ]
+  },
+  "MI_TH_pane": {
+   "parent": "M_TH_Light",
+   "scalars": [
+    "Intensity",
+    "Shape"
+   ],
+   "switches": {},
+   "textures": [],
+   "vectors": [
+    "Tint"
+   ]
+  },
+  "MI_TH_rope": {
+   "parent": "M_TreeHouse",
+   "scalars": [
+    "FadeMode",
+    "Gain",
+    "Glow",
+    "RoomCut"
+   ],
+   "switches": {},
+   "textures": [
+    "Tex"
+   ],
+   "vectors": [
+    "CutScale"
+   ]
+  },
+  "MI_TH_trunk": {
+   "parent": "M_TreeHouse",
+   "scalars": [
+    "FadeMode",
+    "Gain",
+    "Glow",
+    "RoomCut"
+   ],
+   "switches": {},
+   "textures": [
+    "Tex"
+   ],
+   "vectors": [
+    "CutScale"
+   ]
+  }
+ },
+ "not_instances": []
+}

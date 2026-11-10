@@ -1,0 +1,28 @@
+# Recovered from the donor (tools/migrate/small_families.py): SM_HD_JudgesTower: the donor region GLB of one hippodrome course piece.
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/hippodrome/judges-tower"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/hippodrome/judges-tower"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02); pinned by sha256"
+references = ["adopted/hippodrome/materials"]
+input_dependencies = ["adopted/hippodrome/meshes"]
+
+[[sources]]
+path = "src/SM_HD_JudgesTower.glb"
+sha256 = "ebfe7c40abbd75f5b9c4153ef8c1c48f215b1cc077773ee4b2758a19576188e5"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Hippodrome/Meshes/SM_HD_JudgesTower/HD_JudgesTower"]
+triangles = 11779
+collision = "complex"
+
+[[outputs]]
+package = "/Game/Hippodrome/SM_HD_JudgesTower"

@@ -1,0 +1,26 @@
+# Recovered from the donor (tools/migrate/small_families.py): T_TH_rope: the donor PNG rope.png, imported sRGB at max size 1024 in the WORLD group (import_treehouse.py:39-46).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "texture/japan/treehouse-rope"
+kind = "texture"
+authority = "generated"
+owner = "shared/japan/treehouse-rope"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02); pinned by sha256"
+
+[[sources]]
+path = "src/T_TH_rope.png"
+sha256 = "13d328aea5ed6186c14ef7a0fc4972f0c3a05160d0b6b5c00cd6af952b722021"
+
+[recipe]
+importer = "texture"
+version = 1
+
+[recipe.settings]
+srgb = true
+max_texture_size = 1024
+lod_group = "TEXTUREGROUP_WORLD"
+
+[[outputs]]
+package = "/Game/Japan/Treehouse/Textures/T_TH_rope"

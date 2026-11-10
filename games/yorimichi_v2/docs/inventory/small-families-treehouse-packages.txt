@@ -1,0 +1,8 @@
+/Game/Japan/Treehouse/Materials/MI_TH_flat
+/Game/Japan/Treehouse/Materials/MI_TH_glass
+/Game/Japan/Treehouse/Materials/MI_TH_pane
+/Game/Japan/Treehouse/Materials/MI_TH_rope
+/Game/Japan/Treehouse/Materials/MI_TH_trunk
+/Game/Japan/Treehouse/Textures/T_TH_flat
+/Game/Japan/Treehouse/Textures/T_TH_glass
+/Game/Japan/Treehouse/Textures/T_TH_rope

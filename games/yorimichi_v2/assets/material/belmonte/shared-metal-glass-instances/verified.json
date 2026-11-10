@@ -1,0 +1,18 @@
+{
+  "asset": "material/belmonte/shared-metal-glass-instances",
+  "dependencies": {
+    "adopted/belmonte/generator": "ffde97ee397f81836da7547bc4c240104b964ed3d64cb01f82b3dca798eafdb8"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Materials/MI_BM_4ee3168b033c.uasset": "61cf3f5c6b29b682487de38ac4aea74cefd2c01974d6fb3eb868d2cecede0590",
+    "unreal/Content/Belmonte/Materials/MI_BM_69b755f9ad2a.uasset": "753c98af0a4a1ec6120e28516cee537d59ef519456b06536f458f7588e309b5f",
+    "unreal/Content/Belmonte/Materials/MI_BM_aa1a8d45375e.uasset": "bb7c3b257f6f22064f0fad3afb4664f2ae8788b3cb3cc34ece21e664269d76e6",
+    "unreal/Content/Belmonte/Materials/MI_BM_b5dfa6e6373d.uasset": "9a2afe482a2ff5ef5b80905b399de9821f07760681601973d7e0e702d842183a",
+    "unreal/Content/Belmonte/Materials/MI_BM_fae8893ff89f.uasset": "fae80c2324e0802551ba5e16937d21ea919ff0cd0969eec756236fa94531f047"
+  },
+  "input_fingerprint": "625142727044f0088843a25bd762a1a0d401fc2c7d6431675f42007dd8917a7a",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "material-instance@2"
+}

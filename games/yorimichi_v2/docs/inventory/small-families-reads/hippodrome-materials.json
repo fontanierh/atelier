@@ -1,0 +1,10 @@
+{
+ "instances": {},
+ "not_instances": [
+  "M_HD_Dirt",
+  "M_HD_Grass",
+  "M_HD_Rail",
+  "M_HD_Stone",
+  "M_HD_Structure"
+ ]
+}

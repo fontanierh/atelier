@@ -161,6 +161,13 @@ ASSET_KEYS = {'schema', 'id', 'kind', 'authority', 'owner', 'sources', 'recipe',
 DERIVE_KEYS = {'kind', 'version', 'original', 'selection'}
 MATERIAL_RECIPE_KEYS = {'importer', 'version', 'settings'}
 MATERIAL_SETTINGS = {'parent', 'textures', 'scalars', 'vectors', 'switches'}
+# A texture recipe's optional settings (unreal/Scripts/import_settings.py reads them; an absent key leaves the texture as
+# the importer made it). TEXTURE_GROUPS mirrors import_settings.TEXTURE_GROUPS; tests/test_texture_settings.py pins the match.
+TEXTURE_KEYS = {'srgb', 'compression', 'max_texture_size', 'lod_group', 'address'}
+TEXTURE_GROUPS = frozenset({'TEXTUREGROUP_WORLD', 'TEXTUREGROUP_EFFECTS', 'TEXTUREGROUP_CHARACTER', 'TEXTUREGROUP_UI',
+                            'TEXTUREGROUP_WORLD_NORMAL_MAP', 'TEXTUREGROUP_WORLD_SPECULAR'})
+TEXTURE_COMPRESSION = re.compile(r'^TC_[A-Z0-9_]+$')
+TEXTURE_ADDRESS = frozenset({'wrap', 'mirror'})
 PARAMETER_NAME = re.compile(r'^[A-Za-z_][A-Za-z0-9_]*$')
 REGION_KEYS = {'schema', 'id', 'bounds_cm', 'neighbours', 'maps', 'shared', 'about', 'patch_m'}
 
@@ -213,6 +220,32 @@ def _parameters(values: dict, where: Path) -> None:
         if not PARAMETER_NAME.match(name) or not isinstance(value, list) or len(value) != 4 \
                 or any(isinstance(v, bool) or not isinstance(v, (int, float)) for v in value):
             raise RecordError(f'{where}: vector {name!r} must be four numbers [r, g, b, a]')
+
+
+def texture_settings(recipe: dict, where: Path) -> dict:
+    """Validate a texture [recipe]: `importer = "texture"`, version 1 (unchanged by the optional settings), and
+    [recipe.settings] with any of: srgb (bool), compression (a TC_* name), max_texture_size (a power of two), lod_group
+    (a TEXTUREGROUP_* name), address ("wrap" or "mirror"). A key the record does not state leaves the texture as imported."""
+    if recipe.get('importer') != 'texture' or recipe.get('version') != 1:
+        raise RecordError(f'{where}: a texture recipe is importer "texture" version 1')
+    settings = recipe.get('settings', {})
+    if not isinstance(settings, dict):
+        raise RecordError(f'{where}: [recipe.settings] must be a table')
+    _known(settings, TEXTURE_KEYS, where, '[recipe.settings]')
+    if 'srgb' in settings and not isinstance(settings['srgb'], bool):
+        raise RecordError(f'{where}: srgb must be true or false')
+    if 'compression' in settings and not (isinstance(settings['compression'], str)
+                                          and TEXTURE_COMPRESSION.match(settings['compression'])):
+        raise RecordError(f'{where}: compression {settings["compression"]!r} is not a TC_* name')
+    if 'max_texture_size' in settings:
+        size = settings['max_texture_size']
+        if isinstance(size, bool) or not isinstance(size, int) or size <= 0 or size & (size - 1):
+            raise RecordError(f'{where}: max_texture_size must be a positive power of two, not {size!r}')
+    if 'lod_group' in settings and settings['lod_group'] not in TEXTURE_GROUPS:
+        raise RecordError(f'{where}: unknown lod_group {settings["lod_group"]!r}')
+    if 'address' in settings and settings['address'] not in TEXTURE_ADDRESS:
+        raise RecordError(f'{where}: unknown address {settings["address"]!r}')
+    return settings
 
 
 def material_settings(recipe: dict, where: Path, inputs: list[str], outputs: list[str]) -> dict:
@@ -335,8 +368,11 @@ def load_asset(path: Path) -> Asset:
         # input_dependencies (material_settings), so it needs those instead of a source.
         if kind == 'material-instance':
             material_settings(recipe, path, inputs, [entry.get('package', '') for entry in data.get('outputs', [])])
-        elif not sources:
-            raise RecordError(f'{path}: generated content needs at least one source')
+        else:
+            if not sources:
+                raise RecordError(f'{path}: generated content needs at least one source')
+            if kind == 'texture':
+                texture_settings(recipe, path)   # a texture's settings are checked after its original is required
     elif recipe is not None:
         raise RecordError(f'{path}: editor-owned content has no [recipe]; its saved packages are its source')
     outputs = []

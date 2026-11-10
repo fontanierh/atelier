@@ -132,12 +132,8 @@
   }
  },
  "packages": {
-  "/Game/Japan/Textures/T_Arcade_paving": "plaza-harbor",
-  "/Game/Japan/Textures/T_Arcade_timber": "plaza-harbor",
   "/Game/Japan/Textures/T_CoastRock": "rock",
   "/Game/Japan/Textures/T_ForestNormalDefault": "ground",
-  "/Game/Japan/Textures/T_Harbor_paving": "plaza-harbor",
-  "/Game/Japan/Textures/T_Harbor_timber": "plaza-harbor",
   "/Game/Japan/Textures/T_LeafCypress": "leaf-atlases",
   "/Game/Japan/Textures/T_LeafOak": "leaf-atlases",
   "/Game/Japan/Textures/T_LeafOlive": "leaf-atlases",

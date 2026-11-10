@@ -1,0 +1,36 @@
+{
+ "/Game/Japan/Hidamari/Materials/MI_HD_flat": {
+  "effective": {
+   "scalar": {
+    "Gain": 1.0,
+    "Macro": 0.0,
+    "Strength": 0.0,
+    "Tile": 1.0
+   },
+   "texture": {
+    "Tex": "/Game/Japan/Hidamari/Textures/T_HD_plaster.T_HD_plaster"
+   },
+   "vector": {}
+  },
+  "overrides": {
+   "scalar": {
+    "Gain": 1.0,
+    "Macro": 0.0,
+    "Strength": 0.0,
+    "Tile": 1.0
+   },
+   "texture": {
+    "Tex": "/Game/Japan/Hidamari/Textures/T_HD_plaster.T_HD_plaster"
+   },
+   "vector": {}
+  },
+  "parent": "/Game/Japan/Hidamari/Materials/M_HDCity.M_HDCity",
+  "switches": {}
+ },
+ "/Game/Racing/M_RacingTv": {
+  "error": "not a material instance: /Game/Racing/M_RacingTv"
+ },
+ "/Game/SeeThrough/MPC_SeeThrough": {
+  "error": "not a material instance: /Game/SeeThrough/MPC_SeeThrough"
+ }
+}

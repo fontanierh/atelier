@@ -1,6 +1,6 @@
 # Inventory
 
-**Current checkpoint: 2026-11-10, main `91658129cd` ([PR #790](https://github.com/fontanierh/atelier/pull/790)), packaged.**
+**Current checkpoint: 2026-11-10, [PR #797](https://github.com/fontanierh/atelier/pull/797) head `2850d8e498` (main `5d29a3644a` plus the first small-families batch), packaged.**
 This is the status index for the full original-game port.
 The source baseline `7eec0f98dd` is documented separately in [features](inventory/features.md) and
 [world](inventory/world.md); those pages describe the donor, not today's V2 completion state.
@@ -18,30 +18,50 @@ The source baseline `7eec0f98dd` is documented separately in [features](inventor
 
 ## What is already delivered
 
-| Scope | Main / package at `91658129cd` | Evidence and limits |
+| Scope | Package `bb451f636160` at `2850d8e498` | Evidence and limits |
 | --- | --- | --- |
 | Whole island | W00–W20 have committed coverage (29 world region scopes); W14 keeps its disabled baseline. The region records contain 2,450 saved object definitions. | [Regions](../world/regions/), `actors.verified.json`, `objects.saved.json`; these counts are not the number of independently split source models. |
-| Recovered models | 1,048 city records, 67 train records, ten families with 141 meshes and 29 textures, and 100 Japan props are merged. | [PR #784](https://github.com/fontanierh/atelier/pull/784), [PR #786](https://github.com/fontanierh/atelier/pull/786); source completeness and remaining fused objects are tracked below. |
+| Recovered models | Merged:<br>- 1,048 city records;<br>- 67 train mesh records, plus 159 train texture and material records (459 packages);<br>- ten families with 141 meshes and 29 textures;<br>- 100 Japan props;<br>- 72 Brine Cove plants and city tree residuals;<br>- the two Japan leaf instances.<br>The first small-families batch (21 records, 48 packages) is in #797. | [PR #784](https://github.com/fontanierh/atelier/pull/784), [PR #786](https://github.com/fontanierh/atelier/pull/786), [PR #792](https://github.com/fontanierh/atelier/pull/792), [PR #794](https://github.com/fontanierh/atelier/pull/794), [PR #796](https://github.com/fontanierh/atelier/pull/796); the read-back results are below. Source completeness and remaining fused objects are tracked below. |
 | Restricted and Adventure originals | 6,768 restricted package entries and 124 Adventure/animation entries have source routes; the manifest records 6,086 original pins. | [restricted.originals.json](../restricted.originals.json), [PR #785](https://github.com/fontanierh/atelier/pull/785). Private bytes stay on the pinned restricted route. This is not closure of every open source family. |
 | Brine Cove individual objects | All 21 market stalls, all 265 town objects, the two harbour Soft fragments, eleven small props and three ship objects have saved placements in main ([PR #787](https://github.com/fontanierh/atelier/pull/787)). Other scenery still includes fused models/patches. | [Brine Cove scope](inventory/brinecove-objects.md), [split work](inventory/brinecove-split.md), [remaining exceptions](inventory/exceptions.md). |
 | Transport objects | The 10 gondola pylons and 12 railway fittings are saved as their own objects; their fused groups and the train LOD records are retired. | [PR #790](https://github.com/fontanierh/atelier/pull/790), [exceptions](inventory/exceptions.md). |
-| Desktop package | Built 2026-11-10 from the #790 head `a363050d3d`, whose packaged content equals main `91658129cd`. All automated checks pass; first launch and shutdown were observed passing (fingerprint `f5947da8e8c2`). | [Package guide](PACKAGE.md). Human input, travel, gameplay, sound and persistence checks are not claimed complete. |
+| Desktop package | Built 2026-11-10 06:12 Paris from the #797 head `2850d8e498` (fingerprint `bb451f636160`). All automated checks pass; first launch and shutdown were observed passing. The previous `f5947da8e8c2` (#790) app is kept. | [Package guide](PACKAGE.md). Human input, travel, gameplay, sound and persistence checks are not claimed complete. |
 | Appearance | Whole-island captures exist, as well as the earlier slice route/package measurements. | [PARITY](PARITY.md) retains their exact revisions and limits; those earlier captures do not accept every later split. |
 
 ## Active work after this checkpoint
 
 Saved, prepared and packaged totals are kept separate:
-- **Saved and packaged:** everything in the table above is in main and in the `f5947da8e8c2` package.
-- **Imported after the package:** the two used Japan leaf instances (MI_LeafAmber, MI_LeafCrimson) are
-  material-instance records imported from their recipe; they read identical to the packaged ones.
-- **Prepared on a branch, not yet in main or saved:** the residual Belmonte train batch (138 texture and 21 material-instance records
-  covering 459 packages). It waits on two read-only editor reads and a claimed import; see [exceptions](inventory/exceptions.md).
+- **Saved and packaged:** everything in the table above is in the `bb451f636160` package. Main has all of it
+  except the small-families batch, which lands with #797. The package includes these imports:
+  - The two used Japan leaf instances (MI_LeafAmber, MI_LeafCrimson) are material-instance records imported
+    from their recipe ([PR #792](https://github.com/fontanierh/atelier/pull/792)). They read identical to the
+    packaged ones.
+  - 72 Brine Cove plants and city tree residuals are source records, imported and verified
+    ([PR #794](https://github.com/fontanierh/atelier/pull/794)).
+  - The residual Belmonte train batch has 138 texture and 21 material-instance records covering 459 packages
+    ([PR #796](https://github.com/fontanierh/atelier/pull/796)). A read-only read-back matches the donor in
+    parent, switches and effective values for all 321 instances, and in every setting for the 138 textures.
+  - The first small-families batch (#797) has 21 records covering 48 packages:
+    - 4 Hippodrome loose meshes;
+    - 4 plaza textures and 3 tree house textures;
+    - 10 material-instance records (37 instances).
+
+    All 21 are imported under claim SMALLFAM. The read-back matches the editor reads of the original packages:
+    - the 37 instances in parent, switches, overrides and effective values;
+    - the 7 textures in every setting;
+    - the 4 meshes in LODs, triangles, slots and trace.
+
+    The donor meshes carried one convex hull, which the complex-as-simple recipe drops. That trace flag never
+    uses a hull, so collision is unchanged.
+- **Still open:** the 19 generator masters, the Hidamari instance, the Mega Park seams that are still held and MI_TH_pane
+  stay open; see [exceptions](inventory/exceptions.md).
 
 Remaining construction work:
 - Close the other useful-object/source gaps in [exceptions](inventory/exceptions.md) and
   [sources](inventory/sources.md); an imported package with an unknown original stays unfinished.
 - Integrate the accepted follow-ups and produce the next useful package checkpoint. Keep the existing package
-  available while this proceeds. Final owner-led playtesting follows construction.
+  available while this proceeds. Forecast (Paris time, unconfirmed): the held source set by about 14:00 on
+  2026-11-10, and the remaining useful-object splitting by about 20:00. Final owner-led playtesting follows construction.
 
 ## Runtime and ownership facts
 
@@ -73,7 +93,7 @@ Remaining construction work:
 | F11 | Zeppelin: **four** stations (Woodland, Hidamari, Mega Park, Belmonte) | Travel | implemented | W19 | Ported: [ZeppelinService](../unreal/Source/Yorimichi/Travel/ZeppelinService.cpp), four stations and saved station scenery. Ride playtest remains. |
 | F12 | Belmonte train, stations, interior, seats | Travel | implemented | W16, W20 | Ported: [BelmonteTrainService](../unreal/Source/Yorimichi/Travel/BelmonteTrainService.cpp), 67 recovered train records, saved W20 stations/track. Boarding/seats playtest remains. |
 | F13 | Ferry | Travel | implemented | W17 | Ported: [FerryService](../unreal/Source/Yorimichi/Travel/FerryService.cpp); terminals saved in W17. Ride playtest remains. |
-| F14 | Gondola | Travel | implemented | W18 | Ported: [GondolaService](../unreal/Source/Yorimichi/Travel/GondolaService.cpp); fixed stations saved in W18; pylons prepared as ten per-tower objects, not yet saved (see [transport-objects](inventory/transport-objects.md)). Ride playtest remains. |
+| F14 | Gondola | Travel | implemented | W18 | Ported: [GondolaService](../unreal/Source/Yorimichi/Travel/GondolaService.cpp); fixed stations and the ten per-tower pylon objects saved in W18 ([PR #790](https://github.com/fontanierh/atelier/pull/790), [transport-objects](inventory/transport-objects.md)). Ride playtest remains. |
 | F15 | Horse racing, calendar, broadcasts, saves | Racing | implemented | F10, W15, W16 | Ported: [Racing](../unreal/Source/Yorimichi/Racing/) and [HorseRacing](../unreal/Plugins/HorseRacing/). Race/save playtest remains; proposed betting/stables are not added. |
 | F16 | Villagers and ambient actors | Player and characters | implemented: movement only, no interactions found | W02, W07 | Ported: [VillageLife](../unreal/Source/Yorimichi/World/VillageLife.cpp). Baseline movement retained; new villager interactions are not claimed. |
 | F17 | Desktop menus, English text, hints, settings | Presentation | implemented: the phone profile must be removed | — | Ported: [Presentation](../unreal/Source/Yorimichi/Presentation/); phone profile removed. Human menu/settings checks remain. |
@@ -83,7 +103,7 @@ Remaining construction work:
 | F21 | Painterly materials, sky, sea, foliage, effects | World | implemented | W00 | Ported: saved environment/scenery and dynamic effects. Whole-island comparison evidence is in [PARITY](PARITY.md); it is not final visual acceptance. |
 | F22 | Multiplayer | Network | partial: local two-process tests only | F02–F14 | Ported: [Network](../unreal/Source/Yorimichi/Network/). Cross-machine gameplay acceptance remains; owner will test live with his brother after construction. |
 | F23 | Live bridge, QA, dev tools | Presentation/Dev | implemented: single port 8830 | P2-C | Ported: [Dev](../unreal/Source/Yorimichi/Dev/) and session-targeted LiveBridge. Native packaged build has no Python input route; see [PACKAGE](PACKAGE.md). |
-| F24 | Runtime data, saves, startup, packaging | World/Presentation | implemented | — | Packaged checkpoint `f5947da8e8c2` (content of main `91658129cd`); V2 identity and staged runtime files checked. Human save/persistence checks remain. |
+| F24 | Runtime data, saves, startup, packaging | World/Presentation | implemented | — | Packaged checkpoint `bb451f636160` (#797 head `2850d8e498`); V2 identity and staged runtime files checked. Human save/persistence checks remain. |
 | F25 | Crater Park tower hoist | Travel | implemented | W12 | Ported: [CraterParkTower](../unreal/Source/Yorimichi/Travel/CraterParkTower.cpp). Hoist playtest remains. |
 | F26 | Mega Park standalone level and game mode | World | implemented | W11 | Ported: [standalone profile](../game.toml) and Mega Park map/game mode. Rights cleared; standalone playtest remains. |
 | F27 | In-game Dev mode and notes | Presentation/Dev | implemented | F17 | Ported: [DevNotes](../unreal/Source/Yorimichi/Dev/DevNotes.cpp). Human notes/export checks remain. |
@@ -122,7 +142,7 @@ W10 shares W06's region scope; W19's stations belong to their host regions, so t
 | W15 | Hippodrome | Saved [hippodrome](../world/regions/w15-hippodrome/) scenery/objects; racing service stays dynamic. |
 | W16 | Belmonte | Saved [town/estates/courses](../world/regions/w16-belmonte/) and object placements; broader useful-object/source exceptions still tracked. |
 | W17 | Ferry route | Saved [terminals](../world/regions/w17-ferry/); ships remain dynamic. |
-| W18 | Gondola route | Saved [stations](../world/regions/w18-gondola/) (nine saved objects incl. three pylon groups); ten per-tower pylon objects prepared, not saved; cabins/ropes remain dynamic. |
+| W18 | Gondola route | Saved [stations](../world/regions/w18-gondola/) and the ten per-tower pylon objects ([PR #790](https://github.com/fontanierh/atelier/pull/790)); cabins/ropes remain dynamic. |
 | W19 | Zeppelin route (four stations) | Saved station scenery in Woodland/W06, Hidamari/W07, Mega Park/W11 and Belmonte/W16; moving service remains dynamic. |
 | W20 | Railway and cross-region routes | Saved [railway](../world/regions/w20-railway/); 67 train source records recovered, moving train retained. |
 

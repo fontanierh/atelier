@@ -1,0 +1,1283 @@
+{
+ "/Game/MegaPark/Materials/MI_0297e420658d668d": {
+  "effective": {
+   "scalar": {
+    "Albedo": 1.0,
+    "DetailScale": 8.0,
+    "Gloss": 0.5,
+    "HasLightmap": 1.0,
+    "LightmapNorm": 3.364,
+    "LightmapOcclusion": 0.45,
+    "MacroOpacity": 1.0,
+    "MacroScale": 0.3,
+    "Moss": 0.0,
+    "SpecularScale": 0.35,
+    "UseDecal": 1.0
+   },
+   "texture": {
+    "Decal": "/Game/MegaPark/Textures/T_2c70170a002f110a.T_2c70170a002f110a",
+    "Detail": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Diffuse": "/Game/MegaPark/Textures/T_2c70170a001d0151.T_2c70170a001d0151",
+    "Lightmap": "/Game/MegaPark/Textures/T_2c314a862174ebf4.T_2c314a862174ebf4",
+    "Macro": "/Game/MegaPark/Textures/T_2c70170a000b0040.T_2c70170a000b0040",
+    "Normal": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Specular": "/Game/MegaPark/Textures/T_2c70170a001d0150.T_2c70170a001d0150",
+    "Transparent": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite"
+   },
+   "vector": {}
+  },
+  "overrides": {
+   "scalar": {
+    "DetailScale": 8.0,
+    "HasLightmap": 1.0,
+    "HasTransparent": 0.0,
+    "LightmapNorm": 3.364,
+    "MacroOpacity": 1.0,
+    "MacroScale": 0.3,
+    "Moss": 0.0,
+    "UseDecal": 1.0
+   },
+   "texture": {
+    "Decal": "/Game/MegaPark/Textures/T_2c70170a002f110a.T_2c70170a002f110a",
+    "Detail": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Diffuse": "/Game/MegaPark/Textures/T_2c70170a001d0151.T_2c70170a001d0151",
+    "Lightmap": "/Game/MegaPark/Textures/T_2c314a862174ebf4.T_2c314a862174ebf4",
+    "Macro": "/Game/MegaPark/Textures/T_2c70170a000b0040.T_2c70170a000b0040",
+    "Normal": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Specular": "/Game/MegaPark/Textures/T_2c70170a001d0150.T_2c70170a001d0150",
+    "Transparent": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite"
+   },
+   "vector": {}
+  },
+  "parent": "/Game/MegaPark/Materials/M_RetailOpaque.M_RetailOpaque",
+  "switches": {}
+ },
+ "/Game/MegaPark/Materials/MI_0a62da3eb9f73004": {
+  "effective": {
+   "scalar": {
+    "Albedo": 1.0,
+    "DetailScale": 8.0,
+    "Gloss": 0.5,
+    "HasLightmap": 1.0,
+    "LightmapNorm": 3.364,
+    "LightmapOcclusion": 0.45,
+    "MacroOpacity": 1.0,
+    "MacroScale": 0.3,
+    "Moss": 0.0,
+    "SpecularScale": 0.35,
+    "UseDecal": 0.0
+   },
+   "texture": {
+    "Decal": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite",
+    "Detail": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Diffuse": "/Game/MegaPark/Textures/T_2c70170a001d0129.T_2c70170a001d0129",
+    "Lightmap": "/Game/MegaPark/Textures/T_2c314a862174ebf4.T_2c314a862174ebf4",
+    "Macro": "/Game/MegaPark/Textures/T_2c70170a001d01d5.T_2c70170a001d01d5",
+    "Normal": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Specular": "/Game/MegaPark/Textures/T_2c70170a001d012a.T_2c70170a001d012a",
+    "Transparent": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite"
+   },
+   "vector": {}
+  },
+  "overrides": {
+   "scalar": {
+    "DetailScale": 8.0,
+    "HasLightmap": 1.0,
+    "HasTransparent": 0.0,
+    "LightmapNorm": 3.364,
+    "MacroOpacity": 1.0,
+    "MacroScale": 0.3,
+    "Moss": 0.0,
+    "UseDecal": 0.0
+   },
+   "texture": {
+    "Decal": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite",
+    "Detail": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Diffuse": "/Game/MegaPark/Textures/T_2c70170a001d0129.T_2c70170a001d0129",
+    "Lightmap": "/Game/MegaPark/Textures/T_2c314a862174ebf4.T_2c314a862174ebf4",
+    "Macro": "/Game/MegaPark/Textures/T_2c70170a001d01d5.T_2c70170a001d01d5",
+    "Normal": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Specular": "/Game/MegaPark/Textures/T_2c70170a001d012a.T_2c70170a001d012a",
+    "Transparent": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite"
+   },
+   "vector": {}
+  },
+  "parent": "/Game/MegaPark/Materials/M_RetailOpaque.M_RetailOpaque",
+  "switches": {}
+ },
+ "/Game/MegaPark/Materials/MI_0e1c4253739c05d1": {
+  "effective": {
+   "scalar": {
+    "Albedo": 1.0,
+    "DetailScale": 8.0,
+    "Gloss": 0.5,
+    "HasLightmap": 1.0,
+    "LightmapNorm": 3.267,
+    "LightmapOcclusion": 0.45,
+    "MacroOpacity": 1.0,
+    "MacroScale": 0.3,
+    "Moss": 0.0,
+    "SpecularScale": 0.35,
+    "UseDecal": 0.0
+   },
+   "texture": {
+    "Decal": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite",
+    "Detail": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Diffuse": "/Game/MegaPark/Textures/T_2c70170a001d0151.T_2c70170a001d0151",
+    "Lightmap": "/Game/MegaPark/Textures/T_0bfd6047d8f9e482.T_0bfd6047d8f9e482",
+    "Macro": "/Game/MegaPark/Textures/T_2c70170a000b0040.T_2c70170a000b0040",
+    "Normal": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Specular": "/Game/MegaPark/Textures/T_2c70170a001d0150.T_2c70170a001d0150",
+    "Transparent": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite"
+   },
+   "vector": {}
+  },
+  "overrides": {
+   "scalar": {
+    "DetailScale": 8.0,
+    "HasLightmap": 1.0,
+    "HasTransparent": 0.0,
+    "LightmapNorm": 3.267,
+    "MacroOpacity": 1.0,
+    "MacroScale": 0.3,
+    "Moss": 0.0,
+    "UseDecal": 0.0
+   },
+   "texture": {
+    "Decal": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite",
+    "Detail": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Diffuse": "/Game/MegaPark/Textures/T_2c70170a001d0151.T_2c70170a001d0151",
+    "Lightmap": "/Game/MegaPark/Textures/T_0bfd6047d8f9e482.T_0bfd6047d8f9e482",
+    "Macro": "/Game/MegaPark/Textures/T_2c70170a000b0040.T_2c70170a000b0040",
+    "Normal": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Specular": "/Game/MegaPark/Textures/T_2c70170a001d0150.T_2c70170a001d0150",
+    "Transparent": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite"
+   },
+   "vector": {}
+  },
+  "parent": "/Game/MegaPark/Materials/M_RetailOpaque.M_RetailOpaque",
+  "switches": {}
+ },
+ "/Game/MegaPark/Materials/MI_0e3433716e431235": {
+  "effective": {
+   "scalar": {
+    "Albedo": 1.0,
+    "DetailScale": 8.0,
+    "Gloss": 0.5,
+    "HasLightmap": 1.0,
+    "LightmapNorm": 3.364,
+    "LightmapOcclusion": 0.45,
+    "MacroOpacity": 1.0,
+    "MacroScale": 0.3,
+    "Moss": 0.0,
+    "SpecularScale": 0.35,
+    "UseDecal": 1.0
+   },
+   "texture": {
+    "Decal": "/Game/MegaPark/Textures/T_2c70170a002f1109.T_2c70170a002f1109",
+    "Detail": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Diffuse": "/Game/MegaPark/Textures/T_2c70170a001d0151.T_2c70170a001d0151",
+    "Lightmap": "/Game/MegaPark/Textures/T_2c314a862174ebf4.T_2c314a862174ebf4",
+    "Macro": "/Game/MegaPark/Textures/T_2c70170a000b0040.T_2c70170a000b0040",
+    "Normal": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Specular": "/Game/MegaPark/Textures/T_2c70170a001d0150.T_2c70170a001d0150",
+    "Transparent": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite"
+   },
+   "vector": {}
+  },
+  "overrides": {
+   "scalar": {
+    "DetailScale": 8.0,
+    "HasLightmap": 1.0,
+    "HasTransparent": 0.0,
+    "LightmapNorm": 3.364,
+    "MacroOpacity": 1.0,
+    "MacroScale": 0.3,
+    "Moss": 0.0,
+    "UseDecal": 1.0
+   },
+   "texture": {
+    "Decal": "/Game/MegaPark/Textures/T_2c70170a002f1109.T_2c70170a002f1109",
+    "Detail": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Diffuse": "/Game/MegaPark/Textures/T_2c70170a001d0151.T_2c70170a001d0151",
+    "Lightmap": "/Game/MegaPark/Textures/T_2c314a862174ebf4.T_2c314a862174ebf4",
+    "Macro": "/Game/MegaPark/Textures/T_2c70170a000b0040.T_2c70170a000b0040",
+    "Normal": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Specular": "/Game/MegaPark/Textures/T_2c70170a001d0150.T_2c70170a001d0150",
+    "Transparent": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite"
+   },
+   "vector": {}
+  },
+  "parent": "/Game/MegaPark/Materials/M_RetailOpaque.M_RetailOpaque",
+  "switches": {}
+ },
+ "/Game/MegaPark/Materials/MI_234095f625b41d97": {
+  "effective": {
+   "scalar": {
+    "Albedo": 1.0,
+    "DetailScale": 8.0,
+    "Gloss": 0.5,
+    "HasLightmap": 1.0,
+    "LightmapNorm": 3.313,
+    "LightmapOcclusion": 0.45,
+    "MacroOpacity": 1.0,
+    "MacroScale": 0.3,
+    "Moss": 0.0,
+    "SpecularScale": 0.35,
+    "UseDecal": 1.0
+   },
+   "texture": {
+    "Decal": "/Game/MegaPark/Textures/T_2c70170a002f053d.T_2c70170a002f053d",
+    "Detail": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Diffuse": "/Game/MegaPark/Textures/T_2c70170a001d0129.T_2c70170a001d0129",
+    "Lightmap": "/Game/MegaPark/Textures/T_bee8e9ba50a8ffa7.T_bee8e9ba50a8ffa7",
+    "Macro": "/Game/MegaPark/Textures/T_2c70170a001d01d5.T_2c70170a001d01d5",
+    "Normal": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Specular": "/Game/MegaPark/Textures/T_2c70170a001d012a.T_2c70170a001d012a",
+    "Transparent": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite"
+   },
+   "vector": {}
+  },
+  "overrides": {
+   "scalar": {
+    "DetailScale": 8.0,
+    "HasLightmap": 1.0,
+    "HasTransparent": 0.0,
+    "LightmapNorm": 3.313,
+    "MacroOpacity": 1.0,
+    "MacroScale": 0.3,
+    "Moss": 0.0,
+    "UseDecal": 1.0
+   },
+   "texture": {
+    "Decal": "/Game/MegaPark/Textures/T_2c70170a002f053d.T_2c70170a002f053d",
+    "Detail": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Diffuse": "/Game/MegaPark/Textures/T_2c70170a001d0129.T_2c70170a001d0129",
+    "Lightmap": "/Game/MegaPark/Textures/T_bee8e9ba50a8ffa7.T_bee8e9ba50a8ffa7",
+    "Macro": "/Game/MegaPark/Textures/T_2c70170a001d01d5.T_2c70170a001d01d5",
+    "Normal": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Specular": "/Game/MegaPark/Textures/T_2c70170a001d012a.T_2c70170a001d012a",
+    "Transparent": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite"
+   },
+   "vector": {}
+  },
+  "parent": "/Game/MegaPark/Materials/M_RetailOpaque.M_RetailOpaque",
+  "switches": {}
+ },
+ "/Game/MegaPark/Materials/MI_26bca4f4c4439b9a": {
+  "effective": {
+   "scalar": {
+    "Albedo": 1.0,
+    "DetailScale": 1.0,
+    "Gloss": 0.5,
+    "HasLightmap": 1.0,
+    "LightmapNorm": 3.364,
+    "LightmapOcclusion": 0.45,
+    "MacroOpacity": 0.0,
+    "MacroScale": 1.0,
+    "Moss": 0.0,
+    "SpecularScale": 0.35,
+    "UseDecal": 0.0
+   },
+   "texture": {
+    "Decal": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite",
+    "Detail": "/Game/MegaPark/Textures/T_DefaultNormal.T_DefaultNormal",
+    "Diffuse": "/Game/MegaPark/Textures/T_2c70170a001d012c.T_2c70170a001d012c",
+    "Lightmap": "/Game/MegaPark/Textures/T_2c314a862174ebf4.T_2c314a862174ebf4",
+    "Macro": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite",
+    "Normal": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Specular": "/Game/MegaPark/Textures/T_2c70170a001d012b.T_2c70170a001d012b",
+    "Transparent": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite"
+   },
+   "vector": {}
+  },
+  "overrides": {
+   "scalar": {
+    "DetailScale": 1.0,
+    "HasLightmap": 1.0,
+    "HasTransparent": 0.0,
+    "LightmapNorm": 3.364,
+    "MacroOpacity": 0.0,
+    "MacroScale": 1.0,
+    "Moss": 0.0,
+    "UseDecal": 0.0
+   },
+   "texture": {
+    "Decal": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite",
+    "Detail": "/Game/MegaPark/Textures/T_DefaultNormal.T_DefaultNormal",
+    "Diffuse": "/Game/MegaPark/Textures/T_2c70170a001d012c.T_2c70170a001d012c",
+    "Lightmap": "/Game/MegaPark/Textures/T_2c314a862174ebf4.T_2c314a862174ebf4",
+    "Macro": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite",
+    "Normal": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Specular": "/Game/MegaPark/Textures/T_2c70170a001d012b.T_2c70170a001d012b",
+    "Transparent": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite"
+   },
+   "vector": {}
+  },
+  "parent": "/Game/MegaPark/Materials/M_RetailOpaque.M_RetailOpaque",
+  "switches": {}
+ },
+ "/Game/MegaPark/Materials/MI_2d236e27b1c7ae19": {
+  "effective": {
+   "scalar": {
+    "Albedo": 1.0,
+    "DetailScale": 8.0,
+    "Gloss": 0.5,
+    "HasLightmap": 1.0,
+    "LightmapNorm": 3.468,
+    "LightmapOcclusion": 0.45,
+    "MacroOpacity": 1.0,
+    "MacroScale": 0.3,
+    "Moss": 0.0,
+    "SpecularScale": 0.35,
+    "UseDecal": 0.0
+   },
+   "texture": {
+    "Decal": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite",
+    "Detail": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Diffuse": "/Game/MegaPark/Textures/T_2c70170a001d0151.T_2c70170a001d0151",
+    "Lightmap": "/Game/MegaPark/Textures/T_0bb0cdf2fd9825cc.T_0bb0cdf2fd9825cc",
+    "Macro": "/Game/MegaPark/Textures/T_2c70170a000b0040.T_2c70170a000b0040",
+    "Normal": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Specular": "/Game/MegaPark/Textures/T_2c70170a001d0150.T_2c70170a001d0150",
+    "Transparent": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite"
+   },
+   "vector": {}
+  },
+  "overrides": {
+   "scalar": {
+    "DetailScale": 8.0,
+    "HasLightmap": 1.0,
+    "HasTransparent": 0.0,
+    "LightmapNorm": 3.468,
+    "MacroOpacity": 1.0,
+    "MacroScale": 0.3,
+    "Moss": 0.0,
+    "UseDecal": 0.0
+   },
+   "texture": {
+    "Decal": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite",
+    "Detail": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Diffuse": "/Game/MegaPark/Textures/T_2c70170a001d0151.T_2c70170a001d0151",
+    "Lightmap": "/Game/MegaPark/Textures/T_0bb0cdf2fd9825cc.T_0bb0cdf2fd9825cc",
+    "Macro": "/Game/MegaPark/Textures/T_2c70170a000b0040.T_2c70170a000b0040",
+    "Normal": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Specular": "/Game/MegaPark/Textures/T_2c70170a001d0150.T_2c70170a001d0150",
+    "Transparent": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite"
+   },
+   "vector": {}
+  },
+  "parent": "/Game/MegaPark/Materials/M_RetailOpaque.M_RetailOpaque",
+  "switches": {}
+ },
+ "/Game/MegaPark/Materials/MI_2d299e45c0b686a4": {
+  "effective": {
+   "scalar": {
+    "Albedo": 1.0,
+    "DetailScale": 8.0,
+    "Gloss": 0.5,
+    "HasLightmap": 1.0,
+    "LightmapNorm": 3.313,
+    "LightmapOcclusion": 0.45,
+    "MacroOpacity": 1.0,
+    "MacroScale": 0.3,
+    "Moss": 0.0,
+    "SpecularScale": 0.35,
+    "UseDecal": 1.0
+   },
+   "texture": {
+    "Decal": "/Game/MegaPark/Textures/T_2c70170a002f0b10.T_2c70170a002f0b10",
+    "Detail": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Diffuse": "/Game/MegaPark/Textures/T_2c70170a001d012c.T_2c70170a001d012c",
+    "Lightmap": "/Game/MegaPark/Textures/T_bee8e9ba50a8ffa7.T_bee8e9ba50a8ffa7",
+    "Macro": "/Game/MegaPark/Textures/T_2c70170a000b0040.T_2c70170a000b0040",
+    "Normal": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Specular": "/Game/MegaPark/Textures/T_2c70170a001d012b.T_2c70170a001d012b",
+    "Transparent": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite"
+   },
+   "vector": {}
+  },
+  "overrides": {
+   "scalar": {
+    "DetailScale": 8.0,
+    "HasLightmap": 1.0,
+    "HasTransparent": 0.0,
+    "LightmapNorm": 3.313,
+    "MacroOpacity": 1.0,
+    "MacroScale": 0.3,
+    "Moss": 0.0,
+    "UseDecal": 1.0
+   },
+   "texture": {
+    "Decal": "/Game/MegaPark/Textures/T_2c70170a002f0b10.T_2c70170a002f0b10",
+    "Detail": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Diffuse": "/Game/MegaPark/Textures/T_2c70170a001d012c.T_2c70170a001d012c",
+    "Lightmap": "/Game/MegaPark/Textures/T_bee8e9ba50a8ffa7.T_bee8e9ba50a8ffa7",
+    "Macro": "/Game/MegaPark/Textures/T_2c70170a000b0040.T_2c70170a000b0040",
+    "Normal": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Specular": "/Game/MegaPark/Textures/T_2c70170a001d012b.T_2c70170a001d012b",
+    "Transparent": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite"
+   },
+   "vector": {}
+  },
+  "parent": "/Game/MegaPark/Materials/M_RetailOpaque.M_RetailOpaque",
+  "switches": {}
+ },
+ "/Game/MegaPark/Materials/MI_3fc3174182abbed4_Seam": {
+  "effective": {
+   "scalar": {
+    "Albedo": 1.0,
+    "DetailScale": 8.0,
+    "Gloss": 0.0,
+    "HasLightmap": 1.0,
+    "LightmapNorm": 3.505,
+    "LightmapOcclusion": 0.25,
+    "MacroOpacity": 1.0,
+    "MacroScale": 0.3,
+    "Moss": 0.0,
+    "SpecularScale": 0.0,
+    "UseDecal": 1.0
+   },
+   "texture": {
+    "Decal": "/Game/MegaPark/Textures/T_2c70170a002f0353.T_2c70170a002f0353",
+    "Detail": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Diffuse": "/Game/MegaPark/Textures/T_2c70170a001d008e.T_2c70170a001d008e",
+    "Lightmap": "/Game/MegaPark/Textures/T_20dee42563593e76.T_20dee42563593e76",
+    "Macro": "/Game/MegaPark/Textures/T_2c70170a000b0040.T_2c70170a000b0040",
+    "Normal": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Specular": "/Game/MegaPark/Textures/T_2c70170a001d0087.T_2c70170a001d0087",
+    "Transparent": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite"
+   },
+   "vector": {}
+  },
+  "overrides": {
+   "scalar": {
+    "DetailScale": 8.0,
+    "Gloss": 0.0,
+    "HasLightmap": 1.0,
+    "HasTransparent": 0.0,
+    "LightmapNorm": 3.505,
+    "LightmapOcclusion": 0.25,
+    "MacroOpacity": 1.0,
+    "MacroScale": 0.3,
+    "Moss": 0.0,
+    "SpecularScale": 0.0,
+    "UseDecal": 1.0
+   },
+   "texture": {
+    "Decal": "/Game/MegaPark/Textures/T_2c70170a002f0353.T_2c70170a002f0353",
+    "Detail": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Diffuse": "/Game/MegaPark/Textures/T_2c70170a001d008e.T_2c70170a001d008e",
+    "Lightmap": "/Game/MegaPark/Textures/T_20dee42563593e76.T_20dee42563593e76",
+    "Macro": "/Game/MegaPark/Textures/T_2c70170a000b0040.T_2c70170a000b0040",
+    "Normal": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Specular": "/Game/MegaPark/Textures/T_2c70170a001d0087.T_2c70170a001d0087",
+    "Transparent": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite"
+   },
+   "vector": {}
+  },
+  "parent": "/Game/MegaPark/Materials/M_RetailOpaque.M_RetailOpaque",
+  "switches": {}
+ },
+ "/Game/MegaPark/Materials/MI_4154dbd709458a3a": {
+  "effective": {
+   "scalar": {
+    "Albedo": 1.0,
+    "DetailScale": 8.0,
+    "Gloss": 0.5,
+    "HasLightmap": 1.0,
+    "LightmapNorm": 3.203,
+    "LightmapOcclusion": 0.45,
+    "MacroOpacity": 1.0,
+    "MacroScale": 0.3,
+    "Moss": 0.0,
+    "SpecularScale": 0.35,
+    "UseDecal": 0.0
+   },
+   "texture": {
+    "Decal": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite",
+    "Detail": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Diffuse": "/Game/MegaPark/Textures/T_2c70170a001d0129.T_2c70170a001d0129",
+    "Lightmap": "/Game/MegaPark/Textures/T_8b1fb567162f9e8c.T_8b1fb567162f9e8c",
+    "Macro": "/Game/MegaPark/Textures/T_2c70170a001d01d5.T_2c70170a001d01d5",
+    "Normal": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Specular": "/Game/MegaPark/Textures/T_2c70170a001d012a.T_2c70170a001d012a",
+    "Transparent": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite"
+   },
+   "vector": {}
+  },
+  "overrides": {
+   "scalar": {
+    "DetailScale": 8.0,
+    "HasLightmap": 1.0,
+    "HasTransparent": 0.0,
+    "LightmapNorm": 3.203,
+    "MacroOpacity": 1.0,
+    "MacroScale": 0.3,
+    "Moss": 0.0,
+    "UseDecal": 0.0
+   },
+   "texture": {
+    "Decal": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite",
+    "Detail": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Diffuse": "/Game/MegaPark/Textures/T_2c70170a001d0129.T_2c70170a001d0129",
+    "Lightmap": "/Game/MegaPark/Textures/T_8b1fb567162f9e8c.T_8b1fb567162f9e8c",
+    "Macro": "/Game/MegaPark/Textures/T_2c70170a001d01d5.T_2c70170a001d01d5",
+    "Normal": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Specular": "/Game/MegaPark/Textures/T_2c70170a001d012a.T_2c70170a001d012a",
+    "Transparent": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite"
+   },
+   "vector": {}
+  },
+  "parent": "/Game/MegaPark/Materials/M_RetailOpaque.M_RetailOpaque",
+  "switches": {}
+ },
+ "/Game/MegaPark/Materials/MI_4cef5bb305cb09eb_Seam": {
+  "effective": {
+   "scalar": {
+    "Albedo": 1.0,
+    "DetailScale": 8.0,
+    "Gloss": 0.0,
+    "HasLightmap": 1.0,
+    "LightmapNorm": 3.352,
+    "LightmapOcclusion": 0.25,
+    "MacroOpacity": 1.0,
+    "MacroScale": 0.3,
+    "Moss": 0.0,
+    "SpecularScale": 0.0,
+    "UseDecal": 1.0
+   },
+   "texture": {
+    "Decal": "/Game/MegaPark/Textures/T_2c70170a001d00b0.T_2c70170a001d00b0",
+    "Detail": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Diffuse": "/Game/MegaPark/Textures/T_2c70170a001d00aa.T_2c70170a001d00aa",
+    "Lightmap": "/Game/MegaPark/Textures/T_8f426b4a873045a1.T_8f426b4a873045a1",
+    "Macro": "/Game/MegaPark/Textures/T_2c70170a001d01e1.T_2c70170a001d01e1",
+    "Normal": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Specular": "/Game/MegaPark/Textures/T_2c70170a001d00ab.T_2c70170a001d00ab",
+    "Transparent": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite"
+   },
+   "vector": {}
+  },
+  "overrides": {
+   "scalar": {
+    "DetailScale": 8.0,
+    "Gloss": 0.0,
+    "HasLightmap": 1.0,
+    "HasTransparent": 0.0,
+    "LightmapNorm": 3.352,
+    "LightmapOcclusion": 0.25,
+    "MacroOpacity": 1.0,
+    "MacroScale": 0.3,
+    "Moss": 0.0,
+    "SpecularScale": 0.0,
+    "UseDecal": 1.0
+   },
+   "texture": {
+    "Decal": "/Game/MegaPark/Textures/T_2c70170a001d00b0.T_2c70170a001d00b0",
+    "Detail": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Diffuse": "/Game/MegaPark/Textures/T_2c70170a001d00aa.T_2c70170a001d00aa",
+    "Lightmap": "/Game/MegaPark/Textures/T_8f426b4a873045a1.T_8f426b4a873045a1",
+    "Macro": "/Game/MegaPark/Textures/T_2c70170a001d01e1.T_2c70170a001d01e1",
+    "Normal": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Specular": "/Game/MegaPark/Textures/T_2c70170a001d00ab.T_2c70170a001d00ab",
+    "Transparent": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite"
+   },
+   "vector": {}
+  },
+  "parent": "/Game/MegaPark/Materials/M_RetailOpaque.M_RetailOpaque",
+  "switches": {}
+ },
+ "/Game/MegaPark/Materials/MI_54b9cb948ff265c3": {
+  "effective": {
+   "scalar": {
+    "Albedo": 1.0,
+    "DetailScale": 8.0,
+    "Gloss": 0.5,
+    "HasLightmap": 1.0,
+    "LightmapNorm": 3.267,
+    "LightmapOcclusion": 0.45,
+    "MacroOpacity": 1.0,
+    "MacroScale": 0.3,
+    "Moss": 0.0,
+    "SpecularScale": 0.35,
+    "UseDecal": 1.0
+   },
+   "texture": {
+    "Decal": "/Game/MegaPark/Textures/T_2c70170a002f053f.T_2c70170a002f053f",
+    "Detail": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Diffuse": "/Game/MegaPark/Textures/T_2c70170a001d0129.T_2c70170a001d0129",
+    "Lightmap": "/Game/MegaPark/Textures/T_0bfd6047d8f9e482.T_0bfd6047d8f9e482",
+    "Macro": "/Game/MegaPark/Textures/T_2c70170a001d01d5.T_2c70170a001d01d5",
+    "Normal": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Specular": "/Game/MegaPark/Textures/T_2c70170a001d012a.T_2c70170a001d012a",
+    "Transparent": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite"
+   },
+   "vector": {}
+  },
+  "overrides": {
+   "scalar": {
+    "DetailScale": 8.0,
+    "HasLightmap": 1.0,
+    "HasTransparent": 0.0,
+    "LightmapNorm": 3.267,
+    "MacroOpacity": 1.0,
+    "MacroScale": 0.3,
+    "Moss": 0.0,
+    "UseDecal": 1.0
+   },
+   "texture": {
+    "Decal": "/Game/MegaPark/Textures/T_2c70170a002f053f.T_2c70170a002f053f",
+    "Detail": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Diffuse": "/Game/MegaPark/Textures/T_2c70170a001d0129.T_2c70170a001d0129",
+    "Lightmap": "/Game/MegaPark/Textures/T_0bfd6047d8f9e482.T_0bfd6047d8f9e482",
+    "Macro": "/Game/MegaPark/Textures/T_2c70170a001d01d5.T_2c70170a001d01d5",
+    "Normal": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Specular": "/Game/MegaPark/Textures/T_2c70170a001d012a.T_2c70170a001d012a",
+    "Transparent": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite"
+   },
+   "vector": {}
+  },
+  "parent": "/Game/MegaPark/Materials/M_RetailOpaque.M_RetailOpaque",
+  "switches": {}
+ },
+ "/Game/MegaPark/Materials/MI_5b7d4772f362d980": {
+  "effective": {
+   "scalar": {
+    "Albedo": 1.0,
+    "DetailScale": 8.0,
+    "Gloss": 0.5,
+    "HasLightmap": 1.0,
+    "LightmapNorm": 3.203,
+    "LightmapOcclusion": 0.45,
+    "MacroOpacity": 1.0,
+    "MacroScale": 0.3,
+    "Moss": 0.0,
+    "SpecularScale": 0.35,
+    "UseDecal": 1.0
+   },
+   "texture": {
+    "Decal": "/Game/MegaPark/Textures/T_2c70170a002f1109.T_2c70170a002f1109",
+    "Detail": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Diffuse": "/Game/MegaPark/Textures/T_2c70170a001d0129.T_2c70170a001d0129",
+    "Lightmap": "/Game/MegaPark/Textures/T_8b1fb567162f9e8c.T_8b1fb567162f9e8c",
+    "Macro": "/Game/MegaPark/Textures/T_2c70170a001d01d5.T_2c70170a001d01d5",
+    "Normal": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Specular": "/Game/MegaPark/Textures/T_2c70170a001d012a.T_2c70170a001d012a",
+    "Transparent": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite"
+   },
+   "vector": {}
+  },
+  "overrides": {
+   "scalar": {
+    "DetailScale": 8.0,
+    "HasLightmap": 1.0,
+    "HasTransparent": 0.0,
+    "LightmapNorm": 3.203,
+    "MacroOpacity": 1.0,
+    "MacroScale": 0.3,
+    "Moss": 0.0,
+    "UseDecal": 1.0
+   },
+   "texture": {
+    "Decal": "/Game/MegaPark/Textures/T_2c70170a002f1109.T_2c70170a002f1109",
+    "Detail": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Diffuse": "/Game/MegaPark/Textures/T_2c70170a001d0129.T_2c70170a001d0129",
+    "Lightmap": "/Game/MegaPark/Textures/T_8b1fb567162f9e8c.T_8b1fb567162f9e8c",
+    "Macro": "/Game/MegaPark/Textures/T_2c70170a001d01d5.T_2c70170a001d01d5",
+    "Normal": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Specular": "/Game/MegaPark/Textures/T_2c70170a001d012a.T_2c70170a001d012a",
+    "Transparent": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite"
+   },
+   "vector": {}
+  },
+  "parent": "/Game/MegaPark/Materials/M_RetailOpaque.M_RetailOpaque",
+  "switches": {}
+ },
+ "/Game/MegaPark/Materials/MI_5fa42b1b843c5f13": {
+  "effective": {
+   "scalar": {
+    "Albedo": 1.0,
+    "DetailScale": 1.0,
+    "Gloss": 0.5,
+    "HasLightmap": 1.0,
+    "LightmapNorm": 3.364,
+    "LightmapOcclusion": 0.45,
+    "MacroOpacity": 0.0,
+    "MacroScale": 1.0,
+    "Moss": 0.0,
+    "SpecularScale": 0.35,
+    "UseDecal": 0.0
+   },
+   "texture": {
+    "Decal": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite",
+    "Detail": "/Game/MegaPark/Textures/T_DefaultNormal.T_DefaultNormal",
+    "Diffuse": "/Game/MegaPark/Textures/T_2c70170a001d0151.T_2c70170a001d0151",
+    "Lightmap": "/Game/MegaPark/Textures/T_2c314a862174ebf4.T_2c314a862174ebf4",
+    "Macro": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite",
+    "Normal": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Specular": "/Game/MegaPark/Textures/T_2c70170a001d0150.T_2c70170a001d0150",
+    "Transparent": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite"
+   },
+   "vector": {}
+  },
+  "overrides": {
+   "scalar": {
+    "DetailScale": 1.0,
+    "HasLightmap": 1.0,
+    "HasTransparent": 0.0,
+    "LightmapNorm": 3.364,
+    "MacroOpacity": 0.0,
+    "MacroScale": 1.0,
+    "Moss": 0.0,
+    "UseDecal": 0.0
+   },
+   "texture": {
+    "Decal": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite",
+    "Detail": "/Game/MegaPark/Textures/T_DefaultNormal.T_DefaultNormal",
+    "Diffuse": "/Game/MegaPark/Textures/T_2c70170a001d0151.T_2c70170a001d0151",
+    "Lightmap": "/Game/MegaPark/Textures/T_2c314a862174ebf4.T_2c314a862174ebf4",
+    "Macro": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite",
+    "Normal": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Specular": "/Game/MegaPark/Textures/T_2c70170a001d0150.T_2c70170a001d0150",
+    "Transparent": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite"
+   },
+   "vector": {}
+  },
+  "parent": "/Game/MegaPark/Materials/M_RetailOpaque.M_RetailOpaque",
+  "switches": {}
+ },
+ "/Game/MegaPark/Materials/MI_74de62d96d172fcd": {
+  "effective": {
+   "scalar": {
+    "Albedo": 1.0,
+    "DetailScale": 8.0,
+    "Gloss": 0.5,
+    "HasLightmap": 1.0,
+    "LightmapNorm": 3.313,
+    "LightmapOcclusion": 0.45,
+    "MacroOpacity": 1.0,
+    "MacroScale": 0.3,
+    "Moss": 0.0,
+    "SpecularScale": 0.35,
+    "UseDecal": 0.0
+   },
+   "texture": {
+    "Decal": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite",
+    "Detail": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Diffuse": "/Game/MegaPark/Textures/T_2c70170a001d0129.T_2c70170a001d0129",
+    "Lightmap": "/Game/MegaPark/Textures/T_bee8e9ba50a8ffa7.T_bee8e9ba50a8ffa7",
+    "Macro": "/Game/MegaPark/Textures/T_2c70170a001d01d5.T_2c70170a001d01d5",
+    "Normal": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Specular": "/Game/MegaPark/Textures/T_2c70170a001d012a.T_2c70170a001d012a",
+    "Transparent": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite"
+   },
+   "vector": {}
+  },
+  "overrides": {
+   "scalar": {
+    "DetailScale": 8.0,
+    "HasLightmap": 1.0,
+    "HasTransparent": 0.0,
+    "LightmapNorm": 3.313,
+    "MacroOpacity": 1.0,
+    "MacroScale": 0.3,
+    "Moss": 0.0,
+    "UseDecal": 0.0
+   },
+   "texture": {
+    "Decal": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite",
+    "Detail": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Diffuse": "/Game/MegaPark/Textures/T_2c70170a001d0129.T_2c70170a001d0129",
+    "Lightmap": "/Game/MegaPark/Textures/T_bee8e9ba50a8ffa7.T_bee8e9ba50a8ffa7",
+    "Macro": "/Game/MegaPark/Textures/T_2c70170a001d01d5.T_2c70170a001d01d5",
+    "Normal": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Specular": "/Game/MegaPark/Textures/T_2c70170a001d012a.T_2c70170a001d012a",
+    "Transparent": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite"
+   },
+   "vector": {}
+  },
+  "parent": "/Game/MegaPark/Materials/M_RetailOpaque.M_RetailOpaque",
+  "switches": {}
+ },
+ "/Game/MegaPark/Materials/MI_97fb1d5d055dc83e": {
+  "effective": {
+   "scalar": {
+    "Albedo": 1.0,
+    "DetailScale": 8.0,
+    "Gloss": 0.5,
+    "HasLightmap": 1.0,
+    "LightmapNorm": 3.313,
+    "LightmapOcclusion": 0.45,
+    "MacroOpacity": 1.0,
+    "MacroScale": 0.3,
+    "Moss": 0.0,
+    "SpecularScale": 0.35,
+    "UseDecal": 1.0
+   },
+   "texture": {
+    "Decal": "/Game/MegaPark/Textures/T_2c70170a002f0543.T_2c70170a002f0543",
+    "Detail": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Diffuse": "/Game/MegaPark/Textures/T_2c70170a001d012c.T_2c70170a001d012c",
+    "Lightmap": "/Game/MegaPark/Textures/T_bee8e9ba50a8ffa7.T_bee8e9ba50a8ffa7",
+    "Macro": "/Game/MegaPark/Textures/T_2c70170a000b0040.T_2c70170a000b0040",
+    "Normal": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Specular": "/Game/MegaPark/Textures/T_2c70170a001d012b.T_2c70170a001d012b",
+    "Transparent": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite"
+   },
+   "vector": {}
+  },
+  "overrides": {
+   "scalar": {
+    "DetailScale": 8.0,
+    "HasLightmap": 1.0,
+    "HasTransparent": 0.0,
+    "LightmapNorm": 3.313,
+    "MacroOpacity": 1.0,
+    "MacroScale": 0.3,
+    "Moss": 0.0,
+    "UseDecal": 1.0
+   },
+   "texture": {
+    "Decal": "/Game/MegaPark/Textures/T_2c70170a002f0543.T_2c70170a002f0543",
+    "Detail": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Diffuse": "/Game/MegaPark/Textures/T_2c70170a001d012c.T_2c70170a001d012c",
+    "Lightmap": "/Game/MegaPark/Textures/T_bee8e9ba50a8ffa7.T_bee8e9ba50a8ffa7",
+    "Macro": "/Game/MegaPark/Textures/T_2c70170a000b0040.T_2c70170a000b0040",
+    "Normal": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Specular": "/Game/MegaPark/Textures/T_2c70170a001d012b.T_2c70170a001d012b",
+    "Transparent": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite"
+   },
+   "vector": {}
+  },
+  "parent": "/Game/MegaPark/Materials/M_RetailOpaque.M_RetailOpaque",
+  "switches": {}
+ },
+ "/Game/MegaPark/Materials/MI_99622005a8467a13": {
+  "effective": {
+   "scalar": {
+    "Albedo": 1.0,
+    "DetailScale": 10.0,
+    "Gloss": 0.5,
+    "HasLightmap": 1.0,
+    "LightmapNorm": 3.81,
+    "LightmapOcclusion": 0.45,
+    "MacroOpacity": 0.6,
+    "MacroScale": 0.3,
+    "Moss": 0.0,
+    "SpecularScale": 0.35,
+    "UseDecal": 0.0
+   },
+   "texture": {
+    "Decal": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite",
+    "Detail": "/Game/MegaPark/Textures/T_00008ccc03e3870a.T_00008ccc03e3870a",
+    "Diffuse": "/Game/MegaPark/Textures/T_2c70170a00040018.T_2c70170a00040018",
+    "Lightmap": "/Game/MegaPark/Textures/T_9c0719ed9f4cde40.T_9c0719ed9f4cde40",
+    "Macro": "/Game/MegaPark/Textures/T_2c70170a00120009.T_2c70170a00120009",
+    "Normal": "/Game/MegaPark/Textures/T_2c70170a000400cc.T_2c70170a000400cc",
+    "Specular": "/Game/MegaPark/Textures/T_2c70170a00040017.T_2c70170a00040017",
+    "Transparent": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite"
+   },
+   "vector": {}
+  },
+  "overrides": {
+   "scalar": {
+    "DetailScale": 10.0,
+    "HasLightmap": 1.0,
+    "HasTransparent": 0.0,
+    "LightmapNorm": 3.81,
+    "MacroOpacity": 0.6,
+    "MacroScale": 0.3,
+    "Moss": 0.0,
+    "UseDecal": 0.0
+   },
+   "texture": {
+    "Decal": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite",
+    "Detail": "/Game/MegaPark/Textures/T_00008ccc03e3870a.T_00008ccc03e3870a",
+    "Diffuse": "/Game/MegaPark/Textures/T_2c70170a00040018.T_2c70170a00040018",
+    "Lightmap": "/Game/MegaPark/Textures/T_9c0719ed9f4cde40.T_9c0719ed9f4cde40",
+    "Macro": "/Game/MegaPark/Textures/T_2c70170a00120009.T_2c70170a00120009",
+    "Normal": "/Game/MegaPark/Textures/T_2c70170a000400cc.T_2c70170a000400cc",
+    "Specular": "/Game/MegaPark/Textures/T_2c70170a00040017.T_2c70170a00040017",
+    "Transparent": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite"
+   },
+   "vector": {}
+  },
+  "parent": "/Game/MegaPark/Materials/M_RetailOpaque.M_RetailOpaque",
+  "switches": {}
+ },
+ "/Game/MegaPark/Materials/MI_9d9ad61af96a5a48": {
+  "effective": {
+   "scalar": {
+    "Albedo": 1.0,
+    "DetailScale": 1.0,
+    "Gloss": 0.5,
+    "HasLightmap": 1.0,
+    "LightmapNorm": 3.203,
+    "LightmapOcclusion": 0.45,
+    "MacroOpacity": 0.0,
+    "MacroScale": 1.0,
+    "Moss": 0.0,
+    "SpecularScale": 0.35,
+    "UseDecal": 0.0
+   },
+   "texture": {
+    "Decal": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite",
+    "Detail": "/Game/MegaPark/Textures/T_DefaultNormal.T_DefaultNormal",
+    "Diffuse": "/Game/MegaPark/Textures/T_2c70170a001d012c.T_2c70170a001d012c",
+    "Lightmap": "/Game/MegaPark/Textures/T_8b1fb567162f9e8c.T_8b1fb567162f9e8c",
+    "Macro": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite",
+    "Normal": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Specular": "/Game/MegaPark/Textures/T_2c70170a001d012b.T_2c70170a001d012b",
+    "Transparent": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite"
+   },
+   "vector": {}
+  },
+  "overrides": {
+   "scalar": {
+    "DetailScale": 1.0,
+    "HasLightmap": 1.0,
+    "HasTransparent": 0.0,
+    "LightmapNorm": 3.203,
+    "MacroOpacity": 0.0,
+    "MacroScale": 1.0,
+    "Moss": 0.0,
+    "UseDecal": 0.0
+   },
+   "texture": {
+    "Decal": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite",
+    "Detail": "/Game/MegaPark/Textures/T_DefaultNormal.T_DefaultNormal",
+    "Diffuse": "/Game/MegaPark/Textures/T_2c70170a001d012c.T_2c70170a001d012c",
+    "Lightmap": "/Game/MegaPark/Textures/T_8b1fb567162f9e8c.T_8b1fb567162f9e8c",
+    "Macro": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite",
+    "Normal": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Specular": "/Game/MegaPark/Textures/T_2c70170a001d012b.T_2c70170a001d012b",
+    "Transparent": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite"
+   },
+   "vector": {}
+  },
+  "parent": "/Game/MegaPark/Materials/M_RetailOpaque.M_RetailOpaque",
+  "switches": {}
+ },
+ "/Game/MegaPark/Materials/MI_b34bfde2b1b2ba35": {
+  "effective": {
+   "scalar": {
+    "Albedo": 1.0,
+    "DetailScale": 8.0,
+    "Gloss": 0.5,
+    "HasLightmap": 1.0,
+    "LightmapNorm": 3.364,
+    "LightmapOcclusion": 0.45,
+    "MacroOpacity": 1.0,
+    "MacroScale": 0.3,
+    "Moss": 0.0,
+    "SpecularScale": 0.35,
+    "UseDecal": 1.0
+   },
+   "texture": {
+    "Decal": "/Game/MegaPark/Textures/T_2c70170a002f1109.T_2c70170a002f1109",
+    "Detail": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Diffuse": "/Game/MegaPark/Textures/T_2c70170a001d0129.T_2c70170a001d0129",
+    "Lightmap": "/Game/MegaPark/Textures/T_2c314a862174ebf4.T_2c314a862174ebf4",
+    "Macro": "/Game/MegaPark/Textures/T_2c70170a001d01d5.T_2c70170a001d01d5",
+    "Normal": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Specular": "/Game/MegaPark/Textures/T_2c70170a001d012a.T_2c70170a001d012a",
+    "Transparent": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite"
+   },
+   "vector": {}
+  },
+  "overrides": {
+   "scalar": {
+    "DetailScale": 8.0,
+    "HasLightmap": 1.0,
+    "HasTransparent": 0.0,
+    "LightmapNorm": 3.364,
+    "MacroOpacity": 1.0,
+    "MacroScale": 0.3,
+    "Moss": 0.0,
+    "UseDecal": 1.0
+   },
+   "texture": {
+    "Decal": "/Game/MegaPark/Textures/T_2c70170a002f1109.T_2c70170a002f1109",
+    "Detail": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Diffuse": "/Game/MegaPark/Textures/T_2c70170a001d0129.T_2c70170a001d0129",
+    "Lightmap": "/Game/MegaPark/Textures/T_2c314a862174ebf4.T_2c314a862174ebf4",
+    "Macro": "/Game/MegaPark/Textures/T_2c70170a001d01d5.T_2c70170a001d01d5",
+    "Normal": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Specular": "/Game/MegaPark/Textures/T_2c70170a001d012a.T_2c70170a001d012a",
+    "Transparent": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite"
+   },
+   "vector": {}
+  },
+  "parent": "/Game/MegaPark/Materials/M_RetailOpaque.M_RetailOpaque",
+  "switches": {}
+ },
+ "/Game/MegaPark/Materials/MI_b4686eeb54647811_Seam": {
+  "effective": {
+   "scalar": {
+    "Albedo": 1.0,
+    "DetailScale": 8.0,
+    "Gloss": 0.0,
+    "HasLightmap": 1.0,
+    "LightmapNorm": 3.352,
+    "LightmapOcclusion": 0.25,
+    "MacroOpacity": 1.0,
+    "MacroScale": 0.3,
+    "Moss": 0.0,
+    "SpecularScale": 0.0,
+    "UseDecal": 0.0
+   },
+   "texture": {
+    "Decal": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite",
+    "Detail": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Diffuse": "/Game/MegaPark/Textures/T_2c70170a001d00aa.T_2c70170a001d00aa",
+    "Lightmap": "/Game/MegaPark/Textures/T_8f426b4a873045a1.T_8f426b4a873045a1",
+    "Macro": "/Game/MegaPark/Textures/T_2c70170a001d01e1.T_2c70170a001d01e1",
+    "Normal": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Specular": "/Game/MegaPark/Textures/T_2c70170a001d00ab.T_2c70170a001d00ab",
+    "Transparent": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite"
+   },
+   "vector": {}
+  },
+  "overrides": {
+   "scalar": {
+    "DetailScale": 8.0,
+    "Gloss": 0.0,
+    "HasLightmap": 1.0,
+    "HasTransparent": 0.0,
+    "LightmapNorm": 3.352,
+    "LightmapOcclusion": 0.25,
+    "MacroOpacity": 1.0,
+    "MacroScale": 0.3,
+    "Moss": 0.0,
+    "SpecularScale": 0.0,
+    "UseDecal": 0.0
+   },
+   "texture": {
+    "Decal": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite",
+    "Detail": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Diffuse": "/Game/MegaPark/Textures/T_2c70170a001d00aa.T_2c70170a001d00aa",
+    "Lightmap": "/Game/MegaPark/Textures/T_8f426b4a873045a1.T_8f426b4a873045a1",
+    "Macro": "/Game/MegaPark/Textures/T_2c70170a001d01e1.T_2c70170a001d01e1",
+    "Normal": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Specular": "/Game/MegaPark/Textures/T_2c70170a001d00ab.T_2c70170a001d00ab",
+    "Transparent": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite"
+   },
+   "vector": {}
+  },
+  "parent": "/Game/MegaPark/Materials/M_RetailOpaque.M_RetailOpaque",
+  "switches": {}
+ },
+ "/Game/MegaPark/Materials/MI_c3a8971b198e360e": {
+  "effective": {
+   "scalar": {
+    "Albedo": 1.0,
+    "DetailScale": 8.0,
+    "Gloss": 0.5,
+    "HasLightmap": 1.0,
+    "LightmapNorm": 3.267,
+    "LightmapOcclusion": 0.45,
+    "MacroOpacity": 1.0,
+    "MacroScale": 0.3,
+    "Moss": 0.0,
+    "SpecularScale": 0.35,
+    "UseDecal": 1.0
+   },
+   "texture": {
+    "Decal": "/Game/MegaPark/Textures/T_2c70170a002f111c.T_2c70170a002f111c",
+    "Detail": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Diffuse": "/Game/MegaPark/Textures/T_2c70170a001d0129.T_2c70170a001d0129",
+    "Lightmap": "/Game/MegaPark/Textures/T_0bfd6047d8f9e482.T_0bfd6047d8f9e482",
+    "Macro": "/Game/MegaPark/Textures/T_2c70170a001d01d5.T_2c70170a001d01d5",
+    "Normal": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Specular": "/Game/MegaPark/Textures/T_2c70170a001d012a.T_2c70170a001d012a",
+    "Transparent": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite"
+   },
+   "vector": {}
+  },
+  "overrides": {
+   "scalar": {
+    "DetailScale": 8.0,
+    "HasLightmap": 1.0,
+    "HasTransparent": 0.0,
+    "LightmapNorm": 3.267,
+    "MacroOpacity": 1.0,
+    "MacroScale": 0.3,
+    "Moss": 0.0,
+    "UseDecal": 1.0
+   },
+   "texture": {
+    "Decal": "/Game/MegaPark/Textures/T_2c70170a002f111c.T_2c70170a002f111c",
+    "Detail": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Diffuse": "/Game/MegaPark/Textures/T_2c70170a001d0129.T_2c70170a001d0129",
+    "Lightmap": "/Game/MegaPark/Textures/T_0bfd6047d8f9e482.T_0bfd6047d8f9e482",
+    "Macro": "/Game/MegaPark/Textures/T_2c70170a001d01d5.T_2c70170a001d01d5",
+    "Normal": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Specular": "/Game/MegaPark/Textures/T_2c70170a001d012a.T_2c70170a001d012a",
+    "Transparent": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite"
+   },
+   "vector": {}
+  },
+  "parent": "/Game/MegaPark/Materials/M_RetailOpaque.M_RetailOpaque",
+  "switches": {}
+ },
+ "/Game/MegaPark/Materials/MI_c941862c2cc7a50f": {
+  "effective": {
+   "scalar": {
+    "Albedo": 1.0,
+    "DetailScale": 8.0,
+    "Gloss": 0.5,
+    "HasLightmap": 1.0,
+    "LightmapNorm": 3.267,
+    "LightmapOcclusion": 0.45,
+    "MacroOpacity": 1.0,
+    "MacroScale": 0.3,
+    "Moss": 0.0,
+    "SpecularScale": 0.35,
+    "UseDecal": 1.0
+   },
+   "texture": {
+    "Decal": "/Game/MegaPark/Textures/T_2c70170a002f053e.T_2c70170a002f053e",
+    "Detail": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Diffuse": "/Game/MegaPark/Textures/T_2c70170a001d0151.T_2c70170a001d0151",
+    "Lightmap": "/Game/MegaPark/Textures/T_0bfd6047d8f9e482.T_0bfd6047d8f9e482",
+    "Macro": "/Game/MegaPark/Textures/T_2c70170a000b0040.T_2c70170a000b0040",
+    "Normal": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Specular": "/Game/MegaPark/Textures/T_2c70170a001d0150.T_2c70170a001d0150",
+    "Transparent": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite"
+   },
+   "vector": {}
+  },
+  "overrides": {
+   "scalar": {
+    "DetailScale": 8.0,
+    "HasLightmap": 1.0,
+    "HasTransparent": 0.0,
+    "LightmapNorm": 3.267,
+    "MacroOpacity": 1.0,
+    "MacroScale": 0.3,
+    "Moss": 0.0,
+    "UseDecal": 1.0
+   },
+   "texture": {
+    "Decal": "/Game/MegaPark/Textures/T_2c70170a002f053e.T_2c70170a002f053e",
+    "Detail": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Diffuse": "/Game/MegaPark/Textures/T_2c70170a001d0151.T_2c70170a001d0151",
+    "Lightmap": "/Game/MegaPark/Textures/T_0bfd6047d8f9e482.T_0bfd6047d8f9e482",
+    "Macro": "/Game/MegaPark/Textures/T_2c70170a000b0040.T_2c70170a000b0040",
+    "Normal": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Specular": "/Game/MegaPark/Textures/T_2c70170a001d0150.T_2c70170a001d0150",
+    "Transparent": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite"
+   },
+   "vector": {}
+  },
+  "parent": "/Game/MegaPark/Materials/M_RetailOpaque.M_RetailOpaque",
+  "switches": {}
+ },
+ "/Game/MegaPark/Materials/MI_cef7e645a74d3d6c": {
+  "effective": {
+   "scalar": {
+    "Albedo": 1.0,
+    "DetailScale": 1.0,
+    "Gloss": 0.5,
+    "HasLightmap": 1.0,
+    "LightmapNorm": 3.313,
+    "LightmapOcclusion": 0.45,
+    "MacroOpacity": 0.0,
+    "MacroScale": 1.0,
+    "Moss": 0.0,
+    "SpecularScale": 0.35,
+    "UseDecal": 0.0
+   },
+   "texture": {
+    "Decal": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite",
+    "Detail": "/Game/MegaPark/Textures/T_DefaultNormal.T_DefaultNormal",
+    "Diffuse": "/Game/MegaPark/Textures/T_2c70170a001d012c.T_2c70170a001d012c",
+    "Lightmap": "/Game/MegaPark/Textures/T_bee8e9ba50a8ffa7.T_bee8e9ba50a8ffa7",
+    "Macro": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite",
+    "Normal": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Specular": "/Game/MegaPark/Textures/T_2c70170a001d012b.T_2c70170a001d012b",
+    "Transparent": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite"
+   },
+   "vector": {}
+  },
+  "overrides": {
+   "scalar": {
+    "DetailScale": 1.0,
+    "HasLightmap": 1.0,
+    "HasTransparent": 0.0,
+    "LightmapNorm": 3.313,
+    "MacroOpacity": 0.0,
+    "MacroScale": 1.0,
+    "Moss": 0.0,
+    "UseDecal": 0.0
+   },
+   "texture": {
+    "Decal": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite",
+    "Detail": "/Game/MegaPark/Textures/T_DefaultNormal.T_DefaultNormal",
+    "Diffuse": "/Game/MegaPark/Textures/T_2c70170a001d012c.T_2c70170a001d012c",
+    "Lightmap": "/Game/MegaPark/Textures/T_bee8e9ba50a8ffa7.T_bee8e9ba50a8ffa7",
+    "Macro": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite",
+    "Normal": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Specular": "/Game/MegaPark/Textures/T_2c70170a001d012b.T_2c70170a001d012b",
+    "Transparent": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite"
+   },
+   "vector": {}
+  },
+  "parent": "/Game/MegaPark/Materials/M_RetailOpaque.M_RetailOpaque",
+  "switches": {}
+ },
+ "/Game/MegaPark/Materials/MI_da41d4c91df999ea": {
+  "effective": {
+   "scalar": {
+    "Albedo": 1.0,
+    "DetailScale": 8.0,
+    "Gloss": 0.5,
+    "HasLightmap": 1.0,
+    "LightmapNorm": 3.313,
+    "LightmapOcclusion": 0.45,
+    "MacroOpacity": 1.0,
+    "MacroScale": 0.3,
+    "Moss": 0.0,
+    "SpecularScale": 0.35,
+    "UseDecal": 1.0
+   },
+   "texture": {
+    "Decal": "/Game/MegaPark/Textures/T_2c70170a002f1109.T_2c70170a002f1109",
+    "Detail": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Diffuse": "/Game/MegaPark/Textures/T_2c70170a001d0129.T_2c70170a001d0129",
+    "Lightmap": "/Game/MegaPark/Textures/T_bee8e9ba50a8ffa7.T_bee8e9ba50a8ffa7",
+    "Macro": "/Game/MegaPark/Textures/T_2c70170a001d01d5.T_2c70170a001d01d5",
+    "Normal": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Specular": "/Game/MegaPark/Textures/T_2c70170a001d012a.T_2c70170a001d012a",
+    "Transparent": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite"
+   },
+   "vector": {}
+  },
+  "overrides": {
+   "scalar": {
+    "DetailScale": 8.0,
+    "HasLightmap": 1.0,
+    "HasTransparent": 0.0,
+    "LightmapNorm": 3.313,
+    "MacroOpacity": 1.0,
+    "MacroScale": 0.3,
+    "Moss": 0.0,
+    "UseDecal": 1.0
+   },
+   "texture": {
+    "Decal": "/Game/MegaPark/Textures/T_2c70170a002f1109.T_2c70170a002f1109",
+    "Detail": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Diffuse": "/Game/MegaPark/Textures/T_2c70170a001d0129.T_2c70170a001d0129",
+    "Lightmap": "/Game/MegaPark/Textures/T_bee8e9ba50a8ffa7.T_bee8e9ba50a8ffa7",
+    "Macro": "/Game/MegaPark/Textures/T_2c70170a001d01d5.T_2c70170a001d01d5",
+    "Normal": "/Game/MegaPark/Textures/T_0000043d03e3870a.T_0000043d03e3870a",
+    "Specular": "/Game/MegaPark/Textures/T_2c70170a001d012a.T_2c70170a001d012a",
+    "Transparent": "/Game/MegaPark/Textures/T_DefaultWhite.T_DefaultWhite"
+   },
+   "vector": {}
+  },
+  "parent": "/Game/MegaPark/Materials/M_RetailOpaque.M_RetailOpaque",
+  "switches": {}
+ }
+}

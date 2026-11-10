@@ -1,0 +1,28 @@
+# Recovered from the donor (tools/migrate/small_families.py): T_Arcade_timber: the donor PNG timber.png, imported with the saved packages' settings (the plaza read).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "texture/japan/arcade-timber"
+kind = "texture"
+authority = "generated"
+owner = "shared/japan/arcade-timber"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02); pinned by sha256"
+
+[[sources]]
+path = "src/T_Arcade_timber.png"
+sha256 = "d71b181a3d0df569f0c83ab2f5ffc0142bbeff3e2d542f2ddd4c1d5e3fb28311"
+
+[recipe]
+importer = "texture"
+version = 1
+
+[recipe.settings]
+srgb = true
+max_texture_size = 1024
+lod_group = "TEXTUREGROUP_WORLD"
+compression = "TC_EDITOR_ICON"
+address = "mirror"
+
+[[outputs]]
+package = "/Game/Japan/Textures/T_Arcade_timber"

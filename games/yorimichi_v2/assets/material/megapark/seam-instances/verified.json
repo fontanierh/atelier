@@ -1,0 +1,16 @@
+{
+  "asset": "material/megapark/seam-instances",
+  "dependencies": {
+    "adopted/megapark/base-materials": "81b0e86814e67e23a3f2758823ec3ba2fc6621d9e30cbc70a96871e8471cf80b",
+    "adopted/megapark/shared-textures-common": "f279797ca888677031e0d50ea2bc2308950faf90caa3822a71f98aee26a7882c",
+    "adopted/megapark/shared-textures-concrete": "7484d84211f3949f955d44cdc9632a44f35bb2326698d6112fe6defa6520e6ca"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/MegaPark/Materials/MI_3fc3174182abbed4_Seam.uasset": "1c4e783bc5f355b56074385fd72e366d30763eaf3987e994dca28d9206d532ab"
+  },
+  "input_fingerprint": "6a0d3328cf836fdbb47c1a9c3f175a320983881a32577d999a2e1940020e3371",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "material-instance@2"
+}

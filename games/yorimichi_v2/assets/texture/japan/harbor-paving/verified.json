@@ -1,0 +1,12 @@
+{
+  "asset": "texture/japan/harbor-paving",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Textures/T_Harbor_paving.uasset": "cf929bc452863a5ee0dd37acb374c4e37ad76931c13ca64a88f41a8ebdd58b7f"
+  },
+  "input_fingerprint": "08ebb03394a0c249999f79c05a9d0837ced1346773864c48025d32685ce9955f",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

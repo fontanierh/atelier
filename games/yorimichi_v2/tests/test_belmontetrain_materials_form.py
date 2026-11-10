@@ -129,13 +129,13 @@ class FakeTexture(types.SimpleNamespace):
         return getattr(self, name)
 
 
-def test_the_texture_row_is_the_five_settings_with_bare_enum_names(monkeypatch):
+def test_the_texture_row_is_the_six_settings_with_bare_enum_names(monkeypatch):
     report = _report_module(monkeypatch)
-    texture = FakeTexture(srgb=True, compression_settings='TextureCompressionSettings.TC_DEFAULT',
+    texture = FakeTexture(srgb=True, max_texture_size=1024, compression_settings='TextureCompressionSettings.TC_DEFAULT',
                           lod_group='TextureGroup.TEXTUREGROUP_World', address_x='TextureAddress.TA_WRAP',
                           address_y='TextureAddress.TA_WRAP')
-    assert report.row(texture) == {'srgb': True, 'compression': 'TC_DEFAULT', 'lod_group': 'TEXTUREGROUP_World',
-                                   'address_x': 'TA_WRAP', 'address_y': 'TA_WRAP'}
+    assert report.row(texture) == {'srgb': True, 'max_texture_size': 1024, 'compression': 'TC_DEFAULT',
+                                   'lod_group': 'TEXTUREGROUP_World', 'address_x': 'TA_WRAP', 'address_y': 'TA_WRAP'}
     assert report.check_coverage({'/T/a': {'srgb': True}, '/T/b': {'error': 'x'}}, ['/T/a', '/T/b', '/T/c']) == (
         ['/T/c'], ['/T/b'])
 

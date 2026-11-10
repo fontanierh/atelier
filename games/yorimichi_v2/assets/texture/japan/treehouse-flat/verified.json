@@ -1,0 +1,12 @@
+{
+  "asset": "texture/japan/treehouse-flat",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Treehouse/Textures/T_TH_flat.uasset": "bcbf5a68109e16cb54cba4d744039f947e2833a1dfb0d3cc175c56b93b36e87c"
+  },
+  "input_fingerprint": "7b1473a8be955c568df0b752091da9f0de805055ebaf26988c299e25ab50f753",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

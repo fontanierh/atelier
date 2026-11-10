@@ -1,0 +1,2 @@
+/Game/Japan/Assets/BK_WheelFront
+/Game/Japan/Assets/BK_WheelRear

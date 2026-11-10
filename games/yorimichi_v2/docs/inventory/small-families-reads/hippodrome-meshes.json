@@ -1,0 +1,96 @@
+{
+ "loose": {
+  "Hippodrome/SM_HD_FinishPost": {
+   "collision_trace": "CTF_USE_COMPLEX_AS_SIMPLE",
+   "convex": 1,
+   "double_sided": true,
+   "lods": [
+    [
+     2.0,
+     5006
+    ]
+   ],
+   "nanite": false,
+   "simple": 0,
+   "slots": [
+    [
+     "HD_FinishPost",
+     "/Game/Hippodrome/Meshes/SM_HD_FinishPost/HD_FinishPost"
+    ]
+   ]
+  },
+  "Hippodrome/SM_HD_Grandstand": {
+   "collision_trace": "CTF_USE_COMPLEX_AS_SIMPLE",
+   "convex": 1,
+   "double_sided": true,
+   "lods": [
+    [
+     2.0,
+     24940
+    ]
+   ],
+   "nanite": false,
+   "simple": 0,
+   "slots": [
+    [
+     "HD_Grandstand",
+     "/Game/Hippodrome/Meshes/SM_HD_Grandstand/HD_Grandstand"
+    ]
+   ]
+  },
+  "Hippodrome/SM_HD_JudgesTower": {
+   "collision_trace": "CTF_USE_COMPLEX_AS_SIMPLE",
+   "convex": 1,
+   "double_sided": true,
+   "lods": [
+    [
+     2.0,
+     11779
+    ]
+   ],
+   "nanite": false,
+   "simple": 0,
+   "slots": [
+    [
+     "HD_JudgesTower",
+     "/Game/Hippodrome/Meshes/SM_HD_JudgesTower/HD_JudgesTower"
+    ]
+   ]
+  },
+  "Hippodrome/SM_HD_ToteBoard": {
+   "collision_trace": "CTF_USE_COMPLEX_AS_SIMPLE",
+   "convex": 1,
+   "double_sided": true,
+   "lods": [
+    [
+     2.0,
+     11859
+    ]
+   ],
+   "nanite": false,
+   "simple": 0,
+   "slots": [
+    [
+     "HD_ToteBoard",
+     "/Game/Hippodrome/Meshes/SM_HD_ToteBoard/HD_ToteBoard"
+    ]
+   ]
+  }
+ },
+ "sub_objects": {
+  "Hippodrome/Meshes/SM_HD_FinishPost/Color_c3f66034-a443-44e1-ac12-bc4a9a617bb9": "Texture2D",
+  "Hippodrome/Meshes/SM_HD_FinishPost/HD_FinishPost": "MaterialInstanceConstant",
+  "Hippodrome/Meshes/SM_HD_Grandstand/Color_d791cab5-3476-4925-85c1-f4131c7af4b8": "Texture2D",
+  "Hippodrome/Meshes/SM_HD_Grandstand/HD_Grandstand": "MaterialInstanceConstant",
+  "Hippodrome/Meshes/SM_HD_Ground/HD_Grass": "MaterialInstanceConstant",
+  "Hippodrome/Meshes/SM_HD_JudgesTower/Color_13d66ee9-7f6a-447a-a77d-ada02b839472": "Texture2D",
+  "Hippodrome/Meshes/SM_HD_JudgesTower/HD_JudgesTower": "MaterialInstanceConstant",
+  "Hippodrome/Meshes/SM_HD_Lane/HD_Dirt": "MaterialInstanceConstant",
+  "Hippodrome/Meshes/SM_HD_LaneSkirt/HD_Stone": "MaterialInstanceConstant",
+  "Hippodrome/Meshes/SM_HD_Rails/HD_Rail": "MaterialInstanceConstant",
+  "Hippodrome/Meshes/SM_HD_Skirt/HD_Stone": "MaterialInstanceConstant",
+  "Hippodrome/Meshes/SM_HD_ToteBoard/Color_72c00844-b377-41e6-8796-37d3e46331b9": "Texture2D",
+  "Hippodrome/Meshes/SM_HD_ToteBoard/HD_ToteBoard": "MaterialInstanceConstant",
+  "Hippodrome/Meshes/SM_HD_Track/HD_Dirt": "MaterialInstanceConstant"
+ }
+}

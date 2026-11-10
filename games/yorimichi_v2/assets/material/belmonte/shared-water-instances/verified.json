@@ -1,0 +1,15 @@
+{
+  "asset": "material/belmonte/shared-water-instances",
+  "dependencies": {
+    "adopted/belmonte/generator": "ffde97ee397f81836da7547bc4c240104b964ed3d64cb01f82b3dca798eafdb8"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Belmonte/Materials/MI_BM_aadab9c1da71.uasset": "f799130f4c273ccb9b778709174d924b6d1c860dee324a316ecea80bc282644b",
+    "unreal/Content/Belmonte/Materials/MI_BM_f76f48666871.uasset": "202fba370a9f21ffaad2d90167a128f56ad36e43d8a2431a307e782d574ea08e"
+  },
+  "input_fingerprint": "daefc27784ae995fef87b5cfe2df2bdede90d5d55ff8c92d5740aaa292f055e1",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "material-instance@2"
+}

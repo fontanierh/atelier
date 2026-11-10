@@ -1,0 +1,12 @@
+{
+  "asset": "texture/japan/harbor-timber",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Textures/T_Harbor_timber.uasset": "f6100b37d352e1b98751632448b9a48f02a61cc26b96eed66f0c7fc6527eb117"
+  },
+  "input_fingerprint": "e75c5377b23719217707950a3f0d9e25f71a3c03746fc48e7d7ecbc9955c363a",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

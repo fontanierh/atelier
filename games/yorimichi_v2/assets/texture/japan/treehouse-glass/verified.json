@@ -1,0 +1,12 @@
+{
+  "asset": "texture/japan/treehouse-glass",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Treehouse/Textures/T_TH_glass.uasset": "ba4d2e73f73d8deb23b875bd1cfadca5f3ae6c2d8bf9fb9b78d1946ef37773aa"
+  },
+  "input_fingerprint": "9a4f7165e45a3b097624ee46c87048efdf2bd813c8247de232007dd32d277a9b",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

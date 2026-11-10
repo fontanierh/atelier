@@ -10,29 +10,29 @@ id = "object/hippodrome/course"
 park = [
     "SM_HD_Ground", "SM_HD_Skirt", "SM_HD_Track", "SM_HD_Rails", "SM_HD_Lane", "SM_HD_LaneSkirt",
 ]
-model = "adopted/hippodrome/loose_files"
+model = ["prop/hippodrome/ground", "prop/hippodrome/lane", "prop/hippodrome/lane-skirt", "prop/hippodrome/rails", "prop/hippodrome/skirt", "prop/hippodrome/track"]
 about = "the Hippodrome course: its platform ground and skirt, the track, the rails, and the lane with its skirt"
 
 [[objects]]
 id = "object/hippodrome/grandstand"
 park = ["SM_HD_Grandstand"]
-model = "adopted/hippodrome/loose_files"
+model = "prop/hippodrome/grandstand"
 about = "the Hippodrome grandstand, on the course's south side"
 
 [[objects]]
 id = "object/hippodrome/judges-tower"
 park = ["SM_HD_JudgesTower"]
-model = "adopted/hippodrome/loose_files"
+model = "prop/hippodrome/judges-tower"
 about = "the Hippodrome judges' tower, beside the grandstand"
 
 [[objects]]
 id = "object/hippodrome/finish-post"
 park = ["SM_HD_FinishPost"]
-model = "adopted/hippodrome/loose_files"
+model = "prop/hippodrome/finish-post"
 about = "the Hippodrome finish post, on the home straight"
 
 [[objects]]
 id = "object/hippodrome/tote-board"
 park = ["SM_HD_ToteBoard"]
-model = "adopted/hippodrome/loose_files"
+model = "prop/hippodrome/tote-board"
 about = "the Hippodrome tote board, by the infield"

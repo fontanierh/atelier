@@ -1,0 +1,197 @@
+# Planned from the donor (tools/migrate/small_instances.py): 20 instances of adopted/megapark/shared-materials-wood, each agreeing with its editor read.
+# The values are the generator's, agreeing with the committed editor read (docs/inventory/small-families-reads/
+# instances); the import writes each instance from its row and reads every value back. Never edited by hand.
+schema = 1
+id = "material/megapark/shared-materials-wood-instances"
+kind = "material-instance"
+authority = "generated"
+owner = "shared/megapark/shared-materials-wood-instances"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02); pinned by sha256"
+input_dependencies = ["adopted/megapark/base-materials", "adopted/megapark/shared-textures-common", "adopted/megapark/shared-textures-wood"]
+
+[recipe]
+importer = "material-instance"
+version = 2
+
+[recipe.settings]
+
+[[recipe.settings.instances]]
+package = "/Game/MegaPark/Materials/MI_0297e420658d668d"
+parent = "/Game/MegaPark/Materials/M_RetailOpaque"
+textures = {Diffuse = "/Game/MegaPark/Textures/T_2c70170a001d0151", Decal = "/Game/MegaPark/Textures/T_2c70170a002f110a", Macro = "/Game/MegaPark/Textures/T_2c70170a000b0040", Lightmap = "/Game/MegaPark/Textures/T_2c314a862174ebf4", Normal = "/Game/MegaPark/Textures/T_0000043d03e3870a", Detail = "/Game/MegaPark/Textures/T_0000043d03e3870a", Specular = "/Game/MegaPark/Textures/T_2c70170a001d0150", Transparent = "/Game/MegaPark/Textures/T_DefaultWhite"}
+scalars = {MacroScale = 0.30000001192092896, DetailScale = 8.0, MacroOpacity = 1.0, UseDecal = 1.0, HasLightmap = 1.0, HasTransparent = 0.0, LightmapNorm = 3.364, Moss = 0.0}
+
+[[recipe.settings.instances]]
+package = "/Game/MegaPark/Materials/MI_0a62da3eb9f73004"
+parent = "/Game/MegaPark/Materials/M_RetailOpaque"
+textures = {Diffuse = "/Game/MegaPark/Textures/T_2c70170a001d0129", Decal = "/Game/MegaPark/Textures/T_DefaultWhite", Macro = "/Game/MegaPark/Textures/T_2c70170a001d01d5", Lightmap = "/Game/MegaPark/Textures/T_2c314a862174ebf4", Normal = "/Game/MegaPark/Textures/T_0000043d03e3870a", Detail = "/Game/MegaPark/Textures/T_0000043d03e3870a", Specular = "/Game/MegaPark/Textures/T_2c70170a001d012a", Transparent = "/Game/MegaPark/Textures/T_DefaultWhite"}
+scalars = {MacroScale = 0.30000001192092896, DetailScale = 8.0, MacroOpacity = 1.0, UseDecal = 0.0, HasLightmap = 1.0, HasTransparent = 0.0, LightmapNorm = 3.364, Moss = 0.0}
+
+[[recipe.settings.instances]]
+package = "/Game/MegaPark/Materials/MI_0e1c4253739c05d1"
+parent = "/Game/MegaPark/Materials/M_RetailOpaque"
+textures = {Diffuse = "/Game/MegaPark/Textures/T_2c70170a001d0151", Decal = "/Game/MegaPark/Textures/T_DefaultWhite", Macro = "/Game/MegaPark/Textures/T_2c70170a000b0040", Lightmap = "/Game/MegaPark/Textures/T_0bfd6047d8f9e482", Normal = "/Game/MegaPark/Textures/T_0000043d03e3870a", Detail = "/Game/MegaPark/Textures/T_0000043d03e3870a", Specular = "/Game/MegaPark/Textures/T_2c70170a001d0150", Transparent = "/Game/MegaPark/Textures/T_DefaultWhite"}
+scalars = {MacroScale = 0.30000001192092896, DetailScale = 8.0, MacroOpacity = 1.0, UseDecal = 0.0, HasLightmap = 1.0, HasTransparent = 0.0, LightmapNorm = 3.267, Moss = 0.0}
+
+[[recipe.settings.instances]]
+package = "/Game/MegaPark/Materials/MI_0e3433716e431235"
+parent = "/Game/MegaPark/Materials/M_RetailOpaque"
+textures = {Diffuse = "/Game/MegaPark/Textures/T_2c70170a001d0151", Decal = "/Game/MegaPark/Textures/T_2c70170a002f1109", Macro = "/Game/MegaPark/Textures/T_2c70170a000b0040", Lightmap = "/Game/MegaPark/Textures/T_2c314a862174ebf4", Normal = "/Game/MegaPark/Textures/T_0000043d03e3870a", Detail = "/Game/MegaPark/Textures/T_0000043d03e3870a", Specular = "/Game/MegaPark/Textures/T_2c70170a001d0150", Transparent = "/Game/MegaPark/Textures/T_DefaultWhite"}
+scalars = {MacroScale = 0.30000001192092896, DetailScale = 8.0, MacroOpacity = 1.0, UseDecal = 1.0, HasLightmap = 1.0, HasTransparent = 0.0, LightmapNorm = 3.364, Moss = 0.0}
+
+[[recipe.settings.instances]]
+package = "/Game/MegaPark/Materials/MI_234095f625b41d97"
+parent = "/Game/MegaPark/Materials/M_RetailOpaque"
+textures = {Diffuse = "/Game/MegaPark/Textures/T_2c70170a001d0129", Decal = "/Game/MegaPark/Textures/T_2c70170a002f053d", Macro = "/Game/MegaPark/Textures/T_2c70170a001d01d5", Lightmap = "/Game/MegaPark/Textures/T_bee8e9ba50a8ffa7", Normal = "/Game/MegaPark/Textures/T_0000043d03e3870a", Detail = "/Game/MegaPark/Textures/T_0000043d03e3870a", Specular = "/Game/MegaPark/Textures/T_2c70170a001d012a", Transparent = "/Game/MegaPark/Textures/T_DefaultWhite"}
+scalars = {MacroScale = 0.30000001192092896, DetailScale = 8.0, MacroOpacity = 1.0, UseDecal = 1.0, HasLightmap = 1.0, HasTransparent = 0.0, LightmapNorm = 3.313, Moss = 0.0}
+
+[[recipe.settings.instances]]
+package = "/Game/MegaPark/Materials/MI_26bca4f4c4439b9a"
+parent = "/Game/MegaPark/Materials/M_RetailOpaque"
+textures = {Diffuse = "/Game/MegaPark/Textures/T_2c70170a001d012c", Decal = "/Game/MegaPark/Textures/T_DefaultWhite", Macro = "/Game/MegaPark/Textures/T_DefaultWhite", Lightmap = "/Game/MegaPark/Textures/T_2c314a862174ebf4", Normal = "/Game/MegaPark/Textures/T_0000043d03e3870a", Detail = "/Game/MegaPark/Textures/T_DefaultNormal", Specular = "/Game/MegaPark/Textures/T_2c70170a001d012b", Transparent = "/Game/MegaPark/Textures/T_DefaultWhite"}
+scalars = {MacroScale = 1.0, DetailScale = 1.0, MacroOpacity = 0.0, UseDecal = 0.0, HasLightmap = 1.0, HasTransparent = 0.0, LightmapNorm = 3.364, Moss = 0.0}
+
+[[recipe.settings.instances]]
+package = "/Game/MegaPark/Materials/MI_2d236e27b1c7ae19"
+parent = "/Game/MegaPark/Materials/M_RetailOpaque"
+textures = {Diffuse = "/Game/MegaPark/Textures/T_2c70170a001d0151", Decal = "/Game/MegaPark/Textures/T_DefaultWhite", Macro = "/Game/MegaPark/Textures/T_2c70170a000b0040", Lightmap = "/Game/MegaPark/Textures/T_0bb0cdf2fd9825cc", Normal = "/Game/MegaPark/Textures/T_0000043d03e3870a", Detail = "/Game/MegaPark/Textures/T_0000043d03e3870a", Specular = "/Game/MegaPark/Textures/T_2c70170a001d0150", Transparent = "/Game/MegaPark/Textures/T_DefaultWhite"}
+scalars = {MacroScale = 0.30000001192092896, DetailScale = 8.0, MacroOpacity = 1.0, UseDecal = 0.0, HasLightmap = 1.0, HasTransparent = 0.0, LightmapNorm = 3.468, Moss = 0.0}
+
+[[recipe.settings.instances]]
+package = "/Game/MegaPark/Materials/MI_2d299e45c0b686a4"
+parent = "/Game/MegaPark/Materials/M_RetailOpaque"
+textures = {Diffuse = "/Game/MegaPark/Textures/T_2c70170a001d012c", Decal = "/Game/MegaPark/Textures/T_2c70170a002f0b10", Macro = "/Game/MegaPark/Textures/T_2c70170a000b0040", Lightmap = "/Game/MegaPark/Textures/T_bee8e9ba50a8ffa7", Normal = "/Game/MegaPark/Textures/T_0000043d03e3870a", Detail = "/Game/MegaPark/Textures/T_0000043d03e3870a", Specular = "/Game/MegaPark/Textures/T_2c70170a001d012b", Transparent = "/Game/MegaPark/Textures/T_DefaultWhite"}
+scalars = {MacroScale = 0.30000001192092896, DetailScale = 8.0, MacroOpacity = 1.0, UseDecal = 1.0, HasLightmap = 1.0, HasTransparent = 0.0, LightmapNorm = 3.313, Moss = 0.0}
+
+[[recipe.settings.instances]]
+package = "/Game/MegaPark/Materials/MI_4154dbd709458a3a"
+parent = "/Game/MegaPark/Materials/M_RetailOpaque"
+textures = {Diffuse = "/Game/MegaPark/Textures/T_2c70170a001d0129", Decal = "/Game/MegaPark/Textures/T_DefaultWhite", Macro = "/Game/MegaPark/Textures/T_2c70170a001d01d5", Lightmap = "/Game/MegaPark/Textures/T_8b1fb567162f9e8c", Normal = "/Game/MegaPark/Textures/T_0000043d03e3870a", Detail = "/Game/MegaPark/Textures/T_0000043d03e3870a", Specular = "/Game/MegaPark/Textures/T_2c70170a001d012a", Transparent = "/Game/MegaPark/Textures/T_DefaultWhite"}
+scalars = {MacroScale = 0.30000001192092896, DetailScale = 8.0, MacroOpacity = 1.0, UseDecal = 0.0, HasLightmap = 1.0, HasTransparent = 0.0, LightmapNorm = 3.203, Moss = 0.0}
+
+[[recipe.settings.instances]]
+package = "/Game/MegaPark/Materials/MI_54b9cb948ff265c3"
+parent = "/Game/MegaPark/Materials/M_RetailOpaque"
+textures = {Diffuse = "/Game/MegaPark/Textures/T_2c70170a001d0129", Decal = "/Game/MegaPark/Textures/T_2c70170a002f053f", Macro = "/Game/MegaPark/Textures/T_2c70170a001d01d5", Lightmap = "/Game/MegaPark/Textures/T_0bfd6047d8f9e482", Normal = "/Game/MegaPark/Textures/T_0000043d03e3870a", Detail = "/Game/MegaPark/Textures/T_0000043d03e3870a", Specular = "/Game/MegaPark/Textures/T_2c70170a001d012a", Transparent = "/Game/MegaPark/Textures/T_DefaultWhite"}
+scalars = {MacroScale = 0.30000001192092896, DetailScale = 8.0, MacroOpacity = 1.0, UseDecal = 1.0, HasLightmap = 1.0, HasTransparent = 0.0, LightmapNorm = 3.267, Moss = 0.0}
+
+[[recipe.settings.instances]]
+package = "/Game/MegaPark/Materials/MI_5b7d4772f362d980"
+parent = "/Game/MegaPark/Materials/M_RetailOpaque"
+textures = {Diffuse = "/Game/MegaPark/Textures/T_2c70170a001d0129", Decal = "/Game/MegaPark/Textures/T_2c70170a002f1109", Macro = "/Game/MegaPark/Textures/T_2c70170a001d01d5", Lightmap = "/Game/MegaPark/Textures/T_8b1fb567162f9e8c", Normal = "/Game/MegaPark/Textures/T_0000043d03e3870a", Detail = "/Game/MegaPark/Textures/T_0000043d03e3870a", Specular = "/Game/MegaPark/Textures/T_2c70170a001d012a", Transparent = "/Game/MegaPark/Textures/T_DefaultWhite"}
+scalars = {MacroScale = 0.30000001192092896, DetailScale = 8.0, MacroOpacity = 1.0, UseDecal = 1.0, HasLightmap = 1.0, HasTransparent = 0.0, LightmapNorm = 3.203, Moss = 0.0}
+
+[[recipe.settings.instances]]
+package = "/Game/MegaPark/Materials/MI_5fa42b1b843c5f13"
+parent = "/Game/MegaPark/Materials/M_RetailOpaque"
+textures = {Diffuse = "/Game/MegaPark/Textures/T_2c70170a001d0151", Decal = "/Game/MegaPark/Textures/T_DefaultWhite", Macro = "/Game/MegaPark/Textures/T_DefaultWhite", Lightmap = "/Game/MegaPark/Textures/T_2c314a862174ebf4", Normal = "/Game/MegaPark/Textures/T_0000043d03e3870a", Detail = "/Game/MegaPark/Textures/T_DefaultNormal", Specular = "/Game/MegaPark/Textures/T_2c70170a001d0150", Transparent = "/Game/MegaPark/Textures/T_DefaultWhite"}
+scalars = {MacroScale = 1.0, DetailScale = 1.0, MacroOpacity = 0.0, UseDecal = 0.0, HasLightmap = 1.0, HasTransparent = 0.0, LightmapNorm = 3.364, Moss = 0.0}
+
+[[recipe.settings.instances]]
+package = "/Game/MegaPark/Materials/MI_74de62d96d172fcd"
+parent = "/Game/MegaPark/Materials/M_RetailOpaque"
+textures = {Diffuse = "/Game/MegaPark/Textures/T_2c70170a001d0129", Decal = "/Game/MegaPark/Textures/T_DefaultWhite", Macro = "/Game/MegaPark/Textures/T_2c70170a001d01d5", Lightmap = "/Game/MegaPark/Textures/T_bee8e9ba50a8ffa7", Normal = "/Game/MegaPark/Textures/T_0000043d03e3870a", Detail = "/Game/MegaPark/Textures/T_0000043d03e3870a", Specular = "/Game/MegaPark/Textures/T_2c70170a001d012a", Transparent = "/Game/MegaPark/Textures/T_DefaultWhite"}
+scalars = {MacroScale = 0.30000001192092896, DetailScale = 8.0, MacroOpacity = 1.0, UseDecal = 0.0, HasLightmap = 1.0, HasTransparent = 0.0, LightmapNorm = 3.313, Moss = 0.0}
+
+[[recipe.settings.instances]]
+package = "/Game/MegaPark/Materials/MI_97fb1d5d055dc83e"
+parent = "/Game/MegaPark/Materials/M_RetailOpaque"
+textures = {Diffuse = "/Game/MegaPark/Textures/T_2c70170a001d012c", Decal = "/Game/MegaPark/Textures/T_2c70170a002f0543", Macro = "/Game/MegaPark/Textures/T_2c70170a000b0040", Lightmap = "/Game/MegaPark/Textures/T_bee8e9ba50a8ffa7", Normal = "/Game/MegaPark/Textures/T_0000043d03e3870a", Detail = "/Game/MegaPark/Textures/T_0000043d03e3870a", Specular = "/Game/MegaPark/Textures/T_2c70170a001d012b", Transparent = "/Game/MegaPark/Textures/T_DefaultWhite"}
+scalars = {MacroScale = 0.30000001192092896, DetailScale = 8.0, MacroOpacity = 1.0, UseDecal = 1.0, HasLightmap = 1.0, HasTransparent = 0.0, LightmapNorm = 3.313, Moss = 0.0}
+
+[[recipe.settings.instances]]
+package = "/Game/MegaPark/Materials/MI_9d9ad61af96a5a48"
+parent = "/Game/MegaPark/Materials/M_RetailOpaque"
+textures = {Diffuse = "/Game/MegaPark/Textures/T_2c70170a001d012c", Decal = "/Game/MegaPark/Textures/T_DefaultWhite", Macro = "/Game/MegaPark/Textures/T_DefaultWhite", Lightmap = "/Game/MegaPark/Textures/T_8b1fb567162f9e8c", Normal = "/Game/MegaPark/Textures/T_0000043d03e3870a", Detail = "/Game/MegaPark/Textures/T_DefaultNormal", Specular = "/Game/MegaPark/Textures/T_2c70170a001d012b", Transparent = "/Game/MegaPark/Textures/T_DefaultWhite"}
+scalars = {MacroScale = 1.0, DetailScale = 1.0, MacroOpacity = 0.0, UseDecal = 0.0, HasLightmap = 1.0, HasTransparent = 0.0, LightmapNorm = 3.203, Moss = 0.0}
+
+[[recipe.settings.instances]]
+package = "/Game/MegaPark/Materials/MI_b34bfde2b1b2ba35"
+parent = "/Game/MegaPark/Materials/M_RetailOpaque"
+textures = {Diffuse = "/Game/MegaPark/Textures/T_2c70170a001d0129", Decal = "/Game/MegaPark/Textures/T_2c70170a002f1109", Macro = "/Game/MegaPark/Textures/T_2c70170a001d01d5", Lightmap = "/Game/MegaPark/Textures/T_2c314a862174ebf4", Normal = "/Game/MegaPark/Textures/T_0000043d03e3870a", Detail = "/Game/MegaPark/Textures/T_0000043d03e3870a", Specular = "/Game/MegaPark/Textures/T_2c70170a001d012a", Transparent = "/Game/MegaPark/Textures/T_DefaultWhite"}
+scalars = {MacroScale = 0.30000001192092896, DetailScale = 8.0, MacroOpacity = 1.0, UseDecal = 1.0, HasLightmap = 1.0, HasTransparent = 0.0, LightmapNorm = 3.364, Moss = 0.0}
+
+[[recipe.settings.instances]]
+package = "/Game/MegaPark/Materials/MI_c3a8971b198e360e"
+parent = "/Game/MegaPark/Materials/M_RetailOpaque"
+textures = {Diffuse = "/Game/MegaPark/Textures/T_2c70170a001d0129", Decal = "/Game/MegaPark/Textures/T_2c70170a002f111c", Macro = "/Game/MegaPark/Textures/T_2c70170a001d01d5", Lightmap = "/Game/MegaPark/Textures/T_0bfd6047d8f9e482", Normal = "/Game/MegaPark/Textures/T_0000043d03e3870a", Detail = "/Game/MegaPark/Textures/T_0000043d03e3870a", Specular = "/Game/MegaPark/Textures/T_2c70170a001d012a", Transparent = "/Game/MegaPark/Textures/T_DefaultWhite"}
+scalars = {MacroScale = 0.30000001192092896, DetailScale = 8.0, MacroOpacity = 1.0, UseDecal = 1.0, HasLightmap = 1.0, HasTransparent = 0.0, LightmapNorm = 3.267, Moss = 0.0}
+
+[[recipe.settings.instances]]
+package = "/Game/MegaPark/Materials/MI_c941862c2cc7a50f"
+parent = "/Game/MegaPark/Materials/M_RetailOpaque"
+textures = {Diffuse = "/Game/MegaPark/Textures/T_2c70170a001d0151", Decal = "/Game/MegaPark/Textures/T_2c70170a002f053e", Macro = "/Game/MegaPark/Textures/T_2c70170a000b0040", Lightmap = "/Game/MegaPark/Textures/T_0bfd6047d8f9e482", Normal = "/Game/MegaPark/Textures/T_0000043d03e3870a", Detail = "/Game/MegaPark/Textures/T_0000043d03e3870a", Specular = "/Game/MegaPark/Textures/T_2c70170a001d0150", Transparent = "/Game/MegaPark/Textures/T_DefaultWhite"}
+scalars = {MacroScale = 0.30000001192092896, DetailScale = 8.0, MacroOpacity = 1.0, UseDecal = 1.0, HasLightmap = 1.0, HasTransparent = 0.0, LightmapNorm = 3.267, Moss = 0.0}
+
+[[recipe.settings.instances]]
+package = "/Game/MegaPark/Materials/MI_cef7e645a74d3d6c"
+parent = "/Game/MegaPark/Materials/M_RetailOpaque"
+textures = {Diffuse = "/Game/MegaPark/Textures/T_2c70170a001d012c", Decal = "/Game/MegaPark/Textures/T_DefaultWhite", Macro = "/Game/MegaPark/Textures/T_DefaultWhite", Lightmap = "/Game/MegaPark/Textures/T_bee8e9ba50a8ffa7", Normal = "/Game/MegaPark/Textures/T_0000043d03e3870a", Detail = "/Game/MegaPark/Textures/T_DefaultNormal", Specular = "/Game/MegaPark/Textures/T_2c70170a001d012b", Transparent = "/Game/MegaPark/Textures/T_DefaultWhite"}
+scalars = {MacroScale = 1.0, DetailScale = 1.0, MacroOpacity = 0.0, UseDecal = 0.0, HasLightmap = 1.0, HasTransparent = 0.0, LightmapNorm = 3.313, Moss = 0.0}
+
+[[recipe.settings.instances]]
+package = "/Game/MegaPark/Materials/MI_da41d4c91df999ea"
+parent = "/Game/MegaPark/Materials/M_RetailOpaque"
+textures = {Diffuse = "/Game/MegaPark/Textures/T_2c70170a001d0129", Decal = "/Game/MegaPark/Textures/T_2c70170a002f1109", Macro = "/Game/MegaPark/Textures/T_2c70170a001d01d5", Lightmap = "/Game/MegaPark/Textures/T_bee8e9ba50a8ffa7", Normal = "/Game/MegaPark/Textures/T_0000043d03e3870a", Detail = "/Game/MegaPark/Textures/T_0000043d03e3870a", Specular = "/Game/MegaPark/Textures/T_2c70170a001d012a", Transparent = "/Game/MegaPark/Textures/T_DefaultWhite"}
+scalars = {MacroScale = 0.30000001192092896, DetailScale = 8.0, MacroOpacity = 1.0, UseDecal = 1.0, HasLightmap = 1.0, HasTransparent = 0.0, LightmapNorm = 3.313, Moss = 0.0}
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_0297e420658d668d"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_0a62da3eb9f73004"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_0e1c4253739c05d1"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_0e3433716e431235"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_234095f625b41d97"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_26bca4f4c4439b9a"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_2d236e27b1c7ae19"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_2d299e45c0b686a4"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_4154dbd709458a3a"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_54b9cb948ff265c3"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_5b7d4772f362d980"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_5fa42b1b843c5f13"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_74de62d96d172fcd"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_97fb1d5d055dc83e"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_9d9ad61af96a5a48"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_b34bfde2b1b2ba35"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_c3a8971b198e360e"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_c941862c2cc7a50f"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_cef7e645a74d3d6c"
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_da41d4c91df999ea"

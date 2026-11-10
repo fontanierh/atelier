@@ -1,0 +1,28 @@
+# Recovered from the donor (tools/migrate/small_families.py): T_Harbor_paving: the donor PNG paving.png, imported with the saved packages' settings (the plaza read).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "texture/japan/harbor-paving"
+kind = "texture"
+authority = "generated"
+owner = "shared/japan/harbor-paving"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02); pinned by sha256"
+
+[[sources]]
+path = "src/T_Harbor_paving.png"
+sha256 = "0cf002e567a081c1e32ff1c9ae56d70f3bd91d1d728d9f32fe358d2dda3df264"
+
+[recipe]
+importer = "texture"
+version = 1
+
+[recipe.settings]
+srgb = true
+max_texture_size = 1024
+lod_group = "TEXTUREGROUP_WORLD"
+compression = "TC_EDITOR_ICON"
+address = "mirror"
+
+[[outputs]]
+package = "/Game/Japan/Textures/T_Harbor_paving"

@@ -1,0 +1,162 @@
+{
+ "/Game/Japan/Treehouse/Materials/MI_TH_flat": {
+  "effective": {
+   "scalar": {
+    "FadeMode": 0.0,
+    "Gain": 1.9885,
+    "Glow": 0.0,
+    "RoomCut": 1.0
+   },
+   "texture": {
+    "Tex": "/Game/Japan/Treehouse/Textures/T_TH_flat.T_TH_flat"
+   },
+   "vector": {
+    "CutScale": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  "overrides": {
+   "scalar": {
+    "Gain": 1.9885,
+    "Glow": 0.0
+   },
+   "texture": {
+    "Tex": "/Game/Japan/Treehouse/Textures/T_TH_flat.T_TH_flat"
+   },
+   "vector": {}
+  },
+  "parent": "/Game/Japan/Treehouse/Materials/M_TreeHouse.M_TreeHouse",
+  "switches": {}
+ },
+ "/Game/Japan/Treehouse/Materials/MI_TH_glass": {
+  "effective": {
+   "scalar": {
+    "FadeMode": 0.0,
+    "Gain": 1.9885,
+    "Glow": 0.3,
+    "RoomCut": 1.0
+   },
+   "texture": {
+    "Tex": "/Game/Japan/Treehouse/Textures/T_TH_glass.T_TH_glass"
+   },
+   "vector": {
+    "CutScale": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  "overrides": {
+   "scalar": {
+    "Gain": 1.9885,
+    "Glow": 0.3
+   },
+   "texture": {
+    "Tex": "/Game/Japan/Treehouse/Textures/T_TH_glass.T_TH_glass"
+   },
+   "vector": {}
+  },
+  "parent": "/Game/Japan/Treehouse/Materials/M_TreeHouse.M_TreeHouse",
+  "switches": {}
+ },
+ "/Game/Japan/Treehouse/Materials/MI_TH_pane": {
+  "effective": {
+   "scalar": {
+    "Intensity": 0.06,
+    "Shape": 1.0
+   },
+   "texture": {},
+   "vector": {
+    "Tint": [
+     1.0,
+     0.74,
+     0.42,
+     1.0
+    ]
+   }
+  },
+  "overrides": {
+   "scalar": {
+    "Intensity": 0.06,
+    "Shape": 1.0
+   },
+   "texture": {},
+   "vector": {}
+  },
+  "parent": "/Game/Japan/Treehouse/Materials/M_TH_Light.M_TH_Light",
+  "switches": {}
+ },
+ "/Game/Japan/Treehouse/Materials/MI_TH_rope": {
+  "effective": {
+   "scalar": {
+    "FadeMode": 0.0,
+    "Gain": 2.0,
+    "Glow": 0.0,
+    "RoomCut": 1.0
+   },
+   "texture": {
+    "Tex": "/Game/Japan/Treehouse/Textures/T_TH_rope.T_TH_rope"
+   },
+   "vector": {
+    "CutScale": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  "overrides": {
+   "scalar": {
+    "Gain": 2.0,
+    "Glow": 0.0
+   },
+   "texture": {
+    "Tex": "/Game/Japan/Treehouse/Textures/T_TH_rope.T_TH_rope"
+   },
+   "vector": {}
+  },
+  "parent": "/Game/Japan/Treehouse/Materials/M_TreeHouse.M_TreeHouse",
+  "switches": {}
+ },
+ "/Game/Japan/Treehouse/Materials/MI_TH_trunk": {
+  "effective": {
+   "scalar": {
+    "FadeMode": 0.0,
+    "Gain": 2.0,
+    "Glow": 0.0,
+    "RoomCut": 0.0
+   },
+   "texture": {
+    "Tex": "/Game/Japan/Treehouse/Textures/T_TH_bark.T_TH_bark"
+   },
+   "vector": {
+    "CutScale": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  "overrides": {
+   "scalar": {
+    "Gain": 2.0,
+    "Glow": 0.0,
+    "RoomCut": 0.0
+   },
+   "texture": {
+    "Tex": "/Game/Japan/Treehouse/Textures/T_TH_bark.T_TH_bark"
+   },
+   "vector": {}
+  },
+  "parent": "/Game/Japan/Treehouse/Materials/M_TreeHouse.M_TreeHouse",
+  "switches": {}
+ }
+}
