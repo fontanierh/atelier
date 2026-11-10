@@ -556,15 +556,17 @@ def load_restricted(game: Path) -> Restricted:
 
 
 DATA_ROOT = 'Data'                    # unreal/Content/Data: files the game reads at run time (AtelierDataPath)
+DATA_GENERATED = 'Data/Network'        # the multiplayer manifest unreal.package writes (tools/package/network_identity.py)
 DATA_LOCK = 'runtime-data.lock.json'  # every runtime data file with its sha256
 
 
 def data_files(game: Path) -> list[str]:
-    """Content-relative paths of every file under unreal/Content/Data."""
+    """Content-relative paths of every file under unreal/Content/Data, except the generated Data/Network manifest."""
     root = game / 'unreal' / 'Content' / DATA_ROOT
     if not root.is_dir():
         return []
-    return sorted(p.relative_to(root.parent).as_posix() for p in root.rglob('*') if p.is_file() or p.is_symlink())
+    return sorted(p.relative_to(root.parent).as_posix() for p in root.rglob('*')
+                  if (p.is_file() or p.is_symlink()) and not p.relative_to(root.parent).is_relative_to(DATA_GENERATED))
 
 
 def load_data_lock(game: Path) -> dict[str, str] | None:
