@@ -1,0 +1,17 @@
+{
+  "asset": "material/megapark/seam-two-sided-instances",
+  "dependencies": {
+    "adopted/megapark/shared-textures-common": "f279797ca888677031e0d50ea2bc2308950faf90caa3822a71f98aee26a7882c",
+    "adopted/megapark/shared-textures-dirtgravel": "a2d69e34b75bd972a51732e601e539f2582804a59128af4580aec2ab8cd7b1bd",
+    "master/megapark/opaque": "4b3c2b4c4994113316d36ae629854073ab22f272d1a7f1e79520e05a7f709e5b"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/MegaPark/Materials/MI_4cef5bb305cb09eb_Seam.uasset": "52d7cc240dca2ffb2a2e7d003bad680c4b1a7925a64fa339f4e76f2d63d8c410",
+    "unreal/Content/MegaPark/Materials/MI_b4686eeb54647811_Seam.uasset": "da394b306cb86766f378c4e95b417fc6bdec5d3756c6a84e6283d25ac2e91fba"
+  },
+  "input_fingerprint": "f03aab3c4e468f19aa3211d819efe61a8f1fcc7b2b87553d4111de4713f96378",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "material-instance@2"
+}

@@ -6,7 +6,7 @@ id = "prop/citysurfaces/clock-hall-cell-0-0"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/citysurfaces/clock-hall-cell-0-0"
-references = ["adopted/japan/hidamari/surface-earth", "adopted/japan/hidamari/surface-flat", "adopted/japan/hidamari/surface-grass", "adopted/japan/hidamari/surface-metal", "adopted/japan/hidamari/surface-paint", "adopted/japan/hidamari/surface-plaster", "adopted/japan/hidamari/surface-roof", "adopted/japan/hidamari/surface-stone", "adopted/japan/hidamari/surface-timber"]
+references = ["adopted/japan/hidamari/surface-earth", "adopted/japan/hidamari/surface-grass", "adopted/japan/hidamari/surface-metal", "adopted/japan/hidamari/surface-paint", "adopted/japan/hidamari/surface-plaster", "adopted/japan/hidamari/surface-roof", "adopted/japan/hidamari/surface-stone", "adopted/japan/hidamari/surface-timber", "material/japan/hidamari/surface-flat-instances"]
 
 [[sources]]
 path = "src/HD_ClockHall_cell_0_0.fbx"

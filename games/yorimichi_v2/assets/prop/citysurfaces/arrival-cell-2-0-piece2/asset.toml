@@ -6,7 +6,7 @@ id = "prop/citysurfaces/arrival-cell-2-0-piece2"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/citysurfaces/arrival-cell-2-0-piece2"
-references = ["adopted/japan/hidamari/surface-drystone", "adopted/japan/hidamari/surface-earth", "adopted/japan/hidamari/surface-flat", "adopted/japan/hidamari/surface-grass", "adopted/japan/hidamari/surface-gravel", "adopted/japan/hidamari/surface-paint", "adopted/japan/hidamari/surface-rice", "adopted/japan/hidamari/surface-roof", "adopted/japan/hidamari/surface-stone", "adopted/japan/hidamari/surface-timber", "material/japan/materials/ground-instances"]
+references = ["adopted/japan/hidamari/surface-drystone", "adopted/japan/hidamari/surface-earth", "adopted/japan/hidamari/surface-grass", "adopted/japan/hidamari/surface-gravel", "adopted/japan/hidamari/surface-paint", "adopted/japan/hidamari/surface-rice", "adopted/japan/hidamari/surface-roof", "adopted/japan/hidamari/surface-stone", "adopted/japan/hidamari/surface-timber", "material/japan/hidamari/surface-flat-instances", "material/japan/materials/ground-instances"]
 
 [[sources]]
 path = "src/HD_Arrival_cell_2_0_Piece2.fbx"

@@ -6,7 +6,7 @@ id = "prop/megapark/seam"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/megapark/seam"
-references = ["adopted/megapark/seam"]
+references = ["material/megapark/seam-two-sided-instances"]
 
 [[sources]]
 path = "src/SM_MP_Seam.fbx"

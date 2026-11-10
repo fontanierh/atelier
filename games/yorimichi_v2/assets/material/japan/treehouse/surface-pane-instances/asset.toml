@@ -1,0 +1,25 @@
+# Planned from the donor (tools/migrate/small_instances.py): 1 instances of adopted/japan/treehouse/surface-pane, each agreeing with its editor read.
+# The values are the generator's, agreeing with the committed editor read (docs/inventory/small-families-reads/
+# instances); the import writes each instance from its row and reads every value back. Never edited by hand.
+schema = 1
+id = "material/japan/treehouse/surface-pane-instances"
+kind = "material-instance"
+authority = "generated"
+owner = "shared/japan/treehouse/surface-pane-instances"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02); pinned by sha256"
+input_dependencies = ["adopted/japan/treehouse/generator"]
+
+[recipe]
+importer = "material-instance"
+version = 2
+
+[recipe.settings]
+
+[[recipe.settings.instances]]
+package = "/Game/Japan/Treehouse/Materials/MI_TH_pane"
+parent = "/Game/Japan/Treehouse/Materials/M_TH_Light"
+scalars = {Shape = 1.0, Intensity = 0.06}
+
+[[outputs]]
+package = "/Game/Japan/Treehouse/Materials/MI_TH_pane"
