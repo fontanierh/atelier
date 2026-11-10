@@ -162,3 +162,23 @@ def test_real_donor_treehouse_pins():
     assert rows['T_TH_flat']['png_sha256'].startswith('10b379bb6586c9e9')
     assert rows['T_TH_glass']['png_sha256'] == rows['T_TH_flat']['png_sha256']
     assert rows['T_TH_rope']['png_sha256'].startswith('13d328aea5ed6186')
+
+
+@pytest.mark.skipif(not real_tree_ready(), reason='family package bytes are not hydrated')
+def test_native_read_lists_match_the_records():
+    """Each family's package list is the records' packages, and its materials list is the subset a material read takes."""
+    result = sf.classify(sf.GAME)
+    inventory = sf.GAME / 'docs/inventory'
+    for family in sf.FAMILY_ORDER:
+        rows = [r for r in result['records'] if r['family'] == family]
+        if not rows:
+            continue
+        packages = sorted({p for r in rows for p in r['packages']})
+        listed = inventory / f'small-families-{family}-packages.txt'
+        if listed.is_file():
+            assert sorted(listed.read_text().split()) == packages, family
+        materials = inventory / f'small-families-{family}-materials.txt'
+        if materials.is_file():
+            names = materials.read_text().split()
+            assert set(names) <= set(packages), family
+            assert all('/Materials/' in n or n.rsplit('/', 1)[1].startswith(('M_', 'MI_', 'MPC_')) for n in names), family
