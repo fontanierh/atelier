@@ -115,7 +115,7 @@ REGISTRY = {
         'planned', 'T_Arcade and T_Harbor packages of each name have equal sizes (2219461 and 1833653 bytes), so one import of each PNG is consistent; the PNGs are tracked in the donor source (paving sha256 0cf002e5..., timber d71b181a...)'),
     'adopted/japan/assets/bike': ('bike', 'generated wheel static meshes (donor wheel constructors, build.py wheel())',
         'import_bike.py:36-46 (manifest parts, FBX per part under build/yorimichi/bike/assets); generator: games/yorimichi/assets/vehicles/bike/build.py wheel() (line 237) and its settings (line 733), world/bike_sources.py:69-70', 'planned',
-        'generator pinned as generator/bike/wheels (six donor sources, sha256, editor-owned); FBX pins and native reads kept; allow_cpu_access is set by unreal/Scripts/import_settings.py. Open: the claimed write (recover.py japan/assets --apply) moves both wheels to prop/bike/wheel-front and prop/bike/wheel-rear, then the claimed import and native equality against docs/inventory/small-families-reads/bike-meshes.json. M_Bike is owned by adopted/japan/materials/base-materials'),
+        'generator pinned as generator/bike/wheels (six donor sources, sha256, editor-owned); FBX pins and native reads kept; allow_cpu_access is set by unreal/Scripts/import_settings.py. Done (BCBIKE): recover.py japan/assets --only prop/bike/wheel-front,prop/bike/wheel-rear --apply moved both wheels to their records, the claimed import kept 26060 triangles each on the M_Bike slot, as docs/inventory/small-families-reads/bike-meshes.json reads. M_Bike is owned by adopted/japan/materials/base-materials'),
     'adopted/swordcamp/materials': ('swordcamp', 'generator masters M_SwordCamp and M_RoninBody',
         'import_swordcamp.py:47-51 (M_SwordCamp), :117-122 (M_RoninBody); atlas import :29-39', 'need-read',
         'generator-built masters; not yet read; the atlas T_SwordCampAtlas is owned by texture/swordcamp/atlas.'+MASTER_NOTE),
@@ -252,7 +252,7 @@ def megapark_report(donor: Path | None) -> dict:
 
 
 # The adopted records a later write moved into generated records (SMALLFAM, PR #797; MASTERHD and MASTERS2, the material masters;
-# JAPANMI, held_instances.py); their rows report `migrated`.
+# JAPANMI, held_instances.py; BCBIKE, the bike wheels); their rows report `migrated`.
 MIGRATED = frozenset({
     'adopted/belmonte/shared-metal-glass', 'adopted/belmonte/shared-water', 'adopted/hippodrome/loose_files',
     'adopted/hippodrome/materials', 'adopted/hippodrome/meshes', 'adopted/skatepark/materials', 'adopted/skatepark/board', 'adopted/fx', 'adopted/racing',
@@ -260,7 +260,8 @@ MIGRATED = frozenset({
     'adopted/japan/textures/plaza-harbor', 'adopted/japan/treehouse/surface-flat', 'adopted/japan/treehouse/surface-glass',
     'adopted/japan/treehouse/surface-rope', 'adopted/japan/treehouse/surface-trunk',
     'adopted/megapark/shared-materials-pavement', 'adopted/megapark/shared-materials-wood',
-    'adopted/japan/hidamari/surface-flat', 'adopted/japan/treehouse/surface-pane', 'adopted/megapark/seam'})
+    'adopted/japan/hidamari/surface-flat', 'adopted/japan/treehouse/surface-pane', 'adopted/megapark/seam',
+    'adopted/japan/assets/bike'})
 
 
 def _family_counts(out: dict, family: str) -> dict:
