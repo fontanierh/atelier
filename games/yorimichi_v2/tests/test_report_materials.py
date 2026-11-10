@@ -51,3 +51,18 @@ def test_the_package_list_is_the_43_records_packages_in_order():
     names = ['bark', 'buildings', 'foliage', 'ground', 'rock-concrete', 'sky-wind', 'water']
     recorded = [o.package for n in names for o in records.load_asset(family / n / 'asset.toml').outputs]
     assert sorted(listed) == sorted(recorded)
+
+
+def test_the_report_is_refused_inside_the_game_tree_even_through_a_link(job, tmp_path):
+    game = tmp_path / 'game'
+    (game / 'unreal' / 'Content').mkdir(parents=True)
+    outside = tmp_path / 'reports' / 'japan.json'
+    assert job.report_target(str(outside), str(game)) == str(outside.resolve())
+    for inside in (game / 'unreal' / 'Content' / 'MI_Bark.uasset', game):
+        with pytest.raises(ValueError, match='inside'):
+            job.report_target(str(inside), str(game))
+    link = tmp_path / 'link'
+    link.symlink_to(game / 'unreal' / 'Content')
+    with pytest.raises(ValueError, match='inside'):
+        job.report_target(str(link / 'new.uasset'), str(game))
+    assert job.GAME == str(Path(job.__file__).resolve().parents[2])

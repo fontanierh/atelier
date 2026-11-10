@@ -31,6 +31,20 @@ def split_packages(text):
     return text.split()
 
 
+GAME = os.path.realpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
+
+
+def report_target(target, game=GAME):
+    """Pure: the resolved output path, refused inside the game tree (a claim-free read must not write a tracked file or a
+    Content package; yorimichi-v2-single-writer). Symlinks are resolved first, so a link that points into the tree is
+    refused too."""
+    resolved = os.path.realpath(os.path.abspath(target))
+    root = os.path.realpath(game)
+    if resolved == root or resolved.startswith(root + os.sep):
+        raise ValueError(f'V2_REPORT_OUT {target!r} lies inside {root}; write the report outside the game tree')
+    return resolved
+
+
 def check_coverage(report, expected):
     """Pure: the expected packages that have no row, and the rows that carry an error. Nothing else is judged."""
     missing = sorted(p for p in expected if p not in report)
@@ -81,6 +95,7 @@ def report(path):
 
 
 def main():
+    target = report_target(os.environ['V2_REPORT_OUT'])   # refused before anything is read or opened
     packages = split_packages(os.environ['V2_REPORT_PACKAGES'])
     out = {}
     for path in packages:
@@ -88,8 +103,7 @@ def main():
             out[path] = report(path)
         except Exception as exc:
             out[path] = {'error': repr(exc)}
-    target = os.environ['V2_REPORT_OUT']
-    os.makedirs(os.path.dirname(os.path.abspath(target)), exist_ok=True)
+    os.makedirs(os.path.dirname(target), exist_ok=True)
     with open(target, 'w') as f:
         json.dump(out, f, indent=1, sort_keys=True)
     missing, failed = check_coverage(out, packages)
