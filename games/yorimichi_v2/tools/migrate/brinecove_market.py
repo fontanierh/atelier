@@ -56,6 +56,14 @@ SCOPES = (
     dict(component='TownLower', module='lower_town', loop='for spec in L.SHORE_BUILDINGS:', key='key'),
     dict(component='TownUpper', module='upper_town', loop='for spec in L.DENSE_LOTS:', key='spec[0]'),
     dict(component='TownUpper', module='upper_town', loop='for spec in L.HILLSIDE_BUILDINGS:', key='key'),
+    # Harbour props at fixed layout positions (procedural/props.py): each rowboat, each buoy (float and pole) and each
+    # potted palm (pot, trunk and fronds) is its loop body. Named by side and |x| (all x differ within a loop).
+    dict(component='Props', module='props', loop='for x, y, z, yaw, scale in [(-155, -205, 0.0, 20, 1.0), (145, -228, 0.0, -14, 0.9),',
+         key="'rowboat-%s%d' % ('w' if x < 0 else 'e', abs(x))"),
+    dict(component='Props', module='props', loop='for x, y in [(-200, -160), (190, -190), (-90, -210)]:',
+         key="'buoy-%s%d' % ('w' if x < 0 else 'e', abs(x))"),
+    dict(component='Props', module='props', loop='for x, y in [(-300, 300), (-170, 300), (120, 300), (280, 300), (-40, 236), (45, 236)]:',
+         key="'potted-palm-%s%d' % ('w' if x < 0 else 'e', abs(x))"),
 )
 
 
@@ -191,6 +199,8 @@ def object_name(component: str, key: str) -> str:
         return 'market-' + (key if key.startswith('stall') else 'stall-' + key)
     if component in ('TownLower', 'TownUpper'):
         return 'town-' + component[4:].lower() + '-' + key.lower().replace('_', '-')
+    if component == 'Props':
+        return 'props-' + key
     raise MarketError(f'no naming for component {component}')
 
 
@@ -268,7 +278,13 @@ TOWN_LOTS = {
 }
 BATCHES.update({name: tuple(prefix + lot for lot in lots) for name, (prefix, lots) in TOWN_LOTS.items()})
 
-COMPONENT_OF = {'market-': 'Market', 'town-lower-': 'TownLower', 'town-upper-': 'TownUpper'}
+# The harbour props: four rowboats and three buoys in the water, six potted palms on the upper terrace and by the tavern doors.
+BATCHES['props1'] = ('props-rowboat-w155', 'props-rowboat-e145', 'props-rowboat-w270', 'props-rowboat-e270',
+                     'props-buoy-w200', 'props-buoy-e190', 'props-buoy-w90',
+                     'props-potted-palm-w300', 'props-potted-palm-w170', 'props-potted-palm-e120', 'props-potted-palm-e280',
+                     'props-potted-palm-w40', 'props-potted-palm-e45')
+
+COMPONENT_OF = {'market-': 'Market', 'town-lower-': 'TownLower', 'town-upper-': 'TownUpper', 'props-': 'Props'}
 ALL_OBJECTS = frozenset(o for names in BATCHES.values() for o in names)
 
 
@@ -786,7 +802,7 @@ def placements_compute(game: Path, info: dict) -> dict:
 
 
 def batch_names(arg: str) -> list[str]:
-    """`all` (every market and town batch in apply order) or a comma list of batch names, each once."""
+    """`all` (every market, town and props batch in apply order) or a comma list of batch names, each once."""
     names = list(BATCHES) if arg == 'all' else list(dict.fromkeys(b.strip() for b in arg.split(',') if b.strip()))
     unknown = [b for b in names if b not in BATCHES]
     if not names or unknown:
