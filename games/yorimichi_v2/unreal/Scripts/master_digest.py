@@ -4,19 +4,22 @@ The digest records what a graph is, not how Unreal happens to list it: each expr
 (parameter name, default, texture, sampler, constants), each input connection (source expression and output, destination
 expression and input), each material property connection, and the blend mode, shading model and two-sided flag.
 Expression indices and object names are not recorded, since a rebuild in another package has other names. The three
-lists are compared as multisets, so their order does not matter.
+lists are compared as multisets for diagnostics. Version 2 also fingerprints the graph rooted at each material property,
+including each node's ordered input pins and upstream structure: identical local nodes must not hide different wiring.
+Older reports lack that structure and must be read again; their lossy connection labels cannot establish equivalence.
 
 The graph is what the master renders: the expressions reachable from its property pins. An expression wired to nothing
-compiles into no shader, so it is listed apart as `unwired` and not compared. The saved Hippodrome masters each carry two,
-which a rebuild over the original keeps (delete_all_material_expressions leaves them, in the donor as here) and the fresh
-transient build the importer checks first does not have. Its parameters still count, since a material instance can see every parameter
-of its parent, so `parameters` lists each distinct parameter expression of the whole graph, wired or not, and is compared.
+compiles into no shader, so it is listed apart as `unwired` and not compared with historical originals. The importer clears
+old expressions before rebuilding and separately requires the saved graph's unwired nodes to equal the fresh build's.
+Parameters still count, since a material instance can see every parameter of its parent: `parameters` lists each distinct
+parameter expression of the whole graph, wired or not, and is compared.
 
 The pure functions (canonical, accept) run without the Unreal editor, and the tests use them. read() needs the editor and
 is the only part that touches it. A part that cannot be read makes the whole digest an error, which refuses the master:
 a partial digest never matches.
 """
 import collections
+import hashlib
 import json
 
 try:
@@ -27,16 +30,19 @@ except ImportError:   # outside the editor only the pure functions are usable
 # Every material-level property a builder writes, plus the domain: a cutoff or a usage flag that differs refuses.
 SETTINGS = ('blend_mode', 'shading_model', 'two_sided', 'material_domain', 'opacity_mask_clip_value',
             'used_with_instanced_static_meshes', 'used_with_skeletal_mesh', 'used_with_static_lighting',
-            'translucency_lighting_mode')   # written by the translucent sailboat wake (japan_base_masters.sailboat_material)
+            'translucency_lighting_mode', 'is_sky', 'blendable_location', 'dithered_lod_transition',
+            'tangent_space_normal', 'compute_fog_per_pixel')
 PROPERTY_PINS = ('MP_BASE_COLOR', 'MP_NORMAL', 'MP_ROUGHNESS', 'MP_METALLIC', 'MP_SPECULAR', 'MP_EMISSIVE_COLOR',
                  'MP_OPACITY', 'MP_OPACITY_MASK', 'MP_AMBIENT_OCCLUSION', 'MP_WORLD_POSITION_OFFSET', 'MP_REFRACTION',
                  'MP_PIXEL_DEPTH_OFFSET', 'MP_SUBSURFACE_COLOR', 'MP_CUSTOM_DATA0', 'MP_CUSTOM_DATA1', 'MP_TANGENT',
                  'MP_ANISOTROPY', 'MP_SHADING_MODEL')   # a pin this engine does not have is skipped on both sides alike
 EXPRESSION_PROPERTIES = ('parameter_name', 'default_value', 'r', 'constant', 'const_a', 'const_b', 'texture',
                          'sampler_type', 'code', 'coordinate_index', 'output_type', 'data_index', 'const_default_value',
-                         'inputs')   # a Custom node's inputs, recorded by name
+                         'inputs', 'scene_texture_id', 'collection', 'g', 'b', 'a', 'material_function',
+                         'use_custom_primitive_data', 'primitive_data_index')   # desc is editor-only metadata
 LISTS = ('expressions', 'connections', 'property_connections')
 SETS = ('parameters',)
+TOPOLOGY_VERSION = 2
 
 
 def _norm(value):
@@ -57,17 +63,23 @@ def canonical(digest):
             'connections': sorted(digest['connections']),
             'property_connections': sorted(digest['property_connections']),
             'parameters': sorted(set(digest.get('parameters', ()))),
-            'unwired': sorted(digest.get('unwired', ()))}
+            'unwired': sorted(digest.get('unwired', ())),
+            'topology': digest['topology']}
 
 
 def accept(saved, rebuilt):
     """@cc [owner:fontanierh,label:correctness] master-digest-equals-saved
     A rebuilt master is accepted only when its wiring digest equals the saved original's, with nothing missing on either side:
-    the settings, the rendered graph and every parameter. An unwired expression is not compared, unless it carries a
-    parameter. A digest that failed to read refuses. Returns the differences: empty exactly when the rebuilt master is accepted."""
+    the settings, rooted topology with ordered input pins, the rendered graph and every parameter. An unwired expression
+    is not compared, unless it carries a parameter. An unreadable or legacy digest without version 2 topology refuses;
+    lossy local-node labels MUST NOT be used to invent that topology. Returns differences; empty means accepted."""
     for label, digest in (('saved original', saved), ('rebuilt master', rebuilt)):
         if 'error' in digest:
             return [f'{label} could not be read: {digest["error"]}']
+        topology = digest.get('topology')
+        if not isinstance(topology, dict) or topology.get('version') != TOPOLOGY_VERSION \
+                or not isinstance(topology.get('roots'), dict):
+            return [f'{label} lacks version {TOPOLOGY_VERSION} rooted topology; collect a new read-only report']
     a, b = canonical(saved), canonical(rebuilt)
     problems = []
     for key in sorted(set(a['settings']) | set(b['settings'])):
@@ -83,7 +95,36 @@ def accept(saved, rebuilt):
         left, right = set(a[key]), set(b[key])
         problems += [f'{key} only in the saved original: {text}' for text in sorted(left - right)]
         problems += [f'{key} only in the rebuilt master: {text}' for text in sorted(right - left)]
+    left, right = a['topology']['roots'], b['topology']['roots']
+    for pin in sorted(set(left) | set(right)):
+        if left.get(pin) != right.get(pin):
+            problems.append(f'rendered topology differs at {pin}')
     return problems
+
+
+def _rooted_topology(nodes, roots):
+    """@cc [owner:fontanierh,label:correctness] master-digest-rooted-inputs
+    Each root MUST identify its expression properties and complete upstream structure, retaining input order, pin names
+    and source output names. Engine node names and enumeration order MUST NOT affect this identity. Cycles refuse.
+    `nodes` maps temporary engine identities to (local expression text, ordered inputs); roots name material properties.
+    Each input is (pin name, source output name, source identity), or None for an unconnected pin."""
+    complete, visiting = {}, set()
+
+    def identity(key):
+        if key in complete:
+            return complete[key]
+        if key in visiting:
+            raise ValueError('a material expression graph contains a cycle')
+        visiting.add(key)
+        local, inputs = nodes[key]
+        ordered = [None if edge is None else [edge[0], edge[1], identity(edge[2])] for edge in inputs]
+        payload = json.dumps([local, ordered], separators=(',', ':'), ensure_ascii=True).encode()
+        complete[key] = hashlib.sha256(payload).hexdigest()
+        visiting.remove(key)
+        return complete[key]
+
+    return {'version': TOPOLOGY_VERSION,
+            'roots': {pin: [output, identity(key)] for pin, (output, key) in sorted(roots.items())}}
 
 
 def _custom_input_name(value):
@@ -150,23 +191,35 @@ def _digest(material):
     unwired = [text[e.get_path_name()] for e in every if e.get_path_name() not in reached]
     parameters = [text[e.get_path_name()] for e in every if json.loads(text[e.get_path_name()])['props'].get('parameter_name')]
 
-    connections = []
+    connections, nodes = [], {}
     for expression in expressions:
         # One entry per input pin, unwired pins as None; the names list walks the same pins in the same order.
         sources = list(MEL.get_inputs_for_material_expression(material, expression) or [])
         names = [str(name) for name in (MEL.get_material_expression_input_names(expression) or [])]
+        connected = [source.get_path_name() for source in sources if source is not None]
+        if len(connected) != len(set(connected)):
+            # This API identifies an output by source node, not by destination input index. Repeated sources could
+            # therefore conceal different selected channels; refuse rather than invent per-input output names.
+            raise ValueError('cannot read distinct output selections when one expression feeds multiple inputs of '
+                             f'{type(expression).__name__}')
+        inputs = []
         for index, source in enumerate(sources):
             if source is None:
+                inputs.append(None)
                 continue
             out = str(MEL.get_input_node_output_name_for_material_expression(expression, source) or '')
             pin = (names[index] if index < len(names) else '') or f'#{index}'
             connections.append(f'{named(source)}.{out} -> {named(expression)}.{pin}')
-    property_connections = []
+            inputs.append((pin, out, source.get_path_name()))
+        nodes[expression.get_path_name()] = (named(expression), inputs)
+    property_connections, roots = [], {}
     for pin, node in pins.items():
         out = MEL.get_material_property_input_node_output_name(material, getattr(U.MaterialProperty, pin))
         property_connections.append(f'{pin} <- {named(node)}.{out}')
+        roots[pin] = (str(out or ''), node.get_path_name())
     return {'settings': settings, 'expressions': [named(e) for e in expressions], 'connections': connections,
-            'property_connections': property_connections, 'parameters': parameters, 'unwired': unwired}
+            'property_connections': property_connections, 'parameters': parameters, 'unwired': unwired,
+            'topology': _rooted_topology(nodes, roots)}
 
 
 def read(material):

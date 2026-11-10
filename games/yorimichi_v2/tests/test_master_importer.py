@@ -157,7 +157,8 @@ def test_no_builder_saves_its_material_the_importer_does():
 def sample(connections=('A -> B.A',), props=(('two_sided', True),)):
     return {'settings': dict(props), 'expressions': ['{"class": "Constant", "props": {"r": 0.5}}',
                                                        '{"class": "Multiply", "props": {"const_b": 0.3}}'],
-            'connections': list(connections), 'property_connections': ['MP_ROUGHNESS <- Constant.']}
+            'connections': list(connections), 'property_connections': ['MP_ROUGHNESS <- Constant.'],
+            'topology': {'version': digest.TOPOLOGY_VERSION, 'roots': {'MP_ROUGHNESS': ['', 'fixture-root']}}}
 
 
 def test_a_digest_is_accepted_against_itself_and_in_any_order():
@@ -200,13 +201,13 @@ def test_a_different_opacity_cutoff_refuses():
 
 def test_the_digest_records_every_property_a_builder_writes():
     """@cc [owner:fontanierh,label:correctness] master-digest-covers-builders
-    Each set_editor_property name in a material-master builder is a digest setting or expression property, so no value
-    a builder writes can differ from the saved original unseen. input_name is a Custom node input, recorded through inputs."""
+    Each rendering property a material-master builder writes is a digest setting or expression property. input_name is
+    a Custom node input recorded through inputs; desc is editor metadata and does not affect appearance."""
     import re
     written = set()
     for path in (SCRIPTS / 'material_masters').glob('*.py'):
         written |= set(re.findall(r"set_editor_property\('([a-z_0-9]+)'", path.read_text()))
-    assert written - set(digest.SETTINGS) - set(digest.EXPRESSION_PROPERTIES) - {'input_name'} == set()
+    assert written - set(digest.SETTINGS) - set(digest.EXPRESSION_PROPERTIES) - {'input_name', 'desc'} == set()
 
 
 def test_an_unwired_expression_of_the_saved_original_is_not_rebuilt_and_still_accepted():
