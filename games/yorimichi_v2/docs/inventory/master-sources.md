@@ -190,7 +190,9 @@ before preparing a write, then use the existing claim, journal and save guard. `
 save, then read back. Every old expression is removed before the in-place rebuild to prevent accumulating leftovers.
 
 The current digest compares material settings, parameter definitions and rooted wiring, including ordered input
-pins and output selections. Equal local-node multisets alone cannot prove the same graph. Historical reports without
+pins, output selections and TextureCoordinate U/V tiling. Earlier reports omit the tiling fields and do not prove
+texture-scale equality; use fresh read-only reports when making that comparison. Equal local-node multisets alone
+cannot prove the same graph. Historical reports without
 this topology remain historical evidence; obtain a fresh read-only report when this stronger comparison is needed,
 without automatically reimporting or discarding completed packages.
 
