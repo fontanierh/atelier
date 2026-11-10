@@ -458,7 +458,7 @@ def test_check_for_the_groups_stage_allows_the_tile_record_to_remain(monkeypatch
 
 def test_batch_names_all_lists_and_checks_names():
     names = market.batch_names('all')
-    assert names[:4] == ['market1', 'market2', 'market3', 'town1'] and names[-4:] == ['town9', 'props1', 'props2', 'props3'] and len(names) == 15
+    assert names[:4] == ['market1', 'market2', 'market3', 'town1'] and names[-5:] == ['town9', 'props1', 'props2', 'props3', 'harbor1'] and len(names) == 16
     assert market.batch_names('town2, market1,town2') == ['town2', 'market1']
     with pytest.raises(market.MarketError, match='unknown batch town99'):
         market.batch_names('town99')
@@ -544,3 +544,31 @@ def test_donor_props3_lantern_posts_are_whole_hard_parts():
                 counts[name] = counts.get(name, 0) + len(members)
     assert {counts[n] for n in market.BATCHES['props3']} == {44}
     assert not any(market.split.is_soft(stem) for stem, owned in done['owned'].items() if any(owned.values()))
+
+
+def test_the_harbor1_batch_names_each_pier_and_quay_palm_once():
+    """The harbor1 objects are the pier and quay-palm loop bodies of procedural/harbor.py."""
+    names = market.BATCHES['harbor1']
+    assert len(names) == len(set(names)) == 15
+    assert all(market.component_of(n) == 'Harbor' for n in names)
+    assert names[:3] == ('harbor-pier-central', 'harbor-pier-west', 'harbor-pier-east')
+    assert sum(n.startswith('harbor-palm-') for n in names) == 12
+    assert market.object_name('Harbor', 'pier-west') == 'harbor-pier-west'
+
+
+@pytest.mark.skipif(not DONOR or not Path(DONOR).is_dir(), reason='needs the donor export (YV2_DONOR_BUILD)')
+def test_donor_harbor1_piers_and_palms_are_whole():
+    """Each pier is matched whole (the central one across four tiles) and each palm is a hard part plus its fronds' Soft
+    part, with batch 1's crane, fish-shed, net-rack and shipyard cuts taken first."""
+    donor = Path(DONOR)
+    src = market.donor_source(donor)
+    prior = {'crane-west', 'crane-east', 'fish-shed', 'net-rack-west', 'net-rack-east', 'shipyard-yard'}
+    done = market.compute(donor / 'brinecove' / 'glb', src, list(market.BATCHES['harbor1']), prior)
+    assert done['problems'] == []
+    counts = {}
+    for owned in done['owned'].values():
+        for name, members in owned.items():
+            if name:
+                counts[name] = counts.get(name, 0) + len(members)
+    assert counts['harbor-pier-central'] == 3672 and counts['harbor-pier-east'] == 3180 and counts['harbor-pier-west'] == 2868
+    assert {counts[n] for n in market.BATCHES['harbor1'] if 'palm' in n} == {272}

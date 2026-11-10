@@ -74,6 +74,11 @@ SCOPES = (
          key="'lantern-quay-%s%d' % ('w' if x < 0 else 'e', abs(x))"),
     dict(component='Props', module='props', loop='for x in range(-300, 321, 40):',
          key="'lantern-upper-%s%d' % ('w' if x < 0 else 'e', abs(x))"),
+    # Harbour structures (procedural/harbor.py): each pier (deck, piles, braces, T-head, bollards and its two lanterns) and
+    # each quay palm with its stone planter is its loop body. The quay wall, paving and steps belong to no object.
+    dict(component='Harbor', module='harbor', loop='for name, px, y0, y1, width in L.PIERS:', key="'pier-' + name"),
+    dict(component='Harbor', module='harbor', loop='for px, py in ((-330, 72), (-280, 96), (-180, 72), (-110, 96), (110, 96), (180, 72),',
+         key="'palm-%s%d' % ('w' if px < 0 else 'e', abs(px))"),
 )
 
 
@@ -211,6 +216,8 @@ def object_name(component: str, key: str) -> str:
         return 'town-' + component[4:].lower() + '-' + key.lower().replace('_', '-')
     if component == 'Props':
         return 'props-' + key
+    if component == 'Harbor':
+        return 'harbor-' + key
     raise MarketError(f'no naming for component {component}')
 
 
@@ -299,8 +306,11 @@ BATCHES['props2'] = ('props-cargo-w250', 'props-cargo-w170', 'props-cargo-e120',
 # The street lighting: the 16 quay lantern posts (every 44 m, none at the centre) and the 16 upper-terrace posts.
 BATCHES['props3'] = tuple(f'props-lantern-quay-{"w" if x < 0 else "e"}{abs(x)}' for x in range(-360, 361, 44) if abs(x) >= 16) + \
     tuple(f'props-lantern-upper-{"w" if x < 0 else "e"}{abs(x)}' for x in range(-300, 321, 40))
+# The harbour: the three piers and the twelve quay palms in their stone planters (procedural/harbor.py).
+BATCHES['harbor1'] = ('harbor-pier-central', 'harbor-pier-west', 'harbor-pier-east') + tuple(
+    f'harbor-palm-{"w" if x < 0 else "e"}{abs(x)}' for x in (-330, -280, -180, -110, 110, 180, 280, 330, -200, 200, -300, 300))
 
-COMPONENT_OF = {'market-': 'Market', 'town-lower-': 'TownLower', 'town-upper-': 'TownUpper', 'props-': 'Props'}
+COMPONENT_OF = {'market-': 'Market', 'town-lower-': 'TownLower', 'town-upper-': 'TownUpper', 'props-': 'Props', 'harbor-pier-': 'Harbor', 'harbor-palm-': 'Harbor'}
 ALL_OBJECTS = frozenset(o for names in BATCHES.values() for o in names)
 
 
