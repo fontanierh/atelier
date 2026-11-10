@@ -5,10 +5,14 @@ Plan mode, the default, reads the committed adopted records, their verified byte
 checkout (read-only). It writes nothing:
 
     uv run python games/yorimichi_v2/tools/migrate/small_families.py [--game PATH] [--donor PATH] [--json]
+    uv run python games/yorimichi_v2/tools/migrate/small_families.py --donor PATH --paths
+    uv run python games/yorimichi_v2/tools/migrate/small_families.py --donor PATH --claim TASK   # the one journaled write
 
-`--claim TASK` is refused in this change: the journaled record write (one claim, moves outputs out of the adopted records)
-has not been run and is not implemented here. Each family's classification, its donor evidence and its native reads are
-in the table this prints; the donor is never written.
+`--paths` prints the claim paths, the owner scopes, and the lock paths (LFS-lockable files, such as the copied `src/` GLBs
+and PNGs, are listed as `lock`, the rest as `path`). `--claim TASK` is the one journaled write: the new records and their
+`src/` copies, the adopted records' outputs moved out, and the referencing records rewritten. It covers only the
+determined rows in CLAIM_FAMILIES (the Hippodrome loose meshes and the plaza textures). The tree house textures are not
+claimable: the texture recipe cannot express their settings yet. The donor is read only.
 
 Each registry row states one adopted record, its family, what made its packages (the donor script and line), and the
 status a reader can rely on:
@@ -21,6 +25,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+from dataclasses import dataclass
 import json
 import re
 import struct
@@ -31,6 +36,10 @@ HERE = Path(__file__).resolve().parent
 GAME = HERE.parents[1]
 sys.path.insert(0, str(GAME / 'tools' / 'content'))
 import records  # noqa: E402
+import authority  # noqa: E402
+import subprocess  # noqa: E402
+import brinecove_split_apply as apply  # noqa: E402  (the journaled write every migrate step uses)
+import recover  # noqa: E402  (_toml, _drop_outputs)
 
 HIPPO_LOOSE = {   # adopted/hippodrome/loose_files package -> donor GLB name (region/glb, same bytes as the export)
     '/Game/Hippodrome/SM_HD_FinishPost': 'SM_HD_FinishPost',
@@ -45,28 +54,29 @@ TREEHOUSE_TEXTURES = {   # T_TH_<slug> <- build/yorimichi/treehouse/textures/<fi
 }
 ALPHA_PARENTS = ('M_RetailOpaque', 'M_RetailMasked', 'M_RetailTranslucent')   # import_megapark.py:76
 
+MASTER_NOTE = ' Classified, not blocked: a generator-built master keeps its editor-authority record, and its saved package is the only byte-level original of an editor-scripted generator; read-confirmed once the native read runs.'
 # adopted record -> (family, origin, donor evidence, status, blocker or note)
 REGISTRY = {
     'adopted/hippodrome/loose_files': ('hippodrome', 'generated static mesh (GLB, region/glb)',
         'donor world/regions/hippodrome/build.py via unreal/Scripts/import_hippodrome.py:161-177', 'planned',
         'static-mesh recipe needs the GLB copied to src/ and a native import; object records still reference this record'),
     'adopted/hippodrome/materials': ('hippodrome', 'generator master materials M_HD_Structure and M_HD_<surface>',
-        'import_hippodrome.py:32-33 (SURFACES), :60-61 (M_HD_Structure)', 'blocked',
-        'no importer for material masters (kind material has no recipe); parameters need a native read'),
+        'import_hippodrome.py:32-33 (SURFACES), :60-61 (M_HD_Structure)', 'need-read',
+        'generator-built masters; not yet read.'+MASTER_NOTE),
     'adopted/hippodrome/meshes': ('hippodrome', 'Interchange sub-objects of the loose GLB imports',
         'import_hippodrome.py:102-103 (Meshes/<name> folder per GLB)', 'blocked',
         'referenced by the four loose meshes (18 files under unreal/Content name Hippodrome/Meshes/); retire only after a loose re-import'),
     'adopted/japan/treehouse/surface-flat': ('treehouse', 'generated texture T_TH_flat and MI_TH_flat',
-        'import_treehouse.py:3-4; build/yorimichi/treehouse/textures/flat.png', 'planned',
-        'texture recipe from the donor PNG; the glass PNG has the same sha256 (see the table)'),
+        'import_treehouse.py:3-4; build/yorimichi/treehouse/textures/flat.png', 'need-read',
+        'texture v1 expresses only srgb and compression; import_treehouse.py:44-46 also sets max size 1024 and the WORLD LOD group, so the exact recipe needs a texture settings extension first. The glass PNG has the same sha256'),
     'adopted/japan/treehouse/surface-glass': ('treehouse', 'generated texture T_TH_glass and MI_TH_glass',
-        'import_treehouse.py:3-4; build/yorimichi/treehouse/textures/glass.png', 'planned',
+        'import_treehouse.py:3-4; build/yorimichi/treehouse/textures/glass.png', 'need-read',
         'glass.png and flat.png are byte-identical in the donor; the two textures differ in V2 (8297 and 8303 bytes), so the import settings are not yet established'),
     'adopted/japan/treehouse/surface-pane': ('treehouse', 'generated MI_TH_pane (parent M_TH_Light)',
         'treehouse generator (adopted/japan/treehouse/generator); parent M_TH_Light', 'need-read',
         'material instance without its own texture; parameters need a native read'),
     'adopted/japan/treehouse/surface-rope': ('treehouse', 'generated texture T_TH_rope and MI_TH_rope',
-        'import_treehouse.py:3-4; build/yorimichi/treehouse/textures/rope.png', 'planned',
+        'import_treehouse.py:3-4; build/yorimichi/treehouse/textures/rope.png', 'need-read',
         'the MI parent M_TreeHouse is owned by adopted/japan/treehouse/generator; the import settings are not yet confirmed'),
     'adopted/japan/treehouse/surface-trunk': ('treehouse', 'generated MI_TH_trunk (bark, RoomCut 0)',
         'import_treehouse.py:10; texture T_TH_bark owned by adopted/japan/treehouse/surface-bark', 'need-read',
@@ -83,10 +93,10 @@ REGISTRY = {
         'import_megapark.py:20-28 (LEVEL), :347 (main)', 'unreal-authored',
         'keeps its editor-saved form (authority editor); a native read lists the actors it references'),
     'adopted/skatepark/board': ('skatepark', 'generator master M_BoardDissolve',
-        'board_dissolve_material.py:11-15', 'blocked', 'no importer for material masters; native read of the graph needed'),
+        'board_dissolve_material.py:11-15', 'need-read', 'generator-built master; not yet read.'+MASTER_NOTE),
     'adopted/skatepark/materials': ('skatepark', 'generator masters M_Pier_<surface>',
-        'import_skatepark.py:137-173 (M_Pier_ and T_Pier_ textures)', 'blocked',
-        'no importer for material masters; their textures are owned by texture/skatepark records'),
+        'import_skatepark.py:137-173 (M_Pier_ and T_Pier_ textures)', 'need-read',
+        'generator-built masters; not yet read; their textures are owned by texture/skatepark records.'+MASTER_NOTE),
     'adopted/belmonte/shared-metal-glass': ('belmonte', 'generator-built MI_BM_<hash>',
         'world/regions/belmonte/material_preparation.py:21 (name from sha256 of the path)', 'need-read',
         'parent M_Belmonte is owned by adopted/belmonte/generator'),
@@ -99,16 +109,16 @@ REGISTRY = {
         'arcade_material.py:5-12 (T_Arcade_<name>) and harbor_material.py:24-27 (T_Harbor_<name>), both from world/regions/hidamari/textures/{paving,timber}.png',
         'planned', 'T_Arcade and T_Harbor packages of each name have equal sizes (2219461 and 1833653 bytes), so one import of each PNG is consistent; the PNGs are tracked in the donor source (paving sha256 0cf002e5..., timber d71b181a...)'),
     'adopted/japan/assets/bike': ('bike', 'generated wheel static meshes (Blender bike build)',
-        'import_bike.py:40 (manifest parts); build/yorimichi/bike/Bike.blend and manifest.json', 'need-read',
-        'the importer needs the bike manifest sha256 and the M_Bike parent (owned by adopted/japan/materials/base-materials)'),
+        'import_bike.py:36-46 (manifest parts, FBX per part under build/yorimichi/bike/assets)', 'blocked',
+        'Bike.blend, the generator, is not tracked in the donor (git ls-files finds no .blend under the bike build): the FBX has no recorded generator, so it cannot be pinned. M_Bike is owned by adopted/japan/materials/base-materials'),
     'adopted/swordcamp/materials': ('swordcamp', 'generator masters M_SwordCamp and M_RoninBody',
-        'import_swordcamp.py:47-51 (M_SwordCamp), :117-122 (M_RoninBody); atlas import :29-39', 'blocked',
-        'no importer for material masters (as the skatepark masters); the atlas T_SwordCampAtlas is owned by texture/swordcamp/atlas'),
+        'import_swordcamp.py:47-51 (M_SwordCamp), :117-122 (M_RoninBody); atlas import :29-39', 'need-read',
+        'generator-built masters; not yet read; the atlas T_SwordCampAtlas is owned by texture/swordcamp/atlas.'+MASTER_NOTE),
     'adopted/japan/hidamari/surface-flat': ('hidamari', 'generated MI_HD_flat (parent M_HDCity)',
         'city_material.py (hidamari generator), tools/hidamari_textures.py', 'need-read',
         'parent M_HDCity and T_HD_plaster are owned by adopted/japan/hidamari records'),
     'adopted/racing': ('racing', 'generator master M_RacingTv',
-        'racing_tv_material.py:12-16', 'blocked', 'no importer for material masters; native read of the graph needed'),
+        'racing_tv_material.py:12-16', 'need-read', 'generator-built master; not yet read.'+MASTER_NOTE),
     'adopted/seethrough': ('seethrough', 'generator material parameter collection MPC_SeeThrough',
         'see_through.py:47 and :246-253', 'blocked', 'no importer for parameter collections'),
     'adopted/skateruntime': ('skateruntime', 'generated RuntimeData data asset (31 MB)',
@@ -123,6 +133,11 @@ FAMILY_ORDER = ('megapark', 'hippodrome', 'treehouse', 'skatepark', 'belmonte', 
 
 class FamilyError(RuntimeError):
     pass
+
+
+PlanError = FamilyError
+REPO = GAME.parents[1]
+GAME_REL = 'games/yorimichi_v2'
 
 
 def sha256_file(path: Path) -> str:
@@ -269,16 +284,228 @@ def summary_lines(result: dict) -> list[str]:
     return lines
 
 
+# --- the claim: the Hippodrome loose meshes and the plaza textures ------------------------------------------------------------
+# Donor files are generated (hippodrome GLBs) or authored and tracked (plaza PNGs in the donor's source tree). Both are
+# committed under src/ with their sha256 and the owner-published license (docs/DECISIONS.md D05 group 1), as the Japan leaf
+# and plant records are. The tree house textures are not claimable: the texture recipe cannot express their settings.
+CLAIM_FAMILIES = ('hippodrome', 'plaza')
+LICENSE = 'owner-published (docs/DECISIONS.md D05 group 1)'
+PROVENANCE = 'donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02); pinned by sha256'
+GLB_DIR = 'build/yorimichi/hippodrome/region/glb'
+PNG_DIR = 'games/yorimichi/world/regions/hidamari/textures'
+PINS = {   # donor-relative path -> sha256 (the region GLBs equal the exports; the plaza PNGs are tracked donor sources)
+    f'{GLB_DIR}/SM_HD_FinishPost.glb': '123ab4602df5111d1df5345185183557b6488595ff9d5c3d58aebf57c9e9b3b4',
+    f'{GLB_DIR}/SM_HD_Grandstand.glb': '92add5b3492eb839b9c6909d055c1d54d9692070e546a3429b2af9fd6ed9ae8f',
+    f'{GLB_DIR}/SM_HD_JudgesTower.glb': 'ebfe7c40abbd75f5b9c4153ef8c1c48f215b1cc077773ee4b2758a19576188e5',
+    f'{GLB_DIR}/SM_HD_ToteBoard.glb': '8086362ef6c65c6457f9ed6c7ca87e89edcfc2fef9856e089b4d375862e589d9',
+    f'{PNG_DIR}/paving.png': '0cf002e567a081c1e32ff1c9ae56d70f3bd91d1d728d9f32fe358d2dda3df264',
+    f'{PNG_DIR}/timber.png': 'd71b181a3d0df569f0c83ab2f5ffc0142bbeff3e2d542f2ddd4c1d5e3fb28311',
+}
+HIPPO_CLAIM = {   # adopted/hippodrome/loose_files package -> (record slug, donor GLB name); static-mesh, lane's form
+    '/Game/Hippodrome/SM_HD_FinishPost': ('finish-post', 'SM_HD_FinishPost'),
+    '/Game/Hippodrome/SM_HD_Grandstand': ('grandstand', 'SM_HD_Grandstand'),
+    '/Game/Hippodrome/SM_HD_JudgesTower': ('judges-tower', 'SM_HD_JudgesTower'),
+    '/Game/Hippodrome/SM_HD_ToteBoard': ('tote-board', 'SM_HD_ToteBoard'),
+}
+PLAZA_CLAIM = {   # adopted/japan/textures/plaza-harbor package -> (record slug, donor PNG); both import with srgb true
+    '/Game/Japan/Textures/T_Arcade_paving': ('arcade-paving', 'paving.png'),
+    '/Game/Japan/Textures/T_Arcade_timber': ('arcade-timber', 'timber.png'),
+    '/Game/Japan/Textures/T_Harbor_paving': ('harbor-paving', 'paving.png'),
+    '/Game/Japan/Textures/T_Harbor_timber': ('harbor-timber', 'timber.png'),
+}
+CLAIM_ADOPTED = ('adopted/hippodrome/loose_files', 'adopted/japan/textures/plaza-harbor')
+
+
+@dataclass
+class NewRecord:
+    id: str
+    kind: str
+    owner: str
+    references: list
+    sources: list     # (record-relative path, sha256, donor file)
+    settings: dict
+    outputs: list
+    adopted: str      # the adopted record that gives up this package
+    about: str
+
+
+def claim_records(donor: Path) -> list:
+    """The new records. Every donor file is checked against its pin first; a mismatch refuses the plan."""
+    for rel, sha in PINS.items():
+        path = donor / rel
+        if not path.is_file():
+            raise PlanError(f'{rel}: missing in the donor')
+        if sha256_file(path) != sha:
+            raise PlanError(f'{rel}: not its pinned sha256')
+    report = json.loads((donor / 'build/yorimichi/hippodrome/import-report.json').read_text())
+    out = []
+    for package, (slug, name) in HIPPO_CLAIM.items():
+        rel = f'{GLB_DIR}/{name}.glb'
+        out.append(NewRecord(
+            id=f'prop/hippodrome/{slug}', kind='static-mesh', owner=f'shared/hippodrome/{slug}',
+            references=['adopted/hippodrome/materials'],
+            sources=[(f'src/{name}.glb', PINS[rel], donor / rel)],
+            settings={'slot_materials': ['/Game/Hippodrome/Materials/M_HD_Structure'],
+                      'triangles': int(report[name]['triangles']), 'collision': 'complex'},
+            outputs=[package], adopted='adopted/hippodrome/loose_files',
+            about=f'{name}: the donor region GLB of one hippodrome course piece'))
+    for package, (slug, png) in PLAZA_CLAIM.items():
+        rel = f'{PNG_DIR}/{png}'
+        name = package.rsplit('/', 1)[1]
+        out.append(NewRecord(
+            id=f'texture/japan/{slug}', kind='texture', owner=f'shared/japan/{slug}', references=[],
+            sources=[(f'src/{name}.png', PINS[rel], donor / rel)], settings={'srgb': True},
+            outputs=[package], adopted='adopted/japan/textures/plaza-harbor',
+            about=f'{name}: the donor PNG {png} imported sRGB (arcade_material.py and harbor_material.py)'))
+    return out
+
+
+def record_text(rec: NewRecord) -> str:
+    lines = [f'# Recovered from the donor (tools/migrate/small_families.py): {rec.about}.',
+             '# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and',
+             '# verified by tools/import/run.py, never edited by hand.',
+             'schema = 1', f'id = "{rec.id}"', f'kind = "{rec.kind}"', 'authority = "generated"', f'owner = "{rec.owner}"',
+             f'license = "{LICENSE}"', f'provenance = "{PROVENANCE}"']
+    if rec.references:
+        lines.append('references = [' + ', '.join(f'"{r}"' for r in rec.references) + ']')
+    for path, sha, _ in rec.sources:
+        lines += ['', '[[sources]]', f'path = "{path}"', f'sha256 = "{sha}"']
+    lines += ['', '[recipe]', f'importer = "{rec.kind}"', 'version = 1', '', '[recipe.settings]']
+    lines += [f'{key} = {recover._toml(value)}' for key, value in rec.settings.items()]
+    lines += ['']
+    for package in rec.outputs:
+        lines += ['[[outputs]]', f'package = "{package}"', '']
+    return '\n'.join(lines)
+
+
+def _owner_of(text: str) -> str:
+    match = re.search(r'(?m)^owner = "([^"]+)"$', text)
+    return match.group(1) if match else ''
+
+
+def claim_ops(game: Path, donor: Path) -> dict:
+    """The one write: {'writes': {rel: bytes}, 'deletes': [rel]}. New records and src copies; each adopted record that
+    gives up all its packages is deleted with its verified.json; each record that references one names the new records."""
+    recs = claim_records(donor)
+    writes, deletes, moved, new_ids = {}, [], {}, {}
+    for rec in recs:
+        folder = 'assets/' + rec.id
+        writes[f'{folder}/asset.toml'] = record_text(rec).encode()
+        for rel, _, file in rec.sources:
+            writes[f'{folder}/{rel}'] = file.read_bytes()
+        moved.setdefault(rec.adopted, set()).update(rec.outputs)
+        new_ids.setdefault(rec.adopted, []).append(rec.id)
+    for adopted_id, packages in sorted(moved.items()):
+        rel = f'assets/{adopted_id}/asset.toml'
+        listed = {o.package for o in records.load_asset(game / rel).outputs}
+        if listed != packages:
+            raise PlanError(f'{adopted_id}: lists {sorted(listed - packages)} outside the plan or misses some; only a '
+                            'whole-record move is claimed here')
+        deletes.append(rel)
+        if (game / f'assets/{adopted_id}/verified.json').is_file():
+            deletes.append(f'assets/{adopted_id}/verified.json')
+    all_moved = {package for packages in moved.values() for package in packages}
+    for folder_rel in sorted({i.rsplit('/', 1)[0] for i in moved}):
+        units_rel = f'assets/{folder_rel}/units.json'
+        if not (game / units_rel).is_file():
+            continue
+        text = (game / units_rel).read_text()
+        units = json.loads(text)
+        if json.dumps(units, indent=1, ensure_ascii=False) + '\n' != text:
+            raise PlanError(f'{units_rel} is not in the form adoption writes; edit it by hand')
+        packages = units.get('packages', {})
+        for package in list(packages):
+            if package in all_moved:
+                packages.pop(package)
+        new_text = json.dumps(units, indent=1, ensure_ascii=False) + '\n'
+        if new_text != text:
+            writes[units_rel] = new_text.encode()
+    for path in records.record_paths(game):
+        rel = path.relative_to(game).as_posix()
+        if rel in writes or any(rel == f'assets/{i}/asset.toml' for i in moved):
+            continue
+        text = path.read_text()
+        match = re.search(r'(?m)^references = \[(.*)\]$', text)
+        if not match:
+            continue
+        refs = re.findall(r'"([^"]+)"', match.group(1))
+        if not any(r in moved for r in refs):
+            continue
+        others = text[:match.start()] + text[match.end():]
+        if any(f'"{r}"' in others for r in refs if r in moved):
+            raise PlanError(f'{rel} names a moved record outside its references line; refused')
+        kept = []
+        for r in refs:
+            kept += sorted(new_ids[r]) if r in moved else [r]
+        line = 'references = [' + ', '.join(f'"{r}"' for r in sorted(set(kept))) + ']'
+        writes[rel] = (text[:match.start()] + line + text[match.end():]).encode()
+    return {'writes': writes, 'deletes': sorted(set(deletes))}
+
+
+def claim_scopes(game: Path, ops: dict) -> list:
+    owners = set()
+    for rel, data in ops['writes'].items():
+        if rel.endswith('asset.toml'):
+            owners.add(_owner_of(data.decode()))
+    for rel in ops['deletes']:
+        if rel.endswith('asset.toml'):
+            owners.add(_owner_of((game / rel).read_text()))
+    return sorted(o for o in owners if o)
+
+
+def locked_paths(game_rels: list) -> set:
+    """The repository-relative paths Git LFS marks lockable (their src copies and binaries)."""
+    out = subprocess.run(['git', 'check-attr', 'lockable', '--', *game_rels], cwd=REPO, text=True,
+                         stdout=subprocess.PIPE, check=True).stdout
+    return {line.split(':')[0] for line in out.splitlines() if line.endswith(': lockable: set')}
+
+
+def print_paths(game: Path, donor: Path) -> None:
+    ops = claim_ops(game, donor)
+    paths = sorted(set(ops['writes']) | set(ops['deletes']))
+    full = [f'{GAME_REL}/{rel}' for rel in paths]
+    locks = locked_paths(full)
+    for rel in full:
+        print(('lock ' if rel in locks else 'path ') + rel)
+    print('scopes: ' + ' '.join(claim_scopes(game, ops)))
+
+
+def materialize(game: Path, donor: Path, claim: str, *, echo=print) -> None:
+    apply.Journal(game).recover(claim)
+    ops = claim_ops(game, donor)
+    scopes = claim_scopes(game, ops)
+    paths = sorted(set(ops['writes']) | set(ops['deletes']))
+    try:
+        authority.authorize([f'{GAME_REL}/{rel}' for rel in paths], claim,
+                            'Yorimichi V2 small families (hippodrome loose meshes, plaza textures)', scopes=scopes)
+    except authority.Unauthorized as error:
+        raise PlanError(str(error)) from None
+    apply.execute(game, ops, scopes=scopes)
+    echo(f'materialize: {len(claim_records(donor))} record(s) written; {len(paths)} path(s) under {claim}')
+
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split('\n\n')[0])
     parser.add_argument('--game', type=Path, default=GAME)
     parser.add_argument('--donor', type=Path, default=None, help='a donor checkout (read-only); donor evidence is skipped without it')
     parser.add_argument('--json', action='store_true')
-    parser.add_argument('--claim', metavar='TASK', help='refused in this change (see the module docstring)')
+    parser.add_argument('--paths', action='store_true', help='print the claim paths (lock or path), then the scopes')
+    parser.add_argument('--claim', metavar='TASK', help='the one journaled write for the claimable rows')
     args = parser.parse_args(argv)
-    if args.claim:
-        print('refused: --claim is not implemented in this change; plan mode only', file=sys.stderr)
-        return 2
+    if args.claim or args.paths:
+        if args.donor is None:
+            print('small_families: --paths and --claim need --donor', file=sys.stderr)
+            return 1
+        try:
+            if args.claim:
+                materialize(args.game, args.donor, args.claim)
+            else:
+                print_paths(args.game, args.donor)
+            return 0
+        except (FamilyError, records.RecordError, apply.SplitError) as error:
+            print(f'small_families: {error}', file=sys.stderr)
+            return 1
     result = classify(args.game, args.donor)
     if args.json:
         print(json.dumps(result, indent=1, sort_keys=True))

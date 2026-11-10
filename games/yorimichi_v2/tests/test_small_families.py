@@ -13,6 +13,8 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'tools' / 'migrate'))
 import small_families as sf  # noqa: E402
+sys.path.insert(0, str(ROOT / 'tools' / 'content'))
+import records  # noqa: E402
 
 POINTER = b'version https://git-lfs.github.com/spec/v1\noid sha256:' + b'0' * 64 + b'\nsize 12\n'
 DONOR = Path(os.environ['V2_FAMILIES_DONOR']) if os.environ.get('V2_FAMILIES_DONOR') else None
@@ -105,9 +107,9 @@ def test_registry_rows_are_consistent():
         assert row[3] != 'planned' or row[4], record_id + ' names what is still missing'
 
 
-def test_claim_is_refused(capsys):
-    assert sf.main(['--claim', 'TASK']) == 2
-    assert 'refused' in capsys.readouterr().err
+def test_claim_without_a_donor_is_refused(capsys):
+    assert sf.main(['--claim', 'TASK']) == 1
+    assert '--donor' in capsys.readouterr().err
 
 
 def real_tree_ready():
@@ -183,3 +185,112 @@ def test_native_read_lists_match_the_records():
             names = materials.read_text().split()
             assert set(names) <= set(packages), family
             assert all('/Materials/' in n or n.rsplit('/', 1)[1].startswith(('M_', 'MI_', 'MPC_')) for n in names), family
+
+
+# --- the claim: fake donor and game trees ---------------------------------------------------------------------------------
+
+OBJECT_TOTE = '''schema = 1
+id = "object/hippodrome/tote-board"
+kind = "placement"
+authority = "editor"
+owner = "region/w15-hippodrome"
+references = ["adopted/hippodrome/loose_files"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/C/Z8/TOTE"
+'''
+
+
+def adopted_text(record_id, owner, packages):
+    lines = ['schema = 1', f'id = "{record_id}"', 'kind = "adopted"', 'authority = "editor"', f'owner = "{owner}"',
+             'provenance = "fixture"', 'license = "fixture"', '']
+    for package in packages:
+        lines += ['[[outputs]]', f'package = "{package}"', '']
+    return '\n'.join(lines)
+
+
+@pytest.fixture()
+def claim_trees(tmp_path, monkeypatch):
+    donor = tmp_path / 'donor'
+    files = {}
+    for slug, name in sf.HIPPO_CLAIM.values():
+        files[f'{sf.GLB_DIR}/{name}.glb'] = f'glb {name}'.encode()
+    for png in ('paving.png', 'timber.png'):
+        files[f'{sf.PNG_DIR}/{png}'] = f'png {png}'.encode()
+    for rel, data in files.items():
+        (donor / rel).parent.mkdir(parents=True, exist_ok=True)
+        (donor / rel).write_bytes(data)
+    (donor / 'build/yorimichi/hippodrome').mkdir(parents=True, exist_ok=True)
+    (donor / 'build/yorimichi/hippodrome/import-report.json').write_text(json.dumps(
+        {name: {'triangles': 10 + i} for i, name in enumerate(n for _, n in sf.HIPPO_CLAIM.values())}))
+    monkeypatch.setattr(sf, 'PINS', {rel: hashlib.sha256(data).hexdigest() for rel, data in files.items()})
+    game = tmp_path / 'game'
+    loose = [p for p in sf.HIPPO_CLAIM]
+    (game / 'assets/adopted/hippodrome/loose_files').mkdir(parents=True)
+    (game / 'assets/adopted/hippodrome/loose_files/asset.toml').write_text(
+        adopted_text('adopted/hippodrome/loose_files', 'shared/hippodrome/loose_files', loose))
+    (game / 'assets/adopted/hippodrome/loose_files/verified.json').write_text('{"files": {}}')
+    plaza = list(sf.PLAZA_CLAIM)
+    (game / 'assets/adopted/japan/textures/plaza-harbor').mkdir(parents=True)
+    (game / 'assets/adopted/japan/textures/plaza-harbor/asset.toml').write_text(
+        adopted_text('adopted/japan/textures/plaza-harbor', 'shared/japan/textures/plaza-harbor', plaza))
+    (game / 'assets/adopted/japan/textures/plaza-harbor/verified.json').write_text('{"files": {}}')
+    units = {'packages': {p: {'note': 'fixture'} for p in plaza + ['/Game/Japan/Textures/T_Other']}}
+    (game / 'assets/adopted/japan/textures/units.json').write_text(json.dumps(units, indent=1, ensure_ascii=False) + '\n')
+    (game / 'assets/object/hippodrome/tote-board').mkdir(parents=True)
+    (game / 'assets/object/hippodrome/tote-board/asset.toml').write_text(OBJECT_TOTE)
+    return donor, game
+
+
+def test_claim_writes_records_moves_outputs_and_rewrites_referencers(claim_trees):
+    donor, game = claim_trees
+    ops = sf.claim_ops(game, donor)
+    writes, deletes = ops['writes'], ops['deletes']
+    assert 'assets/prop/hippodrome/tote-board/asset.toml' in writes
+    assert 'assets/prop/hippodrome/tote-board/src/SM_HD_ToteBoard.glb' in writes
+    assert 'assets/texture/japan/harbor-timber/src/T_Harbor_timber.png' in writes
+    assert 'assets/adopted/hippodrome/loose_files/asset.toml' in deletes
+    assert 'assets/adopted/hippodrome/loose_files/verified.json' in deletes
+    assert 'assets/adopted/japan/textures/plaza-harbor/asset.toml' in deletes
+    rewritten = writes['assets/object/hippodrome/tote-board/asset.toml'].decode()
+    for slug in ('finish-post', 'grandstand', 'judges-tower', 'tote-board'):
+        assert f'"prop/hippodrome/{slug}"' in rewritten
+    assert 'adopted/hippodrome/loose_files' not in rewritten
+    units = json.loads(writes['assets/adopted/japan/textures/units.json'].decode())
+    assert sorted(units['packages']) == ['/Game/Japan/Textures/T_Other']
+
+
+def test_each_new_record_text_loads_as_a_v2_record(claim_trees, tmp_path):
+    donor, game = claim_trees
+    ops = sf.claim_ops(game, donor)
+    for rel, data in ops['writes'].items():
+        if not rel.endswith('asset.toml') or 'adopted' in rel or 'object' in rel:
+            continue
+        path = tmp_path / rel.replace('/', '__')
+        path.write_bytes(data)
+        asset = records.load_asset(path)
+        assert asset.authority == 'generated' and asset.sources and asset.recipe is not None
+        assert asset.license == sf.LICENSE
+
+
+def test_claim_refuses_a_donor_file_that_is_not_its_pin(claim_trees):
+    donor, game = claim_trees
+    (donor / sf.GLB_DIR / 'SM_HD_Grandstand.glb').write_bytes(b'changed')
+    with pytest.raises(sf.PlanError):
+        sf.claim_ops(game, donor)
+
+
+def test_paths_are_claim_paths_and_scopes(claim_trees, capsys):
+    donor, game = claim_trees
+    sf.print_paths(game, donor)
+    out = capsys.readouterr().out.splitlines()
+    assert out[-1].startswith('scopes: ')
+    assert 'shared/hippodrome/tote-board' in out[-1]
+    assert 'shared/japan/arcade-paving' in out[-1]
+
+
+@pytest.mark.skipif(DONOR is None or not (DONOR / sf.GLB_DIR / 'SM_HD_ToteBoard.glb').is_file(), reason='no donor checkout')
+def test_real_donor_claim_pins_match():
+    for rel, sha in sf.PINS.items():
+        assert sf.sha256_file(DONOR / rel) == sha, rel
+    assert all(len(sha) == 64 for sha in sf.PINS.values())
