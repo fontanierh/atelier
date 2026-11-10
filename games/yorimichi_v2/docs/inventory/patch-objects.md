@@ -10,6 +10,9 @@ filter below was a conservative first-batch choice, not a permanent exemption fo
 
 ## Current authoring commands
 
+These routes change placement ownership. Before editing a generated model's geometry, follow the
+[independent-model workflow](../../../../docs/WORLD_BUILD_PRACTICES.md#make-a-model-independent-before-editing-it).
+
 Use the selected region's current `objects.toml` and hold the claim covering its complete record and package paths.
 For an entry with `patch = "<V2Id>"` (or a list of patch IDs), promote the already-saved patch into its own object
 record without opening the editor or changing the package bytes:
