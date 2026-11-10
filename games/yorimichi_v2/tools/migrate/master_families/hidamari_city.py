@@ -8,6 +8,7 @@ FAMILY = {
     'owner': 'shared/japan/hidamari/generator',
     'license': 'owner-published (docs/DECISIONS.md D05 group 1)',
     'builder': 'hidamari_city_masters.py',   # unreal/Scripts/material_masters/, copied into the record's src/
+    'helpers': ['master_haze.py'],   # copied and pinned after the entry builder in each record's sources
     'donor': 'games/yorimichi/unreal/Scripts/city_material.py',   # blob sha256 0d7cf543...
     'donor_lines': {'city_parent': '42-95'},
     # The 56 records that reference adopted/japan/hidamari/generator are all editor-owned adopted records with no recipe

@@ -26,15 +26,24 @@ CITY = FAMILIES['hidamari_city']
 GAME = ROOT
 
 
-def _load(name, path):
+def _load_module(name, path):
     spec = importlib.util.spec_from_file_location(name, path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
 
 
-sword = _load('v2_swordcamp_masters', SCRIPTS / 'material_masters' / 'swordcamp_masters.py')
-city = _load('v2_hidamari_city_masters', SCRIPTS / 'material_masters' / 'hidamari_city_masters.py')
+source_loader = _load_module('v2_master_sources', SCRIPTS / 'master_sources.py')
+
+
+def _load_family(family):
+    with source_loader.builder(planner.builder_sources(family), family['masters'][0]['builder']) as builder:
+        # Retain the module object for the existing traces, without leaving it in the process import cache.
+        return sys.modules[builder.__module__]
+
+
+sword = _load_family(SWORD)
+city = _load_family(CITY)
 
 
 # --- the recording stand-in, as in test_master_importer.py -----------------------------------------------------------------
@@ -114,9 +123,9 @@ def test_the_modules_import_without_the_editor_and_define_the_builders():
 
 
 def test_the_haze_is_the_donor_haze_for_the_sea_look_constants():
-    assert sword.FAR_COLOUR == city.FAR_COLOUR == (0.0932, 0.2301, 0.5328)
-    assert sword._haze_code_base() == city._haze_code_base() == HAZE_BASE
-    assert sword._haze_code_glow() == city._haze_code_glow() == HAZE_GLOW
+    assert sword.haze.FAR_COLOUR == city.haze.FAR_COLOUR == (0.0932, 0.2301, 0.5328)
+    assert sword.haze.code_base() == city.haze.code_base() == HAZE_BASE
+    assert sword.haze.code_glow() == city.haze.code_glow() == HAZE_GLOW
 
 
 def test_the_camp_material_traces_as_the_donor_build_material():
@@ -227,7 +236,9 @@ def test_the_planned_record_text_is_a_valid_material_master_with_the_pinned_buil
         path.write_text(planner.record_text(family, master, sha))
         asset = records.load_asset(path)
         assert asset.kind == 'material-master' and asset.authority == 'generated'
-        assert [(s.path, s.sha256) for s in asset.sources] == [(planner.builder_rel(family), sha)]
+        assert [(s.path, s.sha256) for s in asset.sources] == [
+            (f'src/{source.name}', hashlib.sha256(source.read_bytes()).hexdigest())
+            for source in planner.builder_sources(family)]
         assert records.material_master_reads(asset) == master['reads']
         assert asset.recipe['settings']['builder'] == master['builder']
         outputs_of = {dep: set(master['reads']) for dep in master['inputs']}

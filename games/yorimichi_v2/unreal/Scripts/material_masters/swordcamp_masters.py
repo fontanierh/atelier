@@ -8,74 +8,19 @@ no texture is imported or loaded here (the importer passes every read in), and t
 import (donor lines 1-45) stay behind. Nothing runs at import: the module is functions only, so it imports without the
 Unreal editor, where `unreal` is None and a builder cannot run.
 
-The haze that build_material calls is atmosphere.apply (donor atmosphere.py lines 14-62, blob sha256 b59478df...), which
-reads the sea_look.py constants num and f3 (lines 38-45), HORIZON (line 50) and HAZE_CM, FAR, FAR_COLOUR (lines 67-69,
-blob sha256 ffae53cd...). Only the apply path the Sword Camp graph takes is copied: the glow-less branch has no caller.
-Each copy below is marked with the donor line it comes from.
+The haze uses the shared master_haze.py implementation, which each record declares and pins beside this builder.
+Its donor atmosphere.py and sea_look.py constants and graph are preserved there. The helper is loaded only from the
+record's declared sources in the importer's private module namespace.
 
 A builder takes the destination package path, the loaded reads ({package: asset}) and the recipe's arguments as keyword
 arguments, and returns the rebuilt material.
 """
+from . import master_haze as haze
+
 try:
     import unreal
 except ImportError:   # outside the editor: the functions are defined but cannot run
     unreal = None
-
-
-# --- copied from sea_look.py (donor lines 38-45, 50, 67-69) -----------------------------------------------------------
-
-def num(x):
-    """HLSL float literal (sea_look.py lines 38-40)."""
-    return repr(float(x))
-
-
-def f3(c):
-    """HLSL float3 literal (sea_look.py lines 43-45)."""
-    return 'float3(%s)' % ','.join(num(x) for x in c)
-
-
-HORIZON = (0.126, 0.311, 0.720)                       # sea_look.py line 50
-HAZE_CM = 900000.0                                     # sea_look.py line 67
-FAR = 0.74                                             # sea_look.py line 68
-FAR_COLOUR = tuple(round(c * FAR, 4) for c in HORIZON)  # sea_look.py line 69
-
-
-# --- copied from atmosphere.py (donor lines 17-21, 25-27, 30-33 and the apply path of 37-62) -------------------------------
-START_CM = 3000.0                                      # atmosphere.py line 19: the first 30 m are untouched
-COLOUR = FAR_COLOUR                                    # atmosphere.py line 18
-SHARE = f'saturate(1-exp(-max(D-{num(START_CM)},0)/{num(HAZE_CM)}))'   # atmosphere.py line 21
-
-
-def _haze_code_base(expr='B'):
-    """atmosphere.code_base (atmosphere.py lines 25-27)."""
-    return f'return ({expr})*(1-{SHARE});'
-
-
-def _haze_code_glow(expr='E'):
-    """atmosphere.code_glow (atmosphere.py lines 30-32)."""
-    return f'float h={SHARE}; return ({expr})*(1-h)+{f3(COLOUR)}*h;'
-
-
-def _haze_custom(m, code, inputs, x, y):
-    """atmosphere._custom (atmosphere.py lines 35-47 by the donor's order): a Custom node with named inputs, wired."""
-    MEL = unreal.MaterialEditingLibrary
-    n = MEL.create_material_expression(m, unreal.MaterialExpressionCustom, x, y)
-    n.set_editor_property('code', code)
-    n.set_editor_property('output_type', unreal.CustomMaterialOutputType.CMOT_FLOAT3)
-    n.set_editor_property('inputs', _custom_inputs([name for name, _, _ in inputs]))
-    for name, src, out in inputs:
-        assert MEL.connect_material_expressions(src, out, n, name), name
-    return n
-
-
-def _haze_apply(m, base, glow, x, y):
-    """atmosphere.apply with base_out and glow_out left at '' (atmosphere.py lines 50-62, glow given): the haze depth node,
-    then the base-colour node at (x, y) and the emissive node at (x, y + 200). Returns (base, glow)."""
-    MEL = unreal.MaterialEditingLibrary
-    depth = MEL.create_material_expression(m, unreal.MaterialExpressionPixelDepth, x - 200, y + 300)
-    b = _haze_custom(m, _haze_code_base(), [('B', base, ''), ('D', depth, '')], x, y)
-    g = _haze_custom(m, _haze_code_glow(), [('E', glow, ''), ('D', depth, '')], x, y + 200)
-    return b, g
 
 
 # --- shared helpers (donor: the per-builder loops; `_material` is the hippodrome builder's) ----------------------------
@@ -89,13 +34,8 @@ def _material(package):
 
 
 def _custom_inputs(names):
-    """One CustomInput per name, in order (the donor's `for key in (...)` loops)."""
-    out = []
-    for key in names:
-        arg = unreal.CustomInput()
-        arg.set_editor_property('input_name', key)
-        out.append(arg)
-    return out
+    """The shared helper builds the donor's ordered CustomInput structs."""
+    return haze.custom_inputs(unreal, names)
 
 
 # --- M_SwordCamp -----------------------------------------------------------------------------------------------------------
@@ -131,7 +71,7 @@ def build_material(package, reads, *, texture):
     link(tex, 'RGB', fill, 'C')
     link(vc, 'R', fill, 'G')
 
-    base, glow = _haze_apply(m, tex, fill, x=120, y=0)
+    base, glow = haze.apply(unreal, m, tex, fill, x=120, y=0)
     assert MEL.connect_material_property(base, '', unreal.MaterialProperty.MP_BASE_COLOR)
     assert MEL.connect_material_property(glow, '', unreal.MaterialProperty.MP_EMISSIVE_COLOR)
 
