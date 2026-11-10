@@ -1,0 +1,36 @@
+{
+  "asset": "prop/hippodrome/finish-post",
+  "dependencies": {
+    "adopted/hippodrome/meshes": "1dc4e8a62fa069424357490bd2e10b0e803546989b468f19d5034a2d3419bf0c"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Hippodrome/SM_HD_FinishPost.uasset": "5e9ebb18aae128b9a987861b87d057066df1bfeddeebe97d9a2b6bf38c43801c"
+  },
+  "input_fingerprint": "5a32a91304b6dee061e155cb53287e0d5b35f4a6ebe7335a148ad9bdf2524ed2",
+  "kind": "imported",
+  "lods": {
+    "/Game/Hippodrome/SM_HD_FinishPost": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

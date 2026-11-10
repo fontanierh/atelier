@@ -1,0 +1,28 @@
+# Recovered from the donor (tools/migrate/small_families.py): SM_HD_Grandstand: the donor region GLB of one hippodrome course piece.
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/hippodrome/grandstand"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/hippodrome/grandstand"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02); pinned by sha256"
+references = ["adopted/hippodrome/materials"]
+input_dependencies = ["adopted/hippodrome/meshes"]
+
+[[sources]]
+path = "src/SM_HD_Grandstand.glb"
+sha256 = "92add5b3492eb839b9c6909d055c1d54d9692070e546a3429b2af9fd6ed9ae8f"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Hippodrome/Meshes/SM_HD_Grandstand/HD_Grandstand"]
+triangles = 24940
+collision = "complex"
+
+[[outputs]]
+package = "/Game/Hippodrome/SM_HD_Grandstand"

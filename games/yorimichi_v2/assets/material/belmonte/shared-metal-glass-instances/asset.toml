@@ -1,0 +1,62 @@
+# Planned from the donor (tools/migrate/small_instances.py): 5 instances of adopted/belmonte/shared-metal-glass, each agreeing with its editor read.
+# The values are the generator's, agreeing with the committed editor read (docs/inventory/small-families-reads/
+# instances); the import writes each instance from its row and reads every value back. Never edited by hand.
+schema = 1
+id = "material/belmonte/shared-metal-glass-instances"
+kind = "material-instance"
+authority = "generated"
+owner = "shared/belmonte/shared-metal-glass-instances"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02); pinned by sha256"
+input_dependencies = ["adopted/belmonte/generator"]
+
+[recipe]
+importer = "material-instance"
+version = 2
+
+[recipe.settings]
+
+[[recipe.settings.instances]]
+package = "/Game/Belmonte/Materials/MI_BM_4ee3168b033c"
+parent = "/Game/Belmonte/Materials/M_Belmonte"
+scalars = {Tile = 4.0, WhiteVertex = 0.0, Terrain = 0.0, Brightness = 1.0, Atlas = 0.0, Strength = 0.0, Roughness = 0.87}
+vectors = {Colour = [1.0, 1.0, 1.0, 1.0], Tint = [1.0, 1.0, 1.0, 1.0]}
+
+[[recipe.settings.instances]]
+package = "/Game/Belmonte/Materials/MI_BM_69b755f9ad2a"
+parent = "/Game/Belmonte/Materials/M_Belmonte"
+scalars = {Tile = 4.0, WhiteVertex = 0.0, Terrain = 0.0, Brightness = 1.0, Atlas = 0.0, Strength = 0.0, Roughness = 0.87}
+vectors = {Colour = [1.0, 1.0, 1.0, 1.0], Tint = [1.0, 1.0, 1.0, 1.0]}
+
+[[recipe.settings.instances]]
+package = "/Game/Belmonte/Materials/MI_BM_aa1a8d45375e"
+parent = "/Game/Belmonte/Materials/M_Belmonte"
+scalars = {Tile = 4.0, WhiteVertex = 1.0, Terrain = 0.0, Brightness = 1.0, Atlas = 0.0, Strength = 0.0, Roughness = 0.87}
+vectors = {Colour = [0.029999999329447746, 0.02500000037252903, 0.019999999552965164, 1.0], Tint = [1.0, 1.0, 1.0, 1.0]}
+
+[[recipe.settings.instances]]
+package = "/Game/Belmonte/Materials/MI_BM_b5dfa6e6373d"
+parent = "/Game/Belmonte/Materials/M_Belmonte"
+scalars = {Tile = 4.0, WhiteVertex = 0.0, Terrain = 0.0, Brightness = 1.0, Atlas = 0.0, Strength = 0.0, Roughness = 0.87}
+vectors = {Colour = [1.0, 1.0, 1.0, 1.0], Tint = [1.0, 1.0, 1.0, 1.0]}
+
+[[recipe.settings.instances]]
+package = "/Game/Belmonte/Materials/MI_BM_fae8893ff89f"
+parent = "/Game/Belmonte/Materials/M_Belmonte"
+scalars = {Tile = 4.0, WhiteVertex = 0.0, Terrain = 0.0, Brightness = 1.0, Atlas = 0.0, Strength = 0.0, Roughness = 0.87}
+vectors = {Colour = [1.0, 1.0, 1.0, 1.0], Tint = [1.0, 1.0, 1.0, 1.0]}
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_4ee3168b033c"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_69b755f9ad2a"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_aa1a8d45375e"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_b5dfa6e6373d"
+
+[[outputs]]
+package = "/Game/Belmonte/Materials/MI_BM_fae8893ff89f"

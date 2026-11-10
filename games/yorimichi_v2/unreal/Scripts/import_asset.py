@@ -202,11 +202,41 @@ def _apply_texture_settings(asset, settings):
     if group is not None:
         asset.set_editor_property('lod_group', getattr(U.TextureGroup, group))
     if 'address' in settings:
-        # The donor's tiling surfaces (import_hippodrome.py `wrap=True`): wrap on both axes, nothing else.
-        if settings['address'] != 'wrap':
-            raise RuntimeError(f'unknown texture address {settings["address"]!r}')
-        asset.set_editor_property('address_x', U.TextureAddress.TA_WRAP)
-        asset.set_editor_property('address_y', U.TextureAddress.TA_WRAP)
+        # The donor's tiling surfaces (import_hippodrome.py `wrap=True`) and the plaza's mirrored ones (the saved packages
+        # read TA_MIRROR on both axes): both axes take the one mode.
+        mode = _texture_address(settings['address'])
+        asset.set_editor_property('address_x', mode)
+        asset.set_editor_property('address_y', mode)
+    _read_back_texture_settings(asset, settings)
+
+
+def _texture_address(name):
+    if name == 'wrap':
+        return U.TextureAddress.TA_WRAP
+    if name == 'mirror':
+        return U.TextureAddress.TA_MIRROR
+    raise RuntimeError(f'unknown texture address {name!r}')
+
+
+def _read_back_texture_settings(asset, settings):
+    """Read each stated setting back before the save: UE 5.8's setters can report success and keep the old value
+    (tint_material.py), so only the read proves what the package will contain. An unstated setting is not read."""
+    name = asset.get_path_name()
+    checks = []
+    if 'srgb' in settings:
+        checks.append(('srgb', bool(settings['srgb'])))
+    if 'compression' in settings:
+        checks.append(('compression_settings', getattr(U.TextureCompressionSettings, settings['compression'])))
+    if import_settings.max_texture_size(settings) is not None:
+        checks.append(('max_texture_size', import_settings.max_texture_size(settings)))
+    if import_settings.lod_group(settings) is not None:
+        checks.append(('lod_group', getattr(U.TextureGroup, import_settings.lod_group(settings))))
+    if 'address' in settings:
+        checks += [('address_x', _texture_address(settings['address'])), ('address_y', _texture_address(settings['address']))]
+    for prop, want in checks:
+        got = asset.get_editor_property(prop)
+        if got != want:
+            raise RuntimeError(f'{name}: {prop} reads back {got!r}, not {want!r}; nothing is saved')
 
 
 def _apply_material_slots(asset, plan):

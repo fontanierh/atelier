@@ -1,0 +1,15 @@
+{
+  "asset": "material/japan/treehouse/surface-trunk-instances",
+  "dependencies": {
+    "adopted/japan/treehouse/generator": "283b0fa2fda1ed26f2502dc8dc8bee831d9a85d78887d4381260d2ef4993547e",
+    "adopted/japan/treehouse/surface-bark": "ddd58e2013127774e026af788dafcfc975090e7a0d13881c727daa34340fe524"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Treehouse/Materials/MI_TH_trunk.uasset": "4f9f2c3bc01a8536449804dc5718f94a25102938d0c0bd8a84aeb0bf304a2190"
+  },
+  "input_fingerprint": "e10fd2b18d13a1d3a4271bae43fc0382e19faca67e69af6730f8c2b5690a9a6f",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "material-instance@2"
+}

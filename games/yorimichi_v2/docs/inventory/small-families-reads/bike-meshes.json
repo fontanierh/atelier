@@ -1,0 +1,30 @@
+{
+ "Japan/Assets/BK_WheelFront": {
+  "lods": [
+   [
+    2.0,
+    26060
+   ]
+  ],
+  "slots": [
+   [
+    "BikePalette",
+    "/Game/Japan/Materials/M_Bike"
+   ]
+  ]
+ },
+ "Japan/Assets/BK_WheelRear": {
+  "lods": [
+   [
+    2.0,
+    26060
+   ]
+  ],
+  "slots": [
+   [
+    "BikePalette",
+    "/Game/Japan/Materials/M_Bike"
+   ]
+  ]
+ }
+}

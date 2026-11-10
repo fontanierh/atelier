@@ -1,0 +1,36 @@
+{
+  "asset": "prop/hippodrome/judges-tower",
+  "dependencies": {
+    "adopted/hippodrome/meshes": "1dc4e8a62fa069424357490bd2e10b0e803546989b468f19d5034a2d3419bf0c"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Hippodrome/SM_HD_JudgesTower.uasset": "a71f0693a6ceeb2001252b02dd31870a701623e5540fc788fd3e7c221e74558e"
+  },
+  "input_fingerprint": "066ae00f13b657523991f3f242c4e0f9e5ba47a187d599605eca6439c397c99a",
+  "kind": "imported",
+  "lods": {
+    "/Game/Hippodrome/SM_HD_JudgesTower": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

@@ -6,7 +6,7 @@ id = "prop/treehouse/frame"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/treehouse/frame"
-references = ["adopted/japan/treehouse/surface-rope", "adopted/japan/treehouse/surface-wood-plank", "adopted/japan/treehouse/surface-wood-timber"]
+references = ["adopted/japan/treehouse/surface-wood-plank", "adopted/japan/treehouse/surface-wood-timber", "material/japan/treehouse/surface-rope-instances", "texture/japan/treehouse-rope"]
 
 [[sources]]
 path = "src/TH_Frame.fbx"

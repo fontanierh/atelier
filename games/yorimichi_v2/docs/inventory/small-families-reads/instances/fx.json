@@ -1,0 +1,83 @@
+{
+ "/Game/FX/MI_FX_Dust": {
+  "effective": {
+   "scalar": {},
+   "texture": {
+    "Sprite": "/Game/FX/Textures/T_FX_Dust.T_FX_Dust"
+   },
+   "vector": {}
+  },
+  "overrides": {
+   "scalar": {},
+   "texture": {
+    "Sprite": "/Game/FX/Textures/T_FX_Dust.T_FX_Dust"
+   },
+   "vector": {}
+  },
+  "parent": "/Game/FX/M_FX_Dust.M_FX_Dust",
+  "switches": {}
+ },
+ "/Game/FX/MI_FX_Glow": {
+  "effective": {
+   "scalar": {},
+   "texture": {
+    "Sprite": "/Game/FX/Textures/T_FX_Glow.T_FX_Glow"
+   },
+   "vector": {}
+  },
+  "overrides": {
+   "scalar": {},
+   "texture": {
+    "Sprite": "/Game/FX/Textures/T_FX_Glow.T_FX_Glow"
+   },
+   "vector": {}
+  },
+  "parent": "/Game/FX/M_FX_Additive.M_FX_Additive",
+  "switches": {}
+ },
+ "/Game/FX/MI_FX_Ring": {
+  "effective": {
+   "scalar": {},
+   "texture": {
+    "Sprite": "/Game/FX/Textures/T_FX_Ring.T_FX_Ring"
+   },
+   "vector": {}
+  },
+  "overrides": {
+   "scalar": {},
+   "texture": {
+    "Sprite": "/Game/FX/Textures/T_FX_Ring.T_FX_Ring"
+   },
+   "vector": {}
+  },
+  "parent": "/Game/FX/M_FX_Additive.M_FX_Additive",
+  "switches": {}
+ },
+ "/Game/FX/MI_FX_Spark": {
+  "effective": {
+   "scalar": {},
+   "texture": {
+    "Sprite": "/Game/FX/Textures/T_FX_Spark.T_FX_Spark"
+   },
+   "vector": {}
+  },
+  "overrides": {
+   "scalar": {},
+   "texture": {
+    "Sprite": "/Game/FX/Textures/T_FX_Spark.T_FX_Spark"
+   },
+   "vector": {}
+  },
+  "parent": "/Game/FX/M_FX_Additive.M_FX_Additive",
+  "switches": {}
+ },
+ "/Game/FX/M_FX_Additive": {
+  "error": "not a material instance: /Game/FX/M_FX_Additive"
+ },
+ "/Game/FX/M_FX_Dust": {
+  "error": "not a material instance: /Game/FX/M_FX_Dust"
+ },
+ "/Game/FX/M_FX_Trail": {
+  "error": "not a material instance: /Game/FX/M_FX_Trail"
+ }
+}

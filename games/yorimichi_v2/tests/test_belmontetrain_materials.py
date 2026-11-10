@@ -302,3 +302,21 @@ def test_the_move_applied_to_a_copy_reaches_done_and_the_written_records_agree_w
     assert m.disagreements(written, evidence) == []
     assert sorted(t.package for t in written.textures) == sorted((ROOT / 'docs' / 'inventory' / 'belmontetrain-texture-packages.txt').read_text().split())
     assert sorted(p for r in written.materials for p in r.outputs) == sorted((ROOT / 'docs' / 'inventory' / 'belmontetrain-material-packages.txt').read_text().split())
+
+
+def test_a_texture_recipe_without_a_source_is_refused(tmp_path):
+    """A texture@1 record still needs its original: valid settings do not stand in for the source."""
+    path = tmp_path / 'asset.toml'
+    path.write_text('''schema = 1
+id = "texture/fixture/no-source"
+kind = "texture"
+authority = "generated"
+owner = "region/w04-skatepark"
+[recipe]
+importer = "texture"
+version = 1
+[[outputs]]
+package = "/Game/Props/T_NoSource"
+''')
+    with pytest.raises(records.RecordError, match='needs at least one source'):
+        records.load_asset(path)

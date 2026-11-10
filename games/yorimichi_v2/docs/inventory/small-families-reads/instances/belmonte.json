@@ -1,0 +1,583 @@
+{
+ "/Game/Belmonte/Materials/MI_BM_4ee3168b033c": {
+  "effective": {
+   "scalar": {
+    "Atlas": 0.0,
+    "Brightness": 1.0,
+    "Roughness": 0.87,
+    "Specular": 0.12,
+    "Strength": 0.0,
+    "Terrain": 0.0,
+    "Tile": 4.0,
+    "WhiteVertex": 0.0
+   },
+   "texture": {
+    "Tex": "/Engine/EngineResources/WhiteSquareTexture.WhiteSquareTexture"
+   },
+   "vector": {
+    "Colour": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ],
+    "Dirt": [
+     0.42,
+     0.3,
+     0.17,
+     1.0
+    ],
+    "Dry": [
+     0.4,
+     0.37,
+     0.18,
+     1.0
+    ],
+    "Green": [
+     0.16,
+     0.24,
+     0.08,
+     1.0
+    ],
+    "Rock": [
+     0.36,
+     0.37,
+     0.35,
+     1.0
+    ],
+    "Tint": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  "overrides": {
+   "scalar": {
+    "Atlas": 0.0,
+    "Brightness": 1.0,
+    "Roughness": 0.87,
+    "Strength": 0.0,
+    "Terrain": 0.0,
+    "Tile": 4.0,
+    "WhiteVertex": 0.0
+   },
+   "texture": {},
+   "vector": {
+    "Colour": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ],
+    "Tint": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  "parent": "/Game/Belmonte/Materials/M_Belmonte.M_Belmonte",
+  "switches": {}
+ },
+ "/Game/Belmonte/Materials/MI_BM_69b755f9ad2a": {
+  "effective": {
+   "scalar": {
+    "Atlas": 0.0,
+    "Brightness": 1.0,
+    "Roughness": 0.87,
+    "Specular": 0.12,
+    "Strength": 0.0,
+    "Terrain": 0.0,
+    "Tile": 4.0,
+    "WhiteVertex": 0.0
+   },
+   "texture": {
+    "Tex": "/Engine/EngineResources/WhiteSquareTexture.WhiteSquareTexture"
+   },
+   "vector": {
+    "Colour": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ],
+    "Dirt": [
+     0.42,
+     0.3,
+     0.17,
+     1.0
+    ],
+    "Dry": [
+     0.4,
+     0.37,
+     0.18,
+     1.0
+    ],
+    "Green": [
+     0.16,
+     0.24,
+     0.08,
+     1.0
+    ],
+    "Rock": [
+     0.36,
+     0.37,
+     0.35,
+     1.0
+    ],
+    "Tint": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  "overrides": {
+   "scalar": {
+    "Atlas": 0.0,
+    "Brightness": 1.0,
+    "Roughness": 0.87,
+    "Strength": 0.0,
+    "Terrain": 0.0,
+    "Tile": 4.0,
+    "WhiteVertex": 0.0
+   },
+   "texture": {},
+   "vector": {
+    "Colour": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ],
+    "Tint": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  "parent": "/Game/Belmonte/Materials/M_Belmonte.M_Belmonte",
+  "switches": {}
+ },
+ "/Game/Belmonte/Materials/MI_BM_aa1a8d45375e": {
+  "effective": {
+   "scalar": {
+    "Atlas": 0.0,
+    "Brightness": 1.0,
+    "Roughness": 0.87,
+    "Specular": 0.12,
+    "Strength": 0.0,
+    "Terrain": 0.0,
+    "Tile": 4.0,
+    "WhiteVertex": 1.0
+   },
+   "texture": {
+    "Tex": "/Engine/EngineResources/WhiteSquareTexture.WhiteSquareTexture"
+   },
+   "vector": {
+    "Colour": [
+     0.03,
+     0.025,
+     0.02,
+     1.0
+    ],
+    "Dirt": [
+     0.42,
+     0.3,
+     0.17,
+     1.0
+    ],
+    "Dry": [
+     0.4,
+     0.37,
+     0.18,
+     1.0
+    ],
+    "Green": [
+     0.16,
+     0.24,
+     0.08,
+     1.0
+    ],
+    "Rock": [
+     0.36,
+     0.37,
+     0.35,
+     1.0
+    ],
+    "Tint": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  "overrides": {
+   "scalar": {
+    "Atlas": 0.0,
+    "Brightness": 1.0,
+    "Roughness": 0.87,
+    "Strength": 0.0,
+    "Terrain": 0.0,
+    "Tile": 4.0,
+    "WhiteVertex": 1.0
+   },
+   "texture": {},
+   "vector": {
+    "Colour": [
+     0.03,
+     0.025,
+     0.02,
+     1.0
+    ],
+    "Tint": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  "parent": "/Game/Belmonte/Materials/M_Belmonte.M_Belmonte",
+  "switches": {}
+ },
+ "/Game/Belmonte/Materials/MI_BM_aadab9c1da71": {
+  "effective": {
+   "scalar": {
+    "Atlas": 0.0,
+    "Brightness": 1.0,
+    "Roughness": 0.25,
+    "Specular": 0.12,
+    "Strength": 0.0,
+    "Terrain": 0.0,
+    "Tile": 4.0,
+    "WhiteVertex": 1.0
+   },
+   "texture": {
+    "Tex": "/Engine/EngineResources/WhiteSquareTexture.WhiteSquareTexture"
+   },
+   "vector": {
+    "Colour": [
+     0.051269,
+     0.341914,
+     0.341914,
+     1.0
+    ],
+    "Dirt": [
+     0.42,
+     0.3,
+     0.17,
+     1.0
+    ],
+    "Dry": [
+     0.4,
+     0.37,
+     0.18,
+     1.0
+    ],
+    "Green": [
+     0.16,
+     0.24,
+     0.08,
+     1.0
+    ],
+    "Rock": [
+     0.36,
+     0.37,
+     0.35,
+     1.0
+    ],
+    "Tint": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  "overrides": {
+   "scalar": {
+    "Atlas": 0.0,
+    "Brightness": 1.0,
+    "Roughness": 0.25,
+    "Strength": 0.0,
+    "Terrain": 0.0,
+    "Tile": 4.0,
+    "WhiteVertex": 1.0
+   },
+   "texture": {},
+   "vector": {
+    "Colour": [
+     0.051269,
+     0.341914,
+     0.341914,
+     1.0
+    ],
+    "Tint": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  "parent": "/Game/Belmonte/Materials/M_Belmonte.M_Belmonte",
+  "switches": {}
+ },
+ "/Game/Belmonte/Materials/MI_BM_b5dfa6e6373d": {
+  "effective": {
+   "scalar": {
+    "Atlas": 0.0,
+    "Brightness": 1.0,
+    "Roughness": 0.87,
+    "Specular": 0.12,
+    "Strength": 0.0,
+    "Terrain": 0.0,
+    "Tile": 4.0,
+    "WhiteVertex": 0.0
+   },
+   "texture": {
+    "Tex": "/Engine/EngineResources/WhiteSquareTexture.WhiteSquareTexture"
+   },
+   "vector": {
+    "Colour": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ],
+    "Dirt": [
+     0.42,
+     0.3,
+     0.17,
+     1.0
+    ],
+    "Dry": [
+     0.4,
+     0.37,
+     0.18,
+     1.0
+    ],
+    "Green": [
+     0.16,
+     0.24,
+     0.08,
+     1.0
+    ],
+    "Rock": [
+     0.36,
+     0.37,
+     0.35,
+     1.0
+    ],
+    "Tint": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  "overrides": {
+   "scalar": {
+    "Atlas": 0.0,
+    "Brightness": 1.0,
+    "Roughness": 0.87,
+    "Strength": 0.0,
+    "Terrain": 0.0,
+    "Tile": 4.0,
+    "WhiteVertex": 0.0
+   },
+   "texture": {},
+   "vector": {
+    "Colour": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ],
+    "Tint": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  "parent": "/Game/Belmonte/Materials/M_Belmonte.M_Belmonte",
+  "switches": {}
+ },
+ "/Game/Belmonte/Materials/MI_BM_f76f48666871": {
+  "effective": {
+   "scalar": {
+    "Atlas": 0.0,
+    "Brightness": 1.0,
+    "Roughness": 0.25,
+    "Specular": 0.12,
+    "Strength": 0.0,
+    "Terrain": 0.0,
+    "Tile": 4.0,
+    "WhiteVertex": 1.0
+   },
+   "texture": {
+    "Tex": "/Engine/EngineResources/WhiteSquareTexture.WhiteSquareTexture"
+   },
+   "vector": {
+    "Colour": [
+     0.025187,
+     0.215861,
+     0.246201,
+     1.0
+    ],
+    "Dirt": [
+     0.42,
+     0.3,
+     0.17,
+     1.0
+    ],
+    "Dry": [
+     0.4,
+     0.37,
+     0.18,
+     1.0
+    ],
+    "Green": [
+     0.16,
+     0.24,
+     0.08,
+     1.0
+    ],
+    "Rock": [
+     0.36,
+     0.37,
+     0.35,
+     1.0
+    ],
+    "Tint": [
+     0.62,
+     0.74,
+     0.78,
+     1.0
+    ]
+   }
+  },
+  "overrides": {
+   "scalar": {
+    "Atlas": 0.0,
+    "Brightness": 1.0,
+    "Roughness": 0.25,
+    "Strength": 0.0,
+    "Terrain": 0.0,
+    "Tile": 4.0,
+    "WhiteVertex": 1.0
+   },
+   "texture": {},
+   "vector": {
+    "Colour": [
+     0.025187,
+     0.215861,
+     0.246201,
+     1.0
+    ],
+    "Tint": [
+     0.62,
+     0.74,
+     0.78,
+     1.0
+    ]
+   }
+  },
+  "parent": "/Game/Belmonte/Materials/M_Belmonte.M_Belmonte",
+  "switches": {}
+ },
+ "/Game/Belmonte/Materials/MI_BM_fae8893ff89f": {
+  "effective": {
+   "scalar": {
+    "Atlas": 0.0,
+    "Brightness": 1.0,
+    "Roughness": 0.87,
+    "Specular": 0.12,
+    "Strength": 0.0,
+    "Terrain": 0.0,
+    "Tile": 4.0,
+    "WhiteVertex": 0.0
+   },
+   "texture": {
+    "Tex": "/Engine/EngineResources/WhiteSquareTexture.WhiteSquareTexture"
+   },
+   "vector": {
+    "Colour": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ],
+    "Dirt": [
+     0.42,
+     0.3,
+     0.17,
+     1.0
+    ],
+    "Dry": [
+     0.4,
+     0.37,
+     0.18,
+     1.0
+    ],
+    "Green": [
+     0.16,
+     0.24,
+     0.08,
+     1.0
+    ],
+    "Rock": [
+     0.36,
+     0.37,
+     0.35,
+     1.0
+    ],
+    "Tint": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  "overrides": {
+   "scalar": {
+    "Atlas": 0.0,
+    "Brightness": 1.0,
+    "Roughness": 0.87,
+    "Strength": 0.0,
+    "Terrain": 0.0,
+    "Tile": 4.0,
+    "WhiteVertex": 0.0
+   },
+   "texture": {},
+   "vector": {
+    "Colour": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ],
+    "Tint": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  "parent": "/Game/Belmonte/Materials/M_Belmonte.M_Belmonte",
+  "switches": {}
+ }
+}

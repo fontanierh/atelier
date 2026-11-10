@@ -1,0 +1,22 @@
+{
+ "instances": {
+  "MI_HD_flat": {
+   "parent": "M_HDCity",
+   "scalars": [
+    "Gain",
+    "Macro",
+    "Strength",
+    "Tile"
+   ],
+   "switches": {},
+   "textures": [
+    "Tex"
+   ],
+   "vectors": []
+  }
+ },
+ "not_instances": [
+  "MPC_SeeThrough",
+  "M_RacingTv"
+ ]
+}

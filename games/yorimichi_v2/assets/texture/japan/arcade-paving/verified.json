@@ -1,0 +1,12 @@
+{
+  "asset": "texture/japan/arcade-paving",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Textures/T_Arcade_paving.uasset": "4bbdf5636c6862697783dc74f1024b1c6d58188f49458cb53fc41e2d96926a18"
+  },
+  "input_fingerprint": "443d21203d9e8b449ff947ce985b420f0403df2861ccc50a95ab69b26fcbca96",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

@@ -1,0 +1,12 @@
+{
+  "asset": "texture/japan/treehouse-rope",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Treehouse/Textures/T_TH_rope.uasset": "16350bd8de739a717c3dd4e3f99043409d69e96254234c654a6654fbc53b1fbf"
+  },
+  "input_fingerprint": "bce8797e457b95734d736195b7abfa55f319cd27c253c3ddb8373e1e1912d387",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

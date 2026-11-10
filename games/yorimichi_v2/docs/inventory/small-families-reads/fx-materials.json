@@ -1,0 +1,45 @@
+{
+ "instances": {
+  "MI_FX_Dust": {
+   "parent": "M_FX_Dust",
+   "scalars": [],
+   "switches": {},
+   "textures": [
+    "Sprite"
+   ],
+   "vectors": []
+  },
+  "MI_FX_Glow": {
+   "parent": "M_FX_Additive",
+   "scalars": [],
+   "switches": {},
+   "textures": [
+    "Sprite"
+   ],
+   "vectors": []
+  },
+  "MI_FX_Ring": {
+   "parent": "M_FX_Additive",
+   "scalars": [],
+   "switches": {},
+   "textures": [
+    "Sprite"
+   ],
+   "vectors": []
+  },
+  "MI_FX_Spark": {
+   "parent": "M_FX_Additive",
+   "scalars": [],
+   "switches": {},
+   "textures": [
+    "Sprite"
+   ],
+   "vectors": []
+  }
+ },
+ "not_instances": [
+  "M_FX_Additive",
+  "M_FX_Dust",
+  "M_FX_Trail"
+ ]
+}

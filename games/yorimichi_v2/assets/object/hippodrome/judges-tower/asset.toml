@@ -6,7 +6,7 @@ id = "object/hippodrome/judges-tower"
 kind = "placement"
 authority = "editor"
 owner = "region/w15-hippodrome"
-references = ["adopted/hippodrome/loose_files"]
+references = ["prop/hippodrome/judges-tower"]
 
 [[outputs]]
 package = "/Game/__ExternalActors__/V2/Maps/Slice/8/WE/O084Z3TB02ZLTW7UYO40S7"

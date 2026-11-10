@@ -1,0 +1,26 @@
+# Planned from the donor (tools/migrate/small_instances.py): 1 instances of adopted/megapark/seam, each agreeing with its editor read.
+# The values are the generator's, agreeing with the committed editor read (docs/inventory/small-families-reads/
+# instances); the import writes each instance from its row and reads every value back. Never edited by hand.
+schema = 1
+id = "material/megapark/seam-instances"
+kind = "material-instance"
+authority = "generated"
+owner = "shared/megapark/seam-instances"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02); pinned by sha256"
+input_dependencies = ["adopted/megapark/base-materials", "adopted/megapark/shared-textures-common", "adopted/megapark/shared-textures-concrete"]
+
+[recipe]
+importer = "material-instance"
+version = 2
+
+[recipe.settings]
+
+[[recipe.settings.instances]]
+package = "/Game/MegaPark/Materials/MI_3fc3174182abbed4_Seam"
+parent = "/Game/MegaPark/Materials/M_RetailOpaque"
+textures = {Diffuse = "/Game/MegaPark/Textures/T_2c70170a001d008e", Decal = "/Game/MegaPark/Textures/T_2c70170a002f0353", Macro = "/Game/MegaPark/Textures/T_2c70170a000b0040", Lightmap = "/Game/MegaPark/Textures/T_20dee42563593e76", Normal = "/Game/MegaPark/Textures/T_0000043d03e3870a", Detail = "/Game/MegaPark/Textures/T_0000043d03e3870a", Specular = "/Game/MegaPark/Textures/T_2c70170a001d0087", Transparent = "/Game/MegaPark/Textures/T_DefaultWhite"}
+scalars = {MacroScale = 0.30000001192092896, DetailScale = 8.0, MacroOpacity = 1.0, UseDecal = 1.0, HasLightmap = 1.0, HasTransparent = 0.0, LightmapNorm = 3.505, Moss = 0.0, SpecularScale = 0.0, Gloss = 0.0, LightmapOcclusion = 0.25}
+
+[[outputs]]
+package = "/Game/MegaPark/Materials/MI_3fc3174182abbed4_Seam"

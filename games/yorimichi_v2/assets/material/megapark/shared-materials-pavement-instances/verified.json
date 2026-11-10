@@ -1,0 +1,16 @@
+{
+  "asset": "material/megapark/shared-materials-pavement-instances",
+  "dependencies": {
+    "adopted/megapark/base-materials": "81b0e86814e67e23a3f2758823ec3ba2fc6621d9e30cbc70a96871e8471cf80b",
+    "adopted/megapark/shared-textures-common": "f279797ca888677031e0d50ea2bc2308950faf90caa3822a71f98aee26a7882c",
+    "adopted/megapark/shared-textures-pavement": "e5f1f1192e5ea6991742d02898308ae75fff2d7121539f2cf552ac645fc9a82d"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/MegaPark/Materials/MI_99622005a8467a13.uasset": "95a7c9b22fd5556b1f9817e02ca58ff52d11d9a4c4ebd36470e503bce63f9779"
+  },
+  "input_fingerprint": "51c463bd9726492ad1f53befe1bc15b32668f0ce4e905f81b9e25b203932e721",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "material-instance@2"
+}
