@@ -18,14 +18,13 @@ def loaded():
     return {name: records.load_asset(FOLDER / name / 'asset.toml') for name in RESIDUAL}
 
 
-# Note: this pins the state before the LOD retirement. tools/migrate/belmontetrain_lods.py --claim removes the 14
-# standalone LOD1/LOD2 meshes (SM_B count 14 -> 0, 473 -> 459 packages); after that run, update these two numbers.
-def test_the_seven_records_hold_473_packages_and_no_source_or_recipe():
+# After the LOD retirement (tools/migrate/belmontetrain_lods.py): the 14 standalone LOD1/LOD2 meshes are gone.
+def test_the_seven_records_hold_459_packages_and_no_source_or_recipe():
     assets = loaded()
-    assert sum(len(a.outputs) for a in assets.values()) == 473
+    assert sum(len(a.outputs) for a in assets.values()) == 459
     assert all(not a.sources and a.recipe is None for a in assets.values())
     kinds = [o.package.rsplit('/', 1)[1][:4] for a in assets.values() for o in a.outputs]
-    assert (kinds.count('SM_B'), kinds.count('M_BT'), kinds.count('T_BT')) == (14, 321, 138)
+    assert (kinds.count('SM_B'), kinds.count('M_BT'), kinds.count('T_BT')) == (0, 321, 138)
 
 
 def test_texture_registry_covers_21_of_the_27_texture_names():

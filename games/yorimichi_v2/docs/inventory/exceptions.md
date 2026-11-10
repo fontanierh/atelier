@@ -39,7 +39,7 @@ linked Adventure/animation records. The other **48 records / 678 packages** comp
 
 | Family | Records | Packages |
 |---|---:|---:|
-| Residual Belmonte train packages | 7 | 473 |
+| Residual Belmonte train packages | 7 | 459 |
 | Japan materials (41 prepared, 2 blocked: see below) | 7 | 43 |
 | Brine Cove plants | 9 | 36 |
 | City tree residual packages | 1 | 36 |
@@ -58,14 +58,14 @@ This query is a **classification list**, not a claim that every package lacks an
 verify origin: procedural materials may need generator inputs; genuinely Unreal-authored maps/settings may use
 saved packages; imported files need their original bytes. Do not relabel unknown imports as editor originals.
 
-### Residual Belmonte train records (seven, 473 packages): donor evidence
+### Residual Belmonte train records (seven, 459 packages): donor evidence
 
 The records `adopted/belmontetrain/{baggage-van,brake-van,first-class,locomotive,restaurant,second-class,tender}` hold
-73, 78, 73, 51, 75, 84 and 39 packages (473). None has `[[sources]]` or a recipe, and **none is closed**. The donor
+71, 76, 71, 49, 73, 82 and 37 packages (459, after the 14 unused LOD meshes were retired). None has `[[sources]]` or a recipe, and **none is closed**. The donor
 build output (Train Builder GLBs, `service/import-report.json`, texture PNG/JPG outputs) was read in place, read-only,
 and is not committed. `recover.py belmontetrain --donor <belmonte-train folder>` plans **0 generated records**: its
 `plan_belmontetrain` covers only the root vehicle packages (already generated) and door leaves (none in these seven
-records), so none of the 473 packages has a planner row. Plan mode writes nothing.
+records), so none of the 459 packages has a planner row. Plan mode writes nothing.
 
 | Kind | Packages | Donor evidence (checked) | Verdict |
 |---|---:|---|---|
@@ -75,10 +75,10 @@ records), so none of the 473 packages has a planner row. Plan mode writes nothin
 
 Adding `[[sources]]` to these records would change their import fingerprints and make `check.py` report `STALE_IMPORT`,
 so the records stay as they are until a verified import closes them. The count and the texture coverage are pinned by
-`tests/test_belmontetrain_residual.py`. The LOD retirement takes 14 packages out of them (473 to 459);
-the count is updated once it has run.
+`tests/test_belmontetrain_residual.py`. The LOD retirement has run (`belmontetrain_lods.py`, referencer proof clean):
+the 14 standalone LOD1/LOD2 meshes and their packages are gone (473 to 459).
 
-Next steps, not run here. (1) `tools/migrate/belmontetrain_lods.py --claim TASK` retires the 14 unused LOD meshes (see the row above). It is a retirement, not an import, and it runs under the seven `shared/belmontetrain/<unit>` scopes. (2) Textures remain prepared,
+Next step, not run here: textures remain prepared,
 for all 138 donor-backed ids, after the generator's own source record is pinned.
 
 ## Japan materials: source closure (prepared, not applied)

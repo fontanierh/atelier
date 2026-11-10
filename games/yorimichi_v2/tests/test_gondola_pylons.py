@@ -39,7 +39,16 @@ def data():
 
 
 @pytest.fixture(scope='module')
-def committed():
+def unprepared(data):
+    """The lifecycle tests below start from the unsplit real tree. Once the split ran on it (state `done`), they skip and
+    test_the_real_tree_is_split pins the result instead."""
+    current, _ = pylons.state(GAME, pylons.select(data))
+    if current != 'unprepared':
+        pytest.skip(f'the real tree is {current}, not unprepared: the split already ran')
+
+
+@pytest.fixture(scope='module')
+def committed(unprepared):
     return (REGION_FOLDER / 'objects.toml').read_text()
 
 
@@ -97,14 +106,14 @@ def test_a_rerun_on_its_own_output_is_refused(data, committed):
         pylons.render(text, data)
 
 
-def test_check_writes_nothing_and_reports_the_state(capsys):
+def test_check_writes_nothing_and_reports_the_state(unprepared, capsys):
     before = [p.read_bytes() for p in (REGION_FOLDER / 'objects.toml', REGION_FOLDER / 'objects.saved.json')]
     assert pylons.main(['--check']) == 0
     assert 'state: unprepared' in capsys.readouterr().out
     assert [p.read_bytes() for p in (REGION_FOLDER / 'objects.toml', REGION_FOLDER / 'objects.saved.json')] == before
 
 
-def test_the_claim_paths_name_every_file_and_both_scopes(data):
+def test_the_claim_paths_name_every_file_and_both_scopes(data, unprepared):
     plan = pylons.claim_paths(GAME, pylons.select(data))
     paths = set(plan['paths'])
     assert 'games/yorimichi_v2/world/regions/w18-gondola/objects.toml' in paths
@@ -169,7 +178,7 @@ def write_receipts(tmp: Path, taken: list[dict]) -> None:
     (region / 'objects.saved.json').write_text(json.dumps(saved, indent=2, sort_keys=True) + '\n')
 
 
-def test_prepare_save_retire_each_repeat_safely(data, tmp_path, monkeypatch):
+def test_prepare_save_retire_each_repeat_safely(data, unprepared, tmp_path, monkeypatch):
     calls = []
 
     def fake_authorize(paths, claim, what, *, scopes=(), repo=None):
@@ -224,7 +233,7 @@ def test_prepare_save_retire_each_repeat_safely(data, tmp_path, monkeypatch):
     assert calls and all(scopes == ('region/w00-island', 'region/w18-gondola') for _, scopes in calls)
 
 
-def test_a_claim_that_does_not_hold_the_steps_refuses_before_any_write(data, tmp_path, monkeypatch):
+def test_a_claim_that_does_not_hold_the_steps_refuses_before_any_write(data, unprepared, tmp_path, monkeypatch):
     def refuse(paths, claim, what, *, scopes=(), repo=None):
         raise pylons.authority.Unauthorized('no claim')
 
@@ -248,3 +257,15 @@ def test_the_command_line_dispatches_each_step(monkeypatch):
     assert calls == [('retire', 'TASK'), ('prepare', 'TASK')]
     assert pylons.main(['--retire']) == 1
     assert pylons.main(['--check', '--claim', 'TASK']) == 1
+
+
+def test_the_real_tree_is_split(data):
+    """After the split: each replacement is listed and saved with an accepted receipt, and the replaced group is gone."""
+    current, detail = pylons.state(GAME, pylons.select(data))
+    if current == 'unprepared':
+        pytest.skip('the split has not run on the real tree yet')
+    assert (current, detail) == ('done', 'the groups are retired and the ten pylon objects are listed')
+    listed = [o['id'] for o in tomllib.loads((REGION_FOLDER / 'objects.toml').read_text())['objects']]
+    saved = json.loads((REGION_FOLDER / 'objects.saved.json').read_text())['objects']
+    taken = [t['object'] for t in pylons.select(data)]
+    assert len(taken) == 10 and set(taken) <= set(listed) and set(taken) <= set(saved)
