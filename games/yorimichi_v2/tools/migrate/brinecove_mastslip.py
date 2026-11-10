@@ -469,6 +469,11 @@ YARD_ORIGINAL = 'src/SM_BC_ShipyardYard.glb'
 YARD_ORIGINAL_SHA = '4e9d5402b8207f45a2753cefcb73b62df61658f0861220cd96da1d273e29ebcc'   # main's pin, batch 1's own cut
 
 
+def yard_original_path(yard_dir: Path) -> Path:
+    """The yard record's pinned original GLB inside its folder (YARD_ORIGINAL already names src/)."""
+    return yard_dir / YARD_ORIGINAL
+
+
 def yard_selection(total: int, removed_yard) -> str:
     """The yard's selection file: the original's triangles the derived yard keeps (removed_yard are the slip's)."""
     gone = set(removed_yard)
@@ -518,6 +523,7 @@ def build_plan(game: Path, donor: Path, src: Path, stage: Path) -> tuple[dict, d
     records = apply_.records
     region = game / 'world' / 'regions' / apply_.REGION
     files = donor_owned(donor, src)
+    yards = yard_ordinals(donor / 'brinecove' / 'glb')
     owned, prior, models, tris = {}, {}, {}, {}
     for stem, f in files.items():
         mine = {n: [i for i, o in enumerate(f['owners']) if o == n] for n in OBJECTS}
@@ -528,6 +534,14 @@ def build_plan(game: Path, donor: Path, src: Path, stage: Path) -> tuple[dict, d
         n = len(f['tris'])
         if kept is None:
             kept = set(range(n))
+        # the refusal plan() makes: a triangle an earlier batch already took is not this batch's to take again
+        for name, members in mine.items():
+            for i in members:
+                if i in kept:
+                    continue
+                if name == 'signal-mast' or i not in yards.get(stem, set()):
+                    where = 'an earlier batch' if name == 'signal-mast' else f'neither the remainder nor {YARD}'
+                    raise MastSlipError(f'{stem}: a {name} triangle is in {where}; refusing to take it again')
         rest = [i for i in sorted(kept) if i not in taken]
         prior[stem] = sum(1 for i in range(n) if i not in kept and i not in taken)
         if len(rest) + len(taken) + prior[stem] != n:
@@ -595,11 +609,11 @@ def apply(game: Path, donor: Path, src: Path, stage: Path, claim: str) -> dict:
     the region objects, the runtime file and lock (apply's compute), and the yard re-cut and batch-1 expectation.
     Journaled in one step: a failure restores every file. Authorizes the complete touched set first."""
     apply_ = market.set_batch(BATCH)
+    apply_.Journal(game).recover(claim)     # an interrupted run is restored (and authorized) before anything is read
     plan, files = build_plan(game, donor, src, stage)
     expect_before = json.loads((game / apply_.EXPECTED).read_text()) if (game / apply_.EXPECTED).is_file() else {}
     if expect_before.get('parts'):
         raise MastSlipError('this batch is already applied; run check, do not apply it again')
-    recovered = apply_.Journal(game).recover(claim)
     ops = apply_.compute(game, plan)
     writes = dict(ops['writes'])
     expected_removed = {}
@@ -610,7 +624,7 @@ def apply(game: Path, donor: Path, src: Path, stage: Path, claim: str) -> dict:
         if both:
             expected_removed[stem] = both
     yard_dir = game / 'assets' / YARD_RECORD
-    original = (yard_dir / 'src' / YARD_ORIGINAL).read_bytes()
+    original = yard_original_path(yard_dir).read_bytes()
     if hashlib.sha256(original).hexdigest() != YARD_ORIGINAL_SHA:
         raise MastSlipError('the yard GLB is not main\'s original (it is already carved): run yard-carve, not apply')
     recut = yard_recut(game, donor, src, files, expected_removed)
@@ -706,6 +720,7 @@ def yard_carve(game: Path, claim: str, base_ref: str = 'origin/main') -> dict:
     and renew the mast/slip expectation's yard carve. The derived bytes must be the recorded ones. Journaled and claim-
     authorized like apply; the touched set is yard_carve_paths()."""
     apply_ = market.set_batch(BATCH)
+    apply_.Journal(game).recover(claim)     # restore an interrupted run before reading the expectation
     yard_dir = f'{GAME_REL}/assets/{YARD_RECORD}'
     original = git_bytes(base_ref, f'{yard_dir}/{YARD_ORIGINAL}')
     if hashlib.sha256(original).hexdigest() != YARD_ORIGINAL_SHA:
@@ -733,7 +748,6 @@ def yard_carve(game: Path, claim: str, base_ref: str = 'origin/main') -> dict:
         f'world/regions/{REGION}/{BATCH1}': batch1,
         apply_.EXPECTED: (json.dumps(expect, indent=2, sort_keys=True) + '\n').encode(),
     }
-    apply_.Journal(game).recover(claim)
     exact = yard_carve_paths()
     scopes = {(f'asset/{YARD_RECORD}', f'shared/brinecove/{YARD_RECORD.rsplit("/", 1)[1]}'), f'region/{REGION}'}
     apply_.authority.authorize(exact['paths'], claim, 'Brine Cove yard carve', scopes=scopes)
