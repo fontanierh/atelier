@@ -1,6 +1,6 @@
 # Inventory
 
-**Current checkpoint: 2026-11-10. Package `0adbb5ab212e` at main `7719234597` includes everything merged through [PR #801](https://github.com/fontanierh/atelier/pull/801), among it the small-families batch (#797) and the Brine Cove signal mast and shipyard slip (#798, #800).**
+**Current checkpoint: 2026-11-10. Package `c89f535441be` at clean main `da0a41f891` includes the 49 recovered material masters and Hippodrome follow-up (#803/#804), multiplayer manifest (#809) and host/leave check (#810). Automated checks, launch, shutdown and the host's return to Solo pass. Six manual checks and actual two-machine play remain open.**
 This is the status index for the full original-game port.
 The source baseline `7eec0f98dd` is documented separately in [features](inventory/features.md) and
 [world](inventory/world.md); those pages describe the donor, not today's V2 completion state.
@@ -20,23 +20,22 @@ The source baseline `7eec0f98dd` is documented separately in [features](inventor
 
 ## What is already delivered
 
-| Scope | Package `0adbb5ab212e` at `7719234597` | Evidence and limits |
+| Scope | Saved content / package checkpoint | Evidence and limits |
 | --- | --- | --- |
 | Whole island | W00–W20 have committed coverage (29 world region scopes); W14 keeps its disabled baseline. The region receipts contain 2,750 saved object definitions. | [Regions](../world/regions/), `actors.verified.json`, `objects.saved.json`; these counts are not the number of independently split source models. |
 | Recovered models | Merged:<br>- 1,048 city records;<br>- 67 train mesh records, plus 159 train texture and material records (459 packages);<br>- ten families with 141 meshes and 29 textures;<br>- 100 Japan props;<br>- 72 Brine Cove plants and city tree residuals;<br>- the two Japan leaf instances.<br>The first small-families batch (21 records, 48 packages) is merged (#797). | [PR #784](https://github.com/fontanierh/atelier/pull/784), [PR #786](https://github.com/fontanierh/atelier/pull/786), [PR #792](https://github.com/fontanierh/atelier/pull/792), [PR #794](https://github.com/fontanierh/atelier/pull/794), [PR #796](https://github.com/fontanierh/atelier/pull/796); the read-back results are below. Source completeness and remaining fused objects are tracked below. |
 | Restricted and Adventure originals | 6,768 restricted package entries and 124 Adventure/animation entries have source routes; the manifest records 6,086 original pins. | [restricted.originals.json](../restricted.originals.json), [PR #785](https://github.com/fontanierh/atelier/pull/785). Private bytes stay on the pinned restricted route. This is not closure of every open source family. |
 | Brine Cove individual objects | All 21 market stalls, all 265 town objects, the two harbour Soft fragments, eleven small props and three ship objects have saved placements in main ([PR #787](https://github.com/fontanierh/atelier/pull/787)). The signal mast and the shipyard slip are saved, merged and packaged ([PR #798](https://github.com/fontanierh/atelier/pull/798), [PR #800](https://github.com/fontanierh/atelier/pull/800)). Other scenery still includes fused models/patches. | [Brine Cove scope](inventory/brinecove-objects.md), [split work](inventory/brinecove-split.md), [remaining exceptions](inventory/exceptions.md). |
 | Transport objects | The 10 gondola pylons and 12 railway fittings are saved as their own objects; their fused groups and the train LOD records are retired. | [PR #790](https://github.com/fontanierh/atelier/pull/790), [exceptions](inventory/exceptions.md). |
-| Desktop package | Built 2026-11-10 08:38 Paris from main `7719234597` (fingerprint `0adbb5ab212e`). All automated checks pass; first launch (Slice in 15.7 s, peak 7.8 GiB, no error lines) and shutdown were observed passing. The previous `bb451f636160` (#797) app is kept. | [Package guide](PACKAGE.md). Human input, travel, gameplay, sound and persistence checks are not claimed complete. |
-| Integration package (#803, #804) | Built 2026-11-10 13:03 Paris from branch `7f43b4ccf3` (main `72a7033bf2` plus #803 and #804; fingerprint `88d415e733ec`). All automated checks pass; first launch (Slice in 15.6 s, peak 7.9 GiB, no error lines) and shutdown were observed passing. | [Package guide](PACKAGE.md#integration-package-for-803-and-804-2026-11-10). Pre-merge, and without the #808 session map and the #809 multiplayer manifest: it cannot host. The six manual checks are not recorded. |
+| Desktop package | Main `da0a41f891`, fingerprint `c89f535441be`: guarded package in 255.7 s; automated acceptance 8/8; host/leave 9/9; first launch (Slice in 15.9 s, peak 7.8 GiB, no error lines) and shutdown recorded passing. | [Package guide](PACKAGE.md#current-main-checkpoint-2026-11-10). Log-only launch evidence; human input, travel, gameplay, sound and persistence remain unrecorded. Host/leave covers one process, not a second machine joining. |
+| Earlier integration package (#803, #804) | Built 2026-11-10 13:03 Paris from branch `7f43b4ccf3`, fingerprint `88d415e733ec`; automated checks, first launch and shutdown passed. | [Historical package evidence](PACKAGE.md#integration-package-for-803-and-804-2026-11-10). It predates #808/#809 and cannot host; later success does not upgrade this older app. |
 | Appearance | Whole-island captures exist, as well as the earlier slice route/package measurements. | [PARITY](PARITY.md) retains their exact revisions and limits; those earlier captures do not accept every later split. |
 
 ## Active work after this checkpoint
 
 Saved, prepared and packaged totals are kept separate:
-- **Saved and packaged:** everything in the table above, except the integration-package row, is in the `0adbb5ab212e`
-  package, which is main `7719234597`. That includes the small-families batch (#797) and the Brine Cove signal mast and shipyard slip
-  (#798, #800). The package includes these imports:
+- **Earlier saved content retained:** package `c89f535441be` includes the small-families batch (#797), the Brine Cove
+  signal mast and shipyard slip (#798, #800), and these imports already present in `0adbb5ab212e` at `7719234597`:
   - The two used Japan leaf instances (MI_LeafAmber, MI_LeafCrimson) are material-instance records imported
     from their recipe ([PR #792](https://github.com/fontanierh/atelier/pull/792)). They read identical to the
     packaged ones.
@@ -57,39 +56,38 @@ Saved, prepared and packaged totals are kept separate:
 
     The donor meshes carried one convex hull, which the complex-as-simple recipe drops. That trace flag never
     uses a hull, so collision is unchanged.
-- **Included with [PR #803](https://github.com/fontanierh/atelier/pull/803), not in the current package:** this change
+- **Merged and packaged:** [PR #803](https://github.com/fontanierh/atelier/pull/803) (`b684978143`)
   contains 36 generated material masters with pinned builders: Hippodrome, skating, FX, racing, Sword Camp, Mega Park,
   Hidamari city and 13 Japan base masters. Their native receipts cover the comparisons recorded at each revision.
   Sword Camp's two masters and Hidamari city now pin the shared haze helper; their claimed refresh at `6c807a71f9`
   passed the rooted native comparison and saved read-back ([evidence](inventory/shared-haze-sources.md)). Those reports
   predate the later tiling, transform and Time fields and do not prove those settings equal. Source-only generator
   records retain all 30 Hidamari and 43 Mega Park pins.
-- **Saved follow-up, pending integration:** [PR #804](https://github.com/fontanierh/atelier/pull/804) adds 13 Japan
-  masters (49 total with #803); its base-materials adopted record retains only `MPC_Wind`. At the historical main
-  audit `028bc6243b`, neither #803 nor #804 was merged. These batches supersede the old “19 masters still to start”
-  list. Their imported receipts do not upgrade package `0adbb5ab212e` or constitute final visual acceptance.
-- **Remaining source/detail work:** the Hippodrome mesh residuals (14 packages on main: four Color textures
-  and ten instances), the two Mega Park seam instances with two-sided base-property overrides, the standalone
+- **Merged and packaged follow-up:** [PR #804](https://github.com/fontanierh/atelier/pull/804) (`da0a41f891`) adds
+  13 Japan masters (49 total with #803); its base-materials adopted record retains only `MPC_Wind`. These batches
+  supersede the old “19 masters still to start” list. They are in `c89f535441be`; their receipts do not upgrade
+  older packages or constitute final visual acceptance.
+- **Hippodrome residuals closed in #804:** four texture and four instance records were imported, the four dependent
+  props re-imported, and six unused course instances retired after a reference check. Native before/after reads
+  agree. The old adopted owner is retired; this batch is merged and included in `c89f535441be`.
+- **Remaining source/detail work:** the two Mega Park seam instances with two-sided base-property overrides, the standalone
   Mega Park map's reference check, `MI_TH_pane`, the Hidamari `MI_HD_flat` instance and the 41 Japan
-  material instances. Parent-master recovery alone does not close their instance records. Hippodrome recovery
-  is saved in #804 commit `74a1002c86`: four texture and four instance records were imported, the four
-  dependent props re-imported, and six unused course instances retired after a reference check. The native
-  before/after reads agree; this is pending integration, not main/package content. The other material/settings classification
-  rows and their branch dispositions are in [exceptions](inventory/exceptions.md#current-source-classification).
+  material instances. Parent-master recovery alone does not close their instance records. Bike and runtime/collection
+  source routes also remain open in [exceptions](inventory/exceptions.md#current-source-classification).
 
 Remaining construction work:
 - Close the other useful-object/source gaps in [exceptions](inventory/exceptions.md) and
   [sources](inventory/sources.md); an imported package with an unknown original stays unfinished.
-- Review and integrate the saved master follow-ups above. The earlier #799/#801 preparation and
-  [master recovery design](inventory/master-sources.md) explain their provenance; they are not a second backlog.
-- Produce the next package checkpoint from accepted merged work and retain the existing package. After the guard fixes
-  ([PR #805](https://github.com/fontanierh/atelier/pull/805), [PR #807](https://github.com/fontanierh/atelier/pull/807)) the
-  pre-merge integration package `88d415e733ec` built and launched (table above); the main package stays `0adbb5ab212e`
-  until #803/#804 merge. Packaged multiplayer needs [PR #809](https://github.com/fontanierh/atelier/pull/809): without
-  its content manifest a package refuses to host. The six remaining manual acceptance checks and final owner-led
-  gameplay/multiplayer playtesting remain unrecorded. The last forecast was **14:00 Paris on 2026-11-10 for
-  the held source set and 20:00 for useful-object splitting** (historical, unconfirmed). This documentation
-  audit has not re-estimated it; package-guard and review work add uncertainty.
+- The master follow-ups are integrated. The earlier #799/#801 preparation and
+  [master recovery design](inventory/master-sources.md) explain their provenance; they are not another backlog.
+- Retain the current package while the next source batch proceeds. The guard fixes (#805/#807), multiplayer
+  manifest (#809) and host/leave check (#810) are merged. The six manual acceptance checks and final owner-led
+  gameplay/two-machine playtesting remain open.
+- **Forecast updated 2026-11-10, Paris:** the previous 14:00 source target was missed. The author now estimates
+  **17:30 for the 45 material instances** (41 Japan, `MI_HD_flat`, `MI_TH_pane`, two Mega Park seams), conditional
+  on the batch following #804. This is not an ETA for the bike, runtime/collection and other complete-source gaps.
+  Useful-object splitting moved from **20:00 to 23:00**, with low confidence: residual fused Brine Cove scenery
+  and patches are still unsized. Re-estimate after that instance batch; no complete-source finish date is confirmed.
 
 ## Runtime and ownership facts
 
@@ -129,9 +127,9 @@ Remaining construction work:
 | F19 | Footsteps, combat and vehicle sounds | Presentation | partial: no train or sailboat sounds found | D05 restricted audio | Ported sound code and restricted audio packages/original links. Listening checks remain; baseline train/sailboat sound gaps are not claimed fixed. |
 | F20 | Zone music director, optional library | Presentation | implemented | external music release | Ported: [JapanMusic](../unreal/Source/Yorimichi/Presentation/JapanMusic.cpp) and optional pinned music fetch/launcher route. See [PACKAGE](PACKAGE.md). |
 | F21 | Painterly materials, sky, sea, foliage, effects | World | implemented | W00 | Ported: saved environment/scenery and dynamic effects. Whole-island comparison evidence is in [PARITY](PARITY.md); it is not final visual acceptance. |
-| F22 | Multiplayer | Network | partial: local two-process tests only | F02–F14 | Ported: [Network](../unreal/Source/Yorimichi/Network/). Cross-machine gameplay acceptance remains; owner will test live with his brother after construction. |
+| F22 | Multiplayer | Network | partial: local two-process tests only | F02–F14 | Packaged host → leave → Solo passes on `c89f535441be` with #809/#810. This is one process; cross-machine gameplay acceptance remains with the owner and his brother. |
 | F23 | Live bridge, QA, dev tools | Presentation/Dev | implemented: single port 8830 | P2-C | Ported: [Dev](../unreal/Source/Yorimichi/Dev/) and session-targeted LiveBridge. Native packaged build has no Python input route; see [PACKAGE](PACKAGE.md). |
-| F24 | Runtime data, saves, startup, packaging | World/Presentation | implemented | — | Packaged checkpoint `0adbb5ab212e` (main `7719234597`); V2 identity and staged runtime files checked. Human save/persistence checks remain. |
+| F24 | Runtime data, saves, startup, packaging | World/Presentation | implemented | — | Packaged checkpoint `c89f535441be` (main `da0a41f891`); V2 identity, staged runtime files, launch and shutdown checked. Human save/persistence checks remain. |
 | F25 | Crater Park tower hoist | Travel | implemented | W12 | Ported: [CraterParkTower](../unreal/Source/Yorimichi/Travel/CraterParkTower.cpp). Hoist playtest remains. |
 | F26 | Mega Park standalone level and game mode | World | implemented | W11 | Ported: [standalone profile](../game.toml) and Mega Park map/game mode. Rights cleared; standalone playtest remains. |
 | F27 | In-game Dev mode and notes | Presentation/Dev | implemented | F17 | Ported: [DevNotes](../unreal/Source/Yorimichi/Dev/DevNotes.cpp). Human notes/export checks remain. |

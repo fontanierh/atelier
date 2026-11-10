@@ -4,6 +4,23 @@ The package workflow is implemented. A normal build validates and compiles; cook
 below run from the repository root of an owned checkout at a stopped native-job boundary. Publication uses the
 existing verified package and the [release workflow](../../../docs/RELEASES.md), without another cook.
 
+## Current main checkpoint (2026-11-10)
+
+- **Built:** clean main `da0a41f891` (after #803/#804/#809/#810); fingerprint `c89f535441be`.
+  Guarded `unreal.package` completed in 255.7 s. The 49 recovered material masters and Hippodrome residual batch
+  are included. Older apps and their evidence remain separate.
+- **Automated acceptance:** all eight checks pass, including the 62 pinned runtime-data files.
+- **Observed launch/shutdown:** ledger records both passing for this fingerprint: Slice loaded in 15.9 s,
+  no error lines, guard peak 7.8 GiB; Apple Event quit produced `LogExit` and process exit 0. This is log-only evidence.
+- **Host and leave:** the [#810 check](https://github.com/fontanierh/atelier/pull/810) passed all nine checks on
+  the first attempt: listen server on port 7777, session/content identity, then `LeaveGame` back to Solo with
+  no game net driver, one rider and the same build. It covers the host's own lifecycle in one process.
+- **Still open:** `input`, `map_travel`, `gameplay`, `sound`, `settings_persistence`, `save_persistence`, and
+  a real second-machine session. The recorded verification verdict fails on the six **unrecorded** manual items;
+  it does not report six observed gameplay failures. Hosting/leave does not complete those checks.
+
+The following sections retain the earlier packages' evidence; their results apply only to their named revisions.
+
 ## Integration package for #803 and #804 (2026-11-10)
 
 - **Built:** branch revision `7f43b4ccf3`: main `72a7033bf2` (with the packaging guard fix
@@ -22,9 +39,9 @@ existing verified package and the [release workflow](../../../docs/RELEASES.md),
   `f276a40021` (with #808) passed the same automated checks and launch, but `HostGame` was refused: `This build has no
   multiplayer content manifest`. No V2 package before #809 can host or join a session.
 - **Remaining manual checks:** `input`, `map_travel`, `gameplay`, `sound`, `settings_persistence` and
-  `save_persistence` are not recorded, so `verify` fails for this package as for the main package below.
+  `save_persistence` are not recorded, so `verify` fails for this package as for the earlier main package below.
 
-## Current main checkpoint (2026-11-10)
+## Earlier main checkpoint (2026-11-10 08:38 Paris)
 
 - **Built:** main `7719234597` (after [PR #801](https://github.com/fontanierh/atelier/pull/801)), ready at 08:38 Paris.
   The step took 280 s because the cook reused the previous one; `check.py --full` reported 0 problems over 7,219
@@ -40,18 +57,32 @@ existing verified package and the [release workflow](../../../docs/RELEASES.md),
 
   The other manual items (input, map travel, gameplay, sound, settings and save persistence) are not recorded
   for this app.
-- **Content scope:** see [INVENTORY.md](INVENTORY.md). This package is the first to include:
+- **Content scope:** this older package includes:
   - the first small-families batch ([PR #797](https://github.com/fontanierh/atelier/pull/797));
   - the Brine Cove signal mast and shipyard slip as their own objects ([PR #798](https://github.com/fontanierh/atelier/pull/798),
     [PR #800](https://github.com/fontanierh/atelier/pull/800)).
 
   PRs #799 and #801 add material-master records preparation and inventory only; they change no packaged bytes.
-- **Staging time:** UAT reads one Zen attachment per oplog entry with a blocking request inside a parallel loop,
-  so staging (about 15 000 entries) spends most of its time on .NET thread-pool growth. The log shows a single
-  "Reading oplog" line for that whole time; that is progress, not a hang, while Zen keeps listening on 8558.
 
 The owner directed on 2026-11-09 that human and multiplayer playtesting follows building; multiplayer will be
 played with his brother. These checks remain unverified acceptance work, not a block on independent migration.
+
+## A quiet staging read
+
+`Reading oplog` covers a request for the entry list and subsequent attachment reads. Zen answering on port 8558
+proves server availability, **not progress of that request**. Use the existing UAT log, guard reports and saved
+staging outputs to distinguish progress from a heartbeat; do not infer progress from connection count alone.
+
+On 2026-11-10, the first request waited for its 1,200-second HTTP timeout while Zen stayed healthy. The existing
+second attempt then parsed 15,081 entries in seconds and completed staging. The pinned engine's
+`OplogReader.cs` hardcodes that 20-minute per-request timeout; no shorter timeout setting is exposed in this path.
+The three-attempt reader recovery is inside UAT, separate from Atelier's overall package deadline.
+
+Keep the successful cook and caches for retry. If the explicit job deadline is reached, cancel only the owned
+controller through the normal guarded path and allow cleanup to finish before retrying the same package command.
+Do not restart shared Zen, clear reservations or discard the cook to diagnose a healthy but silent request.
+Changing the engine request timeout requires a separate supported engine change; the memory guard is not a
+request-timeout control.
 
 ## Prepare and build
 
@@ -117,6 +148,17 @@ For multiplayer acceptance, use matching packages on two actual machines and rec
 `two_machine_multiplayer`; then add `--multiplayer` to `verify`. The multiplayer implementation exists, but this
 actual two-machine packaged playtest is not recorded as passed. Two checkouts on one machine do not substitute.
 The packaged bridge has no Python input route, so a human playtest is not replaced by the editor's scripts.
+
+To exercise the host's session lifecycle in an existing package containing #810, use the existing guarded check:
+
+```sh
+ATELIER_AGENT=OWNER nice -n 10 uv run python games/yorimichi_v2/tools/package/host_leave.py run --app "$APP"
+uv run python games/yorimichi_v2/tools/package/host_leave.py verify RECEIPT_DIR
+```
+
+The first command prints the receipt directory. The second re-judges those saved receipts and the recorded exit
+code without launching another game. This check does not cook, does not replace the six manual checks, and does
+not prove another player can join from a second machine. Reuse passing evidence for an unchanged package.
 
 `verify` exits successfully only when every selected automated and manual item passes for the current package.
 Its report records the package fingerprint, bundle identifier, checkout revision/dirty state and check results.
