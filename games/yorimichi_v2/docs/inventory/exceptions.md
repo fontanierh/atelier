@@ -1,6 +1,6 @@
 # Remaining exceptions to independent editing and recoverable sources
 
-Audited snapshot: **main `028bc6243b` (2026-11-10, through #802)**. See [INVENTORY](../INVENTORY.md) for the overall port status.
+Audited snapshot: **main `da0a41f891` (2026-11-10, through #803/#804/#809/#810)**. See [INVENTORY](../INVENTORY.md) for package evidence and forecasts.
 The earlier "320 remaining records" total came from a preparation branch before source recovery and object saves;
 it is retired. Counts of records, packages, cells and useful objects are not interchangeable.
 
@@ -35,30 +35,26 @@ optional simply because a patch is legal to save.
 ## Current source classification
 
 This table is derived from canonical `record_paths` at the audited main revision, excluding nested donor
-`asset.toml` inputs. Of 824 adopted records without direct sources or a recipe, 800 use restricted-manifest
-routes and three use the 124 Adventure/animation links. The remaining **21 records / 83 packages** below
+`asset.toml` inputs. Of 817 adopted records without direct sources or a recipe, 800 use restricted-manifest
+routes and three use the 124 Adventure/animation links. The remaining **14 records / 50 packages** below
 have neither direct sources/recipe nor those manifest routes. This is a classification query, not a claim that
-all 83 packages lack originals, nor a complete recovery backlog: generator records with pinned source files
+all 50 packages lack originals, nor a complete recovery backlog: generator records with pinned source files
 can still need recoverable inputs and an accepted import. See [sources](sources.md).
 
 | Main owner(s) | Records / packages | Current disposition |
 |---|---:|---|
-| `adopted/japan/materials/{bark,buildings,foliage,ground,rock-concrete,sky-wind,water}` | 7 / 41 | The adopted owners remain on this main snapshot. Their parent masters are in #803/#804, but these 41 instance packages still need source closure; a recovered parent does not close its instances |
-| `adopted/hippodrome/materials` | 1 / 5 | Five masters imported in #803's saved branch work; that branch retires this old owner |
-| `adopted/hippodrome/meshes` | 1 / 14 | Four Color textures and ten instances on main. Saved in #804 commit `74a1002c86`: four texture/four instance records imported, six unused course instances retired with reference proof, old owner retired; integration is pending |
-| `adopted/japan/hidamari/surface-flat` | 1 / 1 | `MI_HD_flat` remains open; its parent `M_HDCity` is recovered in #803's saved follow-up |
+| `adopted/japan/materials/{bark,buildings,foliage,ground,rock-concrete,sky-wind,water}` | 7 / 41 | Parent masters are recovered and merged in #803/#804, but these 41 instance packages still need source closure; a recovered parent does not close its instances |
+| `adopted/japan/hidamari/surface-flat` | 1 / 1 | `MI_HD_flat` remains open; its parent `M_HDCity` is recovered and merged in #803 |
 | `adopted/japan/treehouse/surface-pane` | 1 / 1 | `MI_TH_pane` remains unresolved; the old flat/glass/rope/trunk records are already retired in main |
 | `adopted/megapark/seam` | 1 / 2 | Two seam instances remain; preserve their two-sided base-property overrides |
 | `adopted/megapark/standalone-level` | 1 / 1 | Saved Unreal map; reference check remains. This is not an imported-model source gap |
-| `adopted/skatepark/{board,materials}` | 2 / 8 | Master recovery is in #803's saved follow-up |
-| `adopted/fx`, `adopted/swordcamp/materials` | 2 / 5 | Master recovery is in #803's saved follow-up |
 | `adopted/japan/assets/bike` | 1 / 2 | `BK_WheelFront` and `BK_WheelRear`: the donor reads exist, but the `Bike.blend` generator is not recorded; recovery remains open |
-| `adopted/racing` | 1 / 1 | `M_RacingTv` is recovered in #803's saved master batch |
 | `adopted/seethrough`, `adopted/skateruntime` | 2 / 2 | `MPC_SeeThrough` and `RuntimeData` still need recoverable generator/settings/input routes; the earlier reads do not establish source closure |
 
-The master follow-ups contain 36 records in #803 and 13 additional Japan masters in #804 (49 total); the latter
-leaves only `MPC_Wind` in `adopted/japan/materials/base-materials`. They supersede the old nineteen-master
-planning list. Their review/integration and the next package checkpoint are tracked in [INVENTORY](../INVENTORY.md).
+The 49 master records are merged (#803/#804) and included in package `c89f535441be`. The master and Hippodrome
+residual batches retired seven source-less owners accounting for 33 packages in the earlier 21-record / 83-package
+query; those are no longer open rows. `adopted/japan/materials/base-materials` retains `MPC_Wind` and its pinned
+generator sources; it is outside this source-less classification.
 
 ## Completed source batches formerly listed as open
 
@@ -69,10 +65,12 @@ planning list. Their review/integration and the next package checkpoint are trac
 | Two used Japan leaf instances | Imported in #792; read-back agrees |
 | First small-families batch / 21 records, 48 packages | #797 imported four Hippodrome loose meshes, seven plaza/treehouse textures and 37 instances in ten records; read-back agrees. Old Hippodrome loose-files, Treehouse flat/glass/rope/trunk and Mega Park wood/pavement owners are retired |
 | Brine Cove carved sources | #787 preserves the fused originals and recorded carve selections; accepted remainders and saved placements remain intact |
+| Material masters | #803/#804 imported 49 masters with pinned builders; Hippodrome materials, skate-park board/materials, FX, Sword Camp and racing owners retired. Their reports cover only the fields recorded at each revision; see INVENTORY for the historical comparison limits |
+| Hippodrome mesh residuals | #804 imported four Color textures and four material instances, re-imported the four dependent props, and retired six unused course instances with reference proof; old adopted owner retired |
 
-These batches are included in package `0adbb5ab212e` at `7719234597`. None needs re-importing to resolve the
-historical wording below. The three Mega Park masters and five Hippodrome masters are saved on #803,
-not in that package or this audited main revision.
+All these batches are included in package `c89f535441be` at `da0a41f891`. The first five rows were already in
+`0adbb5ab212e` at `7719234597`; the master and Hippodrome residual rows are later additions. None needs
+re-importing to resolve the historical wording below.
 
 ## Historical donor reads and preparation plans
 
