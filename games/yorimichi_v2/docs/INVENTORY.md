@@ -58,6 +58,8 @@ Saved, prepared and packaged totals are kept separate:
   contains 36 generated material masters with pinned builders: Hippodrome, skating, FX, racing, Sword Camp, Mega Park,
   Hidamari city and 13 Japan base masters. The native batches were accepted by the digest at that revision; final
   review strengthens source-pin and graph checks. Their historical reports do not establish the newer rooted comparison.
+  Sword Camp's two masters and Hidamari city now pin the shared haze helper; their claimed refresh at `6c807a71f9`
+  passed the newer native comparison and saved read-back ([evidence](inventory/shared-haze-sources.md)).
   Fourteen Japan base packages remain with the adopted record (13 other masters and `MPC_Wind`); follow-up families
   move these in separate claimed batches. Source-only generator records retain all 30 Hidamari and 43 Mega Park pins.
 - **Still open:** the remaining master inputs and kept packages, the Hidamari instance, held Mega Park seams and MI_TH_pane;

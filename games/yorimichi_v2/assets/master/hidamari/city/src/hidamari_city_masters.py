@@ -9,73 +9,19 @@ texture arrives through `reads`, the donor's `default` argument), and the module
 instances (lines 1-41, 96-134) stay behind. Nothing runs at import: the module is functions only, so it imports without the
 Unreal editor, where `unreal` is None and a builder cannot run.
 
-The haze is atmosphere.apply (donor atmosphere.py lines 14-62, blob sha256 b59478df...) with the sea_look.py constants it
-reads (sea_look.py lines 38-45, 50, 67-69, blob sha256 ffae53cd...), copied below and marked with their donor lines.
+The haze uses the shared master_haze.py implementation, which each record declares and pins beside this builder.
+Its donor atmosphere.py and sea_look.py constants and graph are preserved there. The helper is loaded only from the
+record's declared sources in the importer's private module namespace.
 
 A builder takes the destination package path, the loaded reads ({package: asset}) and the recipe's arguments as keyword
 arguments, and returns the rebuilt material.
 """
+from . import master_haze as haze
+
 try:
     import unreal
 except ImportError:   # outside the editor: the functions are defined but cannot run
     unreal = None
-
-
-# --- copied from sea_look.py (donor lines 38-45, 50, 67-69) -----------------------------------------------------------
-
-def num(x):
-    """HLSL float literal (sea_look.py lines 38-40)."""
-    return repr(float(x))
-
-
-def f3(c):
-    """HLSL float3 literal (sea_look.py lines 43-45)."""
-    return 'float3(%s)' % ','.join(num(x) for x in c)
-
-
-HORIZON = (0.126, 0.311, 0.720)                       # sea_look.py line 50
-HAZE_CM = 900000.0                                     # sea_look.py line 67
-FAR = 0.74                                             # sea_look.py line 68
-FAR_COLOUR = tuple(round(c * FAR, 4) for c in HORIZON)  # sea_look.py line 69
-
-
-# --- copied from atmosphere.py (donor lines 17-21, 25-27, 30-32 and the apply path of 50-62) --------------------------
-
-START_CM = 3000.0                                      # atmosphere.py line 19: the first 30 m are untouched
-COLOUR = FAR_COLOUR                                    # atmosphere.py line 18
-SHARE = f'saturate(1-exp(-max(D-{num(START_CM)},0)/{num(HAZE_CM)}))'   # atmosphere.py line 21
-
-
-def _haze_code_base(expr='B'):
-    """atmosphere.code_base (atmosphere.py lines 25-27)."""
-    return f'return ({expr})*(1-{SHARE});'
-
-
-def _haze_code_glow(expr='E'):
-    """atmosphere.code_glow (atmosphere.py lines 30-32)."""
-    return f'float h={SHARE}; return ({expr})*(1-h)+{f3(COLOUR)}*h;'
-
-
-def _haze_custom(m, code, inputs, x, y):
-    """atmosphere._custom (atmosphere.py lines 35-47 by the donor's order): a Custom node with named inputs, wired."""
-    MEL = unreal.MaterialEditingLibrary
-    n = MEL.create_material_expression(m, unreal.MaterialExpressionCustom, x, y)
-    n.set_editor_property('code', code)
-    n.set_editor_property('output_type', unreal.CustomMaterialOutputType.CMOT_FLOAT3)
-    n.set_editor_property('inputs', _custom_inputs([name for name, _, _ in inputs]))
-    for name, src, out in inputs:
-        assert MEL.connect_material_expressions(src, out, n, name), name
-    return n
-
-
-def _haze_apply(m, base, glow, x, y):
-    """atmosphere.apply with base_out and glow_out left at '' (atmosphere.py lines 50-62, glow given): the haze depth node,
-    then the base-colour node at (x, y) and the emissive node at (x, y + 200). Returns (base, glow)."""
-    MEL = unreal.MaterialEditingLibrary
-    depth = MEL.create_material_expression(m, unreal.MaterialExpressionPixelDepth, x - 200, y + 300)
-    b = _haze_custom(m, _haze_code_base(), [('B', base, ''), ('D', depth, '')], x, y)
-    g = _haze_custom(m, _haze_code_glow(), [('E', glow, ''), ('D', depth, '')], x, y + 200)
-    return b, g
 
 
 # --- shared helpers (the same as swordcamp_masters.py) ---------------------------------------------------------------
@@ -89,13 +35,8 @@ def _material(package):
 
 
 def _custom_inputs(names):
-    """One CustomInput per name, in order (the donor's `for name in (...)` loops)."""
-    out = []
-    for key in names:
-        arg = unreal.CustomInput()
-        arg.set_editor_property('input_name', key)
-        out.append(arg)
-    return out
+    """The shared helper builds the donor's ordered CustomInput structs."""
+    return haze.custom_inputs(unreal, names)
 
 
 # --- city_material.py lines 42-95 (parent) ---------------------------------------------------------------------------------
@@ -155,7 +96,7 @@ def city_parent(package, reads, *, texture):
     base = custom(-450, 0, BASE_CODE, [('C', vc, ''), ('UV', uv, ''), ('P', pos, ''), ('Tex', tex, ''), ('Tile', tile, ''),
                                        ('Strength', strength, ''), ('Macro', macro, ''), ('Gain', gain, '')])
     glow = custom(-200, 300, GLOW_CODE, [('C', vc, ''), ('B', base, '')])
-    b, g = _haze_apply(m, base, glow, x=50, y=0)
+    b, g = haze.apply(unreal, m, base, glow, x=50, y=0)
     assert MEL.connect_material_property(b, '', unreal.MaterialProperty.MP_BASE_COLOR)
     assert MEL.connect_material_property(g, '', unreal.MaterialProperty.MP_EMISSIVE_COLOR)
     for prop, value, y in ((unreal.MaterialProperty.MP_ROUGHNESS, .87, 600), (unreal.MaterialProperty.MP_SPECULAR, .12, 700)):

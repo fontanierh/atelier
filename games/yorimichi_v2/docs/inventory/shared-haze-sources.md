@@ -1,7 +1,8 @@
 # Shared haze source handoff
 
-**Prepared code; three existing records still need their claimed source refresh and native acceptance.** The old pinned
-sources, package bytes and receipts are unchanged. This preparation is based on PR803 head `8527a978f8`.
+**Saved and accepted on the PR803 branch, not yet merged or packaged.** Commit `6c807a71f9` refreshes the three
+records, pinned sources, packages and receipts under MASTERS2. All three were rebuilt in the accepted 14-master warm
+batch and matched their originals with the rooted topology-v2 digest. Preparation began at PR803 head `8527a978f8`.
 
 Sword Camp and Hidamari now use one `unreal/Scripts/material_masters/master_haze.py` implementation. It preserves the
 donor `atmosphere.apply` branches, optional emission, named output pins, defaults and `glow` helper. The only API addition
@@ -21,12 +22,10 @@ and reads source bytes directly, so another warm job's modules or an old bytecod
 | `master/swordcamp/ronin-body` | `/Game/SwordCamp/Materials/M_RoninBody` | `src/swordcamp_masters.py` |
 | `master/hidamari/city` | `/Game/Japan/Hidamari/Materials/M_HDCity` | `src/hidamari_city_masters.py` |
 
-For each record, the source write is its `asset.toml`, replacement entry source and new `src/master_haze.py`. Use the
-existing claimed journal route, with `master_records.record_text(family, master, master_records.builder_sha(family))`
-and the bytes from `master_records.builder_sources(family)`. These families are already `done`; their ordinary migration
-command deliberately does not rewrite completed records. Include the three outputs, their receipts and required
-companions in the native import claim. Ronin does not render haze, but shares Sword Camp's pinned entry module and
-therefore needs a fresh receipt too.
+Each refreshed record contains its updated `asset.toml`, replacement entry source and new `src/master_haze.py`,
+matching `master_records.record_text` and `master_records.builder_sources`. The source refresh used the claimed journal
+route; the normal importer performed the rebuild and issued the receipts. Ronin does not render haze, but shares
+Sword Camp's pinned entry module and therefore also received a fresh import receipt.
 
 Canonical source SHA-256:
 
@@ -37,20 +36,21 @@ Canonical source SHA-256:
 | `master_haze.py` | `329f98441c026c766803a3ce1d1d5e1aba5e09927ee91e12fc51152b8b77a49b` |
 
 The previous entry pins are `a276af6753066718c187577590cda86c7069075cfe145e6b5ad117991989cc82` (both Sword Camp records)
-and `9940b19f7fece3fdf2fdeef73ea7dac63fba5ff68e1c32a5ec0fed3df6b6c875` (Hidamari). Keep their recorded acceptance as the
-baseline. Do not change `verified.json` fingerprints to make new sources appear imported. The normal import must perform
-scratch comparison, save and read-back, and issue its own receipts for these three in the next planned batch. Every
-other accepted master and its evidence remains intact.
+and `9940b19f7fece3fdf2fdeef73ea7dac63fba5ff68e1c32a5ec0fed3df6b6c875` (Hidamari). Their saved originals supplied the
+before baseline. The normal import performed scratch comparison, save and read-back before issuing each new receipt;
+no fingerprint was changed merely to label the new sources imported. Other accepted masters retain their evidence.
 
-Both cold and warm import preparation must check every source pin before planning a write. The warm-path preflight
-correction is a separate integration prerequisite; this patch leaves the existing import caller unchanged.
+Both cold and warm import preparation check every source pin before planning a write. The warm-path preflight
+correction is included in PR803.
 
 ## Validation boundary
 
 The three existing donor trace hashes are unchanged. Focused checks also compare the complete donor haze branches,
 pin every declared helper, detect a helper change in the input fingerprint, refuse undeclared siblings, and isolate
-same-named helpers and failure cleanup across jobs. These are Python checks, not a new native acceptance claim.
+same-named helpers and failure cleanup across jobs. Those Python checks are separate from the native evidence below.
 
-Until the claimed refresh, `test_every_committed_master_record_is_what_its_family_plans` correctly fails for these three
-records: the templates now declare shared sources, while the accepted records still name the old bytes. Keep that check;
-do not weaken it or broaden native imports to unrelated masters.
+The native accessor compiled successfully on `8098aefbd1`. The 14-original read and the post-import comparison both
+accepted every master; material parameters and textures also matched. The batch imported 14 masters and two leaf
+dependents with zero failures. The three refresh records and receipts are isolated in `6c807a71f9`; the eleven new
+Japan masters remain in PR804. `test_every_committed_master_record_is_what_its_family_plans` passes after this refresh.
+This evidence does not replace human appearance or second-machine acceptance.

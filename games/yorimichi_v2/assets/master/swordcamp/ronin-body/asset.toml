@@ -12,7 +12,11 @@ input_dependencies = ["texture/swordcamp/atlas"]
 
 [[sources]]
 path = "src/swordcamp_masters.py"
-sha256 = "a276af6753066718c187577590cda86c7069075cfe145e6b5ad117991989cc82"
+sha256 = "75b50e78a7fd332dbcb3f1f5ab0fe65d0651fff3403067ff983fbbeda34261e8"
+
+[[sources]]
+path = "src/master_haze.py"
+sha256 = "329f98441c026c766803a3ce1d1d5e1aba5e09927ee91e12fc51152b8b77a49b"
 
 [recipe]
 importer = "material-master"
