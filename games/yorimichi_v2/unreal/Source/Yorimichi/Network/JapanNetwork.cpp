@@ -25,7 +25,8 @@ void RequestFailureExit()
     AtelierRequestExit(1);
 }
 
-const TCHAR* Map() { return TEXT("/Game/Japan/Maps/Slice"); }
+// The V2 game map (Config/DefaultEngine.ini GameDefaultMap); the donor's /Game/Japan/Maps/Slice does not exist here.
+const TCHAR* Map() { return TEXT("/Game/V2/Maps/Slice"); }
 bool IsOnline(const UWorld* World) { return World && World->GetNetMode() != NM_Standalone; }
 
 bool Allows(UWorld* World, EActivity Activity)

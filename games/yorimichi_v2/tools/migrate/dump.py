@@ -4,8 +4,8 @@
         --out build/yorimichi_v2/migrate/slice.json [--session ID]
 
 Start the donor game first (from the donor workspace) and wait until its world has finished spawning. The dump
-goes through that game's live bridge. Until explicit session selection exists (plan §8), previews are
-serialized: exactly one game may be running, and this refuses to guess between several.
+goes through that game's live bridge: `--session ID` selects it (`atelier live sessions` lists them); without it,
+the live CLI refuses to guess between several running games.
 """
 import argparse
 import json
@@ -22,7 +22,7 @@ def main(argv=None):
     parser.add_argument('--bounds-cm', type=float, nargs=4, required=True, metavar=('XMIN', 'YMIN', 'XMAX', 'YMAX'))
     parser.add_argument('--out', type=Path, required=True)
     parser.add_argument('--source-revision', help='the donor revision, recorded in the dump')
-    parser.add_argument('--session', help='live session ID, when the live CLI supports session selection')
+    parser.add_argument('--session', help='live session ID (atelier live sessions)')
     args = parser.parse_args(argv)
     out = args.out.resolve()
     out.parent.mkdir(parents=True, exist_ok=True)

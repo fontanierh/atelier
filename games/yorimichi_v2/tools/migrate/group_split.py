@@ -1,8 +1,8 @@
 """The shared lifecycle that replaces a region's grouped objects with one object per member, in steps that each repeat safely.
 
-A regional tool (gondola_pylons.py, railway_fittings.py) chooses the members, renders objects.toml and names its files in a
-`Split`; this module owns the states, the claim, the receipts and the two writing steps, so a fix to acceptance or
-retirement reaches every region.
+A regional tool (the retired gondola_pylons.py and railway_fittings.py; see git history) chooses the members, renders
+objects.toml and names its files in a `Split`; this module owns the states, the claim, the receipts and the two writing
+steps, so a fix to acceptance or retirement reaches every region.
 
 States: unprepared -> prepared (pending save) -> saved (pending retire) -> done. Each state is the tree after a step, and
 a rerun of the step that produced it is a no-op.

@@ -645,7 +645,7 @@ def groups_retired(game: Path, plan: dict) -> bool:
 
 def placements_touched(game: Path, ids: list[str]) -> dict:
     """Stage `placements`: each affected placement's record folder files and the actor packages its record lists as outputs
-    (the same approach as brinecove_ships.touched with retire=True). A placement already deleted contributes nothing."""
+    (the same approach as the retired brinecove_ships.touched with retire=True; see git history). A placement already deleted contributes nothing."""
     apply_ = _apply()
     region = f'region/{apply_.REGION}'
     paths, scopes = set(), {region}
