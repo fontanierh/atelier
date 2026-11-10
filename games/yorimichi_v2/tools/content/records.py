@@ -163,7 +163,7 @@ ASSET_KEYS = {'schema', 'id', 'kind', 'authority', 'owner', 'sources', 'recipe',
               'outputs', 'license', 'provenance', 'validation', 'derive'}
 DERIVE_KEYS = {'kind', 'version', 'original', 'selection'}
 MATERIAL_RECIPE_KEYS = {'importer', 'version', 'settings'}
-MATERIAL_SETTINGS = {'parent', 'textures', 'scalars', 'vectors', 'switches'}
+MATERIAL_SETTINGS = {'parent', 'textures', 'scalars', 'vectors', 'switches', 'base'}
 # A texture recipe's optional settings (unreal/Scripts/import_settings.py reads them; an absent key leaves the texture as
 # the importer made it). TEXTURE_GROUPS mirrors import_settings.TEXTURE_GROUPS; tests/test_texture_settings.py pins the match.
 TEXTURE_KEYS = {'srgb', 'compression', 'max_texture_size', 'lod_group', 'address'}
@@ -186,7 +186,12 @@ ENGINE_PARENTS = frozenset({'/InterchangeAssets/gltf/MaterialInstances/MI_Defaul
                             '/InterchangeAssets/gltf/MaterialInstances/MI_Default_Opaque',
                             '/InterchangeAssets/gltf/MaterialInstances/MI_Default_Blend_DS',
                             '/InterchangeAssets/gltf/MaterialInstances/MI_ClearCoat_Opaque_DS'})
-INSTANCE_KEYS = {'package', 'parent', 'textures', 'scalars', 'vectors', 'switches'}
+INSTANCE_KEYS = {'package', 'parent', 'textures', 'scalars', 'vectors', 'switches', 'base'}
+# The base-property overrides a material-instance record may state (FMaterialInstanceBasePropertyOverrides), with their
+# type: each is written with its override flag set, and every other override flag is cleared (import_asset.py).
+BASE_OVERRIDES = {'blend_mode': str, 'opacity_mask_clip_value': float, 'two_sided': bool, 'dithered_lod_transition': bool}
+BLEND_MODES = {'BLEND_OPAQUE', 'BLEND_MASKED', 'BLEND_TRANSLUCENT', 'BLEND_ADDITIVE', 'BLEND_MODULATE',
+               'BLEND_ALPHA_COMPOSITE', 'BLEND_ALPHA_HOLDOUT'}
 SWITCH_NAME = re.compile(r'^bHas[A-Za-z]+$')   # the static switches the record may state: the Interchange bHas* booleans
 
 
@@ -197,7 +202,24 @@ def _parent(values: dict, where: Path) -> str:
     return parent
 
 
+def _base(values: dict, where: Path) -> None:
+    base = values.get('base', {})
+    if not isinstance(base, dict):
+        raise RecordError(f'{where}: base must be a table of base-property overrides')
+    for name, value in base.items():
+        kind = BASE_OVERRIDES.get(name)
+        if kind is None:
+            raise RecordError(f'{where}: base override {name!r} is not one of {sorted(BASE_OVERRIDES)}')
+        if kind is bool and not isinstance(value, bool):
+            raise RecordError(f'{where}: base override {name} must be true or false')
+        if kind is float and (isinstance(value, bool) or not isinstance(value, (int, float))):
+            raise RecordError(f'{where}: base override {name} must be a number')
+        if kind is str and value not in BLEND_MODES:
+            raise RecordError(f'{where}: base override {name} must be one of {sorted(BLEND_MODES)}')
+
+
 def _parameters(values: dict, where: Path) -> None:
+    _base(values, where)
     switches = values.get('switches', {})
     if not isinstance(switches, dict):
         raise RecordError(f'{where}: switches must be a table of bHas... = true or false')
@@ -256,7 +278,8 @@ def material_settings(recipe: dict, where: Path, inputs: list[str], outputs: lis
 
     Single form: [recipe.settings] with `parent`, `textures` ({parameter: /Game texture package}), `scalars` ({parameter:
     number}) and `vectors` ({parameter: [r, g, b, a]}), written to every output. Instances form: [[recipe.settings.instances]]
-    with one row per output, `package` and the same keys (each row's `parent` as well). The instance is written as exactly
+    with one row per output, `package` and the same keys (each row's `parent` as well). Either form may add `base`, the
+    base-property overrides (blend_mode, opacity_mask_clip_value, two_sided, dithered_lod_transition). The instance is written as exactly
     the values the record states; none is an override the record does not state. Every /Game package it reads must be an
     output of one of its input_dependencies (an Interchange default parent is engine-provided, not read from a record)."""
     _known(recipe, MATERIAL_RECIPE_KEYS, where, '[recipe]')

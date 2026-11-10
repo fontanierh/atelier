@@ -448,13 +448,77 @@ def _parent_switch_values(MEL, parent, names):
     return out
 
 
+def _base_flags(overrides):
+    """The override_* flags of a FMaterialInstanceBasePropertyOverrides (UE 5.8's Python lists them as attributes). None
+    found means this editor cannot be read the way the record is written, so the import stops before any save."""
+    flags = sorted(n for n in dir(overrides) if n.startswith('override_'))
+    if not flags:
+        raise RuntimeError('base_property_overrides exposes no override flags; nothing is saved')
+    return flags
+
+
+def base_value(value):
+    """A base-property value as a record states it: an enum by its name, a float to six places, a bool as it is."""
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, float):
+        return round(value, 6)
+    name = getattr(value, 'name', None)
+    return str(name) if name is not None else value
+
+
+def base_matches(stated, read):
+    """True when the overrides read back are exactly the ones the row states, with the same values."""
+    if set(stated) != set(read):
+        return False
+    for name, want in stated.items():
+        got = read[name]
+        if isinstance(want, bool) or isinstance(want, str):
+            if got != want:
+                return False
+        elif isinstance(got, bool) or not isinstance(got, (int, float)) or abs(float(got) - float(want)) > 1e-4:
+            return False
+    return True
+
+
+def _write_base(instance, base, package):
+    """Set each base-property override the row states, with its value, and clear every other override flag: a donor
+    override the record does not state would otherwise survive the parameter clear."""
+    overrides = instance.get_editor_property('base_property_overrides')
+    flags = _base_flags(overrides)
+    unknown = sorted(set(base) - {flag[len('override_'):] for flag in flags})
+    if unknown:
+        raise RuntimeError(f'{package} has no base override {", ".join(unknown)}; nothing is saved')
+    for flag in flags:
+        name = flag[len('override_'):]
+        overrides.set_editor_property(flag, name in base)
+        if name in base:
+            value = base[name]
+            overrides.set_editor_property(name, getattr(U.BlendMode, value) if name == 'blend_mode' else value)
+    instance.set_editor_property('base_property_overrides', overrides)
+
+
+def read_base(instance):
+    """{name: value} of every base-property override the instance sets; a value this Python cannot read is None."""
+    overrides = instance.get_editor_property('base_property_overrides')
+    out = {}
+    for flag in _base_flags(overrides):
+        if overrides.get_editor_property(flag):
+            name = flag[len('override_'):]
+            try:
+                out[name] = base_value(overrides.get_editor_property(name))
+            except Exception:
+                out[name] = None
+    return out
+
+
 def _material_instances(plan, settings):
     """Write each planned material instance in place: its parent and the parameter values the record states, nothing
     else. A new package is created; an existing one keeps its object path, so references to it survive, and its donor
     import data is scrubbed first. The values are read back before the save, because UE 5.8's setters report False
     (tint_material.py), so the read is the proof. Parameter names come from the record (BaseColorTexture, BaseColorFactor,
     RoughnessFactor, ...). Static switches are written where the row states them; one it does not state must read the
-    parent's value, or the import is refused."""
+    parent's value, or the import is refused. Base-property overrides are exactly the row's `base`, every other cleared."""
     MEL = U.MaterialEditingLibrary
     for row in import_settings.material_instances(settings, plan['packages']):
         package, parent_path = row['package'], row['parent']
@@ -494,6 +558,7 @@ def _material_instances(plan, settings):
             raise RuntimeError(f'{package} has no static switch {", ".join(unknown)}; nothing is saved')
         for name, value in sorted(row['switches'].items()):
             MEL.set_material_instance_static_switch_parameter_value(instance, name, bool(value))
+        _write_base(instance, row['base'], package)
         MEL.update_material_instance(instance)
         # The read-back: the parent, every value the record states, and no donor path in the import data.
         if instance.get_editor_property('parent') != parent:
@@ -518,6 +583,9 @@ def _material_instances(plan, settings):
         stale = stale_switches(row['switches'], own, _parent_switch_values(MEL, parent, names))
         if stale:
             raise RuntimeError(f'{package} keeps static switch overrides its record does not state: {", ".join(stale)}')
+        base = read_base(instance)
+        if not base_matches(row['base'], base):
+            raise RuntimeError(f'{package} reads base overrides {base} instead of {row["base"]}')
         stray = _undeclared_overrides(instance, row)
         if stray:
             raise RuntimeError(f'{package} keeps overrides its record does not state: {", ".join(stray)}')
