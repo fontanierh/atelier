@@ -252,8 +252,9 @@
   },
   {
    "package": "/Game/SkatePark/Materials/M_Pier_basalt",
-   "record": "adopted/skatepark/materials",
+   "record": "master/skatepark/pier-basalt",
    "family": "skatepark",
+   "status": "planned (family skatepark)",
    "generator": {
     "path": "games/yorimichi/unreal/Scripts/import_skatepark.py",
     "lines": [
@@ -324,8 +325,9 @@
   },
   {
    "package": "/Game/SkatePark/Materials/M_Pier_ceramic",
-   "record": "adopted/skatepark/materials",
+   "record": "master/skatepark/pier-ceramic",
    "family": "skatepark",
+   "status": "planned (family skatepark)",
    "generator": {
     "path": "games/yorimichi/unreal/Scripts/import_skatepark.py",
     "lines": [
@@ -396,8 +398,9 @@
   },
   {
    "package": "/Game/SkatePark/Materials/M_Pier_concrete",
-   "record": "adopted/skatepark/materials",
+   "record": "master/skatepark/pier-concrete",
    "family": "skatepark",
+   "status": "planned (family skatepark)",
    "generator": {
     "path": "games/yorimichi/unreal/Scripts/import_skatepark.py",
     "lines": [
@@ -468,8 +471,9 @@
   },
   {
    "package": "/Game/SkatePark/Materials/M_Pier_mural",
-   "record": "adopted/skatepark/materials",
+   "record": "master/skatepark/pier-mural",
    "family": "skatepark",
+   "status": "planned (family skatepark)",
    "generator": {
     "path": "games/yorimichi/unreal/Scripts/import_skatepark.py",
     "lines": [
@@ -524,8 +528,9 @@
   },
   {
    "package": "/Game/SkatePark/Materials/M_Pier_painted",
-   "record": "adopted/skatepark/materials",
+   "record": "master/skatepark/pier-painted",
    "family": "skatepark",
+   "status": "planned (family skatepark)",
    "generator": {
     "path": "games/yorimichi/unreal/Scripts/import_skatepark.py",
     "lines": [
@@ -596,8 +601,9 @@
   },
   {
    "package": "/Game/SkatePark/Materials/M_Pier_steel",
-   "record": "adopted/skatepark/materials",
+   "record": "master/skatepark/pier-steel",
    "family": "skatepark",
+   "status": "planned (family skatepark)",
    "generator": {
     "path": "games/yorimichi/unreal/Scripts/import_skatepark.py",
     "lines": [
@@ -668,8 +674,9 @@
   },
   {
    "package": "/Game/SkatePark/Materials/M_Pier_wood",
-   "record": "adopted/skatepark/materials",
+   "record": "master/skatepark/pier-wood",
    "family": "skatepark",
+   "status": "planned (family skatepark)",
    "generator": {
     "path": "games/yorimichi/unreal/Scripts/import_skatepark.py",
     "lines": [
@@ -740,8 +747,9 @@
   },
   {
    "package": "/Game/SkatePark/Board/M_BoardDissolve",
-   "record": "adopted/skatepark/board",
-   "family": "skatepark",
+   "record": "master/skatepark/board-dissolve",
+   "family": "skatepark_board",
+   "status": "planned (family skatepark_board)",
    "generator": {
     "path": "games/yorimichi/unreal/Scripts/board_dissolve_material.py",
     "lines": [
