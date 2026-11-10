@@ -780,3 +780,11 @@ def test_donor_props5_pieces_partition_each_coarse_cargo_object():
         assert total == (472 if coarse.startswith('props-cargo-') else 732), coarse
     assert {counts[n] for n in counts if n.startswith('props-cargo-') and n.endswith('-rope')} == {144}
     assert {counts[n] for n in counts if '-barrel' in n} == {128}
+
+
+def test_a_rerun_of_a_carved_record_binds_its_slots_by_name():
+    """A pier carved before binds only the slots it kept: the re-cut still finds each kept material's slot by name."""
+    apply_ = market._apply()
+    kept = ['/Game/Brinecove/Materials/MI_BC_lantern', '/Game/Brinecove/Materials/MI_BC_wood_dark']
+    slots = apply_.material_packages(['BC_lantern', 'BC_rope', 'BC_wood_dark'], kept)
+    assert [slots[m] for m in ('BC_lantern', 'BC_wood_dark')] == kept

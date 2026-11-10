@@ -1056,7 +1056,8 @@ def recut_of(game: Path, rid: str, part: dict, pieces: list) -> dict:
            'pieces': sorted(p['record'] for p in pieces), 'after': None}
     if kept:
         data, used = apply_.recut_part(model, sorted(gone), part['mesh'])
-        slots = dict(zip(part['materials'], asset.recipe['settings']['slot_materials']))
+        # by name, never by position: a record carved before binds only the materials it kept (material_packages)
+        slots = apply_.material_packages(part['materials'], asset.recipe['settings']['slot_materials'])
         selection = apply_.carve.selection_text(len(tris), kept).encode()
         lo, hi = split.bounds(tris, kept)
         out['after'] = {'sha256': apply_.carve.sha256(data), 'triangles': len(kept), 'materials': used,
