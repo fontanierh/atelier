@@ -1,0 +1,24 @@
+# Recovered from the donor import (tools/migrate/hippodrome_meshes.py): import_hippodrome.py restyle (lines
+# 116-124) cleared the imported instance, reparented it to M_HD_Structure and set BaseColorTexture to the image
+# its GLB embeds. The importer (tools/import/run.py) writes it in place and reads every value back.
+schema = 1
+id = "material/hippodrome/grandstand"
+kind = "material-instance"
+authority = "generated"
+owner = "shared/hippodrome/materials/grandstand"
+provenance = "donor games/yorimichi/unreal/Scripts/import_hippodrome.py at the V2 source baseline (docs/DECISIONS.md D01, D02), restyle lines 116-124"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+input_dependencies = ["master/hippodrome/structure", "texture/hippodrome/grandstand-color"]
+
+[recipe]
+importer = "material-instance"
+version = 2
+
+[recipe.settings]
+parent = "/Game/Hippodrome/Materials/M_HD_Structure"
+textures = { BaseColorTexture = "/Game/Hippodrome/Meshes/SM_HD_Grandstand/Color_d791cab5-3476-4925-85c1-f4131c7af4b8" }
+scalars = {}
+vectors = {}
+
+[[outputs]]
+package = "/Game/Hippodrome/Meshes/SM_HD_Grandstand/HD_Grandstand"

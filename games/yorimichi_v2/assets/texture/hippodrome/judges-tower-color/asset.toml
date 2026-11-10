@@ -1,0 +1,27 @@
+# Recovered from the donor import (tools/migrate/hippodrome_meshes.py): the base colour image the donor
+# SM_HD_JudgesTower.glb embeds, which Interchange imported as Color_13d66ee9-7f6a-447a-a77d-ada02b839472. The image is committed
+# in src/ and pinned by sha256; the record is imported by the V2 editor and verified by tools/import/run.py.
+schema = 1
+id = "texture/hippodrome/judges-tower-color"
+kind = "texture"
+authority = "generated"
+owner = "shared/hippodrome/textures/judges-tower"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02); pinned by sha256"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+
+[[sources]]
+path = "src/Color_13d66ee9-7f6a-447a-a77d-ada02b839472.jpg"
+sha256 = "3aac2114c489ad20eae4a1e30b304efaac41fb379393ef47c25afafae495689d"
+
+[recipe]
+importer = "texture"
+version = 1
+
+[recipe.settings]
+srgb = true
+compression = "TC_DEFAULT"
+lod_group = "TEXTUREGROUP_WORLD"
+address = "wrap"
+
+[[outputs]]
+package = "/Game/Hippodrome/Meshes/SM_HD_JudgesTower/Color_13d66ee9-7f6a-447a-a77d-ada02b839472"

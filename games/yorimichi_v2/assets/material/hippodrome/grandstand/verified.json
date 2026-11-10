@@ -1,0 +1,15 @@
+{
+  "asset": "material/hippodrome/grandstand",
+  "dependencies": {
+    "master/hippodrome/structure": "9340752c615226aadf825c99b167483f71e83b8dcc4ff7531e531c655f0843dc",
+    "texture/hippodrome/grandstand-color": "7abc4561344cfe59ce47e3da93815901844697fc2079054d84333bea842cd0a8"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Hippodrome/Meshes/SM_HD_Grandstand/HD_Grandstand.uasset": "7bf06eb5411af0a914e3af3cc35245a1a6188b72bcdfc14dd07f956aeba70ca9"
+  },
+  "input_fingerprint": "b2f685aa1033b43037c8030d706ce4256fd7e516612dd740dbf8a3c9fc8e6828",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "material-instance@2"
+}

@@ -1,0 +1,12 @@
+{
+  "asset": "texture/hippodrome/judges-tower-color",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Hippodrome/Meshes/SM_HD_JudgesTower/Color_13d66ee9-7f6a-447a-a77d-ada02b839472.uasset": "aefb340ee319a8da619e035042452734f033b96f5adfd7da3bcca994e30abdb1"
+  },
+  "input_fingerprint": "d159cedf9cfe95f081d0beaf925c1919ed01e3ed041ac7d515b5829e691a7412",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

@@ -1,0 +1,15 @@
+{
+  "asset": "material/hippodrome/tote-board",
+  "dependencies": {
+    "master/hippodrome/structure": "9340752c615226aadf825c99b167483f71e83b8dcc4ff7531e531c655f0843dc",
+    "texture/hippodrome/tote-board-color": "22558d216fd95e36473a35be67946f24380a892f0166ba9dd0b46afc35be1a88"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Hippodrome/Meshes/SM_HD_ToteBoard/HD_ToteBoard.uasset": "f3466bfc1d3f92b5742226424b9ef25ae508782b148c7391bcc6632227adb4f7"
+  },
+  "input_fingerprint": "12b9632f0102ee35838ac311da3e519bbb1bacc690cbafad6cb22588029ad271",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "material-instance@2"
+}

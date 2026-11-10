@@ -1,0 +1,15 @@
+{
+  "asset": "material/hippodrome/finish-post",
+  "dependencies": {
+    "master/hippodrome/structure": "9340752c615226aadf825c99b167483f71e83b8dcc4ff7531e531c655f0843dc",
+    "texture/hippodrome/finish-post-color": "f9b5a0841459e38f96f6f44aefb86aca73354bd68eebe8f52b4bc7f732b22432"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Hippodrome/Meshes/SM_HD_FinishPost/HD_FinishPost.uasset": "a49c919067a0679abba1e1e74cfc24046f9e94f59d39ec1b1827a81712dcf7f4"
+  },
+  "input_fingerprint": "713bfe5765cf69c5824080f60654df1fa2b13e9f81415d633acc433355a8e2d8",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "material-instance@2"
+}

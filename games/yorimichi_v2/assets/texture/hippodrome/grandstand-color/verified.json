@@ -1,0 +1,12 @@
+{
+  "asset": "texture/hippodrome/grandstand-color",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Hippodrome/Meshes/SM_HD_Grandstand/Color_d791cab5-3476-4925-85c1-f4131c7af4b8.uasset": "8be22edf1109b203c1dba2401dcb1a81436fb5564ebac3a31e451987e876bed4"
+  },
+  "input_fingerprint": "ad02b24cd2cf6032f978672c8ae9430e52e15e26c6e8d3633115d473012a60dd",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

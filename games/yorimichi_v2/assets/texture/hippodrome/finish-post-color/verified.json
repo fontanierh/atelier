@@ -1,0 +1,12 @@
+{
+  "asset": "texture/hippodrome/finish-post-color",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Hippodrome/Meshes/SM_HD_FinishPost/Color_c3f66034-a443-44e1-ac12-bc4a9a617bb9.uasset": "c2f9c76e5073d61a6d64d2dea96a03b4ff380244bde6126ce9a4b9a5747f390a"
+  },
+  "input_fingerprint": "0d6b6fe62e250d6445c5230622a9975eb11c808c410d1087eb19f5123c07c9f3",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

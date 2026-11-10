@@ -1,0 +1,15 @@
+{
+  "asset": "material/hippodrome/judges-tower",
+  "dependencies": {
+    "master/hippodrome/structure": "9340752c615226aadf825c99b167483f71e83b8dcc4ff7531e531c655f0843dc",
+    "texture/hippodrome/judges-tower-color": "9fad07745e480c23772d0edc67d799d2148288317bf918942bd143511ebae595"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Hippodrome/Meshes/SM_HD_JudgesTower/HD_JudgesTower.uasset": "cc63e905f4762b54856c3e3b2da670bebc68871fbca9a4e33e947151b82ffea3"
+  },
+  "input_fingerprint": "3fe06b205238bb958e61d756f5e8695cbc034343a875be1aa20f7f08ee08fbe4",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "material-instance@2"
+}
