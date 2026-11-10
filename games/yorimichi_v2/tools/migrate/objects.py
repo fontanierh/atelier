@@ -236,15 +236,15 @@ def record_text(item: dict, region: str, package) -> str:
 
 
 def claim_paths(game: Path, region_ids: list[str], *, only=None, environment=None) -> dict[str, list[str]]:
-    """What a claim for these regions' objects locks and lists: {"lock": the area patch packages their split
-    objects leave (every patch of each split key in patches.json) and the environment's manifest actor (MANIFEST),
-    plus existing selected object outputs and companions; "path": each object record's two files and saved list}.
-
-    @cc [owner:fontanierh,label:correctness] object-claim-discovery-is-not-acceptance
+    """@cc [owner:fontanierh,label:correctness] object-claim-discovery-is-not-acceptance
     Existing object package paths MUST come from the selected object's canonical editor-placement record with
     the matching region and model references, never from a migration log or plan. Saved-definition mismatches
     MUST fail. Listing paths MUST NOT write records, acquire claims or accept an interrupted save; normal claimed
     migration and save validation remain required.
+
+    Returns {"lock": the area patch packages their split objects leave (every patch of each split key in
+    patches.json), the environment's manifest actor (MANIFEST), and existing selected object outputs and
+    companions; "path": each object record's two files and saved list}.
     """
     _, regions = records.discover(game)
     by_id = {r.id: r for r in regions}
