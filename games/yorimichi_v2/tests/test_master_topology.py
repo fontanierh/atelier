@@ -42,6 +42,7 @@ class Material:
         self.nodes, self.roots = nodes, roots
         self.root_audit = {}
         self.settings = {key: False for key in digest.SETTINGS}
+        self.settings['num_customized_u_vs'] = 0
 
     def get_editor_property(self, key):
         return self.settings[key]
@@ -323,6 +324,33 @@ def test_topology_without_material_root_masks_is_legacy_evidence():
     legacy = digest.read(retail())
     legacy['topology']['version'] = 2
     assert 'lacks version 3 rooted topology' in digest.accept(legacy, legacy)[0]
+
+
+@pytest.mark.parametrize('count', [1, 8])
+def test_enabled_customized_uv_inputs_refuse_instead_of_looking_unwired(count):
+    """UE hides these roots from Python's enum; enabled vertex UV graphs cannot be called equivalent."""
+    material = retail()
+    saved = digest.read(material)
+    assert digest.accept(saved, digest.read(material)) == []
+    uv = node('MaterialExpressionTextureCoordinate', 'custom-uv', coordinate_index=1)
+    material.nodes.append(uv)
+    material.roots['MP_CUSTOMIZED_UV_0'] = (uv, '')
+    material.settings['num_customized_u_vs'] = count
+    failed = digest.read(material)
+    assert 'customized UV inputs are not supported' in failed['error']
+    assert digest.accept(saved, failed) and digest.accept(failed, failed)
+
+
+@pytest.mark.parametrize('count', [None, '1'])
+def test_reports_must_prove_customized_uv_inputs_are_disabled(count):
+    current = digest.read(retail())
+    incomplete = copy.deepcopy(current)
+    if count is None:
+        incomplete['settings'].pop('num_customized_u_vs', None)
+    else:
+        incomplete['settings']['num_customized_u_vs'] = count
+    for left, right in [(incomplete, current), (current, incomplete), (incomplete, incomplete)]:
+        assert 'customized-UV count' in digest.accept(left, right)[0]
 
 
 @pytest.mark.parametrize('setting', ['is_sky', 'blendable_location', 'dithered_lod_transition',

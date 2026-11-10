@@ -7,6 +7,8 @@ Expression indices and object names are not recorded, since a rebuild in another
 lists are compared as multisets for diagnostics. Version 3 fingerprints the graph rooted at each material property,
 including each node's ordered input pins and upstream structure, plus each root's native output index and component masks.
 Older reports must be read again; lossy connection labels or roots without their masks cannot establish equivalence.
+Customized UV roots are hidden from Unreal's Python enum. This reader refuses enabled customized UV inputs, and reports
+must record a disabled count explicitly; an older report without that count cannot establish equivalence either.
 
 The graph is what the master renders: the expressions reachable from its property pins. An expression wired to nothing
 compiles into no shader, so it is listed apart as `unwired` and not compared with historical originals. The importer clears
@@ -32,7 +34,7 @@ except ImportError:   # outside the editor only the pure functions are usable
 SETTINGS = ('blend_mode', 'shading_model', 'two_sided', 'material_domain', 'opacity_mask_clip_value',
             'used_with_instanced_static_meshes', 'used_with_skeletal_mesh', 'used_with_static_lighting',
             'translucency_lighting_mode', 'is_sky', 'blendable_location', 'dithered_lod_transition',
-            'tangent_space_normal', 'compute_fog_per_pixel')
+            'tangent_space_normal', 'compute_fog_per_pixel', 'num_customized_u_vs')
 PROPERTY_PINS = ('MP_BASE_COLOR', 'MP_NORMAL', 'MP_ROUGHNESS', 'MP_METALLIC', 'MP_SPECULAR', 'MP_EMISSIVE_COLOR',
                  'MP_OPACITY', 'MP_OPACITY_MASK', 'MP_AMBIENT_OCCLUSION', 'MP_WORLD_POSITION_OFFSET', 'MP_REFRACTION',
                  'MP_PIXEL_DEPTH_OFFSET', 'MP_SUBSURFACE_COLOR', 'MP_CUSTOM_DATA0', 'MP_CUSTOM_DATA1', 'MP_TANGENT',
@@ -83,7 +85,8 @@ def accept(saved, rebuilt):
     A rebuilt master is accepted only when its wiring digest equals the saved original's, with nothing missing on either side:
     the settings, rooted topology with ordered input pins, the rendered graph and every parameter. An unwired expression
     is not compared, unless it carries a parameter. An unreadable or legacy digest without version 3 topology refuses;
-    lossy local-node labels MUST NOT be used to invent that topology. Returns differences; empty means accepted."""
+    lossy local-node labels MUST NOT be used to invent that topology. Both reports MUST explicitly record a disabled
+    customized-UV count; those hidden roots are not supported. Returns differences; empty means accepted."""
     for label, digest in (('saved original', saved), ('rebuilt master', rebuilt)):
         if 'error' in digest:
             return [f'{label} could not be read: {digest["error"]}']
@@ -91,6 +94,8 @@ def accept(saved, rebuilt):
         if not isinstance(topology, dict) or topology.get('version') != TOPOLOGY_VERSION \
                 or not isinstance(topology.get('roots'), dict):
             return [f'{label} lacks version {TOPOLOGY_VERSION} rooted topology; collect a new read-only report']
+        if digest.get('settings', {}).get('num_customized_u_vs') != '0':
+            return [f'{label} lacks a supported customized-UV count of 0; collect a new read-only report']
     a, b = canonical(saved), canonical(rebuilt)
     problems = []
     for key in sorted(set(a['settings']) | set(b['settings'])):
@@ -215,6 +220,8 @@ def _digest(material):
     for key in SETTINGS:
         value = material.get_editor_property(key)
         settings[key] = value if isinstance(value, (bool, float)) else str(value)
+    if settings['num_customized_u_vs'] != '0':
+        raise ValueError('customized UV inputs are not supported by the master digest')
     every = list(MEL.get_material_expressions(material) or [])
     text = {}
     for expression in every:

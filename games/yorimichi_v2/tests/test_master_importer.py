@@ -155,7 +155,7 @@ def test_no_builder_saves_its_material_the_importer_does():
 # --- the wiring digest and its comparer, as pure data -------------------------------------------------------------------
 
 def sample(connections=('A -> B.A',), props=(('two_sided', True),)):
-    return {'settings': dict(props), 'expressions': ['{"class": "Constant", "props": {"r": 0.5}}',
+    return {'settings': {'num_customized_u_vs': '0', **dict(props)}, 'expressions': ['{"class": "Constant", "props": {"r": 0.5}}',
                                                        '{"class": "Multiply", "props": {"const_b": 0.3}}'],
             'connections': list(connections), 'property_connections': ['MP_ROUGHNESS <- Constant.'],
             'topology': {'version': digest.TOPOLOGY_VERSION, 'roots': {'MP_ROUGHNESS': ['', 'fixture-root']}}}
@@ -202,8 +202,8 @@ def test_a_different_opacity_cutoff_refuses():
 def test_the_digest_records_every_property_a_builder_writes():
     """@cc [owner:fontanierh,label:correctness] master-digest-covers-builders
     Each literal rendering property a material-master builder writes directly or through node/_node keywords is a digest
-    setting or expression property. input_name is a Custom node input recorded through inputs; desc is editor metadata
-    and does not affect appearance."""
+    setting or expression property. input_name is a Custom node input recorded through inputs; desc and Custom-node
+    description are editor captions/diagnostics and do not affect appearance."""
     import ast
     written = set()
     for path in (SCRIPTS / 'material_masters').glob('*.py'):
@@ -216,7 +216,7 @@ def test_the_digest_records_every_property_a_builder_writes():
                     written.add(name.value)
             elif isinstance(call.func, ast.Name) and call.func.id in {'node', '_node'}:
                 written.update(keyword.arg for keyword in call.keywords if keyword.arg is not None)
-    assert written - set(digest.SETTINGS) - set(digest.EXPRESSION_PROPERTIES) - {'input_name', 'desc'} == set()
+    assert written - set(digest.SETTINGS) - set(digest.EXPRESSION_PROPERTIES) - {'input_name', 'desc', 'description'} == set()
 
 
 def test_an_unwired_expression_of_the_saved_original_is_not_rebuilt_and_still_accepted():
