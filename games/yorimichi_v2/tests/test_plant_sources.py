@@ -16,7 +16,15 @@ import plant_sources as ps  # noqa: E402
 import records  # noqa: E402
 import import_settings as s  # noqa: E402
 
-GLB = b'glTF plant bytes'
+def make_glb(material_names) -> bytes:
+    """A minimal binary glTF whose materials are named (the planner reads the names)."""
+    import struct
+    doc = json.dumps({'asset': {'version': '2.0'}, 'materials': [{'name': n} for n in material_names]}).encode()
+    doc += b' ' * (-len(doc) % 4)
+    return b'glTF' + struct.pack('<II', 2, 12 + 8 + len(doc)) + struct.pack('<II', len(doc), 0x4E4F534A) + doc
+
+
+GLB = make_glb(['BC_leaf'])
 FBX_ORIGINAL = b'fbx original arcade'
 FBX_LOD1 = b'fbx lod1'
 FBX_LOD2 = b'fbx lod2'
@@ -177,9 +185,18 @@ def test_the_importer_reads_a_reduction_plan_and_a_level_kind_and_refuses_the_re
 REAL_DONOR = os.environ.get('YV2_DONOR_BUILD')
 
 
+@pytest.fixture(scope='module')
+def unprepared():
+    """The plan tests start from the adopted records; once the move ran on the real tree (state `done`) they skip, and
+    test_the_real_tree_is_split pins the result instead."""
+    current, _ = ps.state(ROOT)
+    if current != 'unprepared':
+        pytest.skip(f'the real tree is {current}, not unprepared: the move already ran')
+
+
 @pytest.mark.skipif(not REAL_DONOR or not (Path(REAL_DONOR).expanduser() / 'brinecove' / 'build-report.json').is_file(),
                     reason='needs the donor build (YV2_DONOR_BUILD)')
-def test_real_tree_plans_all_72_packages_without_unmapped_ones():
+def test_real_tree_plans_all_72_packages_without_unmapped_ones(unprepared):
     p = ps.plan(ROOT, Path(REAL_DONOR).expanduser())
     assert p.unmapped == []
     assert len(p.records) == 72 and len(p.packages) == 72
@@ -204,7 +221,9 @@ def agreeing_read(plan_):
                 lods = [{'screen': c[1], 'triangles': c[2], 'sections': [0]} for c in rec.settings['lod_chain']]
                 collision = {'trace': 'CTF_USE_SIMPLE_AND_COMPLEX: 1>', 'convex': rec.settings.get('hulls', 0), 'simple': 0,
                              'boxes': [], 'double_sided': False}
-            read[package] = {'slots': [{'name': 'S', 'material': m} for m in slots], 'lods': lods, 'collision': collision}
+            names = ps.expected_slot_names(rec)
+            read[package] = {'slots': [{'name': n, 'imported': n, 'material': m} for n, m in zip(names, slots)],
+                             'lods': lods, 'collision': collision}
     return read
 
 
@@ -235,9 +254,60 @@ def test_the_committed_read_evidence_has_no_donor_paths_and_names_the_72_package
     assert sorted(evidence) == sorted(listed) and len(listed) == 72
 
 
+def test_the_plan_agrees_with_the_committed_mesh_read_evidence():
+    """Before the move the plan (from the donor) is checked; after it, the written records are, with no donor needed."""
+    current, _ = ps.state(ROOT)
+    if current == 'unprepared':
+        if not REAL_DONOR or not (Path(REAL_DONOR).expanduser() / 'brinecove' / 'build-report.json').is_file():
+            pytest.skip('needs the donor build (YV2_DONOR_BUILD) before the move')
+        plan_ = ps.plan(ROOT, Path(REAL_DONOR).expanduser())
+    else:
+        plan_ = ps.records_plan(ROOT)
+    evidence = json.loads((ROOT / 'docs' / 'inventory' / 'plants-and-city-tree-read.json').read_text())
+    assert len(plan_.records) == 72
+    assert ps.disagreements(plan_, evidence) == []
+
+
+def test_the_real_tree_is_split():
+    """After the move: 72 records of the families list the packages, and no adopted record lists one."""
+    current, detail = ps.state(ROOT)
+    if current == 'unprepared':
+        pytest.skip('the move has not run on the real tree yet')
+    assert (current, detail) == ('done', '72 records list the packages; the adopted records list none')
+    planned = ps.records_plan(ROOT)
+    assert len(planned.records) == 72 and sorted(planned.packages) == sorted(ps.expected_packages())
+    assert list((ROOT / 'assets' / 'adopted' / 'brinecove').glob('plant-*/asset.toml')) == []
+    assert not (ROOT / 'assets' / 'adopted' / 'experiments' / 'citytrees' / 'asset.toml').exists()
+
+
 @pytest.mark.skipif(not REAL_DONOR or not (Path(REAL_DONOR).expanduser() / 'brinecove' / 'build-report.json').is_file(),
                     reason='needs the donor build (YV2_DONOR_BUILD)')
-def test_the_plan_agrees_with_the_committed_mesh_read_evidence():
-    plan_ = ps.plan(ROOT, Path(REAL_DONOR).expanduser())
+def test_the_done_state_checks_the_written_records_in_a_copy(tmp_path):
+    """The move applied to a copy of the records (no claim, and the real tree is not written): the state is done, and the
+    written records agree with the committed evidence, slot names included."""
+    import shutil
+    game = tmp_path / 'game'
+    shutil.copytree(ROOT / 'assets', game / 'assets')
+    plan_ = ps.plan(game, Path(REAL_DONOR).expanduser())
+    ops = ps.build_writes(game, plan_)
+    for rel, data in ops['writes'].items():
+        target = game / rel
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(data)
+    for rel in ops['deletes']:
+        (game / rel).unlink()
+    assert ps.state(game)[0] == 'done'
+    written = ps.records_plan(game)
     evidence = json.loads((ROOT / 'docs' / 'inventory' / 'plants-and-city-tree-read.json').read_text())
-    assert ps.disagreements(plan_, evidence) == []
+    assert len(written.records) == 72 and ps.disagreements(written, evidence) == []
+
+
+def test_a_v4_slot_label_the_import_does_not_save_is_disagreed_with(fake):
+    """A _v4 labelled M_Arcade (the material's name) where the import saves HidamariPalette."""
+    p = ps.plan(fake['game'], fake['donor'])
+    read = agreeing_read(p)
+    v4 = '/Game/Experiments/CityTrees/v4/HD_ArcadeTree_cell_-1_-1_v4'
+    rec = next(r for r in p.records if r.outputs[0] == v4)
+    rec.settings['slots'] = [['M_Arcade', rec.settings['slots'][0][1]]]
+    out = ps.disagreements(p, ps.evidence(p, read))
+    assert any(v4 in d and 'slot name' in d and 'M_Arcade' in d for d in out)
