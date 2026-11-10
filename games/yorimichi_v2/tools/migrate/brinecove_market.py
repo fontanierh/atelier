@@ -580,12 +580,14 @@ def summary(plan: dict) -> dict:
 # Town lots can take every triangle of a tile. `apply` keeps such a tile's record, package and runtime group until the
 # parts are imported and checked (otherwise the old tile would be drawn twice); `retire` then removes them.
 
-def drop_group(text: str, mesh: str) -> str:
-    """objects.toml text without the group `mesh`: removed from `groups = [...]`; an object left with no group is dropped."""
+def drop_group(text: str, mesh: str, record: str | None = None) -> str:
+    """objects.toml text without the group `mesh`: removed from `groups = [...]`; an object left with no group is dropped.
+    The tile's `record` is also removed from a model list, so a placement saved again no longer references it (the
+    records stage refuses while it does). A model that would be left empty is kept."""
     blocks = re.split(r'(?m)^(?=\[\[objects\]\]\n)', text)
     out = []
     for block in blocks:
-        if f'"{mesh}"' not in block or not block.startswith('[[objects]]'):
+        if not block.startswith('[[objects]]') or (f'"{mesh}"' not in block and not (record and f'"{record}"' in block)):
             out.append(block)
             continue
         lines, keep = block.split('\n'), True
@@ -596,13 +598,19 @@ def drop_group(text: str, mesh: str) -> str:
                 groups = [g for g in json.loads(line[len('groups = '):]) if g != mesh]
                 keep = bool(groups)
                 lines[n] = 'groups = ' + json.dumps(groups)
+            elif record and line.startswith('model = ['):
+                models = [m for m in json.loads(line[len('model = '):]) if m != record]
+                if models:
+                    lines[n] = 'model = ' + (json.dumps(models[0]) if len(models) == 1 else
+                                             '[' + ', '.join(json.dumps(m) for m in models) + ']')
         if keep:
             out.append('\n'.join(lines))
     return ''.join(out)
 
 
-def drop_saved_group(body: dict, mesh: str) -> dict:
-    """objects.saved.json body without the group `mesh`; an object left with no group is removed."""
+def drop_saved_group(body: dict, mesh: str, record: str | None = None) -> dict:
+    """objects.saved.json body without the group `mesh` (and the tile's `record` in a model list, as drop_group); an
+    object left with no group is removed."""
     objects = {}
     for oid, item in body.get('objects', {}).items():
         groups = item.get('groups')
@@ -611,6 +619,13 @@ def drop_saved_group(body: dict, mesh: str) -> dict:
             if not groups:
                 continue
             item = {**item, 'groups': groups}
+        model = item.get('model')
+        if record and isinstance(model, list) and record in model and len(model) > 1:
+            models = [m for m in model if m != record]
+            item = {k: v for k, v in item.items() if k != 'models'}   # a list model became one: no stale `models`
+            item['model'] = models[0] if len(models) == 1 else models
+            if len(models) > 1 and 'models' in body['objects'][oid]:
+                item['models'] = models
         objects[oid] = item
     return {**body, 'objects': objects}
 
@@ -651,12 +666,12 @@ def groups_retired(game: Path, plan: dict) -> bool:
     or the runtime file (the tile records may still exist)."""
     apply_ = _apply()
     region = game / 'world' / 'regions' / apply_.REGION
-    meshes = {f'SM_BC_{s}' for s in emptied(plan)}
+    meshes = {f'SM_BC_{s}': plan['tiles'][s]['record'] for s in emptied(plan)}
     text = (region / 'objects.toml').read_text()
     saved = json.loads((region / 'objects.saved.json').read_text()) if (region / 'objects.saved.json').is_file() else None
     names = apply_.group_names(json.loads((game / 'unreal' / 'Content' / apply_.RUNTIME).read_text()))
-    return not any(drop_group(text, m) != text or (saved is not None and drop_saved_group(saved, m) != saved) or m in names
-                   for m in meshes)
+    return not any(drop_group(text, m, r) != text or (saved is not None and drop_saved_group(saved, m, r) != saved)
+                   or m in names for m, r in meshes.items())
 
 
 def placements_touched(game: Path, ids: list[str]) -> dict:
@@ -730,9 +745,10 @@ def retire_compute(game: Path, plan: dict, stage: str = 'groups') -> dict:
     text = (region / 'objects.toml').read_text()
     saved = json.loads((region / 'objects.saved.json').read_text()) if (region / 'objects.saved.json').is_file() else None
     for stem in stems:
-        text = drop_group(text, f'SM_BC_{stem}')
+        record = plan['tiles'][stem]['record']
+        text = drop_group(text, f'SM_BC_{stem}', record)
         if saved is not None:
-            saved = drop_saved_group(saved, f'SM_BC_{stem}')
+            saved = drop_saved_group(saved, f'SM_BC_{stem}', record)
     new = {f'world/regions/{apply_.REGION}/objects.toml': text.encode()}
     if saved is not None:
         new[f'world/regions/{apply_.REGION}/objects.saved.json'] = (json.dumps(saved, indent=2, sort_keys=True) + '\n').encode()

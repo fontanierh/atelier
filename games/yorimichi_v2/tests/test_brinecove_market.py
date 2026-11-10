@@ -253,6 +253,20 @@ def test_drop_saved_group():
     assert market.drop_saved_group(out, 'x') == out
 
 
+def test_drop_group_also_drops_the_emptied_tile_record_from_a_model_list():
+    toml = TOML.replace('model = "adopted/a"', 'model = ["adopted/a", "adopted/t1"]')
+    out = market.drop_group(toml, 'SM_BC_T_1', 'adopted/t1')
+    assert 'groups = ["SM_BC_T_2"]\nmodel = "adopted/a"\n' in out and 'adopted/t1' not in out
+    # the group already gone (an earlier groups stage) still drops the record, and a rerun changes nothing
+    assert market.drop_group(market.drop_group(toml, 'SM_BC_T_1'), 'SM_BC_T_1', 'adopted/t1') == out
+    assert market.drop_group(out, 'SM_BC_T_1', 'adopted/t1') == out
+    assert market.drop_group(TOML, 'SM_BC_T_9', 'adopted/c') == TOML              # a single model is kept
+    body = {'objects': {'a': {'groups': ['x', 'y'], 'model': ['m', 't'], 'models': ['m', 't']}, 'c': {'model': 't'}}}
+    saved = market.drop_saved_group(body, 'x', 't')
+    assert saved['objects'] == {'a': {'groups': ['y'], 'model': 'm'}, 'c': {'model': 't'}}
+    assert market.drop_saved_group(saved, 'x', 't') == saved
+
+
 def test_emptied_lists_tiles_with_no_remainder():
     assert market.emptied({'remainders': {'B': None, 'A': {'triangles': 3}, 'C': None}}) == ['B', 'C']
 
