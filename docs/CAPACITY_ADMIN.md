@@ -179,7 +179,13 @@ strictly absent. Two fresh complete same-user process censuses must rule out rem
 and unexplained recent orphans. Report hashes, service bindings and full compatibility are checked
 again before release. Another charged job, unknown process lookup or any nonempty service/reporter
 evidence refuses. This action does not inherit the completed-job policy's unknown executable-path
-exceptions. Exact independently reviewed service exceptions can still be supplied through
+exceptions. It reuses that policy's exact iCloudHelper XPC exception only after verifying its
+protected system path, parent 1, root ownership, non-writable permissions, SIP flag and Apple
+signature in each census; the exclusion is recorded. No workload identity can use it.
+The exact Apple `biomesyncd` sync service is also allowed with those executable checks and a
+matching live system launchd PID/program/path plus its protected system plist. Arbitrary Apple
+programs and reparented interpreters are not exceptions.
+Exact independently reviewed service exceptions can still be supplied through
 `--administrative-evidence FILE`, using the existing private evidence format plus
 `acknowledge_monitor_failure: true` and the original `guards` and `report_sha256` bindings.
 

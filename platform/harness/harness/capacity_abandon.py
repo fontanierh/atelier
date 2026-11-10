@@ -9,7 +9,9 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import plistlib
 import re
+import stat
 import subprocess
 import sys
 import time
@@ -21,6 +23,7 @@ INDEXER = '/System/Library/Frameworks/CoreServices.framework/Versions/A/Framewor
 OS_SERVICES = frozenset((INDEXER, '/System/Library/PrivateFrameworks/HelpData.framework/Versions/A/Resources/helpd'))
 COMPLETED_XPC = '/System/Library/PrivateFrameworks/AOSKit.framework/Versions/A/XPCServices/com.apple.iCloudHelper.xpc/Contents/MacOS/com.apple.iCloudHelper'
 SYSTEM_INDEXER = '/System/Library/Frameworks/CoreSpotlight.framework/spotlightknowledged'
+BIOME_SYNC = '/usr/libexec/biomesyncd'
 BUILD_NAMES = frozenset(('Blender', 'blender', 'UnrealEditor', 'UnrealEditor-Cmd', 'ShaderCompileWorker',
     'dotnet', 'mono', 'UnrealBuildTool', 'AutomationTool', 'xcodebuild', 'make', 'ninja', 'cmake', 'cargo', 'rustc'))
 
@@ -133,9 +136,51 @@ def unwitnessed_system_service(row):
                for executable in (SYSTEM_INDEXER, COMPLETED_XPC))
 
 
-def validate_snapshot(rows, record, services, *, completed=False, unwitnessed=False):
+def failed_system_service(row):
+    """Only exact protected Apple sync services; Biome also needs its live system launchd binding."""
+    if completed_system_service(row):
+        return True
+    if not protected_apple_service(row, BIOME_SYNC):
+        return False
+    label = 'com.apple.biomesyncd'
+    path = Path('/System/Library/LaunchAgents') / (label + '.plist')
+    try:
+        config = plistlib.loads(protected_system_file(path))
+        if config.get('Label') != label or config.get('ProgramArguments') != [BIOME_SYNC]:
+            return False
+        checked = subprocess.run(['/bin/launchctl', 'print', f'gui/{os.getuid()}/{label}'],
+                                 capture_output=True, timeout=.5)
+        return (checked.returncode == 0 and len(checked.stdout) <= 128 * 1024
+                and re.search(rb'(?m)^\s*pid = '+str(row['pid']).encode()+rb'\s*$', checked.stdout) is not None
+                and re.search(rb'(?m)^\s*path = '+re.escape(str(path).encode())+rb'\s*$', checked.stdout) is not None
+                and re.search(rb'(?m)^\s*program = '+re.escape(BIOME_SYNC.encode())+rb'\s*$', checked.stdout) is not None
+                and wire.process_start(row['pid']) == row['started'])
+    except (OSError, ValueError, wire.CapacityError, plistlib.InvalidFileException, subprocess.SubprocessError):
+        return False
+
+
+def protected_system_file(path):
+    """Read a bounded, stable, root-owned SIP-protected regular file without following links."""
+    fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+    try:
+        before = os.fstat(fd)
+        if (not stat.S_ISREG(before.st_mode) or before.st_uid != 0 or before.st_nlink != 1
+                or before.st_mode & 0o022 or not getattr(before, 'st_flags', 0) & 0x00080000
+                or not 0 < before.st_size <= wire.MAX_FRAME):
+            raise wire.CapacityError('Recovery system file must be protected, root-owned and bounded')
+        raw = os.read(fd, wire.MAX_FRAME + 1)
+        after = os.fstat(fd)
+        fields = ('st_dev', 'st_ino', 'st_uid', 'st_mode', 'st_nlink', 'st_size', 'st_mtime_ns', 'st_ctime_ns', 'st_flags')
+        if len(raw) != before.st_size or any(getattr(before,k,None) != getattr(after,k,None) for k in fields):
+            raise wire.CapacityError('Recovery system file changed while reading')
+        return raw
+    finally:
+        os.close(fd)
+
+
+def validate_snapshot(rows, record, services, *, completed=False, unwitnessed=False, failed=False, retained_pins=()):
     root = tuple(record['child'])
-    retained = set(map(tuple, record['roster']))
+    retained = set(map(tuple, record['roster'])) | set(retained_pins)
     for row in rows.values():
         pin = (row['pid'], row['started'])
         name = Path(row['executable']).name
@@ -143,7 +188,7 @@ def validate_snapshot(rows, record, services, *, completed=False, unwitnessed=Fa
             raise wire.CapacityError('Live compiler/build/render process prevents administrative release')
         if row['started'] < root[1] or row['executable'] in OS_SERVICES or pin in services:
             continue
-        if completed and completed_system_service(row):
+        if (failed and failed_system_service(row)) or (completed and completed_system_service(row)):
             row['verified_completed_system_service'] = True
             continue
         if unwitnessed and unwitnessed_system_service(row):
@@ -182,11 +227,14 @@ def recover(record, evidence, *, principal, boot, epoch, scan=None, missing=None
     every identity in that receipt, preserve its failure and use the strict census. Original report
     bytes MUST be hashed and validated together; failed-job service bindings MUST be rechecked afterward.
     A recent orphan MUST refuse unless it is an exact independently reviewed live launchd service or
-    specialized OS worker. Completed-job recovery MAY additionally exclude the exact
+    specialized OS worker. Completed-job and failed-job recovery MAY additionally exclude the exact
     iCloudHelper XPC executable with PPID 1, root ownership, no group/other write permission,
-    SIP protection and verified Apple signature, recording that exclusion. Its census MAY
+    SIP protection and verified Apple signature, recording that exclusion. Only the completed-job census MAY
     record unavailable executable paths only with stable kernel birth/PID/parent/UID observations
     strictly predating the root. All newer identity/query failures MUST refuse.
+    Failed-job recovery MAY also exclude only the protected Apple biomesyncd executable with
+    those same executable checks plus its root-owned, SIP-protected, non-writable system launchd
+    plist and current exact PID/program/path binding. It MUST reverify and record both observations.
     Unwitnessed-compile recovery MAY exclude only the exact Spotlight knowledge indexer and
     iCloudHelper XPC service with PPID 1, root ownership, no group/other write permission, SIP
     protection and verified Apple signature. It MUST record that exclusion; arbitrary Apple services remain ineligible.
@@ -251,7 +299,8 @@ def recover(record, evidence, *, principal, boot, epoch, scan=None, missing=None
     observations = []
     for _ in range(2):
         rows = scan()
-        validate_snapshot(rows, record, services, completed=completed, unwitnessed=unwitnessed)
+        validate_snapshot(rows, record, services, completed=completed, unwitnessed=unwitnessed,
+                          failed=failed, retained_pins=pins if failed else ())
         observations.append(rows)
     # Recheck every exact identity after the complete observations, still in this actor turn.
     if any(not missing(pin) for pin in pins):

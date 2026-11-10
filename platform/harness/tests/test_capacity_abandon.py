@@ -246,6 +246,87 @@ def test_failed_job_never_exempts_receipt_process_as_service(failed_case):
         recover(failed_case,failed=True,service=lambda item:(99,120))
 
 
+def test_failed_job_reuses_only_verified_icloud_exception_in_both_censuses(failed_case,monkeypatch):
+    rows=failed_case[2]
+    rows[45]=dict(pid=45,started=150,parent=1,executable=abandon.COMPLETED_XPC)
+    checks=[]
+    def verified(row):
+        if row['pid']!=45:return False
+        checks.append(row['pid']);return True
+    monkeypatch.setattr(abandon,'completed_system_service',verified)
+    witness=recover(failed_case,failed=True)
+    assert len(witness['system_service_exemptions'])==2 and checks==[45,45]
+    checks.clear()
+    def lost_signature(row):
+        if row['pid']!=45:return False
+        checks.append(row['pid']);return len(checks)==1
+    monkeypatch.setattr(abandon,'completed_system_service',lost_signature)
+    with pytest.raises(wire.CapacityError,match='Unclassified'):
+        recover(failed_case,failed=True)
+
+
+def test_failed_job_receipt_pin_cannot_use_system_exception(failed_case,monkeypatch):
+    failed_case[2][99]=dict(pid=99,started=120,parent=1,executable=abandon.COMPLETED_XPC)
+    monkeypatch.setattr(abandon,'completed_system_service',lambda row:True)
+    with pytest.raises(wire.CapacityError,match='Live compiler/build/render'):
+        recover(failed_case,failed=True)
+
+
+def test_failed_job_uses_strict_census_even_with_system_exception(failed_case,monkeypatch):
+    record,evidence,rows=failed_case
+    calls=[]
+    def scan(**kwargs):
+        calls.append(kwargs);return copy.deepcopy(rows)
+    monkeypatch.setattr(abandon,'census',scan)
+    abandon.recover(record,evidence,principal=(31,300),boot='boot',epoch=18,
+                    missing=lambda pin:True,failed=True)
+    assert calls==[{},{}], 'failed jobs must not enable before_root unreadable-path exceptions'
+
+
+@pytest.mark.parametrize('bad',[None,'executable','label','program','pid','path','launchctl','reused'])
+def test_failed_job_biome_exception_requires_exact_protected_launchd_service(monkeypatch,bad):
+    from types import SimpleNamespace
+    import plistlib
+    row=dict(pid=45,started=150,parent=1,executable=abandon.BIOME_SYNC)
+    monkeypatch.setattr(abandon,'completed_system_service',lambda row:False)
+    monkeypatch.setattr(abandon,'protected_apple_service',lambda row,path:path==abandon.BIOME_SYNC and bad!='executable')
+    config=dict(Label='different' if bad=='label' else 'com.apple.biomesyncd',
+                ProgramArguments=['/usr/bin/python'] if bad=='program' else [abandon.BIOME_SYNC])
+    monkeypatch.setattr(abandon,'protected_system_file',lambda path:plistlib.dumps(config))
+    monkeypatch.setattr(wire,'process_start',lambda pid:151 if bad=='reused' else 150)
+    output=(f'pid = {46 if bad=="pid" else 45}\n'
+            f'path = {"/wrong" if bad=="path" else "/System/Library/LaunchAgents/com.apple.biomesyncd.plist"}\n'
+            'program = /usr/libexec/biomesyncd\n').encode()
+    monkeypatch.setattr(abandon.subprocess,'run',lambda *args,**kwargs:SimpleNamespace(
+        returncode=1 if bad=='launchctl' else 0,stdout=output))
+    assert abandon.failed_system_service(row) is (bad is None)
+
+
+@pytest.mark.parametrize('bad',[None,'owner','writable','unprotected','multiple-links','size','changed'])
+def test_system_plist_reader_accepts_root_not_current_user_and_requires_stable_protection(tmp_path,monkeypatch,bad):
+    from types import SimpleNamespace
+    import os
+    path=tmp_path/'system.plist';path.write_bytes(b'original system bytes')
+    real_fstat=os.fstat;calls=[]
+    def metadata(fd):
+        current=real_fstat(fd);calls.append(fd)
+        value={name:getattr(current,name) for name in
+               ('st_dev','st_ino','st_mode','st_nlink','st_size','st_mtime_ns','st_ctime_ns')}
+        value.update(st_uid=501 if bad=='owner' else 0,st_flags=0 if bad=='unprotected' else 0x00080000)
+        if bad=='writable':value['st_mode'] |= 0o022
+        if bad=='multiple-links':value['st_nlink']=2
+        if bad=='size':value['st_size']=wire.MAX_FRAME+1
+        if bad=='changed' and len(calls)>1:value['st_mtime_ns']+=1
+        return SimpleNamespace(**value)
+    monkeypatch.setattr(abandon.os,'fstat',metadata)
+    if bad:
+        with pytest.raises(wire.CapacityError):abandon.protected_system_file(path)
+    else:
+        assert abandon.protected_system_file(path)==b'original system bytes'
+        link=tmp_path/'link';link.symlink_to(path)
+        with pytest.raises(OSError):abandon.protected_system_file(link)
+
+
 def test_failed_job_cli_prepares_then_submits_exact_fences(monkeypatch,capsys):
     from atelier import cli
     from atelier.harness import capacity_client
