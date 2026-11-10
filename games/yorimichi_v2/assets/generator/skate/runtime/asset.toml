@@ -1,0 +1,34 @@
+# Donor generator (tools/migrate/recover.py): RuntimeData: the simulation package assembler (simulation_package.py with motion_text.py and runtime_text.py), the editor import (import_runtime.py) and the C++ writer that saves the asset (SkateRuntimeData.cpp, SkateDataLibrary.h).
+# It owns no package. Its sources are copied into src/ and pinned by sha256; the records it generated
+# reference it. Editor-owned: nothing here is imported.
+schema = 1
+id = "generator/skate/runtime"
+kind = "generator"
+authority = "editor"
+owner = "shared/skateruntime"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02) for import_runtime.py; the Skate plugin (simulation_package.py, motion_text.py, runtime_text.py, SkateRuntimeData.cpp, SkateDataLibrary.h) is the tracked platform/engine tree at the same donor commit 7eec0f98dd, not games/yorimichi"
+
+[[sources]]
+path = "src/simulation_package.py"
+sha256 = "84f307127502952c546e1e1c2e53e76fcdd9493ba3b1d0635bc205370538a1a9"
+
+[[sources]]
+path = "src/motion_text.py"
+sha256 = "94178096aaa86604ef32cef6a24decf64e34398829a7d9169095d67e2fd16ba5"
+
+[[sources]]
+path = "src/runtime_text.py"
+sha256 = "9a7eb144e23105b04e2599b87f636a830fcf4e129e9c878ffa8031e925ade9f5"
+
+[[sources]]
+path = "src/import_runtime.py"
+sha256 = "faa0eae5b4bede1444e9faa7fac6e4de246683463d3629800df7d72cd5b611b8"
+
+[[sources]]
+path = "src/SkateRuntimeData.cpp"
+sha256 = "16a79f0d9f95d5dd4b5147e5df3b9711411245e27165fad1f06f40fd87a07425"
+
+[[sources]]
+path = "src/SkateDataLibrary.h"
+sha256 = "6a7b27a22d0218cd2fdee5b9dc1a9c392823f0e9738c4c8860fd81725ad8d26f"
