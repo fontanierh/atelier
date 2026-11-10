@@ -4,6 +4,7 @@ Everything is mocked: no process is started and nothing is signalled.
 """
 from contextlib import ExitStack, contextmanager
 import signal
+from types import SimpleNamespace
 
 import pytest
 
@@ -87,6 +88,46 @@ def test_a_watched_child_that_outlives_its_guard_fails_the_run(monkeypatch, tmp_
         # A guard that stopped its process at the limit is not an error here: the launcher's own exit reports it.
         world(monkeypatch, starts={10: 100, 77: None}, kids={10: []}, names={})
         tree.check()
+
+
+@pytest.mark.parametrize('exited', [0, 900])
+def test_finished_guard_distinguishes_live_child_from_unreaped_exit(monkeypatch, tmp_path, exited):
+    """@cc [owner:fontanierh,label:safety] exited-descendant-monitor-race
+    A clean monitor exit MUST still fail for a live child. A sampled exit MUST stop
+    counting that identity as live even while the parent has not reaped its zombie.
+    """
+    samples = {10: SimpleNamespace(started=100, exited=0),
+               77: SimpleNamespace(started=300, exited=0)}
+    monkeypatch.setattr(process_tree, 'usage', samples.__getitem__)
+    monkeypatch.setattr(process_tree, 'children', lambda pid: [77] if pid == 10 else [])
+    monkeypatch.setattr(process_tree, 'name', lambda pid: 'UnrealEditor-Cmd' if pid == 77 else 'sh')
+    sent, attached = [], []
+    monkeypatch.setattr(guarded.os, 'kill', lambda pid, number: sent.append((pid, number)))
+    stack, tree = tracker(monkeypatch, tmp_path, attached)
+    with stack:
+        tree.poll()
+        assert len(attached) == 1
+        # The monitor uses usage.exited and can finish before UAT reaps this same PID/start.
+        samples[77].exited = exited
+        attached[0][2].code = 0
+        if not exited:
+            with pytest.raises(SystemExit, match='exited before it'):
+                tree.check()
+        else:
+            tree.check()
+            tree.poll()
+            tree.unwind(grace=0)
+            assert len(attached) == 1
+            assert process_tree.started(77) is None
+            assert sent == [], 'an exited child cannot need cleanup signals'
+
+
+def test_process_identity_sampling_failure_is_not_an_exit(monkeypatch):
+    def unreadable(pid):
+        raise PermissionError('process telemetry unavailable')
+    monkeypatch.setattr(process_tree, 'usage', unreadable)
+    with pytest.raises(PermissionError, match='telemetry unavailable'):
+        process_tree.started(77)
 
 
 def test_a_guard_is_not_attached_to_a_different_process_on_the_same_pid(tmp_path):
