@@ -70,10 +70,15 @@ Saved, prepared and packaged totals are kept separate:
 - **Hippodrome residuals closed in #804:** four texture and four instance records were imported, the four dependent
   props re-imported, and six unused course instances retired after a reference check. Native before/after reads
   agree. The old adopted owner is retired; this batch is merged and included in `c89f535441be`.
-- **Remaining source/detail work:** the two Mega Park seam instances with two-sided base-property overrides, the standalone
-  Mega Park map's reference check, `MI_TH_pane`, the Hidamari `MI_HD_flat` instance and the 41 Japan
-  material instances. Parent-master recovery alone does not close their instance records. Bike and runtime/collection
-  source routes also remain open in [exceptions](inventory/exceptions.md#current-source-classification).
+- **Saved on the branch, not yet packaged:** claim `JAPANMI` (branch `jim5/yv2-japan-instances`) closes the 45
+  material instances: the 41 Japan instances, `MI_HD_flat`, `MI_TH_pane` and the two two-sided Mega Park seams become
+  10 generated `material-instance` records (`tools/migrate/held_instances.py`), replacing their adopted owners. Each
+  row agrees with a native editor read that now includes the base-property overrides (LOD blending, masking, two-sided),
+  and each import read back equal to the read before it. See
+  [exceptions](inventory/exceptions.md#current-source-classification).
+- **Remaining source/detail work:** the standalone Mega Park map's reference check, the bike wheels (`Bike.blend`, their
+  generator, is not recorded) and the `MPC_SeeThrough` and `RuntimeData` routes: 4 records / 5 packages in
+  [exceptions](inventory/exceptions.md#current-source-classification).
 
 Remaining construction work:
 - Close the other useful-object/source gaps in [exceptions](inventory/exceptions.md) and
@@ -83,11 +88,12 @@ Remaining construction work:
 - Retain the current package while the next source batch proceeds. The guard fixes (#805/#807), multiplayer
   manifest (#809) and host/leave check (#810) are merged. The six manual acceptance checks and final owner-led
   gameplay/two-machine playtesting remain open.
-- **Forecast updated 2026-11-10, Paris:** the previous 14:00 source target was missed. The author now estimates
-  **17:30 for the 45 material instances** (41 Japan, `MI_HD_flat`, `MI_TH_pane`, two Mega Park seams), conditional
-  on the batch following #804. This is not an ETA for the bike, runtime/collection and other complete-source gaps.
-  Useful-object splitting moved from **20:00 to 23:00**, with low confidence: residual fused Brine Cove scenery
-  and patches are still unsized. Re-estimate after that instance batch; no complete-source finish date is confirmed.
+- **Forecast updated 2026-11-10 15:00, Paris:** the 45 material instances (41 Japan, `MI_HD_flat`, `MI_TH_pane`, two
+  Mega Park seams) are imported on the branch, ahead of the 17:30 estimate; they still need review, merge and a
+  package. The remaining source gaps are the 4 records / 5 packages in
+  [exceptions](inventory/exceptions.md#current-source-classification); they are unsized, so no complete-source date is
+  confirmed. Useful-object splitting stays at **23:00**, low confidence: residual fused scenery and patches are still
+  unsized.
 
 ## Runtime and ownership facts
 

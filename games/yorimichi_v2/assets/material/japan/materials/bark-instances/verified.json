@@ -1,0 +1,17 @@
+{
+  "asset": "material/japan/materials/bark-instances",
+  "dependencies": {
+    "adopted/japan/textures/bark": "1ecd7b4ec43ea4ae2d5901adbfe99834e65deafff22d99ff303e6e6752e74a20",
+    "master/japan/surfaces/painted": "10657a1e86c5795172a095638c682bd6d6f4cc2c5e11d6733b8f8508a981def0"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Materials/MI_Bark.uasset": "eb85d7212b5af6dc3dd95d33cb77565e0c7ce73a0535389f44bba68fec818d3f",
+    "unreal/Content/Japan/Materials/MI_BarkOlive.uasset": "2652b1dbcc923443ab8bf461c237d73dbe279c64d4f04416a5835850d50d256f",
+    "unreal/Content/Japan/Materials/MI_BarkTuscan.uasset": "ff655da533d0f534c4b6525c3df527348b2b07f0f1ed739c1bb946c03c22fd4e"
+  },
+  "input_fingerprint": "9c71d1dcfbcac368dcb62400f5ad7899624b92323a50b2dc7e345db1263f5e8b",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "material-instance@2"
+}

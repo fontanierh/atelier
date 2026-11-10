@@ -6,7 +6,7 @@ id = "prop/citysurfaces/park-cell-7-2-piece12"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/citysurfaces/park-cell-7-2-piece12"
-references = ["adopted/japan/hidamari/surface-earth", "adopted/japan/hidamari/surface-flat", "adopted/japan/hidamari/surface-metal", "adopted/japan/hidamari/surface-moss", "adopted/japan/hidamari/surface-paint", "adopted/japan/hidamari/surface-plaster", "adopted/japan/hidamari/surface-roof", "adopted/japan/hidamari/surface-siding", "adopted/japan/hidamari/surface-stone", "adopted/japan/hidamari/surface-timber"]
+references = ["adopted/japan/hidamari/surface-earth", "adopted/japan/hidamari/surface-metal", "adopted/japan/hidamari/surface-moss", "adopted/japan/hidamari/surface-paint", "adopted/japan/hidamari/surface-plaster", "adopted/japan/hidamari/surface-roof", "adopted/japan/hidamari/surface-siding", "adopted/japan/hidamari/surface-stone", "adopted/japan/hidamari/surface-timber", "material/japan/hidamari/surface-flat-instances"]
 
 [[sources]]
 path = "src/HD_Park_cell_7_2_Piece12.fbx"

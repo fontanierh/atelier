@@ -6,7 +6,7 @@ id = "prop/islandterrain/guardrail"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/islandterrain/guardrail"
-references = ["adopted/japan/materials/buildings"]
+references = ["material/japan/materials/buildings-instances"]
 
 [[sources]]
 path = "src/Guardrail.fbx"

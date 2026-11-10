@@ -6,7 +6,7 @@ id = "prop/islandterrain/road"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/islandterrain/road"
-references = ["adopted/japan/materials/ground"]
+references = ["material/japan/materials/ground-instances"]
 
 [[sources]]
 path = "src/Road.fbx"

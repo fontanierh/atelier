@@ -6,7 +6,7 @@ id = "prop/japan-kit/tree-pine-a"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/japan-kit/tree-pine-a"
-references = ["adopted/japan/foliagelods/tree-pine-a", "adopted/japan/materials/bark", "adopted/japan/materials/foliage"]
+references = ["adopted/japan/foliagelods/tree-pine-a", "material/japan/materials/bark-instances", "material/japan/materials/foliage-instances"]
 
 [[sources]]
 path = "src/Tree_Pine_A.fbx"

@@ -1,0 +1,97 @@
+# Planned from the donor (tools/migrate/small_instances.py): 8 instances of adopted/japan/materials/buildings, each agreeing with its editor read.
+# The values are the generator's, agreeing with the committed editor read (docs/inventory/small-families-reads/
+# instances); the import writes each instance from its row and reads every value back. Never edited by hand.
+schema = 1
+id = "material/japan/materials/buildings-instances"
+kind = "material-instance"
+authority = "generated"
+owner = "shared/japan/materials/buildings-instances"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02); pinned by sha256"
+input_dependencies = ["adopted/japan/textures/rock", "master/japan/surfaces/painted", "texture/japan/white"]
+
+[recipe]
+importer = "material-instance"
+version = 2
+
+[recipe.settings]
+
+[[recipe.settings.instances]]
+package = "/Game/Japan/Materials/MI_Lattice"
+parent = "/Game/Japan/Materials/M_Painted"
+textures = {Tex = "/Game/Japan/Textures/T_white"}
+vectors = {Tint = [0.14, 0.1, 0.08, 1.0]}
+base = {blend_mode = "BLEND_MASKED", opacity_mask_clip_value = 0.5}
+
+[[recipe.settings.instances]]
+package = "/Game/Japan/Materials/MI_Metal"
+parent = "/Game/Japan/Materials/M_Painted"
+textures = {Tex = "/Game/Japan/Textures/T_white"}
+vectors = {Tint = [0.08, 0.08, 0.09, 1.0]}
+base = {blend_mode = "BLEND_MASKED", opacity_mask_clip_value = 0.5}
+
+[[recipe.settings.instances]]
+package = "/Game/Japan/Materials/MI_Paint"
+parent = "/Game/Japan/Materials/M_Painted"
+textures = {Tex = "/Game/Japan/Textures/T_white"}
+vectors = {CutScale = [1.0, 0.25, 1.0, 1.0], Tint = [0.85, 0.85, 0.82, 1.0]}
+base = {blend_mode = "BLEND_MASKED", opacity_mask_clip_value = 0.5}
+
+[[recipe.settings.instances]]
+package = "/Game/Japan/Materials/MI_Plaster"
+parent = "/Game/Japan/Materials/M_Painted"
+textures = {Tex = "/Game/Japan/Textures/T_white"}
+vectors = {Tint = [0.8, 0.74, 0.62, 1.0]}
+base = {blend_mode = "BLEND_MASKED", opacity_mask_clip_value = 0.5}
+
+[[recipe.settings.instances]]
+package = "/Game/Japan/Materials/MI_RoofTile"
+parent = "/Game/Japan/Materials/M_Painted"
+textures = {Tex = "/Game/Japan/Textures/T_rooftile"}
+vectors = {Tint = [0.4, 0.42, 0.48, 1.0]}
+base = {blend_mode = "BLEND_MASKED", opacity_mask_clip_value = 0.5}
+
+[[recipe.settings.instances]]
+package = "/Game/Japan/Materials/MI_Tile"
+parent = "/Game/Japan/Materials/M_Painted"
+textures = {Tex = "/Game/Japan/Textures/T_white"}
+vectors = {Tint = [0.16, 0.17, 0.2, 1.0]}
+base = {blend_mode = "BLEND_MASKED", opacity_mask_clip_value = 0.5}
+
+[[recipe.settings.instances]]
+package = "/Game/Japan/Materials/MI_Vermilion"
+parent = "/Game/Japan/Materials/M_Painted"
+textures = {Tex = "/Game/Japan/Textures/T_white"}
+vectors = {Tint = [0.62, 0.12, 0.06, 1.0]}
+base = {blend_mode = "BLEND_MASKED", opacity_mask_clip_value = 0.5}
+
+[[recipe.settings.instances]]
+package = "/Game/Japan/Materials/MI_Wood"
+parent = "/Game/Japan/Materials/M_Painted"
+textures = {Tex = "/Game/Japan/Textures/T_white"}
+vectors = {Tint = [0.18, 0.11, 0.07, 1.0]}
+base = {blend_mode = "BLEND_MASKED", opacity_mask_clip_value = 0.5}
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_Lattice"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_Metal"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_Paint"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_Plaster"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_RoofTile"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_Tile"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_Vermilion"
+
+[[outputs]]
+package = "/Game/Japan/Materials/MI_Wood"

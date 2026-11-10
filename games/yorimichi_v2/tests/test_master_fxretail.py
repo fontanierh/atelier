@@ -335,8 +335,10 @@ def test_no_record_depends_on_the_racing_record_and_the_fx_instances_depend_on_t
 
 
 def test_the_megapark_mentions_keep_the_generator_and_the_dependencies_move_to_the_opaque_master():
-    """The generator record stays, so a record that references it keeps that reference (41 cells and shared-textures-common);
-    the three instance records name M_RetailOpaque in their recipe and depend on that master instead."""
+    """The generator record stays, so a record that references it keeps that reference (41 records: the cells and
+    shared-textures-common; the adopted seam record that also did is retired by JAPANMI);
+    the four instance records (the two-sided seams of JAPANMI included) name M_RetailOpaque in their recipe and depend on
+    that master instead."""
     counts = {'generator': 0, 'opaque-dependency': 0}
     for path in records.record_paths(ROOT):
         asset = records.load_asset(path)
@@ -345,4 +347,4 @@ def test_the_megapark_mentions_keep_the_generator_and_the_dependencies_move_to_t
             counts['generator'] += 1
         if 'master/megapark/opaque' in asset.input_dependencies:
             counts['opaque-dependency'] += 1
-    assert counts == {'generator': 42, 'opaque-dependency': 3}
+    assert counts == {'generator': 41, 'opaque-dependency': 4}

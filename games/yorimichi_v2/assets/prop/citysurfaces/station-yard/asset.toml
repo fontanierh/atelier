@@ -6,7 +6,7 @@ id = "prop/citysurfaces/station-yard"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/citysurfaces/station-yard"
-references = ["adopted/japan/hidamari/surface-concrete", "adopted/japan/hidamari/surface-flat", "adopted/japan/hidamari/surface-metal", "adopted/japan/hidamari/surface-paint", "adopted/japan/hidamari/surface-plaster", "adopted/japan/hidamari/surface-roof", "adopted/japan/hidamari/surface-sidewalk"]
+references = ["adopted/japan/hidamari/surface-concrete", "adopted/japan/hidamari/surface-metal", "adopted/japan/hidamari/surface-paint", "adopted/japan/hidamari/surface-plaster", "adopted/japan/hidamari/surface-roof", "adopted/japan/hidamari/surface-sidewalk", "material/japan/hidamari/surface-flat-instances"]
 
 [[sources]]
 path = "src/HD_StationYard.fbx"

@@ -6,7 +6,7 @@ id = "prop/islandterrain/terrain-cell-m3-m2"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/islandterrain/terrain-cell-m3-m2"
-references = ["adopted/japan/materials/rock-concrete"]
+references = ["material/japan/materials/rock-concrete-instances"]
 
 [[sources]]
 path = "src/Terrain_cell_-3_-2.fbx"

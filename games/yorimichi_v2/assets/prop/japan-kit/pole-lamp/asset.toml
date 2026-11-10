@@ -6,7 +6,7 @@ id = "prop/japan-kit/pole-lamp"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/japan-kit/pole-lamp"
-references = ["adopted/japan/materials/buildings", "adopted/japan/materials/rock-concrete"]
+references = ["material/japan/materials/buildings-instances", "material/japan/materials/rock-concrete-instances"]
 
 [[sources]]
 path = "src/Pole_Lamp.fbx"

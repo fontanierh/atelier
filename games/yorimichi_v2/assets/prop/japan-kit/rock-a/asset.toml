@@ -6,7 +6,7 @@ id = "prop/japan-kit/rock-a"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/japan-kit/rock-a"
-references = ["adopted/japan/materials/ground", "adopted/japan/materials/rock-concrete"]
+references = ["material/japan/materials/ground-instances", "material/japan/materials/rock-concrete-instances"]
 
 [[sources]]
 path = "src/Rock_A.fbx"

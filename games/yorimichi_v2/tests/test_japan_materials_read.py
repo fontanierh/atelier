@@ -4,8 +4,9 @@ unreal/Scripts/report_materials.py) against what the donor generators set.
 EXPECTED is transcribed from the donor scripts, not from the read: `instance(name, parent, tex, tint)` in
 material_assets.py sets the parent, Tex and Tint; see_through.py adds CutScale to MI_Paint; forest_ground.py sets
 NearGround on MI_Coast; mountain_material.py sets Caps on MI_NorthRockCaps; import_southwest.py sets MI_Sand's tint.
-Overrides not in the read: enable_bark_lod_blend (foliage_material.py) and mask_instance (see_through.py) set
-base_property_overrides, which the parameter read does not cover; those 13 rows are pinned as UNREAD_BASE."""
+enable_bark_lod_blend (foliage_material.py) and mask_instance (see_through.py) set base_property_overrides, which this
+parameter read does not cover; the later read with base overrides (docs/inventory/small-families-reads/instances/
+japan.json, compared in full by small_instances.agreement) shows them on exactly the 13 BASE_ROWS."""
 import json
 import re
 from pathlib import Path
@@ -75,8 +76,8 @@ LEAVES = {
     'MI_LeafCrimson': ('M_Foliage', 'T_leaf_crimson'),
 }
 
-# Rows whose base-property overrides the read does not cover (enable_bark_lod_blend, mask_instance).
-UNREAD_BASE = {'MI_Bark', 'MI_BarkOlive', 'MI_BarkTuscan', 'MI_RoofTile', 'MI_Tile', 'MI_Plaster', 'MI_Wood',
+# Rows with base-property overrides (enable_bark_lod_blend, mask_instance).
+BASE_ROWS = {'MI_Bark', 'MI_BarkOlive', 'MI_BarkTuscan', 'MI_RoofTile', 'MI_Tile', 'MI_Plaster', 'MI_Wood',
                'MI_Lattice', 'MI_Vermilion', 'MI_Paint', 'MI_Metal', 'MI_Stone', 'MI_Concrete'}
 
 
@@ -139,9 +140,10 @@ def test_the_two_used_leaves_are_parent_and_tex_only_and_their_effective_values_
         assert {k: short(v) for k, v in eff['texture'].items()} == {'Tex': tex}
 
 
-def test_the_base_property_rows_are_the_13_the_read_cannot_confirm():
-    assert len(UNREAD_BASE) == 13
-    assert UNREAD_BASE <= set(EXPECTED)
+def test_the_base_read_shows_overrides_on_exactly_the_13_base_rows():
+    assert len(BASE_ROWS) == 13 and BASE_ROWS <= set(EXPECTED)
+    base_read = json.loads((ROOT / 'docs/inventory/small-families-reads/instances/japan.json').read_text())
+    assert {short(k) for k, v in base_read.items() if v['base']} == BASE_ROWS
 
 
 def test_the_doc_statuses_pin_41_read_confirmed_2_recipe_recorded_and_no_blocked():

@@ -12,14 +12,20 @@ Each row is keyed by the instance's package path:
   switches   every bHas* static switch the instance or its parent stores: {name: {"override": bool, "value": the
              value the instance stores (inherited when not overridden), "parent": the parent's value, "effective":
              the value the instance renders}}; a value a call could not read is null (never a guess)
+  base       every base-property override the instance sets: {name: value}, blend_mode by its BLEND_* name
   error      present only when that instance could not be read; the other rows are still written
 
 The vector rows carry the alpha channel too: an EmissiveFactor is reported as [r, g, b, a], so its alpha is read here.
 """
 import json
 import os
+import sys
+from pathlib import Path
 
 import unreal as U
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import material_base  # noqa: E402
 
 MARKER = 'V2 MATERIALS REPORTED'
 EAL = U.EditorAssetLibrary
@@ -173,6 +179,28 @@ def _switches(inst, parent):
     return out
 
 
+def _base(inst):
+    """{name: value} of each base-property override the instance sets (blend mode by name); the same read import_asset.py
+    makes after a write. Every flag is probed (material_base.py); a value this Python cannot read reports null."""
+    overrides = inst.get_editor_property('base_property_overrides')
+    out = {}
+    for flag in material_base.flags(overrides):
+        if not overrides.get_editor_property(flag):
+            continue
+        name = flag[len('override_'):]
+        try:
+            value = overrides.get_editor_property(name)
+        except Exception:
+            out[name] = None
+            continue
+        if isinstance(value, float):
+            value = round_value(value)
+        elif not isinstance(value, bool) and getattr(value, 'name', None) is not None:
+            value = str(value.name)
+        out[name] = value
+    return out
+
+
 def report(path):
     inst = EAL.load_asset(path)
     if not isinstance(inst, U.MaterialInstanceConstant):
@@ -181,7 +209,7 @@ def report(path):
     if parent is None:
         return {'error': f'{path} has no parent'}
     return dict(parent=_path(parent), overrides=_overrides(inst), effective=_effective(inst, parent),
-                switches=_switches(inst, parent))
+                switches=_switches(inst, parent), base=_base(inst))
 
 
 def main():

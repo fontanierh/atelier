@@ -6,7 +6,7 @@ id = "prop/japan-kit/tree-forest-oak"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/japan-kit/tree-forest-oak"
-references = ["adopted/japan/foliagelods/tree-forest-oak", "adopted/japan/materials/bark", "adopted/japan/materials/foliage", "adopted/japan/materials/tree-forest-oak"]
+references = ["adopted/japan/foliagelods/tree-forest-oak", "adopted/japan/materials/tree-forest-oak", "material/japan/materials/bark-instances", "material/japan/materials/foliage-instances"]
 
 [[sources]]
 path = "src/Tree_Forest_Oak.fbx"

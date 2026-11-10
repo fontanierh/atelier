@@ -251,15 +251,16 @@ def megapark_report(donor: Path | None) -> dict:
             'names': sorted('MI_' + key[2:] for key in materials)}
 
 
-# The adopted records a later write moved into generated records (SMALLFAM, PR #797; MASTERHD and MASTERS2, the material masters);
-# their rows report `migrated`.
+# The adopted records a later write moved into generated records (SMALLFAM, PR #797; MASTERHD and MASTERS2, the material masters;
+# JAPANMI, held_instances.py); their rows report `migrated`.
 MIGRATED = frozenset({
     'adopted/belmonte/shared-metal-glass', 'adopted/belmonte/shared-water', 'adopted/hippodrome/loose_files',
     'adopted/hippodrome/materials', 'adopted/hippodrome/meshes', 'adopted/skatepark/materials', 'adopted/skatepark/board', 'adopted/fx', 'adopted/racing',
     'adopted/swordcamp/materials',
     'adopted/japan/textures/plaza-harbor', 'adopted/japan/treehouse/surface-flat', 'adopted/japan/treehouse/surface-glass',
     'adopted/japan/treehouse/surface-rope', 'adopted/japan/treehouse/surface-trunk',
-    'adopted/megapark/shared-materials-pavement', 'adopted/megapark/shared-materials-wood'})
+    'adopted/megapark/shared-materials-pavement', 'adopted/megapark/shared-materials-wood',
+    'adopted/japan/hidamari/surface-flat', 'adopted/japan/treehouse/surface-pane', 'adopted/megapark/seam'})
 
 
 def _family_counts(out: dict, family: str) -> dict:
@@ -474,9 +475,12 @@ def claim_records(donor: Path, game: Path) -> list:
         out += instance_records(game, donor, texture_owner)
     return out
 
-def instance_records(game: Path, donor: Path, texture_owner: dict) -> list:
+def instance_records(game: Path, donor: Path, texture_owner: dict, families=None, ids=None) -> list:
     """One material-instance record per adopted record whose instances agree with the read (small_instances.agreement).
-    Its inputs are the owners of each parent and texture it reads; a texture moving in this write names its new record."""
+    Its inputs are the owners of each parent and texture it reads; a texture moving in this write names its new record.
+    `families` defaults to INSTANCE_FAMILIES (the SMALLFAM claim); held_instances.py passes its own, with `ids` naming
+    the new record of an adopted record whose default id is taken, and then plans only the instances an adopted record
+    still holds (an earlier claim moved the others into generated records)."""
     owner_of, adopted_of = dict(texture_owner), {}
     for path in records.record_paths(game):
         asset = records.load_asset(path)
@@ -485,26 +489,31 @@ def instance_records(game: Path, donor: Path, texture_owner: dict) -> list:
             if asset.id.startswith('adopted/'):
                 adopted_of[output.package] = asset.id
     out = []
-    for family in INSTANCE_FAMILIES:
+    for family in INSTANCE_FAMILIES if families is None else families:
         agreed, expected = si.agreement(family, donor), si.EXPECTED[family](donor)
         groups = {}
         for package, verdict in sorted(agreed.items()):
             if not verdict['agree']:
                 continue
             if package not in adopted_of:
+                if families is not None and owner_of.get(package, '').startswith('material/'):
+                    continue   # moved by an earlier claim
                 raise PlanError(f'{package}: no adopted record holds this instance')
             groups.setdefault(adopted_of[package], []).append(package)
         for adopted, packages in sorted(groups.items()):
             rows = [{'package': pkg, 'parent': expected[pkg]['parent'],
                      'textures': {k: v for k, v in expected[pkg]['textures'].items() if v},
-                     'scalars': expected[pkg]['scalars'], 'vectors': expected[pkg]['vectors']} for pkg in packages]
+                     'scalars': expected[pkg]['scalars'], 'vectors': expected[pkg]['vectors'],
+                     'base': expected[pkg].get('base', {})} for pkg in packages]
             reads = {row['parent'] for row in rows} | {v for row in rows for v in row['textures'].values()}
             inputs = set()
             for package in reads:
                 if package not in owner_of:
                     raise PlanError(f'{package}: read by an instance but owned by no record')
                 inputs.add(owner_of[package])
-            rid = f"material/{adopted[len('adopted/'):]}-instances"
+            rid = (ids or {}).get(adopted) or f"material/{adopted[len('adopted/'):]}-instances"
+            if (game / 'assets' / rid / 'asset.toml').is_file():
+                raise PlanError(f'{rid}: a record with this id exists; name another (held_instances.IDS)')
             out.append(NewRecord(
                 id=rid, kind='material-instance', owner='shared/' + rid[len('material/'):], references=[],
                 sources=[], settings={}, outputs=list(packages), adopted=adopted,
@@ -520,8 +529,9 @@ def hippo_slot(name: str) -> str:
 
 
 # The families whose agreeing instances the claim plans. Hidamari is held: its adopted surface record is referenced by 173
-# citysurfaces prop records (another owner), and a claim that rewrites them would need that scope. (tests narrow this.)
-INSTANCE_FAMILIES = tuple(f for f in si.EXPECTED if f != 'hidamari')
+# citysurfaces prop records (another owner), and a claim that rewrites them would need that scope. Japan has its own
+# claim (held_instances.py). (tests narrow this.)
+INSTANCE_FAMILIES = tuple(f for f in si.EXPECTED if f not in ('hidamari', 'japan'))
 
 
 def instance_record_text(rec: NewRecord) -> str:
@@ -534,8 +544,8 @@ def instance_record_text(rec: NewRecord) -> str:
              '', '[recipe]', 'importer = "material-instance"', 'version = 2', '', '[recipe.settings]']
     for row in rec.instances:
         lines += ['', '[[recipe.settings.instances]]', f'package = "{row["package"]}"', f'parent = "{row["parent"]}"']
-        for key in ('textures', 'scalars', 'vectors'):
-            if row[key]:
+        for key in ('textures', 'scalars', 'vectors', 'base'):
+            if row.get(key):
                 lines.append(f'{key} = {recover._toml(row[key])}')
     lines += ['']
     for package in rec.outputs:
@@ -570,12 +580,12 @@ def _owner_of(text: str) -> str:
     return match.group(1) if match else ''
 
 
-def claim_ops(game: Path, donor: Path) -> dict:
+def claim_ops(game: Path, donor: Path, recs=None) -> dict:
     """The one write: {'writes': {rel: bytes}, 'deletes': [rel]}. The new records and their src/ copies. An adopted record
     that gives up every package is deleted with its verified.json; one that keeps some (a tree house surface keeps its
     instance) loses the moved outputs from its asset.toml and their entries from its verified.json. The units.json of each
     folder drops the moved packages, and a record that references a fully moved record names the new records."""
-    recs = claim_records(donor, game)
+    recs = claim_records(donor, game) if recs is None else recs
     writes, deletes, moved, new_ids = {}, [], {}, {}
     for rec in recs:
         folder = 'assets/' + rec.id

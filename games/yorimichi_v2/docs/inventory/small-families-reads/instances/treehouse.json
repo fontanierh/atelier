@@ -66,6 +66,7 @@
   "switches": {}
  },
  "/Game/Japan/Treehouse/Materials/MI_TH_pane": {
+  "base": {},
   "effective": {
    "scalar": {
     "Intensity": 0.06,

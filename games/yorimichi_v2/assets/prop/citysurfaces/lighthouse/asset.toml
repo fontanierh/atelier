@@ -6,7 +6,7 @@ id = "prop/citysurfaces/lighthouse"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/citysurfaces/lighthouse"
-references = ["adopted/japan/hidamari/surface-flat", "adopted/japan/hidamari/surface-paint", "adopted/japan/hidamari/surface-plaster", "adopted/japan/hidamari/surface-roof"]
+references = ["adopted/japan/hidamari/surface-paint", "adopted/japan/hidamari/surface-plaster", "adopted/japan/hidamari/surface-roof", "material/japan/hidamari/surface-flat-instances"]
 
 [[sources]]
 path = "src/HD_Lighthouse.fbx"

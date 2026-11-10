@@ -76,7 +76,7 @@ def collision_trace(settings: dict):
 
 
 def material_instances(settings: dict, packages: list) -> list:
-    """Pure: one row {package, parent, textures, scalars, vectors} per planned package, from either recipe form. The single
+    """Pure: one row {package, parent, textures, scalars, vectors, switches, base} per planned package, from either recipe form. The single
     form gives every package the same values; the instances form gives each package its own row, and a package it does not
     name (or a row for a package not planned) is refused, so nothing is written from a guess."""
     if 'instances' in settings:
@@ -95,7 +95,7 @@ def material_instances(settings: dict, packages: list) -> list:
             raise SettingError(f'{package} names no parent')
         out.append(dict(package=package, parent=values['parent'], textures=dict(values.get('textures', {})),
                         scalars=dict(values.get('scalars', {})), vectors=dict(values.get('vectors', {})),
-                        switches=dict(values.get('switches', {}))))
+                        switches=dict(values.get('switches', {})), base=dict(values.get('base', {}))))
     return out
 
 

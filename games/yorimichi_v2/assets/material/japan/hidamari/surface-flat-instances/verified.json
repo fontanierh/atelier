@@ -1,0 +1,15 @@
+{
+  "asset": "material/japan/hidamari/surface-flat-instances",
+  "dependencies": {
+    "adopted/japan/hidamari/surface-plaster": "96406cb083f126d95e744068b8f410040ffc91edb02f79c850bee80892855ff5",
+    "master/hidamari/city": "41fdb5a4ae972e8d922a0da6423c9a36a4586d98da124f51c83843348e525b47"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Hidamari/Materials/MI_HD_flat.uasset": "41329a5850e28bd10105a1ddb82d125c5bc287adbf80bffc2e8af0e22e5476c9"
+  },
+  "input_fingerprint": "3dad055f6091b395569f26ec808746a5ca3224329559e311731f87bc1c2caa24",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "material-instance@2"
+}

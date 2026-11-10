@@ -6,7 +6,7 @@ id = "prop/citysurfaces/house-01"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/citysurfaces/house-01"
-references = ["adopted/japan/hidamari/surface-blockwall", "adopted/japan/hidamari/surface-concrete", "adopted/japan/hidamari/surface-earth", "adopted/japan/hidamari/surface-flat", "adopted/japan/hidamari/surface-metal", "adopted/japan/hidamari/surface-paint", "adopted/japan/hidamari/surface-plaster", "adopted/japan/hidamari/surface-roof", "adopted/japan/hidamari/surface-siding", "adopted/japan/hidamari/surface-stone", "adopted/japan/hidamari/surface-timber"]
+references = ["adopted/japan/hidamari/surface-blockwall", "adopted/japan/hidamari/surface-concrete", "adopted/japan/hidamari/surface-earth", "adopted/japan/hidamari/surface-metal", "adopted/japan/hidamari/surface-paint", "adopted/japan/hidamari/surface-plaster", "adopted/japan/hidamari/surface-roof", "adopted/japan/hidamari/surface-siding", "adopted/japan/hidamari/surface-stone", "adopted/japan/hidamari/surface-timber", "material/japan/hidamari/surface-flat-instances"]
 
 [[sources]]
 path = "src/HD_House_01.fbx"

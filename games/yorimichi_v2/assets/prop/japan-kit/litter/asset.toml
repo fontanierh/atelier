@@ -6,7 +6,7 @@ id = "prop/japan-kit/litter"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/japan-kit/litter"
-references = ["adopted/japan/materials/ground"]
+references = ["material/japan/materials/ground-instances"]
 
 [[sources]]
 path = "src/Litter.fbx"
