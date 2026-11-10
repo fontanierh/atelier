@@ -154,6 +154,122 @@ def test_the_inventory_pins_are_sha256_and_line_ranges_and_carry_no_home_paths()
 
 
 def test_the_needs_helper_masters_name_the_helper_they_need():
+    needed = {'atmosphere.py': {'/Game/SwordCamp/Materials/M_SwordCamp', '/Game/Japan/Hidamari/Materials/M_HDCity'},
+              'coast_water.py': {'/Game/Japan/Materials/M_HarborWater'}}
     for master in load_inventory()['masters']:
         if master['fit'] == 'needs helper':
-            assert any(h['path'].endswith('atmosphere.py') for h in master['helpers']), master['package']
+            assert master['helpers'], master['package']
+            for name, packages in needed.items():
+                if master['package'] in packages:
+                    assert any(h['path'].endswith(name) for h in master['helpers']), master['package']
+
+
+# --- the 27 masters and the input-recovery list -----------------------------------------------------------------------
+
+PLAZA = ('/Game/Japan/Materials/M_Arcade', '/Game/Japan/Materials/M_ArcadePaving',
+         '/Game/Japan/Materials/M_Harbor', '/Game/Japan/Materials/M_HarborWater')
+RECOVERY_KINDS = {'engine', 'texture', 'helper'}
+RECOVERY_STATUS = {'engine-default', 'recoverable-now', 'recoverable-by-port', 'wire-dependency', 'not-recoverable'}
+RECOVERY_KEYS = {'id', 'input', 'kind', 'used_by', 'owner', 'donor_file', 'donor_sha256', 'output_sha256', 'importer',
+                 'status', 'recovery', 'evidence'}
+INVENTORY_MD = ROOT / 'docs/inventory/master-sources.md'
+
+
+def test_the_inventory_covers_all_27_masters_including_the_four_plaza_masters():
+    """@cc [owner:fontanierh,label:correctness] plaza-masters-inventoried
+    The inventory names every generator-built master once: the 23 of PR 799 plus the four plaza masters."""
+    packages = [master['package'] for master in load_inventory()['masters']]
+    assert len(packages) == len(set(packages)) == 27
+    assert set(PLAZA) <= set(packages)
+    assert load_inventory()['not_inventoried'] == []
+
+
+def test_every_plaza_master_pins_its_generator_and_names_its_inputs():
+    """@cc [owner:fontanierh,label:correctness] plaza-generator-pinned
+    Each plaza master pins arcade_material.py or harbor_material.py by sha256, with the line range that builds it."""
+    masters = {master['package']: master for master in load_inventory()['masters'] if master['package'] in PLAZA}
+    assert len(masters) == 4
+    for package, master in masters.items():
+        assert master['generator']['path'].endswith(('arcade_material.py', 'harbor_material.py')), package
+        assert master['generator']['builder'] == 'material', package
+        low, high = master['generator']['lines']
+        assert 1 <= low <= high, package
+        assert master['fit'] in FITS, package
+    assert masters['/Game/Japan/Materials/M_Arcade']['generator']['arguments'] == {'paving': False}
+    assert masters['/Game/Japan/Materials/M_ArcadePaving']['generator']['arguments'] == {'paving': True}
+    assert masters['/Game/Japan/Materials/M_Harbor']['generator']['arguments'] == {'water': False}
+    assert masters['/Game/Japan/Materials/M_HarborWater']['generator']['arguments'] == {'water': True}
+    assert masters['/Game/Japan/Materials/M_HarborWater']['fit'] == 'needs helper'
+    assert {m['fit'] for m in masters.values()} == {'direct', 'needs helper'}
+
+
+def test_every_generator_and_helper_is_pinned_in_helper_files_by_sha256():
+    """@cc [owner:fontanierh,label:correctness] generator-pins-match-helper-files
+    A master's generator and each of its helpers appears in helper_files with the same sha256."""
+    data = load_inventory()
+    pinned = {helper['path']: helper['sha256'] for helper in data['helper_files']}
+    for master in data['masters']:
+        assert pinned.get(master['generator']['path']) == master['generator']['sha256'], master['package']
+        for helper in master['helpers']:
+            assert pinned.get(helper['path']) == helper['sha256'], (master['package'], helper['path'])
+
+
+def test_the_input_recovery_list_has_the_schema_and_known_values():
+    """@cc [owner:fontanierh,label:correctness] input-recovery-schema
+    Each recovery entry has every key, a known kind and status, an importer that is named or null, and a sha256 where it claims one."""
+    recovery = load_inventory()['input_recovery']
+    assert recovery['schema'] == 1 and recovery['rule']
+    ids = [entry['id'] for entry in recovery['entries']]
+    assert len(ids) == len(set(ids)) > 0
+    for entry in recovery['entries']:
+        assert set(entry) == RECOVERY_KEYS, entry['id']
+        assert entry['kind'] in RECOVERY_KINDS, entry['id']
+        assert entry['status'] in RECOVERY_STATUS, entry['id']
+        assert entry['importer'] in (None, 'texture@1', 'material-master@1'), entry['id']
+        assert entry['used_by'] and all(package.startswith('/') for package in entry['used_by']), entry['id']
+        for key in ('donor_sha256', 'output_sha256'):
+            value = entry[key]
+            assert value is None or (len(value) == 64 and set(value) <= set('0123456789abcdef')), (entry['id'], key)
+        if entry['status'] in ('recoverable-now', 'recoverable-by-port', 'wire-dependency'):
+            assert entry['donor_sha256'] and entry['donor_file'], entry['id']
+        assert entry['recovery'] and entry['evidence'], entry['id']
+
+
+def test_every_recovery_entry_names_masters_and_inputs_the_inventory_has():
+    """@cc [owner:fontanierh,label:correctness] input-recovery-matches-masters
+    used_by names inventoried masters, and every named input of a recovery entry is an input or helper of one of them."""
+    data = load_inventory()
+    by_package = {master['package']: master for master in data['masters']}
+    for entry in data['input_recovery']['entries']:
+        for package in entry['used_by']:
+            assert package in by_package, (entry['id'], package)
+            master = by_package[package]
+            if entry['kind'] == 'texture':
+                assert entry['input'] in {i['name'] for i in master['inputs']}, (entry['id'], package)
+            if entry['kind'] == 'engine':
+                assert entry['input'] in {i['name'] for i in master['inputs']}, (entry['id'], package)
+
+
+def test_every_adopted_texture_and_engine_input_has_a_recovery_entry():
+    """@cc [owner:fontanierh,label:correctness] input-recovery-covers-adopted-inputs
+    An input without a generated owner (an editor-owned adopted record, or an engine asset) is in the recovery list."""
+    data = load_inventory()
+    listed = {(entry['input'], package) for entry in data['input_recovery']['entries'] for package in entry['used_by']}
+    for master in data['masters']:
+        for entry in master['inputs']:
+            if entry['kind'] == 'engine':
+                assert (entry['name'], master['package']) in listed, (entry['name'], master['package'])
+            if entry['kind'] != 'texture':
+                continue
+            owner = records.load_asset(ROOT / 'assets' / entry['owner'] / 'asset.toml')
+            if owner.authority == 'editor':
+                assert (entry['name'], master['package']) in listed, (entry['name'], master['package'])
+
+
+def test_the_recovery_list_is_in_the_markdown_and_the_markdown_has_no_home_paths():
+    """@cc [owner:fontanierh,label:correctness] input-recovery-in-markdown
+    Every recovery id appears in master-sources.md, which states all 27 masters and carries no home paths."""
+    text = INVENTORY_MD.read_text()
+    for entry in load_inventory()['input_recovery']['entries']:
+        assert entry['id'] in text, entry['id']
+    assert '27' in text and '/Users/' not in text and '/home/' not in text
