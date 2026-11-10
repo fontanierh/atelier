@@ -27,6 +27,9 @@ class Node(Asset):
         self.props, self.inputs = props, inputs
 
     def get_editor_property(self, key):
+        if key not in self.props:
+            kind = type(self).__name__
+            raise Exception(f"{kind}: Failed to find property '{key}' for attribute '{key}' on '{kind}'")
         return self.props[key]
 
 
@@ -188,6 +191,93 @@ def test_time_animation_settings_changes_reject(prop, changed):
     assert digest.accept(saved, digest.read(material)) == []
     time.props[prop] = changed
     assert 'rendered topology differs at MP_EMISSIVE_COLOR' in digest.accept(saved, digest.read(material))
+
+
+@pytest.mark.parametrize(('cls', 'prop', 'before', 'after'), [
+    ('TextureSample', 'sampler_source', 'SSM_FromTextureAsset', 'SSM_Wrap_WorldGroupSettings'),
+    ('TextureSample', 'const_coordinate', 0, 1),
+    ('TextureSample', 'mip_value_mode', 'TMVM_None', 'TMVM_MipLevel'),
+    ('TextureSample', 'const_mip_value', 0, 2),
+    ('TextureSample', 'automatic_view_mip_bias', True, False),
+    ('TextureSample', 'gather_mode', 'TGM_None', 'TGM_Red'),
+    ('LinearInterpolate', 'const_alpha', 0.5, 0.75),
+    ('LocalPosition', 'included_offsets', 'IncludeOffsets', 'ExcludeOffsets'),
+    ('LocalPosition', 'local_origin', 'Instance', 'Primitive'),
+    ('TransformPosition', 'const_periodic_world_tile_size', 32.0, 64.0),
+    ('TransformPosition', 'const_first_person_interpolation_alpha', 1.0, 0.5),
+    ('Custom', 'contains_clip_instruction', 'CMCI_Search', 'CMCI_Always'),
+    ('Custom', 'include_file_paths', ['/Engine/Public/Common.ush'], ['/Engine/Public/Other.ush']),
+])
+def test_used_node_rendering_defaults_changes_reject(cls, prop, before, after):
+    """Used-node sampling, fallback and compilation settings matter even when no builder setter changes them."""
+    expression = node('MaterialExpression' + cls, 'expression', **{prop: before})
+    material = Material([expression], {'MP_EMISSIVE_COLOR': (expression, '')})
+    saved = digest.read(material)
+    assert digest.accept(saved, digest.read(material)) == []
+    expression.props[prop] = after
+    assert 'rendered topology differs at MP_EMISSIVE_COLOR' in digest.accept(saved, digest.read(material))
+
+
+@pytest.mark.parametrize(('kind', 'prop', 'values', 'field', 'changed'), [
+    ('CustomOutput', 'additional_outputs', {'output_name': 'Extra', 'output_type': 'CMOT_Float1'}, 'output_name', 'Other'),
+    ('CustomOutput', 'additional_outputs', {'output_name': 'Extra', 'output_type': 'CMOT_Float1'}, 'output_type', 'CMOT_Float3'),
+    ('CustomDefine', 'additional_defines', {'define_name': 'GAIN', 'define_value': '1'}, 'define_name', 'SCALE'),
+    ('CustomDefine', 'additional_defines', {'define_name': 'GAIN', 'define_value': '1'}, 'define_value', '2'),
+])
+def test_custom_compile_struct_values_are_compared_without_object_identity(kind, prop, values, field, changed):
+    """Custom outputs/defines compare their named values; fresh Unreal struct wrappers are not shader changes."""
+    struct_type = type(kind, (), {'get_editor_property': lambda self, name: self.values[name]})
+
+    def struct(**properties):
+        value = struct_type()
+        value.values = properties
+        return value
+
+    expression = node('MaterialExpressionCustom', 'custom', code='return 0;', **{prop: [struct(**values)]})
+    material = Material([expression], {'MP_EMISSIVE_COLOR': (expression, '')})
+    saved = digest.read(material)
+    expression.props[prop] = [struct(**values)]
+    assert digest.accept(saved, digest.read(material)) == []
+    expression.props[prop] = [struct(**{**values, field: changed})]
+    assert 'rendered topology differs at MP_EMISSIVE_COLOR' in digest.accept(saved, digest.read(material))
+
+
+@pytest.mark.parametrize(('cls', 'prop'), [('TextureSample', 'sampler_source'),
+                                         ('ComponentMask', 'b'), ('ScalarParameter', 'default_value')])
+def test_unreadable_present_rendering_property_refuses(cls, prop):
+    """UE's protected-property error is not its absent-property result, including real mask/default settings."""
+    expression = node('MaterialExpression' + cls, 'expression', **{prop: 1})
+    material = Material([expression], {'MP_EMISSIVE_COLOR': (expression, '')})
+    saved = digest.read(material)
+    ordinary_read = expression.get_editor_property
+
+    def failed_read(key):
+        if key == prop:
+            raise Exception(f"{cls}: Property '{key}' for attribute '{key}' on '{cls}' is protected and cannot be read")
+        return ordinary_read(key)
+
+    expression.get_editor_property = failed_read
+    failed = digest.read(material)
+    assert 'protected and cannot be read' in failed['error']
+    assert digest.accept(saved, failed) and digest.accept(failed, failed)
+
+
+@pytest.mark.parametrize(('cls', 'pins'), [('Multiply', {'a', 'b'}), ('Divide', {'a', 'b'}),
+                                         ('PerInstanceCustomData', {'default_value'})])
+def test_known_connection_property_names_are_not_read_as_scalar_settings(cls, pins):
+    """FExpressionInput A/B/DefaultValue are native-audited connections, not the similarly named scalar settings."""
+    expression = node('MaterialExpression' + cls, 'expression')
+    ordinary_read = expression.get_editor_property
+
+    def read(key):
+        if key in pins:
+            raise Exception(f"{cls}: Property '{key}' for attribute '{key}' on '{cls}' is protected and cannot be read")
+        return ordinary_read(key)
+
+    expression.get_editor_property = read
+    material = Material([expression], {'MP_EMISSIVE_COLOR': (expression, '')})
+    result = digest.read(material)
+    assert 'error' not in result and digest.accept(result, digest.read(material)) == []
 
 
 @pytest.mark.parametrize('setting', ['is_sky', 'blendable_location', 'dithered_lod_transition',

@@ -21,6 +21,7 @@ a partial digest never matches.
 import collections
 import hashlib
 import json
+import re
 
 try:
     import unreal as U
@@ -42,7 +43,14 @@ EXPRESSION_PROPERTIES = ('parameter_name', 'default_value', 'r', 'constant', 'co
                          'inputs', 'scene_texture_id', 'collection', 'g', 'b', 'a', 'material_function',
                          'use_custom_primitive_data', 'primitive_data_index',
                          'transform_source_type', 'transform_type', 'world_position_shader_offset',
-                         'ignore_pause', 'override_period', 'period')   # desc is editor-only metadata
+                         'ignore_pause', 'override_period', 'period',
+                         # Defaults matter too: these are the remaining rendering fields of the used UE 5.8 node classes.
+                         'sampler_source', 'const_coordinate', 'mip_value_mode', 'const_mip_value',
+                         'automatic_view_mip_bias', 'gather_mode', 'const_alpha', 'included_offsets', 'local_origin',
+                         'const_periodic_world_tile_size', 'const_first_person_interpolation_alpha',
+                         'additional_outputs', 'additional_defines', 'include_file_paths', 'contains_clip_instruction')
+# Descriptions/UI/generated editor state are excluded. ExternalCodeIdentifiers is engine class configuration from
+# MaterialExpressions.ini; GetExternalCodeReferencesHash reads it from class default objects, not authored node settings.
 LISTS = ('expressions', 'connections', 'property_connections')
 SETS = ('parameters',)
 TOPOLOGY_VERSION = 2
@@ -143,6 +151,9 @@ def _value(value):
     name = _custom_input_name(value)
     if name is not None:   # a Custom node input: its name, never the struct's text
         return name
+    fields = {'CustomOutput': ('output_name', 'output_type'), 'CustomDefine': ('define_name', 'define_value')}
+    if type(value).__name__ in fields:
+        return [str(value.get_editor_property(field)) for field in fields[type(value).__name__]]
     if hasattr(value, 'get_path_name'):
         return value.get_path_name().split('.')[0]
     if hasattr(value, 'r') and hasattr(value, 'a'):
@@ -151,15 +162,29 @@ def _value(value):
 
 
 def _expression_text(expression):
-    """The class and its own settings, as canonical JSON. A property the class does not have is absent, on both sides alike."""
+    """The class and its settings, as canonical JSON. Only UE's explicit absent-property result may be skipped."""
+    kind = type(expression).__name__
     props = {}
     for prop in EXPRESSION_PROPERTIES:
+        # These exact fields are FExpressionInput connections in the installed headers, read by the native input audit.
+        # ComponentMask A/B and scalar/vector DefaultValue are real settings and must still be read (or refuse).
+        if (prop in ('a', 'b') and kind in {'MaterialExpressionAdd', 'MaterialExpressionAppendVector',
+                                          'MaterialExpressionLinearInterpolate', 'MaterialExpressionMultiply',
+                                          'MaterialExpressionDotProduct', 'MaterialExpressionSubtract',
+                                          'MaterialExpressionDivide'}) \
+                or (prop == 'default_value' and kind == 'MaterialExpressionPerInstanceCustomData'):
+            continue
         try:
             value = expression.get_editor_property(prop)
-        except Exception:
-            continue
+        except Exception as error:
+            # PyWrapperObject::FindEditorPropertyImpl + PyUtil::SetPythonError in UE 5.8. Protected/read/conversion
+            # failures of present properties have different messages and must make the whole digest unreadable.
+            missing = rf"[^\n]+: Failed to find property '[^'\n]+' for attribute '{re.escape(prop)}' on '[^'\n]+'"
+            if re.fullmatch(missing, str(error)):
+                continue
+            raise
         props[prop] = _norm(_value(value))
-    return json.dumps({'class': type(expression).__name__, 'props': props}, sort_keys=True)
+    return json.dumps({'class': kind, 'props': props}, sort_keys=True)
 
 
 def _input_output(expression, index, source):
