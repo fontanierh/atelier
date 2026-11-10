@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_PropsLanternUpperE140: the props lantern upper e140, cut from the fused tile(s) Props_4_4 (44 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/brinecove/props-lantern-upper-e140"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/brinecove/props-lantern-upper-e140"
+references = ["adopted/brinecove/materials"]
+
+[[sources]]
+path = "src/SM_BC_PropsLanternUpperE140.glb"
+sha256 = "6d94fc92e59115b595af0cf1d9289f907b00b7bc15035ad1e86a35c8b64728c5"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Brinecove/Materials/MI_BC_lantern", "/Game/Brinecove/Materials/MI_BC_metal"]
+triangles = 44
+collision = "complex"
+full_precision_uvs = true
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_PropsLanternUpperE140"

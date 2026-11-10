@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/props-lantern-quay-w228",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_PropsLanternQuayW228.uasset": "c3700d6bbb66061612301c6ed49e2e22a4fcf5c4838ec26ff618b89cb5a4eb3c"
+  },
+  "input_fingerprint": "0b3faee3a2596b0b0a30f555bfc75f5e99611863bb4b02e2eedce2d5fced3291",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_PropsLanternQuayW228": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

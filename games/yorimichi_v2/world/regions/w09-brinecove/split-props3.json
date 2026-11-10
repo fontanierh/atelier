@@ -1,0 +1,1065 @@
+{
+  "about": "Expected result of tools/migrate/brinecove_split_apply.py (docs/inventory/brinecove-split.md): each part mesh, each tile remainder, and the donor tile each was cut from.",
+  "parts": {
+    "prop/brinecove/props-lantern-quay-e124": {
+      "materials": [
+        "BC_lantern",
+        "BC_metal"
+      ],
+      "max": [
+        124.29,
+        8.77,
+        -102.71
+      ],
+      "mesh": "SM_BC_PropsLanternQuayE124",
+      "min": [
+        123.71,
+        4.7,
+        -103.29
+      ],
+      "object": "props-lantern-quay-e124",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsLanternQuayE124",
+      "sha256": "0afb4f3db2ea82dc1f4703599d78d1db084ee0fa36fb15b13096a37fb2b630a7",
+      "soft": false,
+      "tiles": [
+        "Props_4_4"
+      ],
+      "triangles": 44
+    },
+    "prop/brinecove/props-lantern-quay-e168": {
+      "materials": [
+        "BC_lantern",
+        "BC_metal"
+      ],
+      "max": [
+        168.29,
+        8.77,
+        -102.71
+      ],
+      "mesh": "SM_BC_PropsLanternQuayE168",
+      "min": [
+        167.71,
+        4.7,
+        -103.29
+      ],
+      "object": "props-lantern-quay-e168",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsLanternQuayE168",
+      "sha256": "81ff0f5f8d03308bffbb256da71db61d46239b17c0ca278945c04d261213e5ef",
+      "soft": false,
+      "tiles": [
+        "Props_4_4"
+      ],
+      "triangles": 44
+    },
+    "prop/brinecove/props-lantern-quay-e212": {
+      "materials": [
+        "BC_lantern",
+        "BC_metal"
+      ],
+      "max": [
+        212.29,
+        8.77,
+        -102.71
+      ],
+      "mesh": "SM_BC_PropsLanternQuayE212",
+      "min": [
+        211.71,
+        4.7,
+        -103.29
+      ],
+      "object": "props-lantern-quay-e212",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsLanternQuayE212",
+      "sha256": "64121e31b3896776a391913d7106d31faaed95f8914690dc3975cec920ecf00d",
+      "soft": false,
+      "tiles": [
+        "Props_4_4"
+      ],
+      "triangles": 44
+    },
+    "prop/brinecove/props-lantern-quay-e256": {
+      "materials": [
+        "BC_lantern",
+        "BC_metal"
+      ],
+      "max": [
+        256.29,
+        8.77,
+        -102.71
+      ],
+      "mesh": "SM_BC_PropsLanternQuayE256",
+      "min": [
+        255.71,
+        4.7,
+        -103.29
+      ],
+      "object": "props-lantern-quay-e256",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsLanternQuayE256",
+      "sha256": "a48a1f82dab19fccca2660983f399f52f737b9a2581ec32e6846c02469bce8d3",
+      "soft": false,
+      "tiles": [
+        "Props_5_4"
+      ],
+      "triangles": 44
+    },
+    "prop/brinecove/props-lantern-quay-e300": {
+      "materials": [
+        "BC_lantern",
+        "BC_metal"
+      ],
+      "max": [
+        300.29,
+        8.77,
+        -102.71
+      ],
+      "mesh": "SM_BC_PropsLanternQuayE300",
+      "min": [
+        299.71,
+        4.7,
+        -103.29
+      ],
+      "object": "props-lantern-quay-e300",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsLanternQuayE300",
+      "sha256": "8921e76ee79b96816de1ec23e1d6f506b5d05d774e593d55ed0eb1a9beb3dba5",
+      "soft": false,
+      "tiles": [
+        "Props_5_4"
+      ],
+      "triangles": 44
+    },
+    "prop/brinecove/props-lantern-quay-e344": {
+      "materials": [
+        "BC_lantern",
+        "BC_metal"
+      ],
+      "max": [
+        344.29,
+        8.77,
+        -102.71
+      ],
+      "mesh": "SM_BC_PropsLanternQuayE344",
+      "min": [
+        343.71,
+        4.7,
+        -103.29
+      ],
+      "object": "props-lantern-quay-e344",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsLanternQuayE344",
+      "sha256": "de018e5d0dafb149efaff107a722ee07bfdb67a234d02bbefbcfc7e911a38216",
+      "soft": false,
+      "tiles": [
+        "Props_5_4"
+      ],
+      "triangles": 44
+    },
+    "prop/brinecove/props-lantern-quay-e36": {
+      "materials": [
+        "BC_lantern",
+        "BC_metal"
+      ],
+      "max": [
+        36.29,
+        8.77,
+        -102.71
+      ],
+      "mesh": "SM_BC_PropsLanternQuayE36",
+      "min": [
+        35.71,
+        4.7,
+        -103.29
+      ],
+      "object": "props-lantern-quay-e36",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsLanternQuayE36",
+      "sha256": "237b278dd000890725e68049bd70ee7c388f22403c0db87d5b079f3b927c0d15",
+      "soft": false,
+      "tiles": [
+        "Props_4_4"
+      ],
+      "triangles": 44
+    },
+    "prop/brinecove/props-lantern-quay-e80": {
+      "materials": [
+        "BC_lantern",
+        "BC_metal"
+      ],
+      "max": [
+        80.29,
+        8.77,
+        -102.71
+      ],
+      "mesh": "SM_BC_PropsLanternQuayE80",
+      "min": [
+        79.71,
+        4.7,
+        -103.29
+      ],
+      "object": "props-lantern-quay-e80",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsLanternQuayE80",
+      "sha256": "0082cf5d20a641f3bdb3fef3c7e17ac76ca52a0ea8b5ae93579748cde50dcd3f",
+      "soft": false,
+      "tiles": [
+        "Props_4_4"
+      ],
+      "triangles": 44
+    },
+    "prop/brinecove/props-lantern-quay-w140": {
+      "materials": [
+        "BC_lantern",
+        "BC_metal"
+      ],
+      "max": [
+        -139.71,
+        8.77,
+        -102.71
+      ],
+      "mesh": "SM_BC_PropsLanternQuayW140",
+      "min": [
+        -140.29,
+        4.7,
+        -103.29
+      ],
+      "object": "props-lantern-quay-w140",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsLanternQuayW140",
+      "sha256": "a741b0e4b01f08c7f4193e827bd5a7b3cf86b22d83206ebe06f19119941a00b7",
+      "soft": false,
+      "tiles": [
+        "Props_3_4"
+      ],
+      "triangles": 44
+    },
+    "prop/brinecove/props-lantern-quay-w184": {
+      "materials": [
+        "BC_lantern",
+        "BC_metal"
+      ],
+      "max": [
+        -183.71,
+        8.77,
+        -102.71
+      ],
+      "mesh": "SM_BC_PropsLanternQuayW184",
+      "min": [
+        -184.29,
+        4.7,
+        -103.29
+      ],
+      "object": "props-lantern-quay-w184",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsLanternQuayW184",
+      "sha256": "1e10230c974c97aa1c72f36b0b3abacd07a9f76e86f9d89e7130447060b0b6e4",
+      "soft": false,
+      "tiles": [
+        "Props_3_4"
+      ],
+      "triangles": 44
+    },
+    "prop/brinecove/props-lantern-quay-w228": {
+      "materials": [
+        "BC_lantern",
+        "BC_metal"
+      ],
+      "max": [
+        -227.71,
+        8.77,
+        -102.71
+      ],
+      "mesh": "SM_BC_PropsLanternQuayW228",
+      "min": [
+        -228.29,
+        4.7,
+        -103.29
+      ],
+      "object": "props-lantern-quay-w228",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsLanternQuayW228",
+      "sha256": "d4f14bad6f6b9d0c561f703d8a0ef5c8feefa0e4c5db700ce0ac9d20f1ed3fce",
+      "soft": false,
+      "tiles": [
+        "Props_3_4"
+      ],
+      "triangles": 44
+    },
+    "prop/brinecove/props-lantern-quay-w272": {
+      "materials": [
+        "BC_lantern",
+        "BC_metal"
+      ],
+      "max": [
+        -271.71,
+        8.77,
+        -102.71
+      ],
+      "mesh": "SM_BC_PropsLanternQuayW272",
+      "min": [
+        -272.29,
+        4.7,
+        -103.29
+      ],
+      "object": "props-lantern-quay-w272",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsLanternQuayW272",
+      "sha256": "e0e0b0cc852a613244d71e26d60e5f234fcb1b05b418375e9054e403d078d722",
+      "soft": false,
+      "tiles": [
+        "Props_2_4"
+      ],
+      "triangles": 44
+    },
+    "prop/brinecove/props-lantern-quay-w316": {
+      "materials": [
+        "BC_lantern",
+        "BC_metal"
+      ],
+      "max": [
+        -315.71,
+        8.77,
+        -102.71
+      ],
+      "mesh": "SM_BC_PropsLanternQuayW316",
+      "min": [
+        -316.29,
+        4.7,
+        -103.29
+      ],
+      "object": "props-lantern-quay-w316",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsLanternQuayW316",
+      "sha256": "cb9bb18b4fc2d10d9c9e6802c70138aaa49eb846eb4d507438269c0fd80effa6",
+      "soft": false,
+      "tiles": [
+        "Props_2_4"
+      ],
+      "triangles": 44
+    },
+    "prop/brinecove/props-lantern-quay-w360": {
+      "materials": [
+        "BC_lantern",
+        "BC_metal"
+      ],
+      "max": [
+        -359.71,
+        8.77,
+        -102.71
+      ],
+      "mesh": "SM_BC_PropsLanternQuayW360",
+      "min": [
+        -360.29,
+        4.7,
+        -103.29
+      ],
+      "object": "props-lantern-quay-w360",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsLanternQuayW360",
+      "sha256": "b06595f0ad35446f09304f1eb204af74556a3cac4aa8c47d882edd4ffdaa1457",
+      "soft": false,
+      "tiles": [
+        "Props_2_4"
+      ],
+      "triangles": 44
+    },
+    "prop/brinecove/props-lantern-quay-w52": {
+      "materials": [
+        "BC_lantern",
+        "BC_metal"
+      ],
+      "max": [
+        -51.71,
+        8.77,
+        -102.71
+      ],
+      "mesh": "SM_BC_PropsLanternQuayW52",
+      "min": [
+        -52.29,
+        4.7,
+        -103.29
+      ],
+      "object": "props-lantern-quay-w52",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsLanternQuayW52",
+      "sha256": "4253299b803651372137a623bada719e65278e8f7a10400f5916e553c9e03af1",
+      "soft": false,
+      "tiles": [
+        "Props_3_4"
+      ],
+      "triangles": 44
+    },
+    "prop/brinecove/props-lantern-quay-w96": {
+      "materials": [
+        "BC_lantern",
+        "BC_metal"
+      ],
+      "max": [
+        -95.71,
+        8.77,
+        -102.71
+      ],
+      "mesh": "SM_BC_PropsLanternQuayW96",
+      "min": [
+        -96.29,
+        4.7,
+        -103.29
+      ],
+      "object": "props-lantern-quay-w96",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsLanternQuayW96",
+      "sha256": "f7da01035c37b96bb811617613353dc44aff97e1e28036fc38620f32f161748f",
+      "soft": false,
+      "tiles": [
+        "Props_3_4"
+      ],
+      "triangles": 44
+    },
+    "prop/brinecove/props-lantern-upper-e100": {
+      "materials": [
+        "BC_lantern",
+        "BC_metal"
+      ],
+      "max": [
+        100.29,
+        34.07,
+        -325.71
+      ],
+      "mesh": "SM_BC_PropsLanternUpperE100",
+      "min": [
+        99.71,
+        30.0,
+        -326.29
+      ],
+      "object": "props-lantern-upper-e100",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsLanternUpperE100",
+      "sha256": "43984bd3958e409f9c6445dffdbf31cac8a7e5c6640a13217c4d869f69c83e4d",
+      "soft": false,
+      "tiles": [
+        "Props_4_4"
+      ],
+      "triangles": 44
+    },
+    "prop/brinecove/props-lantern-upper-e140": {
+      "materials": [
+        "BC_lantern",
+        "BC_metal"
+      ],
+      "max": [
+        140.29,
+        34.07,
+        -325.71
+      ],
+      "mesh": "SM_BC_PropsLanternUpperE140",
+      "min": [
+        139.71,
+        30.0,
+        -326.29
+      ],
+      "object": "props-lantern-upper-e140",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsLanternUpperE140",
+      "sha256": "6d94fc92e59115b595af0cf1d9289f907b00b7bc15035ad1e86a35c8b64728c5",
+      "soft": false,
+      "tiles": [
+        "Props_4_4"
+      ],
+      "triangles": 44
+    },
+    "prop/brinecove/props-lantern-upper-e180": {
+      "materials": [
+        "BC_lantern",
+        "BC_metal"
+      ],
+      "max": [
+        180.29,
+        34.07,
+        -325.71
+      ],
+      "mesh": "SM_BC_PropsLanternUpperE180",
+      "min": [
+        179.71,
+        30.0,
+        -326.29
+      ],
+      "object": "props-lantern-upper-e180",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsLanternUpperE180",
+      "sha256": "083da5a911d5226611c5484fb6f4a394cc1e478c8edccdf37b54a0da44180dbe",
+      "soft": false,
+      "tiles": [
+        "Props_4_4"
+      ],
+      "triangles": 44
+    },
+    "prop/brinecove/props-lantern-upper-e20": {
+      "materials": [
+        "BC_lantern",
+        "BC_metal"
+      ],
+      "max": [
+        20.29,
+        34.07,
+        -325.71
+      ],
+      "mesh": "SM_BC_PropsLanternUpperE20",
+      "min": [
+        19.71,
+        30.0,
+        -326.29
+      ],
+      "object": "props-lantern-upper-e20",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsLanternUpperE20",
+      "sha256": "972bb0a252ab572a28030ff548ddafad983d64409fb98b27605e081abe6b8b53",
+      "soft": false,
+      "tiles": [
+        "Props_4_4"
+      ],
+      "triangles": 44
+    },
+    "prop/brinecove/props-lantern-upper-e220": {
+      "materials": [
+        "BC_lantern",
+        "BC_metal"
+      ],
+      "max": [
+        220.29,
+        34.07,
+        -325.71
+      ],
+      "mesh": "SM_BC_PropsLanternUpperE220",
+      "min": [
+        219.71,
+        30.0,
+        -326.29
+      ],
+      "object": "props-lantern-upper-e220",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsLanternUpperE220",
+      "sha256": "c5f119f90eb2f87c9dfc9d61118a7069e92a0c29598686163db07fc323a9f897",
+      "soft": false,
+      "tiles": [
+        "Props_4_4"
+      ],
+      "triangles": 44
+    },
+    "prop/brinecove/props-lantern-upper-e260": {
+      "materials": [
+        "BC_lantern",
+        "BC_metal"
+      ],
+      "max": [
+        260.29,
+        34.07,
+        -325.71
+      ],
+      "mesh": "SM_BC_PropsLanternUpperE260",
+      "min": [
+        259.71,
+        30.0,
+        -326.29
+      ],
+      "object": "props-lantern-upper-e260",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsLanternUpperE260",
+      "sha256": "fc384ef72ad83bcde244b34531fdedd4b9cd7beb92b260c1f81c586a5fd57bf5",
+      "soft": false,
+      "tiles": [
+        "Props_5_4"
+      ],
+      "triangles": 44
+    },
+    "prop/brinecove/props-lantern-upper-e300": {
+      "materials": [
+        "BC_lantern",
+        "BC_metal"
+      ],
+      "max": [
+        300.29,
+        34.07,
+        -325.71
+      ],
+      "mesh": "SM_BC_PropsLanternUpperE300",
+      "min": [
+        299.71,
+        30.0,
+        -326.29
+      ],
+      "object": "props-lantern-upper-e300",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsLanternUpperE300",
+      "sha256": "10a8cbb54dd056671c57005ccae9fef0e35b9b6d44ca02896f6fea09f95c7b9c",
+      "soft": false,
+      "tiles": [
+        "Props_5_4"
+      ],
+      "triangles": 44
+    },
+    "prop/brinecove/props-lantern-upper-e60": {
+      "materials": [
+        "BC_lantern",
+        "BC_metal"
+      ],
+      "max": [
+        60.29,
+        34.07,
+        -325.71
+      ],
+      "mesh": "SM_BC_PropsLanternUpperE60",
+      "min": [
+        59.71,
+        30.0,
+        -326.29
+      ],
+      "object": "props-lantern-upper-e60",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsLanternUpperE60",
+      "sha256": "08da74841e4b8310c99f49ea3c5322a18c4cd0238038d88e43c5f320fb8a5f15",
+      "soft": false,
+      "tiles": [
+        "Props_4_4"
+      ],
+      "triangles": 44
+    },
+    "prop/brinecove/props-lantern-upper-w100": {
+      "materials": [
+        "BC_lantern",
+        "BC_metal"
+      ],
+      "max": [
+        -99.71,
+        34.07,
+        -325.71
+      ],
+      "mesh": "SM_BC_PropsLanternUpperW100",
+      "min": [
+        -100.29,
+        30.0,
+        -326.29
+      ],
+      "object": "props-lantern-upper-w100",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsLanternUpperW100",
+      "sha256": "f2a001ec865930b213f49c568d38449660f5adeb5e29342ca3d0910e98dcb544",
+      "soft": false,
+      "tiles": [
+        "Props_3_4"
+      ],
+      "triangles": 44
+    },
+    "prop/brinecove/props-lantern-upper-w140": {
+      "materials": [
+        "BC_lantern",
+        "BC_metal"
+      ],
+      "max": [
+        -139.71,
+        34.07,
+        -325.71
+      ],
+      "mesh": "SM_BC_PropsLanternUpperW140",
+      "min": [
+        -140.29,
+        30.0,
+        -326.29
+      ],
+      "object": "props-lantern-upper-w140",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsLanternUpperW140",
+      "sha256": "f40d83614ef945ccdfa395ca81e28698b4e652190fab202416068e3d16c25f41",
+      "soft": false,
+      "tiles": [
+        "Props_3_4"
+      ],
+      "triangles": 44
+    },
+    "prop/brinecove/props-lantern-upper-w180": {
+      "materials": [
+        "BC_lantern",
+        "BC_metal"
+      ],
+      "max": [
+        -179.71,
+        34.07,
+        -325.71
+      ],
+      "mesh": "SM_BC_PropsLanternUpperW180",
+      "min": [
+        -180.29,
+        30.0,
+        -326.29
+      ],
+      "object": "props-lantern-upper-w180",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsLanternUpperW180",
+      "sha256": "9ea4f369a90e107f9b590ec7bae4fe1afb09f047de9342dace8075d15acfa884",
+      "soft": false,
+      "tiles": [
+        "Props_3_4"
+      ],
+      "triangles": 44
+    },
+    "prop/brinecove/props-lantern-upper-w20": {
+      "materials": [
+        "BC_lantern",
+        "BC_metal"
+      ],
+      "max": [
+        -19.71,
+        34.07,
+        -325.71
+      ],
+      "mesh": "SM_BC_PropsLanternUpperW20",
+      "min": [
+        -20.29,
+        30.0,
+        -326.29
+      ],
+      "object": "props-lantern-upper-w20",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsLanternUpperW20",
+      "sha256": "f594e3fa6231cac7912955055e90d542765bd91215c0c42d0dae915c407741dd",
+      "soft": false,
+      "tiles": [
+        "Props_3_4"
+      ],
+      "triangles": 44
+    },
+    "prop/brinecove/props-lantern-upper-w220": {
+      "materials": [
+        "BC_lantern",
+        "BC_metal"
+      ],
+      "max": [
+        -219.71,
+        34.07,
+        -325.71
+      ],
+      "mesh": "SM_BC_PropsLanternUpperW220",
+      "min": [
+        -220.29,
+        30.0,
+        -326.29
+      ],
+      "object": "props-lantern-upper-w220",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsLanternUpperW220",
+      "sha256": "de9e0132def68acd50717eacf56c0f828d771b50e8d73324d727c0a436108b25",
+      "soft": false,
+      "tiles": [
+        "Props_3_4"
+      ],
+      "triangles": 44
+    },
+    "prop/brinecove/props-lantern-upper-w260": {
+      "materials": [
+        "BC_lantern",
+        "BC_metal"
+      ],
+      "max": [
+        -259.71,
+        34.07,
+        -325.71
+      ],
+      "mesh": "SM_BC_PropsLanternUpperW260",
+      "min": [
+        -260.29,
+        30.0,
+        -326.29
+      ],
+      "object": "props-lantern-upper-w260",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsLanternUpperW260",
+      "sha256": "9e3bb29620502092728616defa6755c1f1e4a1e3754bee1486a977838fadf490",
+      "soft": false,
+      "tiles": [
+        "Props_2_4"
+      ],
+      "triangles": 44
+    },
+    "prop/brinecove/props-lantern-upper-w300": {
+      "materials": [
+        "BC_lantern",
+        "BC_metal"
+      ],
+      "max": [
+        -299.71,
+        34.07,
+        -325.71
+      ],
+      "mesh": "SM_BC_PropsLanternUpperW300",
+      "min": [
+        -300.29,
+        30.0,
+        -326.29
+      ],
+      "object": "props-lantern-upper-w300",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsLanternUpperW300",
+      "sha256": "9ba9c91883355c99e9aba6dec3c7343f8b2d375587c28762cdd8d6ef40a85f8c",
+      "soft": false,
+      "tiles": [
+        "Props_2_4"
+      ],
+      "triangles": 44
+    },
+    "prop/brinecove/props-lantern-upper-w60": {
+      "materials": [
+        "BC_lantern",
+        "BC_metal"
+      ],
+      "max": [
+        -59.71,
+        34.07,
+        -325.71
+      ],
+      "mesh": "SM_BC_PropsLanternUpperW60",
+      "min": [
+        -60.29,
+        30.0,
+        -326.29
+      ],
+      "object": "props-lantern-upper-w60",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsLanternUpperW60",
+      "sha256": "615d51b62022b835dd9740b8c8d4f7c606ac6a33f68dc04cc122e8abfc842b77",
+      "soft": false,
+      "tiles": [
+        "Props_3_4"
+      ],
+      "triangles": 44
+    }
+  },
+  "pending": {
+    "resave": [],
+    "stale": []
+  },
+  "retired": false,
+  "schema": 1,
+  "selection": [
+    "props-lantern-quay-e124",
+    "props-lantern-quay-e168",
+    "props-lantern-quay-e212",
+    "props-lantern-quay-e256",
+    "props-lantern-quay-e300",
+    "props-lantern-quay-e344",
+    "props-lantern-quay-e36",
+    "props-lantern-quay-e80",
+    "props-lantern-quay-w140",
+    "props-lantern-quay-w184",
+    "props-lantern-quay-w228",
+    "props-lantern-quay-w272",
+    "props-lantern-quay-w316",
+    "props-lantern-quay-w360",
+    "props-lantern-quay-w52",
+    "props-lantern-quay-w96",
+    "props-lantern-upper-e100",
+    "props-lantern-upper-e140",
+    "props-lantern-upper-e180",
+    "props-lantern-upper-e20",
+    "props-lantern-upper-e220",
+    "props-lantern-upper-e260",
+    "props-lantern-upper-e300",
+    "props-lantern-upper-e60",
+    "props-lantern-upper-w100",
+    "props-lantern-upper-w140",
+    "props-lantern-upper-w180",
+    "props-lantern-upper-w20",
+    "props-lantern-upper-w220",
+    "props-lantern-upper-w260",
+    "props-lantern-upper-w300",
+    "props-lantern-upper-w60"
+  ],
+  "shares": {
+    "Props_2_4": {
+      "prop/brinecove/props-lantern-quay-w272": 44,
+      "prop/brinecove/props-lantern-quay-w316": 44,
+      "prop/brinecove/props-lantern-quay-w360": 44,
+      "prop/brinecove/props-lantern-upper-w260": 44,
+      "prop/brinecove/props-lantern-upper-w300": 44
+    },
+    "Props_3_4": {
+      "prop/brinecove/props-lantern-quay-w140": 44,
+      "prop/brinecove/props-lantern-quay-w184": 44,
+      "prop/brinecove/props-lantern-quay-w228": 44,
+      "prop/brinecove/props-lantern-quay-w52": 44,
+      "prop/brinecove/props-lantern-quay-w96": 44,
+      "prop/brinecove/props-lantern-upper-w100": 44,
+      "prop/brinecove/props-lantern-upper-w140": 44,
+      "prop/brinecove/props-lantern-upper-w180": 44,
+      "prop/brinecove/props-lantern-upper-w20": 44,
+      "prop/brinecove/props-lantern-upper-w220": 44,
+      "prop/brinecove/props-lantern-upper-w60": 44
+    },
+    "Props_4_4": {
+      "prop/brinecove/props-lantern-quay-e124": 44,
+      "prop/brinecove/props-lantern-quay-e168": 44,
+      "prop/brinecove/props-lantern-quay-e212": 44,
+      "prop/brinecove/props-lantern-quay-e36": 44,
+      "prop/brinecove/props-lantern-quay-e80": 44,
+      "prop/brinecove/props-lantern-upper-e100": 44,
+      "prop/brinecove/props-lantern-upper-e140": 44,
+      "prop/brinecove/props-lantern-upper-e180": 44,
+      "prop/brinecove/props-lantern-upper-e20": 44,
+      "prop/brinecove/props-lantern-upper-e220": 44,
+      "prop/brinecove/props-lantern-upper-e60": 44
+    },
+    "Props_5_4": {
+      "prop/brinecove/props-lantern-quay-e256": 44,
+      "prop/brinecove/props-lantern-quay-e300": 44,
+      "prop/brinecove/props-lantern-quay-e344": 44,
+      "prop/brinecove/props-lantern-upper-e260": 44,
+      "prop/brinecove/props-lantern-upper-e300": 44
+    }
+  },
+  "tiles": {
+    "Props_2_4": {
+      "original": {
+        "material_package": {
+          "BC_autumn_olive": "/Game/Brinecove/Materials/MI_BC_autumn_olive",
+          "BC_clay": "/Game/Brinecove/Materials/MI_BC_clay",
+          "BC_lantern": "/Game/Brinecove/Materials/MI_BC_lantern",
+          "BC_metal": "/Game/Brinecove/Materials/MI_BC_metal",
+          "BC_wood": "/Game/Brinecove/Materials/MI_BC_wood",
+          "BC_wood_dark": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+          "BC_wood_light": "/Game/Brinecove/Materials/MI_BC_wood_light"
+        },
+        "owner": "shared/brinecove/props-2-4",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "collision": "complex",
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_autumn_olive",
+            "/Game/Brinecove/Materials/MI_BC_clay",
+            "/Game/Brinecove/Materials/MI_BC_lantern",
+            "/Game/Brinecove/Materials/MI_BC_metal",
+            "/Game/Brinecove/Materials/MI_BC_wood",
+            "/Game/Brinecove/Materials/MI_BC_wood_dark",
+            "/Game/Brinecove/Materials/MI_BC_wood_light"
+          ],
+          "triangles": 1010
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_Props_2_4",
+      "record": "prop/brinecove/props-2-4",
+      "remainder": {
+        "materials": [
+          "BC_metal",
+          "BC_wood",
+          "BC_wood_dark",
+          "BC_wood_light"
+        ],
+        "sha256": "b4c5be51a44f7a21c48dcce6a9d427782c5c2f4757616a26a9c057c63e4eaa29",
+        "triangles": 584
+      },
+      "source_triangles": 804
+    },
+    "Props_3_4": {
+      "original": {
+        "material_package": {
+          "BC_autumn_olive": "/Game/Brinecove/Materials/MI_BC_autumn_olive",
+          "BC_clay": "/Game/Brinecove/Materials/MI_BC_clay",
+          "BC_lantern": "/Game/Brinecove/Materials/MI_BC_lantern",
+          "BC_metal": "/Game/Brinecove/Materials/MI_BC_metal",
+          "BC_wood": "/Game/Brinecove/Materials/MI_BC_wood",
+          "BC_wood_dark": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+          "BC_wood_light": "/Game/Brinecove/Materials/MI_BC_wood_light"
+        },
+        "owner": "shared/brinecove/props-3-4",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "collision": "complex",
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_autumn_olive",
+            "/Game/Brinecove/Materials/MI_BC_clay",
+            "/Game/Brinecove/Materials/MI_BC_lantern",
+            "/Game/Brinecove/Materials/MI_BC_metal",
+            "/Game/Brinecove/Materials/MI_BC_wood",
+            "/Game/Brinecove/Materials/MI_BC_wood_dark",
+            "/Game/Brinecove/Materials/MI_BC_wood_light"
+          ],
+          "triangles": 1188
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_Props_3_4",
+      "record": "prop/brinecove/props-3-4",
+      "remainder": {
+        "materials": [
+          "BC_metal",
+          "BC_wood",
+          "BC_wood_dark",
+          "BC_wood_light"
+        ],
+        "sha256": "76e0752530e690424accf07afb4980da1539347123c706bca8aec9484aaecae1",
+        "triangles": 292
+      },
+      "source_triangles": 776
+    },
+    "Props_4_4": {
+      "original": {
+        "material_package": {
+          "BC_autumn_olive": "/Game/Brinecove/Materials/MI_BC_autumn_olive",
+          "BC_clay": "/Game/Brinecove/Materials/MI_BC_clay",
+          "BC_lantern": "/Game/Brinecove/Materials/MI_BC_lantern",
+          "BC_metal": "/Game/Brinecove/Materials/MI_BC_metal",
+          "BC_wood": "/Game/Brinecove/Materials/MI_BC_wood",
+          "BC_wood_dark": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+          "BC_wood_light": "/Game/Brinecove/Materials/MI_BC_wood_light"
+        },
+        "owner": "shared/brinecove/props-4-4",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "collision": "complex",
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_autumn_olive",
+            "/Game/Brinecove/Materials/MI_BC_clay",
+            "/Game/Brinecove/Materials/MI_BC_lantern",
+            "/Game/Brinecove/Materials/MI_BC_metal",
+            "/Game/Brinecove/Materials/MI_BC_wood",
+            "/Game/Brinecove/Materials/MI_BC_wood_dark",
+            "/Game/Brinecove/Materials/MI_BC_wood_light"
+          ],
+          "triangles": 1480
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_Props_4_4",
+      "record": "prop/brinecove/props-4-4",
+      "remainder": {
+        "materials": [
+          "BC_metal",
+          "BC_wood",
+          "BC_wood_dark",
+          "BC_wood_light"
+        ],
+        "sha256": "227c5e0e9b2de98556e01b0cfdb6434d4981dac8d8d23dc6d827a1575730e36e",
+        "triangles": 584
+      },
+      "source_triangles": 1068
+    },
+    "Props_5_4": {
+      "original": {
+        "material_package": {
+          "BC_autumn_olive": "/Game/Brinecove/Materials/MI_BC_autumn_olive",
+          "BC_clay": "/Game/Brinecove/Materials/MI_BC_clay",
+          "BC_lantern": "/Game/Brinecove/Materials/MI_BC_lantern",
+          "BC_metal": "/Game/Brinecove/Materials/MI_BC_metal",
+          "BC_wood": "/Game/Brinecove/Materials/MI_BC_wood",
+          "BC_wood_dark": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+          "BC_wood_light": "/Game/Brinecove/Materials/MI_BC_wood_light"
+        },
+        "owner": "shared/brinecove/props-5-4",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "collision": "complex",
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_autumn_olive",
+            "/Game/Brinecove/Materials/MI_BC_clay",
+            "/Game/Brinecove/Materials/MI_BC_lantern",
+            "/Game/Brinecove/Materials/MI_BC_metal",
+            "/Game/Brinecove/Materials/MI_BC_wood",
+            "/Game/Brinecove/Materials/MI_BC_wood_dark",
+            "/Game/Brinecove/Materials/MI_BC_wood_light"
+          ],
+          "triangles": 1010
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_Props_5_4",
+      "record": "prop/brinecove/props-5-4",
+      "remainder": {
+        "materials": [
+          "BC_metal",
+          "BC_wood",
+          "BC_wood_dark",
+          "BC_wood_light"
+        ],
+        "sha256": "f1a76467777a52bb3ca0ac2b5a3ab22d9a0b81e83564e56c3a9b922ff471f8e9",
+        "triangles": 584
+      },
+      "source_triangles": 804
+    }
+  }
+}

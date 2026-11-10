@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_PropsLanternUpperW60: the props lantern upper w60, cut from the fused tile(s) Props_3_4 (44 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/brinecove/props-lantern-upper-w60"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/brinecove/props-lantern-upper-w60"
+references = ["adopted/brinecove/materials"]
+
+[[sources]]
+path = "src/SM_BC_PropsLanternUpperW60.glb"
+sha256 = "615d51b62022b835dd9740b8c8d4f7c606ac6a33f68dc04cc122e8abfc842b77"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Brinecove/Materials/MI_BC_lantern", "/Game/Brinecove/Materials/MI_BC_metal"]
+triangles = 44
+collision = "complex"
+full_precision_uvs = true
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_PropsLanternUpperW60"

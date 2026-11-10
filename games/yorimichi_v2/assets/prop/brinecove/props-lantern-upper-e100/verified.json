@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/props-lantern-upper-e100",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_PropsLanternUpperE100.uasset": "9eb9f3f8fcdfc5d5581a3f03d0571bc4afe3e2304602af7b172e443533165343"
+  },
+  "input_fingerprint": "3182a10243016ce43f1f4a51a1478ee6d8d33a7f91f1d4ec1a376f20bc2ecdcd",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_PropsLanternUpperE100": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

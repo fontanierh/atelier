@@ -185,5 +185,16 @@ The quay cannons and anchor are batch 1 objects too.
 |---|---|---|---|---|
 | 3 | 3,196 (472 per cluster, 52 per basket) | `Props_3_3`, `4_3`, `5_3` (all hard) | none | 16 |
 
-Nothing is emptied, so there is no retire. What remains in the Props tiles is street and pier furniture (lantern posts,
-loose barrels and crates, rope coils) and the gulls.
+Nothing is emptied, so there is no retire.
+
+## Street lighting (`props3`)
+
+`props3` takes the 32 lantern posts: 16 along the quay every 44 m (none at the centre, `props-lantern-quay-<side><|x|>`)
+and 16 on the upper terrace every 40 m (`props-lantern-upper-<side><|x|>`). Each post is 44 triangles in one hard tile.
+
+| Tiles touched | Triangles taken | Tiles remade | Tiles emptied | Records |
+|---|---|---|---|---|
+| 4 | 1,408 | `Props_2_4`, `3_4`, `4_4`, `5_4` (props1's remainders, all hard) | none | 36 |
+
+The 36 records import in one bounded queue (`run.py --batch 36`). Nothing is emptied, so there is no retire. What
+remains in the Props tiles is loose furniture (the street and pier barrels and crates, the rope coils) and the gulls.

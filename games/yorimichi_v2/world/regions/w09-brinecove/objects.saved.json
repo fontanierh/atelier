@@ -3457,6 +3457,326 @@
         "prop/brinecove/props-fish-basket-7"
       ]
     },
+    "object/brinecove/props-lantern-quay-e124": {
+      "groups": [
+        "SM_BC_PropsLanternQuayE124"
+      ],
+      "id": "object/brinecove/props-lantern-quay-e124",
+      "model": "prop/brinecove/props-lantern-quay-e124",
+      "models": [
+        "prop/brinecove/props-lantern-quay-e124"
+      ]
+    },
+    "object/brinecove/props-lantern-quay-e168": {
+      "groups": [
+        "SM_BC_PropsLanternQuayE168"
+      ],
+      "id": "object/brinecove/props-lantern-quay-e168",
+      "model": "prop/brinecove/props-lantern-quay-e168",
+      "models": [
+        "prop/brinecove/props-lantern-quay-e168"
+      ]
+    },
+    "object/brinecove/props-lantern-quay-e212": {
+      "groups": [
+        "SM_BC_PropsLanternQuayE212"
+      ],
+      "id": "object/brinecove/props-lantern-quay-e212",
+      "model": "prop/brinecove/props-lantern-quay-e212",
+      "models": [
+        "prop/brinecove/props-lantern-quay-e212"
+      ]
+    },
+    "object/brinecove/props-lantern-quay-e256": {
+      "groups": [
+        "SM_BC_PropsLanternQuayE256"
+      ],
+      "id": "object/brinecove/props-lantern-quay-e256",
+      "model": "prop/brinecove/props-lantern-quay-e256",
+      "models": [
+        "prop/brinecove/props-lantern-quay-e256"
+      ]
+    },
+    "object/brinecove/props-lantern-quay-e300": {
+      "groups": [
+        "SM_BC_PropsLanternQuayE300"
+      ],
+      "id": "object/brinecove/props-lantern-quay-e300",
+      "model": "prop/brinecove/props-lantern-quay-e300",
+      "models": [
+        "prop/brinecove/props-lantern-quay-e300"
+      ]
+    },
+    "object/brinecove/props-lantern-quay-e344": {
+      "groups": [
+        "SM_BC_PropsLanternQuayE344"
+      ],
+      "id": "object/brinecove/props-lantern-quay-e344",
+      "model": "prop/brinecove/props-lantern-quay-e344",
+      "models": [
+        "prop/brinecove/props-lantern-quay-e344"
+      ]
+    },
+    "object/brinecove/props-lantern-quay-e36": {
+      "groups": [
+        "SM_BC_PropsLanternQuayE36"
+      ],
+      "id": "object/brinecove/props-lantern-quay-e36",
+      "model": "prop/brinecove/props-lantern-quay-e36",
+      "models": [
+        "prop/brinecove/props-lantern-quay-e36"
+      ]
+    },
+    "object/brinecove/props-lantern-quay-e80": {
+      "groups": [
+        "SM_BC_PropsLanternQuayE80"
+      ],
+      "id": "object/brinecove/props-lantern-quay-e80",
+      "model": "prop/brinecove/props-lantern-quay-e80",
+      "models": [
+        "prop/brinecove/props-lantern-quay-e80"
+      ]
+    },
+    "object/brinecove/props-lantern-quay-w140": {
+      "groups": [
+        "SM_BC_PropsLanternQuayW140"
+      ],
+      "id": "object/brinecove/props-lantern-quay-w140",
+      "model": "prop/brinecove/props-lantern-quay-w140",
+      "models": [
+        "prop/brinecove/props-lantern-quay-w140"
+      ]
+    },
+    "object/brinecove/props-lantern-quay-w184": {
+      "groups": [
+        "SM_BC_PropsLanternQuayW184"
+      ],
+      "id": "object/brinecove/props-lantern-quay-w184",
+      "model": "prop/brinecove/props-lantern-quay-w184",
+      "models": [
+        "prop/brinecove/props-lantern-quay-w184"
+      ]
+    },
+    "object/brinecove/props-lantern-quay-w228": {
+      "groups": [
+        "SM_BC_PropsLanternQuayW228"
+      ],
+      "id": "object/brinecove/props-lantern-quay-w228",
+      "model": "prop/brinecove/props-lantern-quay-w228",
+      "models": [
+        "prop/brinecove/props-lantern-quay-w228"
+      ]
+    },
+    "object/brinecove/props-lantern-quay-w272": {
+      "groups": [
+        "SM_BC_PropsLanternQuayW272"
+      ],
+      "id": "object/brinecove/props-lantern-quay-w272",
+      "model": "prop/brinecove/props-lantern-quay-w272",
+      "models": [
+        "prop/brinecove/props-lantern-quay-w272"
+      ]
+    },
+    "object/brinecove/props-lantern-quay-w316": {
+      "groups": [
+        "SM_BC_PropsLanternQuayW316"
+      ],
+      "id": "object/brinecove/props-lantern-quay-w316",
+      "model": "prop/brinecove/props-lantern-quay-w316",
+      "models": [
+        "prop/brinecove/props-lantern-quay-w316"
+      ]
+    },
+    "object/brinecove/props-lantern-quay-w360": {
+      "groups": [
+        "SM_BC_PropsLanternQuayW360"
+      ],
+      "id": "object/brinecove/props-lantern-quay-w360",
+      "model": "prop/brinecove/props-lantern-quay-w360",
+      "models": [
+        "prop/brinecove/props-lantern-quay-w360"
+      ]
+    },
+    "object/brinecove/props-lantern-quay-w52": {
+      "groups": [
+        "SM_BC_PropsLanternQuayW52"
+      ],
+      "id": "object/brinecove/props-lantern-quay-w52",
+      "model": "prop/brinecove/props-lantern-quay-w52",
+      "models": [
+        "prop/brinecove/props-lantern-quay-w52"
+      ]
+    },
+    "object/brinecove/props-lantern-quay-w96": {
+      "groups": [
+        "SM_BC_PropsLanternQuayW96"
+      ],
+      "id": "object/brinecove/props-lantern-quay-w96",
+      "model": "prop/brinecove/props-lantern-quay-w96",
+      "models": [
+        "prop/brinecove/props-lantern-quay-w96"
+      ]
+    },
+    "object/brinecove/props-lantern-upper-e100": {
+      "groups": [
+        "SM_BC_PropsLanternUpperE100"
+      ],
+      "id": "object/brinecove/props-lantern-upper-e100",
+      "model": "prop/brinecove/props-lantern-upper-e100",
+      "models": [
+        "prop/brinecove/props-lantern-upper-e100"
+      ]
+    },
+    "object/brinecove/props-lantern-upper-e140": {
+      "groups": [
+        "SM_BC_PropsLanternUpperE140"
+      ],
+      "id": "object/brinecove/props-lantern-upper-e140",
+      "model": "prop/brinecove/props-lantern-upper-e140",
+      "models": [
+        "prop/brinecove/props-lantern-upper-e140"
+      ]
+    },
+    "object/brinecove/props-lantern-upper-e180": {
+      "groups": [
+        "SM_BC_PropsLanternUpperE180"
+      ],
+      "id": "object/brinecove/props-lantern-upper-e180",
+      "model": "prop/brinecove/props-lantern-upper-e180",
+      "models": [
+        "prop/brinecove/props-lantern-upper-e180"
+      ]
+    },
+    "object/brinecove/props-lantern-upper-e20": {
+      "groups": [
+        "SM_BC_PropsLanternUpperE20"
+      ],
+      "id": "object/brinecove/props-lantern-upper-e20",
+      "model": "prop/brinecove/props-lantern-upper-e20",
+      "models": [
+        "prop/brinecove/props-lantern-upper-e20"
+      ]
+    },
+    "object/brinecove/props-lantern-upper-e220": {
+      "groups": [
+        "SM_BC_PropsLanternUpperE220"
+      ],
+      "id": "object/brinecove/props-lantern-upper-e220",
+      "model": "prop/brinecove/props-lantern-upper-e220",
+      "models": [
+        "prop/brinecove/props-lantern-upper-e220"
+      ]
+    },
+    "object/brinecove/props-lantern-upper-e260": {
+      "groups": [
+        "SM_BC_PropsLanternUpperE260"
+      ],
+      "id": "object/brinecove/props-lantern-upper-e260",
+      "model": "prop/brinecove/props-lantern-upper-e260",
+      "models": [
+        "prop/brinecove/props-lantern-upper-e260"
+      ]
+    },
+    "object/brinecove/props-lantern-upper-e300": {
+      "groups": [
+        "SM_BC_PropsLanternUpperE300"
+      ],
+      "id": "object/brinecove/props-lantern-upper-e300",
+      "model": "prop/brinecove/props-lantern-upper-e300",
+      "models": [
+        "prop/brinecove/props-lantern-upper-e300"
+      ]
+    },
+    "object/brinecove/props-lantern-upper-e60": {
+      "groups": [
+        "SM_BC_PropsLanternUpperE60"
+      ],
+      "id": "object/brinecove/props-lantern-upper-e60",
+      "model": "prop/brinecove/props-lantern-upper-e60",
+      "models": [
+        "prop/brinecove/props-lantern-upper-e60"
+      ]
+    },
+    "object/brinecove/props-lantern-upper-w100": {
+      "groups": [
+        "SM_BC_PropsLanternUpperW100"
+      ],
+      "id": "object/brinecove/props-lantern-upper-w100",
+      "model": "prop/brinecove/props-lantern-upper-w100",
+      "models": [
+        "prop/brinecove/props-lantern-upper-w100"
+      ]
+    },
+    "object/brinecove/props-lantern-upper-w140": {
+      "groups": [
+        "SM_BC_PropsLanternUpperW140"
+      ],
+      "id": "object/brinecove/props-lantern-upper-w140",
+      "model": "prop/brinecove/props-lantern-upper-w140",
+      "models": [
+        "prop/brinecove/props-lantern-upper-w140"
+      ]
+    },
+    "object/brinecove/props-lantern-upper-w180": {
+      "groups": [
+        "SM_BC_PropsLanternUpperW180"
+      ],
+      "id": "object/brinecove/props-lantern-upper-w180",
+      "model": "prop/brinecove/props-lantern-upper-w180",
+      "models": [
+        "prop/brinecove/props-lantern-upper-w180"
+      ]
+    },
+    "object/brinecove/props-lantern-upper-w20": {
+      "groups": [
+        "SM_BC_PropsLanternUpperW20"
+      ],
+      "id": "object/brinecove/props-lantern-upper-w20",
+      "model": "prop/brinecove/props-lantern-upper-w20",
+      "models": [
+        "prop/brinecove/props-lantern-upper-w20"
+      ]
+    },
+    "object/brinecove/props-lantern-upper-w220": {
+      "groups": [
+        "SM_BC_PropsLanternUpperW220"
+      ],
+      "id": "object/brinecove/props-lantern-upper-w220",
+      "model": "prop/brinecove/props-lantern-upper-w220",
+      "models": [
+        "prop/brinecove/props-lantern-upper-w220"
+      ]
+    },
+    "object/brinecove/props-lantern-upper-w260": {
+      "groups": [
+        "SM_BC_PropsLanternUpperW260"
+      ],
+      "id": "object/brinecove/props-lantern-upper-w260",
+      "model": "prop/brinecove/props-lantern-upper-w260",
+      "models": [
+        "prop/brinecove/props-lantern-upper-w260"
+      ]
+    },
+    "object/brinecove/props-lantern-upper-w300": {
+      "groups": [
+        "SM_BC_PropsLanternUpperW300"
+      ],
+      "id": "object/brinecove/props-lantern-upper-w300",
+      "model": "prop/brinecove/props-lantern-upper-w300",
+      "models": [
+        "prop/brinecove/props-lantern-upper-w300"
+      ]
+    },
+    "object/brinecove/props-lantern-upper-w60": {
+      "groups": [
+        "SM_BC_PropsLanternUpperW60"
+      ],
+      "id": "object/brinecove/props-lantern-upper-w60",
+      "model": "prop/brinecove/props-lantern-upper-w60",
+      "models": [
+        "prop/brinecove/props-lantern-upper-w60"
+      ]
+    },
     "object/brinecove/props-potted-palm-e120": {
       "groups": [
         "SM_BC_PropsPottedPalmE120",

@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_PropsLanternQuayE36: the props lantern quay e36, cut from the fused tile(s) Props_4_4 (44 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/brinecove/props-lantern-quay-e36"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/brinecove/props-lantern-quay-e36"
+references = ["adopted/brinecove/materials"]
+
+[[sources]]
+path = "src/SM_BC_PropsLanternQuayE36.glb"
+sha256 = "237b278dd000890725e68049bd70ee7c388f22403c0db87d5b079f3b927c0d15"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Brinecove/Materials/MI_BC_lantern", "/Game/Brinecove/Materials/MI_BC_metal"]
+triangles = 44
+collision = "complex"
+full_precision_uvs = true
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_PropsLanternQuayE36"

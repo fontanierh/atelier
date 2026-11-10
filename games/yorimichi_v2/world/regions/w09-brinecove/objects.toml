@@ -2016,6 +2016,198 @@ group = "SM_BC_PropsFishBasket7"
 model = "prop/brinecove/props-fish-basket-7"
 about = "the props fish basket 7, cut from its fused tile (52 triangles)"
 
+[[objects]]
+id = "object/brinecove/props-lantern-quay-e124"
+group = "SM_BC_PropsLanternQuayE124"
+model = "prop/brinecove/props-lantern-quay-e124"
+about = "the props lantern quay e124, cut from its fused tile (44 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-lantern-quay-e168"
+group = "SM_BC_PropsLanternQuayE168"
+model = "prop/brinecove/props-lantern-quay-e168"
+about = "the props lantern quay e168, cut from its fused tile (44 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-lantern-quay-e212"
+group = "SM_BC_PropsLanternQuayE212"
+model = "prop/brinecove/props-lantern-quay-e212"
+about = "the props lantern quay e212, cut from its fused tile (44 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-lantern-quay-e256"
+group = "SM_BC_PropsLanternQuayE256"
+model = "prop/brinecove/props-lantern-quay-e256"
+about = "the props lantern quay e256, cut from its fused tile (44 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-lantern-quay-e300"
+group = "SM_BC_PropsLanternQuayE300"
+model = "prop/brinecove/props-lantern-quay-e300"
+about = "the props lantern quay e300, cut from its fused tile (44 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-lantern-quay-e344"
+group = "SM_BC_PropsLanternQuayE344"
+model = "prop/brinecove/props-lantern-quay-e344"
+about = "the props lantern quay e344, cut from its fused tile (44 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-lantern-quay-e36"
+group = "SM_BC_PropsLanternQuayE36"
+model = "prop/brinecove/props-lantern-quay-e36"
+about = "the props lantern quay e36, cut from its fused tile (44 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-lantern-quay-e80"
+group = "SM_BC_PropsLanternQuayE80"
+model = "prop/brinecove/props-lantern-quay-e80"
+about = "the props lantern quay e80, cut from its fused tile (44 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-lantern-quay-w140"
+group = "SM_BC_PropsLanternQuayW140"
+model = "prop/brinecove/props-lantern-quay-w140"
+about = "the props lantern quay w140, cut from its fused tile (44 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-lantern-quay-w184"
+group = "SM_BC_PropsLanternQuayW184"
+model = "prop/brinecove/props-lantern-quay-w184"
+about = "the props lantern quay w184, cut from its fused tile (44 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-lantern-quay-w228"
+group = "SM_BC_PropsLanternQuayW228"
+model = "prop/brinecove/props-lantern-quay-w228"
+about = "the props lantern quay w228, cut from its fused tile (44 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-lantern-quay-w272"
+group = "SM_BC_PropsLanternQuayW272"
+model = "prop/brinecove/props-lantern-quay-w272"
+about = "the props lantern quay w272, cut from its fused tile (44 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-lantern-quay-w316"
+group = "SM_BC_PropsLanternQuayW316"
+model = "prop/brinecove/props-lantern-quay-w316"
+about = "the props lantern quay w316, cut from its fused tile (44 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-lantern-quay-w360"
+group = "SM_BC_PropsLanternQuayW360"
+model = "prop/brinecove/props-lantern-quay-w360"
+about = "the props lantern quay w360, cut from its fused tile (44 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-lantern-quay-w52"
+group = "SM_BC_PropsLanternQuayW52"
+model = "prop/brinecove/props-lantern-quay-w52"
+about = "the props lantern quay w52, cut from its fused tile (44 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-lantern-quay-w96"
+group = "SM_BC_PropsLanternQuayW96"
+model = "prop/brinecove/props-lantern-quay-w96"
+about = "the props lantern quay w96, cut from its fused tile (44 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-lantern-upper-e100"
+group = "SM_BC_PropsLanternUpperE100"
+model = "prop/brinecove/props-lantern-upper-e100"
+about = "the props lantern upper e100, cut from its fused tile (44 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-lantern-upper-e140"
+group = "SM_BC_PropsLanternUpperE140"
+model = "prop/brinecove/props-lantern-upper-e140"
+about = "the props lantern upper e140, cut from its fused tile (44 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-lantern-upper-e180"
+group = "SM_BC_PropsLanternUpperE180"
+model = "prop/brinecove/props-lantern-upper-e180"
+about = "the props lantern upper e180, cut from its fused tile (44 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-lantern-upper-e20"
+group = "SM_BC_PropsLanternUpperE20"
+model = "prop/brinecove/props-lantern-upper-e20"
+about = "the props lantern upper e20, cut from its fused tile (44 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-lantern-upper-e220"
+group = "SM_BC_PropsLanternUpperE220"
+model = "prop/brinecove/props-lantern-upper-e220"
+about = "the props lantern upper e220, cut from its fused tile (44 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-lantern-upper-e260"
+group = "SM_BC_PropsLanternUpperE260"
+model = "prop/brinecove/props-lantern-upper-e260"
+about = "the props lantern upper e260, cut from its fused tile (44 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-lantern-upper-e300"
+group = "SM_BC_PropsLanternUpperE300"
+model = "prop/brinecove/props-lantern-upper-e300"
+about = "the props lantern upper e300, cut from its fused tile (44 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-lantern-upper-e60"
+group = "SM_BC_PropsLanternUpperE60"
+model = "prop/brinecove/props-lantern-upper-e60"
+about = "the props lantern upper e60, cut from its fused tile (44 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-lantern-upper-w100"
+group = "SM_BC_PropsLanternUpperW100"
+model = "prop/brinecove/props-lantern-upper-w100"
+about = "the props lantern upper w100, cut from its fused tile (44 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-lantern-upper-w140"
+group = "SM_BC_PropsLanternUpperW140"
+model = "prop/brinecove/props-lantern-upper-w140"
+about = "the props lantern upper w140, cut from its fused tile (44 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-lantern-upper-w180"
+group = "SM_BC_PropsLanternUpperW180"
+model = "prop/brinecove/props-lantern-upper-w180"
+about = "the props lantern upper w180, cut from its fused tile (44 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-lantern-upper-w20"
+group = "SM_BC_PropsLanternUpperW20"
+model = "prop/brinecove/props-lantern-upper-w20"
+about = "the props lantern upper w20, cut from its fused tile (44 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-lantern-upper-w220"
+group = "SM_BC_PropsLanternUpperW220"
+model = "prop/brinecove/props-lantern-upper-w220"
+about = "the props lantern upper w220, cut from its fused tile (44 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-lantern-upper-w260"
+group = "SM_BC_PropsLanternUpperW260"
+model = "prop/brinecove/props-lantern-upper-w260"
+about = "the props lantern upper w260, cut from its fused tile (44 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-lantern-upper-w300"
+group = "SM_BC_PropsLanternUpperW300"
+model = "prop/brinecove/props-lantern-upper-w300"
+about = "the props lantern upper w300, cut from its fused tile (44 triangles)"
+
+[[objects]]
+id = "object/brinecove/props-lantern-upper-w60"
+group = "SM_BC_PropsLanternUpperW60"
+model = "prop/brinecove/props-lantern-upper-w60"
+about = "the props lantern upper w60, cut from its fused tile (44 triangles)"
+
 # --- Generated by tools/migrate/towns.py: every other runtime group of the region (rerun to regenerate) ---
 
 [[objects]]
