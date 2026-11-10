@@ -978,7 +978,9 @@
    "helpers": [],
    "fit": "direct",
    "reason": "No texture is built by the generator; the Picture parameter is a runtime render target, so the read-back checks the graph and defaults only. The EyeAdaptationInverse pin name depends on the engine version.",
-   "reads": []
+   "reads": [],
+   "planned_record": "master/racing/tv",
+   "status": "planned (family racing)"
   },
   {
    "package": "/Game/FX/M_FX_Additive",
@@ -1033,7 +1035,9 @@
    "reason": "Unlit additive sprite master; the Sprite texture is the only input.",
    "reads": [
     "/Game/FX/Textures/T_FX_Glow"
-   ]
+   ],
+   "planned_record": "master/fx/additive",
+   "status": "planned (family fx)"
   },
   {
    "package": "/Game/FX/M_FX_Dust",
@@ -1074,7 +1078,9 @@
    "reason": "Translucent branch: opacity = saturate(mask) (import_combat_fx.py:66-67).",
    "reads": [
     "/Game/FX/Textures/T_FX_Dust"
-   ]
+   ],
+   "planned_record": "master/fx/dust",
+   "status": "planned (family fx)"
   },
   {
    "package": "/Game/FX/M_FX_Trail",
@@ -1110,7 +1116,9 @@
    "reason": "Vertex colour x vertex alpha x streak texture x Intensity; no helper. Module-body builder (wrap as a function).",
    "reads": [
     "/Game/FX/Textures/T_FX_Trail"
-   ]
+   ],
+   "planned_record": "master/fx/trail",
+   "status": "planned (family fx)"
   },
   {
    "package": "/Game/MegaPark/Materials/M_RetailOpaque",
@@ -1176,7 +1184,9 @@
     "/Game/MegaPark/Textures/T_DefaultLinear",
     "/Game/MegaPark/Textures/T_DefaultBlack",
     "/Game/MegaPark/Textures/T_DefaultNormal"
-   ]
+   ],
+   "planned_record": "master/megapark/opaque",
+   "status": "planned (family megapark)"
   },
   {
    "package": "/Game/MegaPark/Materials/M_RetailMasked",
@@ -1242,7 +1252,9 @@
     "/Game/MegaPark/Textures/T_DefaultLinear",
     "/Game/MegaPark/Textures/T_DefaultBlack",
     "/Game/MegaPark/Textures/T_DefaultNormal"
-   ]
+   ],
+   "planned_record": "master/megapark/masked",
+   "status": "planned (family megapark)"
   },
   {
    "package": "/Game/MegaPark/Materials/M_RetailTranslucent",
@@ -1308,7 +1320,9 @@
     "/Game/MegaPark/Textures/T_DefaultLinear",
     "/Game/MegaPark/Textures/T_DefaultBlack",
     "/Game/MegaPark/Textures/T_DefaultNormal"
-   ]
+   ],
+   "planned_record": "master/megapark/translucent",
+   "status": "planned (family megapark)"
   },
   {
    "package": "/Game/Japan/Hidamari/Materials/M_HDCity",

@@ -46,13 +46,13 @@ Unreal change); **not recoverable** = none of the 23 is. Every texture input bel
 | `/Game/SkatePark/Board/M_BoardDissolve` | `master/skatepark/board-dissolve` planned (family skatepark_board) | `unreal/Scripts/board_dissolve_material.py`:1-95 (module body) | none (constants and Dissolve scalar) | direct |
 | `/Game/SwordCamp/Materials/M_SwordCamp` | `adopted/swordcamp/materials` | `unreal/Scripts/import_swordcamp.py`:46-113 (build_material) | T_SwordCampAtlas (texture/swordcamp/atlas); helper atmosphere.py | needs helper |
 | `/Game/SwordCamp/Materials/M_RoninBody` | `adopted/swordcamp/materials` | `unreal/Scripts/import_swordcamp.py`:116-171 (build_ronin_body_material) | T_SwordCampAtlas (texture/swordcamp/atlas) | direct |
-| `/Game/Racing/M_RacingTv` | `adopted/racing` | `unreal/Scripts/racing_tv_material.py`:1-57 (module body) | Black (engine); Picture is a runtime render target | direct |
-| `/Game/FX/M_FX_Additive` | `adopted/fx` | `unreal/Scripts/import_combat_fx.py`:52-70 (sprite_material) | T_FX_Glow (texture/fx/glow) | direct |
-| `/Game/FX/M_FX_Dust` | `adopted/fx` | `unreal/Scripts/import_combat_fx.py`:52-70 (sprite_material) | T_FX_Dust (texture/fx/dust) | direct |
-| `/Game/FX/M_FX_Trail` | `adopted/fx` | `unreal/Scripts/import_combat_fx.py`:87-96 (module body) | T_FX_Trail (texture/fx/trail) | direct |
-| `/Game/MegaPark/Materials/M_RetailOpaque` | `adopted/megapark/base-materials` | `unreal/Scripts/import_megapark.py`:68-163 (material, alpha 0) | T_DefaultWhite, T_DefaultLinear, T_DefaultBlack, T_DefaultNormal (adopted/megapark/shared-textures-common) | direct |
-| `/Game/MegaPark/Materials/M_RetailMasked` | `adopted/megapark/base-materials` | `unreal/Scripts/import_megapark.py`:68-163 (material, alpha 1) | as above | direct |
-| `/Game/MegaPark/Materials/M_RetailTranslucent` | `adopted/megapark/base-materials` | `unreal/Scripts/import_megapark.py`:68-163 (material, alpha 2) | as above | direct |
+| `/Game/Racing/M_RacingTv` | `adopted/racing` (planned `master/racing/tv`, planned (family racing)) | `unreal/Scripts/racing_tv_material.py`:1-57 (module body) | Black (engine); Picture is a runtime render target | direct |
+| `/Game/FX/M_FX_Additive` | `adopted/fx` (planned `master/fx/additive`, planned (family fx)) | `unreal/Scripts/import_combat_fx.py`:52-70 (sprite_material) | T_FX_Glow (texture/fx/glow) | direct |
+| `/Game/FX/M_FX_Dust` | `adopted/fx` (planned `master/fx/dust`, planned (family fx)) | `unreal/Scripts/import_combat_fx.py`:52-70 (sprite_material) | T_FX_Dust (texture/fx/dust) | direct |
+| `/Game/FX/M_FX_Trail` | `adopted/fx` (planned `master/fx/trail`, planned (family fx)) | `unreal/Scripts/import_combat_fx.py`:87-96 (module body) | T_FX_Trail (texture/fx/trail) | direct |
+| `/Game/MegaPark/Materials/M_RetailOpaque` | `adopted/megapark/base-materials` (planned `master/megapark/opaque`, planned (family megapark)) | `unreal/Scripts/import_megapark.py`:68-163 (material, alpha 0) | T_DefaultWhite, T_DefaultLinear, T_DefaultBlack, T_DefaultNormal (adopted/megapark/shared-textures-common) | direct |
+| `/Game/MegaPark/Materials/M_RetailMasked` | `adopted/megapark/base-materials` (planned `master/megapark/masked`, planned (family megapark)) | `unreal/Scripts/import_megapark.py`:68-163 (material, alpha 1) | as above | direct |
+| `/Game/MegaPark/Materials/M_RetailTranslucent` | `adopted/megapark/base-materials` (planned `master/megapark/translucent`, planned (family megapark)) | `unreal/Scripts/import_megapark.py`:68-163 (material, alpha 2) | as above | direct |
 | `/Game/Japan/Hidamari/Materials/M_HDCity` | `adopted/japan/hidamari/generator` | `unreal/Scripts/city_material.py`:42-95 (parent) | T_HD_plaster (adopted/japan/hidamari/surface-plaster); helper atmosphere.py | needs helper |
 
 Counts: **21 direct, 2 needs helper, 0 not recoverable.**
