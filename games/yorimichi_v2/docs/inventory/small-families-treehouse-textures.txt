@@ -1,0 +1,3 @@
+/Game/Japan/Treehouse/Textures/T_TH_flat
+/Game/Japan/Treehouse/Textures/T_TH_glass
+/Game/Japan/Treehouse/Textures/T_TH_rope

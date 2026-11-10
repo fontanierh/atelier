@@ -946,55 +946,39 @@ inside another asset's source folder. A loose filesystem glob can include stale/
 `verified.json` and `objects.saved.json` distinguish imported packages from saved placements. Keep changes to this
 page and the main inventory in the same content PR; do not mark a family complete from a plan or provisional receipt.
 
-## Small families: source closure plan (planned, not imported)
+## Small families: source closure plan (classified; nothing imported)
 
 The ten smaller families of "Source closure still to classify" (90 packages in 25 adopted records) are classified by
 `tools/migrate/small_families.py`. Its plan mode reads the committed records, the hydrated bytes (each file matches its
-`verified.json` sha256) and the donor. Nothing is imported, claimed or written. Counts are pinned by
+`verified.json` sha256) and the donor. Nothing is imported. The claim (`--claim TASK`) exists for the hippodrome loose meshes and the plaza textures and has not been run. Counts are pinned by
 `tests/test_small_families.py`.
 
 ### Hippodrome (3 records, 23 packages)
 
-Plan: `games/yorimichi_v2/tools/migrate/small_families.py` (plan mode only; `--claim` is refused). Donor checkout read
-only (the donor checkout, commit `7eec0f98dd`). Evidence and verdicts for the three records:
+Plan: `games/yorimichi_v2/tools/migrate/small_families.py`. Plan mode writes nothing. `--paths` lists the claim paths, lock paths and scopes. `--claim TASK` is the one journaled write, implemented for the claimable rows (the loose meshes and the plaza textures). Donor read only, from the donor checkout at commit `7eec0f98dd`.
 
-- `adopted/hippodrome/loose_files` (4 static meshes): the donor writes these GLBs in `world/regions/hippodrome/build.py`
-  and imports them in `unreal/Scripts/import_hippodrome.py:161-177`. The four GLBs are in the donor
-  (`build/yorimichi/hippodrome/region/glb/`) with the same bytes as the exports. The static-mesh importer fits: its
-  precedent is `prop/hippodrome/lane`, whose committed `src/SM_HD_Lane.glb` (sha256 `1b1558f9…`) equals the donor region
-  GLB. Pins (sha256 of the donor GLB, triangles from `build/yorimichi/hippodrome/import-report.json`):
+- `adopted/hippodrome/loose_files` (4 static meshes): the donor writes these GLBs in `world/regions/hippodrome/build.py` and imports them in `unreal/Scripts/import_hippodrome.py:161-177`. The donor region GLBs have the same bytes as the exports, and the static-mesh importer fits: its precedent is `prop/hippodrome/lane`, whose committed `src/SM_HD_Lane.glb` equals the donor region GLB (sha256 `1b1558f9…`). Pins (sha256 of the donor GLB; triangles from `build/yorimichi/hippodrome/import-report.json`):
 
-  | Package | GLB sha256 | Triangles | GLB material |
-  |---|---|---:|---|
-  | `SM_HD_FinishPost` | `123ab4602df5111d…` | 5006 | `HD_FinishPost` |
-  | `SM_HD_Grandstand` | `92add5b3492eb839…` | 24940 | `HD_Grandstand` |
-  | `SM_HD_JudgesTower` | `ebfe7c40abbd75f5…` | 11779 | `HD_JudgesTower` |
-  | `SM_HD_ToteBoard` | `8086362ef6c65c64…` | 11859 | `HD_ToteBoard` |
+  | Package | GLB sha256 | Triangles | GLB material | Claimed record |
+  |---|---|---:|---|---|
+  | `SM_HD_FinishPost` | `123ab4602df5111d…` | 5006 | `HD_FinishPost` | `prop/hippodrome/finish-post` |
+  | `SM_HD_Grandstand` | `92add5b3492eb839…` | 24940 | `HD_Grandstand` | `prop/hippodrome/grandstand` |
+  | `SM_HD_JudgesTower` | `ebfe7c40abbd75f5…` | 11779 | `HD_JudgesTower` | `prop/hippodrome/judges-tower` |
+  | `SM_HD_ToteBoard` | `8086362ef6c65c64…` | 11859 | `HD_ToteBoard` | `prop/hippodrome/tote-board` |
 
-  The loose packages' bytes name `M_HD_Structure` as their master, so that is the slot material of the recipe. Status:
-  **planned**. The four `prop/hippodrome/<part>` records would need the GLBs copied into `src/` (not done here) and a
-  claimed native import. The object records `object/hippodrome/{finish-post,grandstand,judges-tower,tote-board}` still
-  reference this record, so nothing changes until that import is accepted.
-- `adopted/hippodrome/materials` (5 material masters): `import_hippodrome.py:32-33` (SURFACES: grass, dirt, stone, rail)
-  and `:60-61` (`M_HD_Structure`). `T_Dirt` and `T_Grass` are owned by `texture/hippodrome/*`. Status: **blocked**: kind
-  `material` has no importer, so the graph and parameters need a native read before anything can be recorded.
-- `adopted/hippodrome/meshes` (14 packages): the Interchange sub-objects of the same four GLBs (`import_hippodrome.py:102-103`
-  puts each GLB in `Meshes/<name>`), with the embedded `Color_<uuid>` textures. The loose meshes reference them (18 files
-  under `unreal/Content` name `Hippodrome/Meshes/`). Status: **blocked** until a loose re-import is accepted and a
-  referencer check shows nothing else uses them.
+  The loose packages reference `M_HD_Structure`, the recipe's slot material. Status: **planned, claimable**. The claim writes each record in lane's form (`static-mesh`, slot `M_HD_Structure`, `collision = "complex"`), copies its GLB into `src/` with the owner-published license, moves the package out of `loose_files` (which is deleted with its `verified.json`), and rewrites the four `object/hippodrome/*` records to reference the new records. The bytes are not imported by the claim; the static-mesh import runs after it.
+- `adopted/hippodrome/materials` (5 material masters): `import_hippodrome.py:32-33` (SURFACES: grass, dirt, stone, rail) and `:60-61` (`M_HD_Structure`). `T_Dirt` and `T_Grass` are owned by `texture/hippodrome/*`. Status: **need-read**, classified as generator-built masters. They keep their editor-authority record; the saved packages are the only byte-level originals of this editor-scripted generator, as for the Japan instances. Not yet read.
+- `adopted/hippodrome/meshes` (14 packages): the Interchange sub-objects of the same four GLBs (`import_hippodrome.py:102-103` puts each GLB in `Meshes/<name>`), with the embedded `Color_<uuid>` textures. The loose meshes reference them (18 files under `unreal/Content` name `Hippodrome/Meshes/`). Status: **blocked** until the loose re-import is accepted and a referencer check shows nothing else uses them.
 
-Native reads still needed (read-only; each needs an editor and a clean hydrate). The list file is
-`docs/inventory/small-families-hippodrome-materials.txt`; the command is the Japan form with `V2_REPORT_PACKAGES` set to
-that list, `V2_REPORT_OUT` under `build/yorimichi_v2/reports/`, and `editor.run` as the step.
+Native reads still needed (read-only; each needs an editor and a clean hydrate). Each uses a list file with `V2_REPORT_PACKAGES` set to the list, `V2_REPORT_OUT` under `build/yorimichi_v2/reports/`, and the `editor.run` step:
 
-`report_materials.py` reads material instances; it may not read the masters (`M_HD_*`), so those rows need a master
-reader first. No static-mesh reader exists in this tree for the loose meshes or the `Meshes/` sub-objects.
+- Materials: `docs/inventory/small-families-hippodrome-materials.txt` through `report_materials.py`. It reads material instances; the masters may need it to read them too, which is the read's first check.
+- Meshes: `docs/inventory/small-families-hippodrome-meshes.txt` (the 4 loose meshes and the 14 sub-objects) through `unreal/Scripts/report_meshes.py`.
 
-Blockers: the static mesh import (not run, claim needed); master materials have no importer; the `Meshes/` sub-objects
-need a referencer proof before any retirement.
+Blockers: the static-mesh import and the claim are not run; the Interchange sub-objects need the referencer proof; the masters need their read.
 
 - `adopted/hippodrome/loose_files`: generated static mesh (GLB, region/glb). Evidence: donor world/regions/hippodrome/build.py via unreal/Scripts/import_hippodrome.py:161-177. Status: **planned**. static-mesh recipe needs the GLB copied to src/ and a native import; object records still reference this record
-- `adopted/hippodrome/materials`: generator master materials M_HD_Structure and M_HD_<surface>. Evidence: import_hippodrome.py:32-33 (SURFACES), :60-61 (M_HD_Structure). Status: **blocked**. no importer for material masters (kind material has no recipe); parameters need a native read
+- `adopted/hippodrome/materials`: generator master materials M_HD_Structure and M_HD_<surface>. Evidence: import_hippodrome.py:32-33 (SURFACES), :60-61 (M_HD_Structure). Status: **need-read**. generator-built masters; not yet read. Classified, not blocked: a generator-built master keeps its editor-authority record, and its saved package is the only byte-level original of an editor-scripted generator; read-confirmed once the native read runs.
 - `adopted/hippodrome/meshes`: Interchange sub-objects of the loose GLB imports. Evidence: import_hippodrome.py:102-103 (Meshes/<name> folder per GLB). Status: **blocked**. referenced by the four loose meshes (18 files under unreal/Content name Hippodrome/Meshes/); retire only after a loose re-import
 
 | Package | Record | Status | Inputs (owner records) | Native read still needed |
@@ -1003,11 +987,11 @@ need a referencer proof before any retirement.
 | `SM_HD_Grandstand` | `hippodrome/loose_files` | planned | Hippodrome/Meshes/SM_HD_Grandstand/HD_Grandstand, Hippodrome/Meshes/SM_HD_Grandstand/HD_Grandstand | no static-mesh reader in this tree |
 | `SM_HD_JudgesTower` | `hippodrome/loose_files` | planned | Hippodrome/Meshes/SM_HD_JudgesTower/HD_JudgesTower, Hippodrome/Meshes/SM_HD_JudgesTower/HD_JudgesTower | no static-mesh reader in this tree |
 | `SM_HD_ToteBoard` | `hippodrome/loose_files` | planned | Hippodrome/Meshes/SM_HD_ToteBoard/HD_ToteBoard, Hippodrome/Meshes/SM_HD_ToteBoard/HD_ToteBoard | no static-mesh reader in this tree |
-| `M_HD_Dirt` | `hippodrome/materials` | blocked | Hippodrome/Textures/T_Dirt | `report_materials` (material list) |
-| `M_HD_Grass` | `hippodrome/materials` | blocked | Hippodrome/Textures/T_Grass | `report_materials` (material list) |
-| `M_HD_Rail` | `hippodrome/materials` | blocked | - | `report_materials` (material list) |
-| `M_HD_Stone` | `hippodrome/materials` | blocked | - | `report_materials` (material list) |
-| `M_HD_Structure` | `hippodrome/materials` | blocked | - | `report_materials` (material list) |
+| `M_HD_Dirt` | `hippodrome/materials` | need-read | Hippodrome/Textures/T_Dirt | `report_materials` (material list) |
+| `M_HD_Grass` | `hippodrome/materials` | need-read | Hippodrome/Textures/T_Grass | `report_materials` (material list) |
+| `M_HD_Rail` | `hippodrome/materials` | need-read | - | `report_materials` (material list) |
+| `M_HD_Stone` | `hippodrome/materials` | need-read | - | `report_materials` (material list) |
+| `M_HD_Structure` | `hippodrome/materials` | need-read | - | `report_materials` (material list) |
 | `Color_c3f66034-a443-44e1-ac12-bc4a9a617bb9` | `hippodrome/meshes` | blocked | Hippodrome/Meshes/SM_HD_FinishPost | no static-mesh reader in this tree |
 | `HD_FinishPost` | `hippodrome/meshes` | blocked | Hippodrome/Materials/M_HD_Structure, Hippodrome/Materials/M_HD_Structure, Hippodrome/Meshes/SM_HD_FinishPost ... | no static-mesh reader in this tree |
 | `Color_d791cab5-3476-4925-85c1-f4131c7af4b8` | `hippodrome/meshes` | blocked | Hippodrome/Meshes/SM_HD_Grandstand | no static-mesh reader in this tree |
@@ -1025,53 +1009,38 @@ need a referencer proof before any retirement.
 
 ### Tree house surface materials (5 records, 8 packages)
 
-Donor evidence: `unreal/Scripts/import_treehouse.py:3-4` turns each `build/yorimichi/treehouse/textures/<slug>.png`
-(written by `tools/treehouse_textures.py finish`) into `T_TH_<slug>`, and gives `M_TreeHouse` the village look; `:10` says
-`MI_TH_trunk` is the bark of `TH_Trunks`. The import is a texture import of a generated PNG, so the texture importer fits.
-Byte evidence: the four `T_TH_*` packages and their `MI_TH_*` instances reference `M_TreeHouse` and `M_TH_Light`
-(owned by `adopted/japan/treehouse/generator`) and the textures named below.
+Donor evidence: `unreal/Scripts/import_treehouse.py:3-4` turns each `build/yorimichi/treehouse/textures/<slug>.png` (written by `tools/treehouse_textures.py finish`) into `T_TH_<slug>`. `:39-46` sets each texture's sRGB flag, its max size 1024 and its WORLD LOD group, and `:73-75` builds the instance graph with the parameters `Tex`, `Gain` and `Glow`. `:10` says `MI_TH_trunk` is the bark of `TH_Trunks`.
 
-Donor PNG pins (sha256, from `build/yorimichi/treehouse/textures/`):
+Donor PNG pins (sha256, `build/yorimichi/treehouse/textures/`):
 
 | Texture package | Donor PNG | sha256 | Note |
 |---|---|---|---|
 | `T_TH_flat` | `flat.png` | `10b379bb6586c9e9…` | same bytes as `glass.png` |
-| `T_TH_glass` | `glass.png` | `10b379bb6586c9e9…` | `T_TH_glass` is 8303 bytes, `T_TH_flat` 8297: the 6-byte difference is the name length, so the two imports are probably identical, to be confirmed by a native read |
+| `T_TH_glass` | `glass.png` | `10b379bb6586c9e9…` | `T_TH_glass` is 8303 bytes, `T_TH_flat` 8297; the 6-byte difference is probably the name length |
 | `T_TH_rope` | `rope.png` | `13d328aea5ed6186…` | |
-| `T_TH_bark` | `bark.png` | `89d2715329c84685…` | owned by `adopted/japan/treehouse/surface-bark`, not by these records |
+| `T_TH_bark` | `bark.png` | `89d2715329c84685…` | owned by `adopted/japan/treehouse/surface-bark`, not these records |
 
-Status per record:
-- `surface-flat` (`MI_TH_flat`, `T_TH_flat`), `surface-glass` (`MI_TH_glass`, `T_TH_glass`), `surface-rope`
-  (`MI_TH_rope`, `T_TH_rope`): **planned**. Each texture takes a texture recipe with the donor PNG committed under `src/`
-  (not done here), and each instance a material-instance recipe with `M_TreeHouse` as parent and `Tex` set to its texture.
-  Nothing is imported.
-- `surface-pane` (`MI_TH_pane`, parent `M_TH_Light`): **need-read**. The instance has no texture of its own, so its
-  parameters come from a native read of the saved instance.
-- `surface-trunk` (`MI_TH_trunk`, parent `M_TreeHouse`, `T_TH_bark`): **need-read**. Its bark texture is owned by
-  `surface-bark`, which is outside these families, so the input owner is named but not changed here.
+Status: **need-read** for all five records. The texture recipe (`texture` v1) expresses only `srgb` and `compression`. `import_treehouse.py` also sets the max size (1024) and the WORLD LOD group, which the recipe cannot state, so a claim would not reproduce the donor's textures. The texture settings extension comes first; the claim is not written for these rows. The instances `MI_TH_*` have parent `M_TreeHouse` (owned by `adopted/japan/treehouse/generator`) and their parameters need a native read; `surface-pane` (`MI_TH_pane`, parent `M_TH_Light`) and `surface-trunk` (`MI_TH_trunk`, bark from `surface-bark`) are read the same way.
 
-Native reads still needed (read-only; editor and clean hydrate): the material list file
-`docs/inventory/small-families-treehouse-materials.txt` (the five `MI_TH_*` instances) through `report_materials.py`,
-with `V2_REPORT_PACKAGES` set to that list and `V2_REPORT_OUT` under `build/yorimichi_v2/reports/`, run as an `editor.run`
-step in the same form as the Japan read. Texture settings need the same kind of read for the four `T_TH_*` packages.
+Native reads still needed (read-only; editor and clean hydrate): the five `MI_TH_*` instances through `report_materials.py` with `docs/inventory/small-families-treehouse-materials.txt`, `V2_REPORT_OUT` under `build/yorimichi_v2/reports/`, as an `editor.run` step. The four `T_TH_*` textures need `report_textures.py` (cherry-picked from #793) with a list of their packages, to read their sRGB, max size and LOD group, the values the extension must state.
 
-Blockers: no claimed import; `glass` versus `flat` settings to confirm; `T_TH_bark` has an owner outside these records.
+Blockers: the texture settings extension (max size and LOD group are not in the recipe); the glass versus flat setting, which the read confirms; `T_TH_bark` belongs to another record.
 
-- `adopted/japan/treehouse/surface-flat`: generated texture T_TH_flat and MI_TH_flat. Evidence: import_treehouse.py:3-4; build/yorimichi/treehouse/textures/flat.png. Status: **planned**. texture recipe from the donor PNG; the glass PNG has the same sha256 (see the table)
-- `adopted/japan/treehouse/surface-glass`: generated texture T_TH_glass and MI_TH_glass. Evidence: import_treehouse.py:3-4; build/yorimichi/treehouse/textures/glass.png. Status: **planned**. glass.png and flat.png are byte-identical in the donor; the two textures differ in V2 (8297 and 8303 bytes), so the import settings are not yet established
+- `adopted/japan/treehouse/surface-flat`: generated texture T_TH_flat and MI_TH_flat. Evidence: import_treehouse.py:3-4; build/yorimichi/treehouse/textures/flat.png. Status: **need-read**. texture v1 expresses only srgb and compression; import_treehouse.py:44-46 also sets max size 1024 and the WORLD LOD group, so the exact recipe needs a texture settings extension first. The glass PNG has the same sha256
+- `adopted/japan/treehouse/surface-glass`: generated texture T_TH_glass and MI_TH_glass. Evidence: import_treehouse.py:3-4; build/yorimichi/treehouse/textures/glass.png. Status: **need-read**. glass.png and flat.png are byte-identical in the donor; the two textures differ in V2 (8297 and 8303 bytes), so the import settings are not yet established
 - `adopted/japan/treehouse/surface-pane`: generated MI_TH_pane (parent M_TH_Light). Evidence: treehouse generator (adopted/japan/treehouse/generator); parent M_TH_Light. Status: **need-read**. material instance without its own texture; parameters need a native read
-- `adopted/japan/treehouse/surface-rope`: generated texture T_TH_rope and MI_TH_rope. Evidence: import_treehouse.py:3-4; build/yorimichi/treehouse/textures/rope.png. Status: **planned**. the MI parent M_TreeHouse is owned by adopted/japan/treehouse/generator; the import settings are not yet confirmed
+- `adopted/japan/treehouse/surface-rope`: generated texture T_TH_rope and MI_TH_rope. Evidence: import_treehouse.py:3-4; build/yorimichi/treehouse/textures/rope.png. Status: **need-read**. the MI parent M_TreeHouse is owned by adopted/japan/treehouse/generator; the import settings are not yet confirmed
 - `adopted/japan/treehouse/surface-trunk`: generated MI_TH_trunk (bark, RoomCut 0). Evidence: import_treehouse.py:10; texture T_TH_bark owned by adopted/japan/treehouse/surface-bark. Status: **need-read**. material instance; its bark texture is owned elsewhere
 
 | Package | Record | Status | Inputs (owner records) | Native read still needed |
 |---|---|---|---|---|
-| `MI_TH_flat` | `japan/treehouse/surface-flat` | planned | Japan/Treehouse/Materials/M_TreeHouse, Japan/Treehouse/Materials/M_TreeHouse, Japan/Treehouse/Textures/T_TH_flat | `report_materials` (material list) |
-| `T_TH_flat` | `japan/treehouse/surface-flat` | planned | Japan/Treehouse/Textures | no reader in this tree |
-| `MI_TH_glass` | `japan/treehouse/surface-glass` | planned | Japan/Treehouse/Materials/M_TreeHouse, Japan/Treehouse/Materials/M_TreeHouse, Japan/Treehouse/Textures/T_TH_glass | `report_materials` (material list) |
-| `T_TH_glass` | `japan/treehouse/surface-glass` | planned | Japan/Treehouse/Textures | no reader in this tree |
+| `MI_TH_flat` | `japan/treehouse/surface-flat` | need-read | Japan/Treehouse/Materials/M_TreeHouse, Japan/Treehouse/Materials/M_TreeHouse, Japan/Treehouse/Textures/T_TH_flat | `report_materials` (material list) |
+| `T_TH_flat` | `japan/treehouse/surface-flat` | need-read | Japan/Treehouse/Textures | no reader in this tree |
+| `MI_TH_glass` | `japan/treehouse/surface-glass` | need-read | Japan/Treehouse/Materials/M_TreeHouse, Japan/Treehouse/Materials/M_TreeHouse, Japan/Treehouse/Textures/T_TH_glass | `report_materials` (material list) |
+| `T_TH_glass` | `japan/treehouse/surface-glass` | need-read | Japan/Treehouse/Textures | no reader in this tree |
 | `MI_TH_pane` | `japan/treehouse/surface-pane` | need-read | Japan/Treehouse/Materials/M_TH_Light, Japan/Treehouse/Materials/M_TH_Light | `report_materials` (material list) |
-| `MI_TH_rope` | `japan/treehouse/surface-rope` | planned | Japan/Treehouse/Materials/M_TreeHouse, Japan/Treehouse/Materials/M_TreeHouse, Japan/Treehouse/Textures/T_TH_rope | `report_materials` (material list) |
-| `T_TH_rope` | `japan/treehouse/surface-rope` | planned | Japan/Treehouse/Textures | no reader in this tree |
+| `MI_TH_rope` | `japan/treehouse/surface-rope` | need-read | Japan/Treehouse/Materials/M_TreeHouse, Japan/Treehouse/Materials/M_TreeHouse, Japan/Treehouse/Textures/T_TH_rope | `report_materials` (material list) |
+| `T_TH_rope` | `japan/treehouse/surface-rope` | need-read | Japan/Treehouse/Textures | no reader in this tree |
 | `MI_TH_trunk` | `japan/treehouse/surface-trunk` | need-read | Japan/Treehouse/Materials/M_TreeHouse, Japan/Treehouse/Materials/M_TreeHouse, Japan/Treehouse/Textures/T_TH_bark | `report_materials` (material list) |
 
 ### Mega Park materials and standalone map (4 records, 25 packages)
@@ -1150,29 +1119,26 @@ Those textures are owned by the 19 `texture/skatepark/pier-*` records, which are
 names no other package.
 
 Status per record:
-- `skatepark/board` (`M_BoardDissolve`): **blocked**. A material master has no importer in this tree, and its graph has never been read natively. The donor's `build.py` and
-  `unreal/Config/DefaultGame.ini` name it as the board's dissolve material.
-- `skatepark/materials` (seven `M_Pier_*`): **blocked** for the same reason. Their texture inputs are determined (owned by
-  `texture/skatepark/*`), so only the graph read is missing.
+- `skatepark/board` (`M_BoardDissolve`): **need-read**. Classified as generator-built masters (no new recipe kind): each keeps its editor-authority record, and its saved package is the only byte-level original of an editor-scripted generator, as for the Japan instances. Not yet read. The donor's `build.py` and `unreal/Config/DefaultGame.ini` name it as the board's dissolve material.
+- `skatepark/materials` (seven `M_Pier_*`): **need-read**. Classified as generator-built masters (no new recipe kind): each keeps its editor-authority record, and its saved package is the only byte-level original of an editor-scripted generator, as for the Japan instances. Not yet read. Their texture inputs are determined and owned by `texture/skatepark/*`.
 
-Native reads still needed: a read of each master's graph and its texture parameters. No reader for masters or graphs is
-in this tree (`report_materials.py` reads material instances), so the read is a new read-only script, not a command.
+Native reads still needed: `unreal/Scripts/report_materials.py` with `docs/inventory/small-families-skatepark-packages.txt` (the masters may need its master support), `V2_REPORT_OUT` under `build/yorimichi_v2/reports/`, as an `editor.run` step.
 
-Blockers: no importer kind for material masters; no native read of the graphs.
+Blockers: none for classification; the masters are read-confirmed only after that read.
 
-- `adopted/skatepark/board`: generator master M_BoardDissolve. Evidence: board_dissolve_material.py:11-15. Status: **blocked**. no importer for material masters; native read of the graph needed
-- `adopted/skatepark/materials`: generator masters M_Pier_<surface>. Evidence: import_skatepark.py:137-173 (M_Pier_ and T_Pier_ textures). Status: **blocked**. no importer for material masters; their textures are owned by texture/skatepark records
+- `adopted/skatepark/board`: generator master M_BoardDissolve. Evidence: board_dissolve_material.py:11-15. Status: **need-read**. generator-built master; not yet read. Classified, not blocked: a generator-built master keeps its editor-authority record, and its saved package is the only byte-level original of an editor-scripted generator; read-confirmed once the native read runs.
+- `adopted/skatepark/materials`: generator masters M_Pier_<surface>. Evidence: import_skatepark.py:137-173 (M_Pier_ and T_Pier_ textures). Status: **need-read**. generator-built masters; not yet read; their textures are owned by texture/skatepark records. Classified, not blocked: a generator-built master keeps its editor-authority record, and its saved package is the only byte-level original of an editor-scripted generator; read-confirmed once the native read runs.
 
 | Package | Record | Status | Inputs (owner records) | Native read still needed |
 |---|---|---|---|---|
-| `M_BoardDissolve` | `skatepark/board` | blocked | - | `report_materials` (material list) |
-| `M_Pier_basalt` | `skatepark/materials` | blocked | SkatePark/Textures/T_Pier_basalt_albedo, SkatePark/Textures/T_Pier_basalt_normal, SkatePark/Textures/T_Pier_basalt_roughness | `report_materials` (material list) |
-| `M_Pier_ceramic` | `skatepark/materials` | blocked | SkatePark/Textures/T_Pier_ceramic_albedo, SkatePark/Textures/T_Pier_ceramic_normal, SkatePark/Textures/T_Pier_ceramic_roughness | `report_materials` (material list) |
-| `M_Pier_concrete` | `skatepark/materials` | blocked | SkatePark/Textures/T_Pier_concrete_albedo, SkatePark/Textures/T_Pier_concrete_normal, SkatePark/Textures/T_Pier_concrete_roughness | `report_materials` (material list) |
-| `M_Pier_mural` | `skatepark/materials` | blocked | SkatePark/Textures/T_Pier_mural_albedo | `report_materials` (material list) |
-| `M_Pier_painted` | `skatepark/materials` | blocked | SkatePark/Textures/T_Pier_painted_albedo, SkatePark/Textures/T_Pier_painted_normal, SkatePark/Textures/T_Pier_painted_roughness | `report_materials` (material list) |
-| `M_Pier_steel` | `skatepark/materials` | blocked | SkatePark/Textures/T_Pier_steel_albedo, SkatePark/Textures/T_Pier_steel_normal, SkatePark/Textures/T_Pier_steel_roughness | `report_materials` (material list) |
-| `M_Pier_wood` | `skatepark/materials` | blocked | SkatePark/Textures/T_Pier_wood_albedo, SkatePark/Textures/T_Pier_wood_normal, SkatePark/Textures/T_Pier_wood_roughness | `report_materials` (material list) |
+| `M_BoardDissolve` | `skatepark/board` | need-read | - | `report_materials` (material list) |
+| `M_Pier_basalt` | `skatepark/materials` | need-read | SkatePark/Textures/T_Pier_basalt_albedo, SkatePark/Textures/T_Pier_basalt_normal, SkatePark/Textures/T_Pier_basalt_roughness | `report_materials` (material list) |
+| `M_Pier_ceramic` | `skatepark/materials` | need-read | SkatePark/Textures/T_Pier_ceramic_albedo, SkatePark/Textures/T_Pier_ceramic_normal, SkatePark/Textures/T_Pier_ceramic_roughness | `report_materials` (material list) |
+| `M_Pier_concrete` | `skatepark/materials` | need-read | SkatePark/Textures/T_Pier_concrete_albedo, SkatePark/Textures/T_Pier_concrete_normal, SkatePark/Textures/T_Pier_concrete_roughness | `report_materials` (material list) |
+| `M_Pier_mural` | `skatepark/materials` | need-read | SkatePark/Textures/T_Pier_mural_albedo | `report_materials` (material list) |
+| `M_Pier_painted` | `skatepark/materials` | need-read | SkatePark/Textures/T_Pier_painted_albedo, SkatePark/Textures/T_Pier_painted_normal, SkatePark/Textures/T_Pier_painted_roughness | `report_materials` (material list) |
+| `M_Pier_steel` | `skatepark/materials` | need-read | SkatePark/Textures/T_Pier_steel_albedo, SkatePark/Textures/T_Pier_steel_normal, SkatePark/Textures/T_Pier_steel_roughness | `report_materials` (material list) |
+| `M_Pier_wood` | `skatepark/materials` | need-read | SkatePark/Textures/T_Pier_wood_albedo, SkatePark/Textures/T_Pier_wood_normal, SkatePark/Textures/T_Pier_wood_roughness | `report_materials` (material list) |
 
 ### Belmonte shared materials (2 records, 7 packages)
 
@@ -1250,24 +1216,13 @@ Blockers: masters (`M_FX_Additive`, `M_FX_Dust`, `M_FX_Trail`) have no importer;
 
 ### Japan plaza and harbour textures (1 record, 4 packages)
 
-Donor evidence: the four textures are imports of two tracked PNGs from the donor's source tree,
-`world/regions/hidamari/textures/paving.png` (sha256 `0cf002e567a081c1e32f…`) and `timber.png` (sha256 `d71b181a3d0df569f0c8…`).
-`unreal/Scripts/arcade_material.py:5-12` imports them as `T_Arcade_<name>` and `unreal/Scripts/harbor_material.py:24-27` as
-`T_Harbor_<name>`, both into `/Game/Japan/Textures`. The two PNGs are tracked in the donor (`git ls-files`), so they are
-authored inputs, not build outputs. The donor's `plaza_material.py:45` only loads `T_Arcade_paving`; it does not make it.
+Donor evidence: the four textures are imports of two tracked PNGs from the donor's source tree, `world/regions/hidamari/textures/paving.png` (sha256 `0cf002e567a081c1e32f…`) and `timber.png` (sha256 `d71b181a3d0df569f0c8…`). `unreal/Scripts/arcade_material.py:5-14` imports them as `T_Arcade_<name>` and `unreal/Scripts/harbor_material.py:24-29` as `T_Harbor_<name>`, both into `/Game/Japan/Textures`, each with `srgb` set true. The PNGs are tracked in the donor (`git ls-files`), so they are authored inputs. `plaza_material.py:45` only loads `T_Arcade_paving`; it does not make it.
 
-Byte evidence: `T_Arcade_paving` and `T_Harbor_paving` are both 2219461 bytes, and `T_Arcade_timber` and `T_Harbor_timber`
-both 1833653 bytes. Equal sizes fit one import of each PNG with the same settings. The four packages name no other package.
+Byte evidence: `T_Arcade_paving` and `T_Harbor_paving` are both 2219461 bytes, and `T_Arcade_timber` and `T_Harbor_timber` both 1833653 bytes, consistent with one import of each PNG. The packages name no other package.
 
-Status: **planned** (`adopted/japan/textures/plaza-harbor`). The texture importer fits: the record would commit the two
-PNGs under `src/` with their sha256, and each `T_*` package would take a texture recipe. Two conditions stand in front
-of it. First, the asset rights of the PNGs must be settled before their bytes are uploaded (`games/yorimichi_v2/CONTRACTS`,
-`yorimichi-v2-portable-records`). Second, a native read must confirm the equal settings, because the sizes are only
-consistent with, not proof of, the same import. Nothing is imported or claimed here.
+Status: **planned, claimable** (`adopted/japan/textures/plaza-harbor`). The texture recipe states exactly what both scripts set (`srgb = true`). The claim writes four `texture/japan/{arcade,harbor}-{paving,timber}` records, each with its own copy of its PNG under `src/` (sha256 pinned, owner-published license, lockable), moves the four packages out of the plaza record (deleted with its `verified.json`), and edits `adopted/japan/textures/units.json` to drop them. The bytes are not imported by the claim; the import is the next step.
 
-Native reads still needed (read-only; editor and clean hydrate): the texture settings of the four packages. No texture
-reader is in this tree (the texture report of the residual Belmonte train is in PR #793, not on this branch), so this
-needs that reader first.
+Native reads still needed: the four texture packages' settings through `report_textures.py` (cherry-picked from #793), with the list `docs/inventory/small-families-plaza-packages.txt`, `V2_REPORT_OUT` under `build/yorimichi_v2/reports/`, as an `editor.run` step. The read confirms that the saved packages carry the sRGB flag and no other setting the recipe lacks.
 
 - `adopted/japan/textures/plaza-harbor`: textures imported from two tracked donor PNGs. Evidence: arcade_material.py:5-12 (T_Arcade_<name>) and harbor_material.py:24-27 (T_Harbor_<name>), both from world/regions/hidamari/textures/{paving,timber}.png. Status: **planned**. T_Arcade and T_Harbor packages of each name have equal sizes (2219461 and 1833653 bytes), so one import of each PNG is consistent; the PNGs are tracked in the donor source (paving sha256 0cf002e5..., timber d71b181a...)
 
@@ -1280,34 +1235,22 @@ needs that reader first.
 
 ### Bike residual packages (1 record, 2 packages)
 
-Donor evidence: `unreal/Scripts/import_bike.py:36-46` imports each bike part from `build/yorimichi/bike/assets/<part>.fbx`,
-with its entry in `build/yorimichi/bike/manifest.json` (`parts`, triangles 26060 for each wheel) and the wheel rule that
-requires CPU access and no full-precision UVs. The FBX files are the donor's Blender bike build output: they are
-git-ignored under `build/`, and their generator is `assets/vehicles/bike/build.py` on `Bike.blend`. `M_Bike` is the
-parent, owned by `adopted/japan/materials/base-materials`.
+Donor evidence: `unreal/Scripts/import_bike.py:36-46` imports each bike part from `build/yorimichi/bike/assets/<part>.fbx`, with its entry in `build/yorimichi/bike/manifest.json` (`parts`, 26060 triangles for each wheel) and the wheel rule that requires CPU access and no full-precision UVs. `M_Bike` is the parent, owned by `adopted/japan/materials/base-materials`.
 
 Byte evidence: `BK_WheelFront` and `BK_WheelRear` are 550 KB each and reference only `/Game/Japan/Materials/M_Bike`.
 
-Donor FBX pins (sha256, `build/yorimichi/bike/assets/`): `BK_WheelFront.fbx` `b9d91c3ff4143f67…`, `BK_WheelRear.fbx`
-`5a62e75f11e02be6…`.
+Donor FBX pins (sha256, `build/yorimichi/bike/assets/`): `BK_WheelFront.fbx` `b9d91c3ff4143f67…`, `BK_WheelRear.fbx` `5a62e75f11e02be6…`.
 
-Status: **need-read** (`adopted/japan/assets/bike`). The importer can take an FBX (`import_asset.py`, `_fbx_static_mesh`),
-and the static-mesh recipe can state the wheel settings (`allow_cpu_access`, `full_precision_uvs`, which the recipe
-already has for `prop/megapark/seam-collision`). Two things still stop a record. First, the FBX is a git-ignored
-build output, so its bytes would be committed as a pinned source only after its generator and inputs (`Bike.blend`) are
-recorded, as the generated-art rule requires. Second, the wheel's material slot and `M_Bike` need a native read.
+Status: **blocked** (`adopted/japan/assets/bike`). The generator, `Bike.blend`, is not tracked in the donor: `git ls-files` finds no `.blend` under the bike build, and the FBX files sit in a git-ignored build folder. An FBX with no recorded generator cannot be pinned as its original, as the generated-art rule requires, so the wheels are not claimed. The importer itself takes FBX and the static-mesh recipe can state the wheel settings (`allow_cpu_access`, `full_precision_uvs`, as `prop/megapark/seam-collision` already does), so the block is the generator alone. Recording a tracked generator would unblock the rows.
 
-Native reads still needed (read-only; editor and clean hydrate): the wheels' saved settings and the `M_Bike` slot, by a
-static-mesh reader that this tree does not have. No command is given because the reader is missing.
+Native reads: the wheels' saved settings and the `M_Bike` slot. The read is `unreal/Scripts/report_meshes.py` with `docs/inventory/small-families-bike-meshes.txt` (`BK_WheelFront`, `BK_WheelRear`), `V2_REPORT_OUT` under `build/yorimichi_v2/reports/`, as an `editor.run` step. It is listed for when the generator is recorded; the block stands until then.
 
-Blockers: the FBX generator inputs are not yet recorded; no static-mesh reader in this tree.
-
-- `adopted/japan/assets/bike`: generated wheel static meshes (Blender bike build). Evidence: import_bike.py:40 (manifest parts); build/yorimichi/bike/Bike.blend and manifest.json. Status: **need-read**. the importer needs the bike manifest sha256 and the M_Bike parent (owned by adopted/japan/materials/base-materials)
+- `adopted/japan/assets/bike`: generated wheel static meshes (Blender bike build). Evidence: import_bike.py:36-46 (manifest parts, FBX per part under build/yorimichi/bike/assets). Status: **blocked**. Bike.blend, the generator, is not tracked in the donor (git ls-files finds no .blend under the bike build): the FBX has no recorded generator, so it cannot be pinned. M_Bike is owned by adopted/japan/materials/base-materials
 
 | Package | Record | Status | Inputs (owner records) | Native read still needed |
 |---|---|---|---|---|
-| `BK_WheelFront` | `japan/assets/bike` | need-read | Japan/Materials/M_Bike, Japan/Materials/M_Bike | no reader in this tree |
-| `BK_WheelRear` | `japan/assets/bike` | need-read | Japan/Materials/M_Bike, Japan/Materials/M_Bike | no reader in this tree |
+| `BK_WheelFront` | `japan/assets/bike` | blocked | Japan/Materials/M_Bike, Japan/Materials/M_Bike | no reader in this tree |
+| `BK_WheelRear` | `japan/assets/bike` | blocked | Japan/Materials/M_Bike, Japan/Materials/M_Bike | no reader in this tree |
 
 ### Sword camp materials (1 record, 2 packages)
 
@@ -1319,22 +1262,16 @@ Donor evidence: `unreal/Scripts/import_swordcamp.py` creates `M_SwordCamp` in `/
 Byte evidence: `M_SwordCamp` and `M_RoninBody` each reference only `/Game/SwordCamp/Textures/T_SwordCampAtlas`, which
 `texture/swordcamp/atlas` owns. Neither names any other package.
 
-Status per record: **blocked** (`adopted/swordcamp/materials`). Both packages are material masters built by Unreal-script
-graphs, and this tree has no importer for a material master (the same blocker as the skatepark masters). Their one
-texture input is determined and owned, so the only missing piece is the graph, which needs a native read of the saved
-nodes. The atlas is not a blocker.
+Status per record: **need-read**, classified (`adopted/swordcamp/materials`). Both packages are generator-built masters. Classified as generator-built masters (no new recipe kind): each keeps its editor-authority record, and its saved package is the only byte-level original of an editor-scripted generator, as for the Japan instances. Not yet read. Their one texture input is determined and owned, so the read only has to confirm the saved graphs and the atlas parameter.
 
-Native reads still needed (read-only; editor and clean hydrate): a read of the two masters' saved graphs and their atlas
-parameter. No reader for master graphs is in this tree (`report_materials.py` reads material instances only).
+Native reads still needed: `unreal/Scripts/report_materials.py` with `docs/inventory/small-families-swordcamp-packages.txt` (masters may need its master support), `V2_REPORT_OUT` under `build/yorimichi_v2/reports/`, as an `editor.run` step.
 
-Blockers: no importer for material masters; no native graph read.
-
-- `adopted/swordcamp/materials`: generator masters M_SwordCamp and M_RoninBody. Evidence: import_swordcamp.py:47-51 (M_SwordCamp), :117-122 (M_RoninBody); atlas import :29-39. Status: **blocked**. no importer for material masters (as the skatepark masters); the atlas T_SwordCampAtlas is owned by texture/swordcamp/atlas
+- `adopted/swordcamp/materials`: generator masters M_SwordCamp and M_RoninBody. Evidence: import_swordcamp.py:47-51 (M_SwordCamp), :117-122 (M_RoninBody); atlas import :29-39. Status: **need-read**. generator-built masters; not yet read; the atlas T_SwordCampAtlas is owned by texture/swordcamp/atlas. Classified, not blocked: a generator-built master keeps its editor-authority record, and its saved package is the only byte-level original of an editor-scripted generator; read-confirmed once the native read runs.
 
 | Package | Record | Status | Inputs (owner records) | Native read still needed |
 |---|---|---|---|---|
-| `M_RoninBody` | `swordcamp/materials` | blocked | SwordCamp/Textures/T_SwordCampAtlas | `report_materials` (material list) |
-| `M_SwordCamp` | `swordcamp/materials` | blocked | SwordCamp/Textures/T_SwordCampAtlas | `report_materials` (material list) |
+| `M_RoninBody` | `swordcamp/materials` | need-read | SwordCamp/Textures/T_SwordCampAtlas | `report_materials` (material list) |
+| `M_SwordCamp` | `swordcamp/materials` | need-read | SwordCamp/Textures/T_SwordCampAtlas | `report_materials` (material list) |
 
 ### Hidamari surface, racing, see-through and skate runtime (4 records, 4 packages)
 
@@ -1345,8 +1282,7 @@ Four records, one package each. None is an import; each is a script product or a
   `T_HD_plaster` is owned by `adopted/japan/hidamari/surface-plaster`, from the donor's `tools/hidamari_textures.py`.
   Status: **need-read**. The instance is a plain one (parent and `Tex`), so a material-instance recipe fits once its
   parameters are read; the master has no importer.
-- `adopted/racing` (`M_RacingTv`): `unreal/Scripts/racing_tv_material.py:12-16` creates the picture master in `/Game/Racing`
-  with a graph and no texture input. Status: **blocked** (a master, no importer, no native graph read).
+- `adopted/racing` (`M_RacingTv`): `unreal/Scripts/racing_tv_material.py:12-16` creates the picture master in `/Game/Racing` with a graph and no texture input. Status: **need-read**, classified as a generator-built master. Classified as generator-built masters (no new recipe kind): each keeps its editor-authority record, and its saved package is the only byte-level original of an editor-scripted generator, as for the Japan instances. Not yet read.
 - `adopted/seethrough` (`MPC_SeeThrough`): `unreal/Scripts/see_through.py:47` names the parameter collection and `:246-253`
   creates it; the game's `USeeThroughComponent` writes it every frame (`SeeThrough.cpp`, cited in the script's header). It is a
   parameter collection, which no importer kind takes. Status: **blocked**.
@@ -1364,13 +1300,13 @@ Blockers: the `M_HDCity` master (for the instance); the racing and see-through g
 `RuntimeData` data asset has no importer kind.
 
 - `adopted/japan/hidamari/surface-flat`: generated MI_HD_flat (parent M_HDCity). Evidence: city_material.py (hidamari generator), tools/hidamari_textures.py. Status: **need-read**. parent M_HDCity and T_HD_plaster are owned by adopted/japan/hidamari records
-- `adopted/racing`: generator master M_RacingTv. Evidence: racing_tv_material.py:12-16. Status: **blocked**. no importer for material masters; native read of the graph needed
+- `adopted/racing`: generator master M_RacingTv. Evidence: racing_tv_material.py:12-16. Status: **need-read**. generator-built master; not yet read. Classified, not blocked: a generator-built master keeps its editor-authority record, and its saved package is the only byte-level original of an editor-scripted generator; read-confirmed once the native read runs.
 - `adopted/seethrough`: generator material parameter collection MPC_SeeThrough. Evidence: see_through.py:47 and :246-253. Status: **blocked**. no importer for parameter collections
 - `adopted/skateruntime`: generated RuntimeData data asset (31 MB). Evidence: build.py:1813 (RuntimeData output); unreal/Scripts/skate_ride/verify_data.py:15. Status: **blocked**. no importer for data assets; the cooked data is the only copy in the editor
 
 | Package | Record | Status | Inputs (owner records) | Native read still needed |
 |---|---|---|---|---|
 | `MI_HD_flat` | `japan/hidamari/surface-flat` | need-read | Japan/Hidamari/Materials/M_HDCity, Japan/Hidamari/Materials/M_HDCity, Japan/Hidamari/Textures/T_HD_plaster | `report_materials` (material list) |
-| `M_RacingTv` | `racing` | blocked | - | `report_materials` (material list) |
+| `M_RacingTv` | `racing` | need-read | - | `report_materials` (material list) |
 | `MPC_SeeThrough` | `seethrough` | blocked | - | `report_materials` (material list) |
 | `RuntimeData` | `skateruntime` | blocked | - | no reader in this tree |
