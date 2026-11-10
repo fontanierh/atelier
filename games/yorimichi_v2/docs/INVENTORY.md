@@ -32,9 +32,10 @@ The source baseline `7eec0f98dd` is documented separately in [features](inventor
 
 Saved, prepared and packaged totals are kept separate:
 - **Saved and packaged:** everything in the table above is in main and in the `f5947da8e8c2` package.
-- **Prepared on branches, not yet in main or saved:** the two used Japan leaf instances (MI_LeafAmber, MI_LeafCrimson) as
-  material-instance records, and the residual Belmonte train batch (138 texture and 21 material-instance records
-  covering 459 packages). Both wait on native reads and a claimed import; see [exceptions](inventory/exceptions.md).
+- **Imported after the package:** the two used Japan leaf instances (MI_LeafAmber, MI_LeafCrimson) are
+  material-instance records imported from their recipe; they read identical to the packaged ones.
+- **Prepared on a branch, not yet in main or saved:** the residual Belmonte train batch (138 texture and 21 material-instance records
+  covering 459 packages). It waits on two read-only editor reads and a claimed import; see [exceptions](inventory/exceptions.md).
 
 Remaining construction work:
 - Close the other useful-object/source gaps in [exceptions](inventory/exceptions.md) and
