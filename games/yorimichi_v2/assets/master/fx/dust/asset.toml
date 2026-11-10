@@ -1,0 +1,27 @@
+# Recovered as a material master (tools/migrate/master_records.py): /Game/FX/M_FX_Dust.
+# The builder is src/fx_masters.py, pinned by sha256; the master is rebuilt by the V2 editor and read back
+# against its saved original, never edited by hand.
+schema = 1
+id = "master/fx/dust"
+kind = "material-master"
+authority = "generated"
+owner = "shared/fx"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+provenance = "donor generator games/yorimichi/unreal/Scripts/import_combat_fx.py at the V2 source baseline (docs/DECISIONS.md D01, D02), sprite_material lines 52-69"
+input_dependencies = ["texture/fx/dust"]
+
+[[sources]]
+path = "src/fx_masters.py"
+sha256 = "ff485252418bc14550722f96256f585924781188828d847a93f35c4515618940"
+
+[recipe]
+importer = "material-master"
+version = 1
+
+[recipe.settings]
+builder = "sprite_material"
+reads = ["/Game/FX/Textures/T_FX_Dust"]
+arguments = { blend = "translucent", texture = "/Game/FX/Textures/T_FX_Dust" }
+
+[[outputs]]
+package = "/Game/FX/M_FX_Dust"

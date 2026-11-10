@@ -1,0 +1,14 @@
+{
+  "asset": "master/fx/additive",
+  "dependencies": {
+    "texture/fx/glow": "667edb8e3623c1eb9b5677fb95ac5530ecd36590cca487d5f48dfcf2806e818c"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/FX/M_FX_Additive.uasset": "1081146c3ac94c16a3984db11ef50c0d50106c9c33abd7b9eda8d5b9a070a719"
+  },
+  "input_fingerprint": "96816725ddb9d10446c93863ce82e363106f37d29779aa4aa7deb8eafa690f7b",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "material-master@1"
+}

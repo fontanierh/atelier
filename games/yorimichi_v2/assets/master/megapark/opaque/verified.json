@@ -1,0 +1,14 @@
+{
+  "asset": "master/megapark/opaque",
+  "dependencies": {
+    "adopted/megapark/shared-textures-common": "f279797ca888677031e0d50ea2bc2308950faf90caa3822a71f98aee26a7882c"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/MegaPark/Materials/M_RetailOpaque.uasset": "f5333d49cdf83471f2b775516a836eafec02394ef2ab643802d67cf8abef2478"
+  },
+  "input_fingerprint": "ef9fa1e043d5ce8fcce9186b12e34a8cfabf621164ba7a2f1839af97a60093fc",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "material-master@1"
+}

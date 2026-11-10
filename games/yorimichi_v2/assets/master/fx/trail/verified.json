@@ -1,0 +1,14 @@
+{
+  "asset": "master/fx/trail",
+  "dependencies": {
+    "texture/fx/trail": "723bbe2e6c6128d4fb58c1960f54dac7d33f54d324db6c1f1920e0e56d18d7b1"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/FX/M_FX_Trail.uasset": "8c6c498c6146e8df10df2812b343a142cbf0cf087a5de1655d17b40a48e6536b"
+  },
+  "input_fingerprint": "225d866675b769cc059465dc58c309beb2fd023fdb59db1efa5e9ac50f74698c",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "material-master@1"
+}
