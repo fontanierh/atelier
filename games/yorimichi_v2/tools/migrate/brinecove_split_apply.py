@@ -764,6 +764,20 @@ def run_step(game: Path, plan: dict, claim: str | None, *, retire: bool = False,
     return execute(game, ops, scopes=info['scopes'], lockable=lockable)
 
 
+# --- part re-cut: remove triangles from a part that already exists (a removal, never a move) -----------------------------
+
+def recut_part(model: dict, removed, name: str) -> tuple[bytes, list[str]]:
+    """The binary glTF of a committed part without the triangle ordinals `removed` (in glb_subset.triangles order).
+    Every kept triangle keeps its vertex positions, normals, UVs, material and order (glb_subset.subset_glb, the same
+    writer the carves use), so nothing moves. Returns the bytes and the material names still used."""
+    from glb_subset import subset_glb
+    gone = set(removed)
+    total = sum(1 for _ in split.triangles(model))
+    if not gone <= set(range(total)):
+        raise SplitError(f'{name}: removed ordinals outside the part (it has {total} triangles)')
+    return subset_glb(model, [i for i in range(total) if i not in gone], name)
+
+
 # --- check -------------------------------------------------------------------------------------------------------------
 
 def group_names(data: dict) -> list[str]:

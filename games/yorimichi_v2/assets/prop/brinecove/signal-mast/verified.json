@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/signal-mast",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_SignalMast.uasset": "d4a5836a486b82060efc9a11ed8d8aded0536a8fb907d2c63e2b63ac67a94a4b"
+  },
+  "input_fingerprint": "08ad4f0048f2345def581c9e7467d83616e9f8d6bbfc2ad0f09aa7cd47f73142",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_SignalMast": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

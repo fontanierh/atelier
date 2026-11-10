@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_ShipyardSlip: the shipyard slip, cut from the fused tile(s) Harbor_5_3, Harbor_5_4 (408 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/brinecove/shipyard-slip"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/brinecove/shipyard-slip"
+references = ["adopted/brinecove/materials"]
+
+[[sources]]
+path = "src/SM_BC_ShipyardSlip.glb"
+sha256 = "b4244a964de10ca1a1e507cd98af4c55fefcdc0d2c87c0e34ade512af1a6f134"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Brinecove/Materials/MI_BC_stone", "/Game/Brinecove/Materials/MI_BC_stone_dark", "/Game/Brinecove/Materials/MI_BC_stone_light", "/Game/Brinecove/Materials/MI_BC_wood", "/Game/Brinecove/Materials/MI_BC_wood_dark"]
+triangles = 408
+collision = "complex"
+full_precision_uvs = true
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_ShipyardSlip"

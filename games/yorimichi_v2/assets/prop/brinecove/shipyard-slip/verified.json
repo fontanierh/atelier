@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/shipyard-slip",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_ShipyardSlip.uasset": "0aaa79e725d8b35775f2a4c5db564c00143dc865509b777ccac46af397d67d67"
+  },
+  "input_fingerprint": "33ae17ccafb9fb24b780db7bf805c1796affd76476de4a1cb23a2ee41bf53290",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_ShipyardSlip": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

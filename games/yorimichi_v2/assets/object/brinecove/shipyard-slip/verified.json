@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/shipyard-slip",
+  "dependencies": {
+    "prop/brinecove/shipyard-slip": "b8e5bc54c4cc999f0f8a94f250467502e34593023cfa181d15a61bd7f2d9f0a8"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/8/KA/CLU4U0T70IUTH3GXH60WBT.uasset": "229be233b8524cfa50ad7bc08ebe38ca328480484a072132e29be8a4793b2e93"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}
