@@ -84,9 +84,7 @@
     "unreal/Content/BelmonteTrain/Source/SM_BT_SecondClass/LOD2/T_BT_IvoryWorn.uasset": "bd0980e8dec914fa1af6fbdb3c5fcf1c9f6e6db3b006576342edc4158f859880",
     "unreal/Content/BelmonteTrain/Source/SM_BT_SecondClass/LOD2/T_BT_RoofWorn.uasset": "9b58eda70299a8fb1aeea996953fb7c503928a76aec2e8b06aa8949dd503e163",
     "unreal/Content/BelmonteTrain/Source/SM_BT_SecondClass/LOD2/T_BT_SecondClassInterior.uasset": "640dfe9f83b27213b3e66171bba05bc7675b59dec4189750a3ef783833373724",
-    "unreal/Content/BelmonteTrain/Source/SM_BT_SecondClass/LOD2/T_BT_Underframe.uasset": "6334a9903df2cb258b5b1087d5bfd9db4738938dba5d88458f06f350bba1ef1b",
-    "unreal/Content/BelmonteTrain/Source/SM_BT_SecondClass/SM_BT_SecondClass_LOD1.uasset": "49f1f60015c3fe639a1532355bd603525496fa7339c5fe6b3b60b7219bc919c7",
-    "unreal/Content/BelmonteTrain/Source/SM_BT_SecondClass/SM_BT_SecondClass_LOD2.uasset": "bdd930a74b8aa27cf6e5060c84a3b43896c976150b84755455e67bbbcc6c9c28"
+    "unreal/Content/BelmonteTrain/Source/SM_BT_SecondClass/LOD2/T_BT_Underframe.uasset": "6334a9903df2cb258b5b1087d5bfd9db4738938dba5d88458f06f350bba1ef1b"
   },
   "kind": "editor-saved",
   "schema": 1

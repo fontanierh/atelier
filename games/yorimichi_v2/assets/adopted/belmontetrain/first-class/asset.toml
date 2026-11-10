@@ -222,8 +222,3 @@ package = "/Game/BelmonteTrain/Source/SM_BT_FirstClass/LOD2/T_BT_Roof"
 [[outputs]]
 package = "/Game/BelmonteTrain/Source/SM_BT_FirstClass/LOD2/T_BT_Underframe"
 
-[[outputs]]
-package = "/Game/BelmonteTrain/Source/SM_BT_FirstClass/SM_BT_FirstClass_LOD1"
-
-[[outputs]]
-package = "/Game/BelmonteTrain/Source/SM_BT_FirstClass/SM_BT_FirstClass_LOD2"

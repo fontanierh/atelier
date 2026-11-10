@@ -156,8 +156,3 @@ package = "/Game/BelmonteTrain/Source/SM_BT_Locomotive/LOD2/M_BT_Undercarriage"
 [[outputs]]
 package = "/Game/BelmonteTrain/Source/SM_BT_Locomotive/LOD2/T_BT_Underframe"
 
-[[outputs]]
-package = "/Game/BelmonteTrain/Source/SM_BT_Locomotive/SM_BT_Locomotive_LOD1"
-
-[[outputs]]
-package = "/Game/BelmonteTrain/Source/SM_BT_Locomotive/SM_BT_Locomotive_LOD2"

@@ -237,8 +237,3 @@ package = "/Game/BelmonteTrain/Source/SM_BT_BrakeVan/LOD2/T_BT_Roof"
 [[outputs]]
 package = "/Game/BelmonteTrain/Source/SM_BT_BrakeVan/LOD2/T_BT_Underframe"
 
-[[outputs]]
-package = "/Game/BelmonteTrain/Source/SM_BT_BrakeVan/SM_BT_BrakeVan_LOD1"
-
-[[outputs]]
-package = "/Game/BelmonteTrain/Source/SM_BT_BrakeVan/SM_BT_BrakeVan_LOD2"

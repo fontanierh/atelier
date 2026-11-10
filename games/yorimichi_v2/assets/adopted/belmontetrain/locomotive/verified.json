@@ -51,9 +51,7 @@
     "unreal/Content/BelmonteTrain/Source/SM_BT_Locomotive/LOD2/M_BT_IronBlack.uasset": "c2367d6ab098848b37b1e3e8013426bf8281e5f591840b9812b08052e101cd0c",
     "unreal/Content/BelmonteTrain/Source/SM_BT_Locomotive/LOD2/M_BT_LocoBlack.uasset": "07e2d29996819b7913326a68578e684b9225f155f8a6f08781f18d1fbd2b3328",
     "unreal/Content/BelmonteTrain/Source/SM_BT_Locomotive/LOD2/M_BT_Undercarriage.uasset": "d4385c2fa707a39c9d2b4315b965dbc28cc3fcd0a4f3fa83eb8e743fd31124c1",
-    "unreal/Content/BelmonteTrain/Source/SM_BT_Locomotive/LOD2/T_BT_Underframe.uasset": "d915c384ef55c25d9766f29991ddb1f9f951fdd6185d0bb8c05022674c3cd577",
-    "unreal/Content/BelmonteTrain/Source/SM_BT_Locomotive/SM_BT_Locomotive_LOD1.uasset": "6b05d549d17a3344e9972bd6ebb99b2045a5fb9bfd0ad81cf927ebab25f14b4b",
-    "unreal/Content/BelmonteTrain/Source/SM_BT_Locomotive/SM_BT_Locomotive_LOD2.uasset": "0550e9eea6cb3c73e22ea21515d1b69769d04f9d4167e1887ebcd7d28bea0419"
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Locomotive/LOD2/T_BT_Underframe.uasset": "d915c384ef55c25d9766f29991ddb1f9f951fdd6185d0bb8c05022674c3cd577"
   },
   "kind": "editor-saved",
   "schema": 1

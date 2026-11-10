@@ -78,9 +78,7 @@
     "unreal/Content/BelmonteTrain/Source/SM_BT_BrakeVan/LOD2/T_BT_BrakeVanInterior.uasset": "f51dccb9a340c4c0e43c92c6d7b37321ae6dda39f8dc27eec119192e9b73318d",
     "unreal/Content/BelmonteTrain/Source/SM_BT_BrakeVan/LOD2/T_BT_Ivory.uasset": "dde586dae9acd563145211e7e0244d13f008316d417c89c8b8ecc594ecb69e67",
     "unreal/Content/BelmonteTrain/Source/SM_BT_BrakeVan/LOD2/T_BT_Roof.uasset": "d7e8a9b53f988a8df1bb859d3cda459099d7110115c65b19f34908ba168032ab",
-    "unreal/Content/BelmonteTrain/Source/SM_BT_BrakeVan/LOD2/T_BT_Underframe.uasset": "5ea9f79ce728f6711afe11c1e9288977ff0954b42da97d5282f48f48fcfac22c",
-    "unreal/Content/BelmonteTrain/Source/SM_BT_BrakeVan/SM_BT_BrakeVan_LOD1.uasset": "7fc61d898dde39c05e39d37432d5bc382cc5a771c06363e7abaa00ba2cc54722",
-    "unreal/Content/BelmonteTrain/Source/SM_BT_BrakeVan/SM_BT_BrakeVan_LOD2.uasset": "9eebc3ee3bfe9f8ec5f76e373f7bc95fa9e247a51413cd9055c8cfb160a26716"
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BrakeVan/LOD2/T_BT_Underframe.uasset": "5ea9f79ce728f6711afe11c1e9288977ff0954b42da97d5282f48f48fcfac22c"
   },
   "kind": "editor-saved",
   "schema": 1
