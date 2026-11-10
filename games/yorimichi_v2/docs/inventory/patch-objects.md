@@ -8,10 +8,36 @@ receipts without re-saving unchanged actors. [INVENTORY](../INVENTORY.md) is the
 A real patch that still bundles several useful objects remains unfinished. The original one-worldwide-instance
 filter below was a conservative first-batch choice, not a permanent exemption for repeated useful objects.
 
+## Current authoring commands
+
+These routes change placement ownership. Before editing a generated model's geometry, follow the
+[independent-model workflow](../../../../docs/WORLD_BUILD_PRACTICES.md#make-a-model-independent-before-editing-it).
+
+Use the selected region's current `objects.toml` and hold the claim covering its complete record and package paths.
+For an entry with `patch = "<V2Id>"` (or a list of patch IDs), promote the already-saved patch into its own object
+record without opening the editor or changing the package bytes:
+
+```sh
+ATELIER_AGENT=OWNER uv run python games/yorimichi_v2/tools/migrate/objects.py REGION \
+    --promote --only OBJECT_ID --claim TASK
+```
+
+For an entry with `split = {key = "...", at = [x, y]}`, use the normal guarded migration route. It removes that
+placement from its area patches and saves it as its own actor:
+
+```sh
+ATELIER_AGENT=OWNER uv run python games/yorimichi_v2/tools/migrate/objects.py REGION \
+    --only OBJECT_ID --claim TASK
+```
+
+Repeat `--only` to select more objects. `split` is an entry type, not a CLI subcommand. Runtime-group and other
+manifest-writing object selections also need `--environment REGION`; a split-only selection does not.
+After an interrupted save, follow the [object claim recovery steps](transport-objects.md#recovering-object-package-claims).
+
 ## Initial promotion set
 
 `world/regions/<region>/objects.toml` entries with `patch = "<V2Id>"` take the area-patch actor `AV2ScenePatch` that already
-holds exactly one object, instead of splitting a patch in the editor. `tools/migrate/objects.py split` handles selected members of a broader patch. 31 entries in six regions,
+holds exactly one object, instead of splitting a patch in the editor. The initial set contained 31 entries in six regions,
 tags unique across regions (`start`, `village`, `pier`, `lake`, `swcoast`, `swterrace`; `brinecove` and `belmonte` already exist).
 Each file has `data = ""` (no runtime file).
 
