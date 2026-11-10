@@ -67,16 +67,16 @@ REGISTRY = {
         'import_hippodrome.py:102-103 (Meshes/<name> folder per GLB)', 'blocked',
         'referenced by the four loose meshes (18 files under unreal/Content name Hippodrome/Meshes/); retire only after a loose re-import'),
     'adopted/japan/treehouse/surface-flat': ('treehouse', 'generated texture T_TH_flat and MI_TH_flat',
-        'import_treehouse.py:3-4; build/yorimichi/treehouse/textures/flat.png', 'need-read',
-        'texture v1 expresses only srgb and compression; import_treehouse.py:44-46 also sets max size 1024 and the WORLD LOD group, so the exact recipe needs a texture settings extension first. The glass PNG has the same sha256'),
+        'import_treehouse.py:3-4 and :39-46 (sRGB, max size 1024, WORLD group); build/yorimichi/treehouse/textures/flat.png', 'planned',
+        'claimable once docs/inventory/treehouse-textures-read.json confirms the three settings; the glass PNG has the same sha256'),
     'adopted/japan/treehouse/surface-glass': ('treehouse', 'generated texture T_TH_glass and MI_TH_glass',
-        'import_treehouse.py:3-4; build/yorimichi/treehouse/textures/glass.png', 'need-read',
+        'import_treehouse.py:3-4 and :39-46; build/yorimichi/treehouse/textures/glass.png', 'planned',
         'glass.png and flat.png are byte-identical in the donor; the two textures differ in V2 (8297 and 8303 bytes), so the import settings are not yet established'),
     'adopted/japan/treehouse/surface-pane': ('treehouse', 'generated MI_TH_pane (parent M_TH_Light)',
         'treehouse generator (adopted/japan/treehouse/generator); parent M_TH_Light', 'need-read',
         'material instance without its own texture; parameters need a native read'),
     'adopted/japan/treehouse/surface-rope': ('treehouse', 'generated texture T_TH_rope and MI_TH_rope',
-        'import_treehouse.py:3-4; build/yorimichi/treehouse/textures/rope.png', 'need-read',
+        'import_treehouse.py:3-4 and :39-46; build/yorimichi/treehouse/textures/rope.png', 'planned',
         'the MI parent M_TreeHouse is owned by adopted/japan/treehouse/generator; the import settings are not yet confirmed'),
     'adopted/japan/treehouse/surface-trunk': ('treehouse', 'generated MI_TH_trunk (bark, RoomCut 0)',
         'import_treehouse.py:10; texture T_TH_bark owned by adopted/japan/treehouse/surface-bark', 'need-read',
@@ -288,11 +288,20 @@ def summary_lines(result: dict) -> list[str]:
 # Donor files are generated (hippodrome GLBs) or authored and tracked (plaza PNGs in the donor's source tree). Both are
 # committed under src/ with their sha256 and the owner-published license (docs/DECISIONS.md D05 group 1), as the Japan leaf
 # and plant records are. The tree house textures are not claimable: the texture recipe cannot express their settings.
-CLAIM_FAMILIES = ('hippodrome', 'plaza')
+CLAIM_FAMILIES = ('hippodrome', 'plaza', 'treehouse')
 LICENSE = 'owner-published (docs/DECISIONS.md D05 group 1)'
 PROVENANCE = 'donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02); pinned by sha256'
 GLB_DIR = 'build/yorimichi/hippodrome/region/glb'
 PNG_DIR = 'games/yorimichi/world/regions/hidamari/textures'
+TREE_DIR = 'build/yorimichi/treehouse/textures'
+TREE_CLAIM = {   # the tree house textures (import_treehouse.py:3-4 and :39-46): package -> (slug, donor PNG, adopted record)
+    '/Game/Japan/Treehouse/Textures/T_TH_flat': ('flat', 'flat.png', 'adopted/japan/treehouse/surface-flat'),
+    '/Game/Japan/Treehouse/Textures/T_TH_glass': ('glass', 'glass.png', 'adopted/japan/treehouse/surface-glass'),
+    '/Game/Japan/Treehouse/Textures/T_TH_rope': ('rope', 'rope.png', 'adopted/japan/treehouse/surface-rope'),
+}
+TREE_SETTINGS = {'srgb': True, 'max_texture_size': 1024, 'lod_group': 'TEXTUREGROUP_WORLD'}
+# The tree house textures are claimable only once the texture read (report_textures.py, its JSON) confirms these settings.
+TREE_READ = 'docs/inventory/treehouse-textures-read.json'
 PINS = {   # donor-relative path -> sha256 (the region GLBs equal the exports; the plaza PNGs are tracked donor sources)
     f'{GLB_DIR}/SM_HD_FinishPost.glb': '123ab4602df5111d1df5345185183557b6488595ff9d5c3d58aebf57c9e9b3b4',
     f'{GLB_DIR}/SM_HD_Grandstand.glb': '92add5b3492eb839b9c6909d055c1d54d9692070e546a3429b2af9fd6ed9ae8f',
@@ -300,6 +309,9 @@ PINS = {   # donor-relative path -> sha256 (the region GLBs equal the exports; t
     f'{GLB_DIR}/SM_HD_ToteBoard.glb': '8086362ef6c65c6457f9ed6c7ca87e89edcfc2fef9856e089b4d375862e589d9',
     f'{PNG_DIR}/paving.png': '0cf002e567a081c1e32ff1c9ae56d70f3bd91d1d728d9f32fe358d2dda3df264',
     f'{PNG_DIR}/timber.png': 'd71b181a3d0df569f0c83ab2f5ffc0142bbeff3e2d542f2ddd4c1d5e3fb28311',
+    f'{TREE_DIR}/flat.png': '10b379bb6586c9e928bec14701c904b488d4677577857642a9a6a8e514fdd3a7',
+    f'{TREE_DIR}/glass.png': '10b379bb6586c9e928bec14701c904b488d4677577857642a9a6a8e514fdd3a7',
+    f'{TREE_DIR}/rope.png': '13d328aea5ed6186c14ef7a0fc4972f0c3a05160d0b6b5c00cd6af952b722021',
 }
 HIPPO_CLAIM = {   # adopted/hippodrome/loose_files package -> (record slug, donor GLB name); static-mesh, lane's form
     '/Game/Hippodrome/SM_HD_FinishPost': ('finish-post', 'SM_HD_FinishPost'),
@@ -329,13 +341,34 @@ class NewRecord:
     about: str
 
 
-def claim_records(donor: Path) -> list:
-    """The new records. Every donor file is checked against its pin first; a mismatch refuses the plan."""
-    for rel, sha in PINS.items():
+def treehouse_status(game: Path) -> tuple:
+    """(confirmed, reason): the tree house textures are claimable when TREE_READ holds, for every package, the settings
+    report_textures.py reads back, as TREE_SETTINGS states them."""
+    path = game / TREE_READ
+    if not path.is_file():
+        return False, f'{TREE_READ} is missing: the texture read has not confirmed the settings'
+    read = json.loads(path.read_text())
+    for package in TREE_CLAIM:
+        row = read.get(package)
+        if row is None:
+            return False, f'{package} is not in {TREE_READ}'
+        for key, want in TREE_SETTINGS.items():
+            if row.get(key) != want:
+                return False, f'{package}: {key} reads back {row.get(key)!r}, not {want!r}'
+    return True, f'the settings are confirmed by {TREE_READ}'
+
+
+def claim_records(donor: Path, game: Path) -> list:
+    """The new records. Every donor file is checked against its pin first; a mismatch refuses the plan. The tree house
+    records are included only when treehouse_status confirms them."""
+    confirmed, _ = treehouse_status(game)
+    needed = [rel for rel in PINS if rel.startswith(GLB_DIR) or rel.startswith(PNG_DIR)
+              or (confirmed and rel.startswith(TREE_DIR))]
+    for rel in needed:
         path = donor / rel
         if not path.is_file():
             raise PlanError(f'{rel}: missing in the donor')
-        if sha256_file(path) != sha:
+        if sha256_file(path) != PINS[rel]:
             raise PlanError(f'{rel}: not its pinned sha256')
     report = json.loads((donor / 'build/yorimichi/hippodrome/import-report.json').read_text())
     out = []
@@ -357,6 +390,15 @@ def claim_records(donor: Path) -> list:
             sources=[(f'src/{name}.png', PINS[rel], donor / rel)], settings={'srgb': True},
             outputs=[package], adopted='adopted/japan/textures/plaza-harbor',
             about=f'{name}: the donor PNG {png} imported sRGB (arcade_material.py and harbor_material.py)'))
+    if confirmed:
+        for package, (slug, png, adopted) in TREE_CLAIM.items():
+            rel = f'{TREE_DIR}/{png}'
+            name = package.rsplit('/', 1)[1]
+            out.append(NewRecord(
+                id=f'texture/japan/treehouse-{slug}', kind='texture', owner=f'shared/japan/treehouse-{slug}',
+                references=[], sources=[(f'src/{name}.png', PINS[rel], donor / rel)], settings=dict(TREE_SETTINGS),
+                outputs=[package], adopted=adopted,
+                about=f'{name}: the donor PNG {png}, imported sRGB at max size 1024 in the WORLD group (import_treehouse.py:39-46)'))
     return out
 
 
@@ -384,9 +426,11 @@ def _owner_of(text: str) -> str:
 
 
 def claim_ops(game: Path, donor: Path) -> dict:
-    """The one write: {'writes': {rel: bytes}, 'deletes': [rel]}. New records and src copies; each adopted record that
-    gives up all its packages is deleted with its verified.json; each record that references one names the new records."""
-    recs = claim_records(donor)
+    """The one write: {'writes': {rel: bytes}, 'deletes': [rel]}. The new records and their src/ copies. An adopted record
+    that gives up every package is deleted with its verified.json; one that keeps some (a tree house surface keeps its
+    instance) loses the moved outputs from its asset.toml and their entries from its verified.json. The units.json of each
+    folder drops the moved packages, and a record that references a fully moved record names the new records."""
+    recs = claim_records(donor, game)
     writes, deletes, moved, new_ids = {}, [], {}, {}
     for rec in recs:
         folder = 'assets/' + rec.id
@@ -395,15 +439,33 @@ def claim_ops(game: Path, donor: Path) -> dict:
             writes[f'{folder}/{rel}'] = file.read_bytes()
         moved.setdefault(rec.adopted, set()).update(rec.outputs)
         new_ids.setdefault(rec.adopted, []).append(rec.id)
+    full, partial = set(), set()
     for adopted_id, packages in sorted(moved.items()):
         rel = f'assets/{adopted_id}/asset.toml'
+        text = (game / rel).read_text()
         listed = {o.package for o in records.load_asset(game / rel).outputs}
-        if listed != packages:
-            raise PlanError(f'{adopted_id}: lists {sorted(listed - packages)} outside the plan or misses some; only a '
-                            'whole-record move is claimed here')
-        deletes.append(rel)
-        if (game / f'assets/{adopted_id}/verified.json').is_file():
-            deletes.append(f'assets/{adopted_id}/verified.json')
+        if not packages <= listed:
+            raise PlanError(f'{adopted_id}: the plan moves {sorted(packages - listed)}, which it does not list')
+        verified = game / f'assets/{adopted_id}/verified.json'
+        if listed == packages:
+            full.add(adopted_id)
+            deletes.append(rel)
+            if verified.is_file():
+                deletes.append(f'assets/{adopted_id}/verified.json')
+            continue
+        partial.add(adopted_id)
+        writes[rel] = recover._drop_outputs(text, packages).encode()
+        if not verified.is_file():
+            raise PlanError(f'{adopted_id}: keeps some packages but has no verified.json to edit')
+        vtext = verified.read_text()
+        data = json.loads(vtext)
+        if json.dumps(data, indent=2, sort_keys=True) + '\n' != vtext:
+            raise PlanError(f'{adopted_id}/verified.json is not in the form adoption writes; edit it by hand')
+        files = data.get('files', {})
+        for package in packages:
+            for ext in ('.uasset', '.umap', '.uexp', '.ubulk'):
+                files.pop('unreal/Content/' + package[len('/Game/'):] + ext, None)
+        writes[f'assets/{adopted_id}/verified.json'] = (json.dumps(data, indent=2, sort_keys=True) + '\n').encode()
     all_moved = {package for packages in moved.values() for package in packages}
     for folder_rel in sorted({i.rsplit('/', 1)[0] for i in moved}):
         units_rel = f'assets/{folder_rel}/units.json'
@@ -422,21 +484,21 @@ def claim_ops(game: Path, donor: Path) -> dict:
             writes[units_rel] = new_text.encode()
     for path in records.record_paths(game):
         rel = path.relative_to(game).as_posix()
-        if rel in writes or any(rel == f'assets/{i}/asset.toml' for i in moved):
+        if rel in writes or any(rel == f'assets/{i}/asset.toml' for i in full):
             continue
         text = path.read_text()
         match = re.search(r'(?m)^references = \[(.*)\]$', text)
         if not match:
             continue
         refs = re.findall(r'"([^"]+)"', match.group(1))
-        if not any(r in moved for r in refs):
+        if not any(r in full for r in refs):
             continue
         others = text[:match.start()] + text[match.end():]
-        if any(f'"{r}"' in others for r in refs if r in moved):
+        if any(f'"{r}"' in others for r in refs if r in full):
             raise PlanError(f'{rel} names a moved record outside its references line; refused')
         kept = []
         for r in refs:
-            kept += sorted(new_ids[r]) if r in moved else [r]
+            kept += sorted(new_ids[r]) if r in full else [r]
         line = 'references = [' + ', '.join(f'"{r}"' for r in sorted(set(kept))) + ']'
         writes[rel] = (text[:match.start()] + line + text[match.end():]).encode()
     return {'writes': writes, 'deletes': sorted(set(deletes))}
@@ -461,6 +523,8 @@ def locked_paths(game_rels: list) -> set:
 
 
 def print_paths(game: Path, donor: Path) -> None:
+    confirmed, reason = treehouse_status(game)
+    print(f'note: tree house textures {"claimed" if confirmed else "not claimed"}: {reason}')
     ops = claim_ops(game, donor)
     paths = sorted(set(ops['writes']) | set(ops['deletes']))
     full = [f'{GAME_REL}/{rel}' for rel in paths]
@@ -481,7 +545,7 @@ def materialize(game: Path, donor: Path, claim: str, *, echo=print) -> None:
     except authority.Unauthorized as error:
         raise PlanError(str(error)) from None
     apply.execute(game, ops, scopes=scopes)
-    echo(f'materialize: {len(claim_records(donor))} record(s) written; {len(paths)} path(s) under {claim}')
+    echo(f'materialize: {len(claim_records(donor, game))} record(s) written; {len(paths)} path(s) under {claim}')
 
 
 

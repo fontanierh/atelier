@@ -294,3 +294,80 @@ def test_real_donor_claim_pins_match():
     for rel, sha in sf.PINS.items():
         assert sf.sha256_file(DONOR / rel) == sha, rel
     assert all(len(sha) == 64 for sha in sf.PINS.values())
+
+
+# --- the tree house textures: held until the read confirms, then claimed with their instances kept ----------------------
+
+TREE_PNGS = {'flat.png': b'tree flat', 'glass.png': b'tree glass', 'rope.png': b'tree rope'}
+
+
+@pytest.fixture()
+def tree_trees(claim_trees, monkeypatch):
+    donor, game = claim_trees
+    for name, data in TREE_PNGS.items():
+        (donor / sf.TREE_DIR / name).parent.mkdir(parents=True, exist_ok=True)
+        (donor / sf.TREE_DIR / name).write_bytes(data)
+    pins = {f'{sf.TREE_DIR}/{name}': hashlib.sha256(data).hexdigest() for name, data in TREE_PNGS.items()}
+    monkeypatch.setattr(sf, 'PINS', {**sf.PINS, **pins})
+    for slug in ('flat', 'glass', 'rope'):
+        materials = f'/Game/Japan/Treehouse/Materials/MI_TH_{slug}'
+        texture = f'/Game/Japan/Treehouse/Textures/T_TH_{slug}'
+        record = f'adopted/japan/treehouse/surface-{slug}'
+        folder = game / 'assets' / record
+        folder.mkdir(parents=True)
+        (folder / 'asset.toml').write_text(adopted_text(record, f'shared/japan/treehouse/surface-{slug}', [materials, texture]))
+        files = {f'unreal/Content/Japan/Treehouse/Materials/MI_TH_{slug}.uasset': 'aa',
+                 f'unreal/Content/Japan/Treehouse/Textures/T_TH_{slug}.uasset': 'bb'}
+        (folder / 'verified.json').write_text(json.dumps({'asset': record, 'files': files}, indent=2, sort_keys=True) + '\n')
+    return donor, game
+
+
+def write_tree_read(game, max_size=1024):
+    rows = {package: {**sf.TREE_SETTINGS, 'max_texture_size': max_size} if max_size != 1024 else dict(sf.TREE_SETTINGS)
+            for package in sf.TREE_CLAIM}
+    path = game / sf.TREE_READ
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(rows, indent=1, sort_keys=True))
+
+
+def test_the_tree_house_is_held_without_the_read(tree_trees, capsys):
+    donor, game = tree_trees
+    confirmed, reason = sf.treehouse_status(game)
+    assert not confirmed and sf.TREE_READ in reason
+    ops = sf.claim_ops(game, donor)
+    assert not any('treehouse' in rel for rel in list(ops['writes']) + ops['deletes'])
+    sf.print_paths(game, donor)
+    assert 'not claimed' in capsys.readouterr().out
+
+
+def test_a_read_that_disagrees_holds_the_tree_house(tree_trees):
+    donor, game = tree_trees
+    write_tree_read(game, max_size=2048)
+    confirmed, reason = sf.treehouse_status(game)
+    assert not confirmed and 'max_texture_size' in reason
+
+
+def test_a_confirmed_read_claims_the_textures_and_keeps_the_instances(tree_trees, tmp_path):
+    donor, game = tree_trees
+    write_tree_read(game)
+    assert sf.treehouse_status(game)[0]
+    ops = sf.claim_ops(game, donor)
+    writes = ops['writes']
+    record_text = writes['assets/texture/japan/treehouse-flat/asset.toml'].decode()
+    assert 'max_texture_size = 1024' in record_text and 'lod_group = "TEXTUREGROUP_WORLD"' in record_text
+    assert 'srgb = true' in record_text
+    assert 'assets/texture/japan/treehouse-flat/src/T_TH_flat.png' in writes
+    kept = tmp_path / 'surface-flat.toml'
+    kept.write_bytes(writes['assets/adopted/japan/treehouse/surface-flat/asset.toml'])
+    outputs = [o.package for o in records.load_asset(kept).outputs]
+    assert outputs == ['/Game/Japan/Treehouse/Materials/MI_TH_flat']
+    assert 'assets/adopted/japan/treehouse/surface-flat/asset.toml' not in ops['deletes']
+    verified = json.loads(writes['assets/adopted/japan/treehouse/surface-flat/verified.json'].decode())
+    assert list(verified['files']) == ['unreal/Content/Japan/Treehouse/Materials/MI_TH_flat.uasset']
+
+
+def test_the_real_tree_house_verified_files_are_in_adoption_form():
+    for slug in ('flat', 'glass', 'rope'):
+        path = sf.GAME / f'assets/adopted/japan/treehouse/surface-{slug}/verified.json'
+        text = path.read_text()
+        assert json.dumps(json.loads(text), indent=2, sort_keys=True) + '\n' == text, slug
