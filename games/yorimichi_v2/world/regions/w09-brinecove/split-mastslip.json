@@ -618,6 +618,12 @@
   "yard": {
     "after": 9352,
     "before": 9558,
+    "carve": {
+      "original": "src/SM_BC_ShipyardYard.glb",
+      "original_sha256": "4e9d5402b8207f45a2753cefcb73b62df61658f0861220cd96da1d273e29ebcc",
+      "selection": "src/SM_BC_ShipyardYard.carve.json",
+      "selection_sha256": "b8c0a58c1df5202e1e52991b43a59f555e823d919daf670730836baf4d1f5e0e"
+    },
     "record": "prop/brinecove/shipyard-yard",
     "removed_donor": {
       "Harbor_5_3": [

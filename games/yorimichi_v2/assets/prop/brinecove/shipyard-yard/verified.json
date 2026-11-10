@@ -3,9 +3,9 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Brinecove/Meshes/SM_BC_ShipyardYard.uasset": "8688cafade46294ad298717ad960986c765afda7441f783fd06dd135ab0399f7"
+    "unreal/Content/Brinecove/Meshes/SM_BC_ShipyardYard.uasset": "f686561954da5072301e2f79adcef3c3bc08616983b7568332b6b6eedb32c103"
   },
-  "input_fingerprint": "291fcc20e82aba1d39383ef252c8d0680052520e83d1401e864bc9eaeb19bfab",
+  "input_fingerprint": "b5f0d7d46a8edffae16d5ba059354d26527d3223f5bb75a7020b39c8d51e248a",
   "kind": "imported",
   "lods": {
     "/Game/Brinecove/Meshes/SM_BC_ShipyardYard": {

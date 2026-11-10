@@ -1,4 +1,4 @@
-# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_ShipyardYard: the shipyard yard, cut from the fused tile(s) Harbor_5_3, Harbor_5_4 (9352 triangles).
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_ShipyardYard: the shipyard yard, cut from the fused tile(s) Harbor_5_3, Harbor_5_4 (9558 triangles).
 # The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
 # verified by tools/import/run.py, never edited by hand.
 schema = 1
@@ -10,7 +10,17 @@ references = ["adopted/brinecove/materials"]
 
 [[sources]]
 path = "src/SM_BC_ShipyardYard.glb"
-sha256 = "c886436ce232adb472dee853458a222298bbc1f11e5e88d6697b71cbe42499bf"
+sha256 = "4e9d5402b8207f45a2753cefcb73b62df61658f0861220cd96da1d273e29ebcc"
+
+[[sources]]
+path = "src/SM_BC_ShipyardYard.carve.json"
+sha256 = "b8c0a58c1df5202e1e52991b43a59f555e823d919daf670730836baf4d1f5e0e"
+
+[derive]
+kind = "carve"
+version = 1
+original = "src/SM_BC_ShipyardYard.glb"
+selection = "src/SM_BC_ShipyardYard.carve.json"
 
 [recipe]
 importer = "static-mesh"
