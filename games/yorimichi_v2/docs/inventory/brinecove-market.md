@@ -198,3 +198,21 @@ and 16 on the upper terrace every 40 m (`props-lantern-upper-<side><|x|>`). Each
 
 The 36 records import in one bounded queue (`run.py --batch 36`). Nothing is emptied, so there is no retire. What
 remains in the Props tiles is loose furniture (the street and pier barrels and crates, the rope coils) and the gulls.
+
+## Harbour piers and quay palms (`harbor1`)
+
+`harbor1` is the first batch of the fused `Harbor` component (`procedural/harbor.py`):
+- the 3 piers, `harbor-pier-central`, `-west` and `-east`. Each is the deck, piles, braces, T-head (central and east),
+  bollards and its two lantern posts. The central pier spans four tiles.
+- the 12 quay palms with their stone planters, `harbor-palm-<side><|x|>`: a hard part and its fronds' Soft part.
+
+The quay wall, promenade paving and water steps belong to no object. Batch 1's cranes, fish shed, net racks and
+shipyard yard, and the signal mast and slip, are taken first.
+
+| Tiles touched | Triangles taken | Tiles remade | Tiles emptied | Records |
+|---|---|---|---|---|
+| 10 | 12,984 (piers 3,672 / 2,868 / 3,180; palms 272 each) | `Harbor_2_3`, `3_3`, `4_2`, `4_3`, `5_3` | 5 (`Harbor_3_2` and the 2_3, 3_3, 4_3, 5_3 Soft tiles) | 32 |
+
+The emptied tiles are retired with the three stages above (`--batch harbor1`). The `harbor-*` placements that drew
+them are saved again; `harbor-3-2` contained only an emptied tile, so its placement is retired.
+
