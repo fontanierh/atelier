@@ -4,18 +4,24 @@ The package workflow is implemented. A normal build validates and compiles; cook
 below run from the repository root of an owned checkout at a stopped native-job boundary. Publication uses the
 existing verified package and the [release workflow](../../../docs/RELEASES.md), without another cook.
 
-## Current checkpoint (2026-11-09)
+## Current checkpoint (2026-11-10)
 
-- **Built:** main `3027366ced`, ready at 15:16 Paris. The package log records UAT/archive success; the incremental
-  build step took 546 s, including admission. The extracted app is about 3.1 GB.
-- **Automated checks:** the implementation owner reported all checks passing for this checkpoint (board #31340):
-  bundle identity `com.atelier.yorimichiv2`, executable, signatures, audio entitlement, 14 bundled dependencies,
-  excluded phone/kart content absent, and 62 runtime-data files with no missing or changed bytes.
-- **Human verification:** no new manual-play ledger is recorded here for this checkpoint. Earlier launch/shutdown
-  results belong to the earlier `40d5f9721f4f` package fingerprint and do not transfer to this app.
-- **Content scope:** see [INVENTORY.md](INVENTORY.md). The Brine Cove market and town split of
-  [PR #787](https://github.com/fontanierh/atelier/pull/787) (15 more stalls, 265 town objects, the soft fragments,
-  the source-preservation conversion and the tile retirements) is outside this package; the next package includes it.
+- **Built:** integration head `a363050d3d` of [PR #790](https://github.com/fontanierh/atelier/pull/790), ready at
+  02:36 Paris; the step took 1476 s. Main `91658129cd` differs from that head only in migration tools, tests and
+  one inventory line, none of which is packaged, so the app's content is that of main. The extracted app is about
+  3.2 GB; package fingerprint `f5947da8e8c2`.
+- **Automated checks:** all pass on the extracted app: bundle identity `com.atelier.yorimichiv2`, executable,
+  signatures, audio entitlement, 14 bundled dependencies, excluded phone/kart content absent, and 62 runtime-data
+  files with no missing or changed bytes.
+- **Observed launch:** `first_launch` and `shutdown` are recorded as passed for `f5947da8e8c2` (guarded launch,
+  LoadMap of the Slice in 16.4 s, no error lines, clean exit on the Quit event). The other manual items (input,
+  map travel, gameplay, sound, settings and save persistence) are not recorded for this app.
+- **Content scope:** see [INVENTORY.md](INVENTORY.md). This package is the first to include the Brine Cove market
+  and town split of [PR #787](https://github.com/fontanierh/atelier/pull/787) and the railway fittings, gondola
+  pylons and train LOD split of #790.
+- **Staging time:** UAT reads one Zen attachment per oplog entry with a blocking request inside a parallel loop,
+  so staging (about 15 000 entries) spends most of its time on .NET thread-pool growth. The log shows a single
+  "Reading oplog" line for that whole time; that is progress, not a hang, while Zen keeps listening on 8558.
 
 The owner directed on 2026-11-09 that human and multiplayer playtesting follows building; multiplayer will be
 played with his brother. These checks remain unverified acceptance work, not a block on independent migration.
