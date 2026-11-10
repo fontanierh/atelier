@@ -7,7 +7,8 @@
 
 A family (tools/migrate/master_families/NAME.py, one FAMILY dict) names the adopted record that owns its masters, the
 builder module under unreal/Scripts/material_masters/ and one entry per master. Each master becomes its own
-material-master record, with the builder module copied into its src/ and pinned by sha256. The adopted record gives up
+material-master record, with the builder module and any declared helper modules copied into src/ and pinned by sha256.
+The first source is the entry builder; helpers follow in dependency order. The adopted record gives up
 every package, so it is deleted with its verified.json, and every record that references it references the masters it
 uses instead (reference_rewrites). The records are not imported here: the V2 editor builds and reads back each master
 (unreal/Scripts/import_asset.py, material-master), and tools/import/run.py writes its verified.json.
@@ -49,7 +50,7 @@ LINE = {key: re.compile(rf'^{key} = (\[.*\])$', re.M) for key in DEPENDENCY_KEYS
 FAMILY_KEYS = {'name', 'adopted', 'owner', 'license', 'builder', 'donor', 'donor_lines', 'fallback', 'masters'}
 # keeps: packages the adopted record keeps. generator: the adopted record also holds its region generator's pinned code,
 # so it becomes a generator record (records.KINDS) instead of being deleted, and its referrers keep pointing at it.
-OPTIONAL_KEYS = {'keeps', 'generator'}
+OPTIONAL_KEYS = {'keeps', 'generator', 'helpers'}
 MASTER_KEYS = {'id', 'package', 'builder', 'reads', 'inputs', 'arguments'}
 
 
@@ -69,6 +70,17 @@ def load_families(folder: Path = FAMILY_DIR) -> dict:
             raise PlanError(f'{path.name}: a family has the keys {sorted(FAMILY_KEYS)} and is named after its file')
         if not (BUILDERS / family['builder']).is_file():
             raise PlanError(f'{path.name}: no builder module {family["builder"]} in unreal/Scripts/material_masters')
+        helpers = family.get('helpers', [])
+        if not isinstance(helpers, list) or any(not isinstance(name, str) for name in helpers):
+            raise PlanError(f'{path.name}: helpers must be a list of Python module filenames')
+        names = [family['builder'], *helpers]
+        if (len(set(names)) != len(names)
+                or any(Path(name).name != name or Path(name).suffix != '.py'
+                       or not Path(name).stem.isidentifier() or Path(name).stem == '__init__' for name in names)):
+            raise PlanError(f'{path.name}: builder and helpers must have distinct Python module filenames')
+        for name in helpers:
+            if not (BUILDERS / name).is_file():
+                raise PlanError(f'{path.name}: no helper module {name} in unreal/Scripts/material_masters')
         for master in family['masters']:
             if set(master) != MASTER_KEYS or master['builder'] not in family['donor_lines']:
                 raise PlanError(f'{path.name}: {master.get("id")}: a master has the keys {sorted(MASTER_KEYS)} and a '
@@ -97,6 +109,11 @@ def builder_rel(family: dict) -> str:
 
 def builder_sha(family: dict) -> str:
     return hashlib.sha256(builder_path(family).read_bytes()).hexdigest()
+
+
+def builder_sources(family: dict) -> list[Path]:
+    """The entry source first, then only the family's explicitly declared helpers, in dependency order."""
+    return [builder_path(family), *(BUILDERS / name for name in family.get('helpers', []))]
 
 
 def _packages_named(value) -> set:
@@ -186,8 +203,10 @@ def record_text(family: dict, master: dict, sha: str) -> str:
              f'provenance = "{provenance}, {master["builder"]} lines {family["donor_lines"][master["builder"]]}"']
     if master['inputs']:   # a top-level key: it must come before the first [[sources]] table
         lines.append('input_dependencies = [' + ', '.join(f'"{r}"' for r in master['inputs']) + ']')
-    lines += ['', '[[sources]]', f'path = "{builder_rel(family)}"', f'sha256 = "{sha}"',
-              '', '[recipe]', 'importer = "material-master"', 'version = 1', '', '[recipe.settings]',
+    for index, source in enumerate(builder_sources(family)):
+        digest = sha if index == 0 else hashlib.sha256(source.read_bytes()).hexdigest()
+        lines += ['', '[[sources]]', f'path = "src/{source.name}"', f'sha256 = "{digest}"']
+    lines += ['', '[recipe]', 'importer = "material-master"', 'version = 1', '', '[recipe.settings]',
               f'builder = "{master["builder"]}"',
               'reads = [' + ', '.join(f'"{r}"' for r in master['reads']) + ']',
               'arguments = { ' + ', '.join(f'{k} = {_value(v)}' for k, v in master['arguments'].items()) + ' }',
@@ -227,7 +246,8 @@ def claim_ops(game: Path, family: dict) -> dict:
     for master in family['masters']:
         folder = f'assets/{master["id"]}'
         writes[f'{folder}/asset.toml'] = record_text(family, master, sha).encode()
-        writes[f'{folder}/{builder_rel(family)}'] = builder_path(family).read_bytes()
+        for source in builder_sources(family):
+            writes[f'{folder}/src/{source.name}'] = source.read_bytes()
     if family.get('keeps'):
         writes.update(slimmed_adopted(game, family))
         return {'writes': writes, 'deletes': []}

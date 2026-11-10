@@ -17,6 +17,7 @@ FAMILY = {
     'owner': 'shared/japan/materials/base-materials',
     'license': 'owner-published (docs/DECISIONS.md D05 group 1)',
     'builder': 'japan_surface_masters.py',
+    'helpers': ['master_haze.py'],
     'donor': 'games/yorimichi/unreal/Scripts at 7eec0f98dd (pins in docs/inventory/japan-surfaces-prep.md)',
     'donor_lines': {
         'painted_material': 'shared_materials.py 169-221 (lit opaque); atmosphere.py 14-56; see_through.py 381-435, 509-525',

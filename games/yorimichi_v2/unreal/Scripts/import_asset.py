@@ -6,7 +6,6 @@ recreates other packages and saves only the planned ones. It reimports into the 
 to it, and its user-owned settings, survive. Import metadata keeps the repository-relative source path, never the
 absolute path of this checkout (CONTRACTS yorimichi-v2-portable-records).
 """
-import importlib.util
 import json
 import os
 import sys
@@ -21,6 +20,7 @@ import import_settings  # noqa: E402
 import lod_preservation  # noqa: E402
 from mesh_materials import assign_materials  # noqa: E402
 import master_digest  # noqa: E402
+from master_sources import builder as _master_builder  # noqa: E402
 
 MARKER = 'V2 IMPORT DONE'
 LOD_RESULT = 'lod-result.json'   # beside the plan: each static-mesh package's LOD chain before and after
@@ -529,17 +529,6 @@ def _material_instances(plan, settings):
         U.log(f'V2 import wrote {package} from parent {parent_path}')
 
 
-def _master_builder(path, name):
-    """The builder function the record names, from its pinned source file (loaded as a module of its own)."""
-    spec = importlib.util.spec_from_file_location(f'v2_master_builder_{name}', path)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    builder = getattr(module, name, None)
-    if not callable(builder) or name.startswith('_'):
-        raise RuntimeError(f'{path} has no builder {name}')
-    return builder
-
-
 def _material_master(plan):
     """@cc [owner:fontanierh,label:correctness] importer-writes-only-record-outputs
     Rebuild one generator master from its pinned builder and save it only when its wiring digest equals the saved original's
@@ -551,10 +540,15 @@ def _material_master(plan):
     empty: delete_all_material_expressions leaves some unwired leftovers in 5.8, and a rebuild over them would grow the
     package on every import. The saved master is therefore the fresh build, and its read-back has exactly the fresh
     build's unwired expressions."""
-    if len(plan['sources']) != 1 or len(plan['packages']) != 1:
-        raise RuntimeError('a material master names one builder source and builds one package')
+    if not plan['sources'] or len(plan['packages']) != 1:
+        raise RuntimeError('a material master names an entry builder with optional helpers and builds one package')
+    with _master_builder(plan['sources'], plan['settings']['builder']) as builder:
+        _material_master_with_builder(plan, builder)
+
+
+def _material_master_with_builder(plan, builder):
+    """The existing scratch, save and read-back route while this record's source namespace remains loaded."""
     settings = plan['settings']
-    builder = _master_builder(plan['sources'][0], settings['builder'])
     reads = {}
     for path in settings.get('reads', []):
         loaded = U.load_asset(path) if path.startswith('/Engine/') else EAL.load_asset(path)
