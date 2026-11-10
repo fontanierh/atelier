@@ -64,11 +64,22 @@ class Generated:
 
 
 @dataclass
+class Generator:
+    """A donor generator kept as a `kind = "generator"` record: pinned sources, no outputs and no recipe. Generated
+    records reference it; it owns no package (records.py, the generator kind)."""
+    id: str
+    owner: str
+    sources: list[Path]           # donor files (absolute, read only), copied into the record's src/
+    about: str
+
+
+@dataclass
 class Plan:
     family: str
     generated: list[Generated]
     unmapped_outputs: list[str]   # donor files no generated record uses
     kept: dict[str, list[str]]    # adopted record -> packages that stay with it
+    generators: list[Generator] = field(default_factory=list)
 
 
 def slug(name: str) -> str:
@@ -590,6 +601,22 @@ JAPAN_VILLAGE = '/Game/Japan/Materials/M_Village'     # the painted kit material
 JAPAN_COMPLEX = {'collision': 'complex'}
 JAPAN_RENDER_ONLY = {'collision': 'boxes', 'boxes': []}   # the donor's simple-as-complex with no shape (a look-only mesh)
 TREEHOUSE_SURFACES = ('TH_Structure', 'TH_Dressing', 'TH_Frame', 'TH_Trunks')
+BIKE_WHEELS = ('BK_WheelFront', 'BK_WheelRear')
+BIKE_WHEEL_IDS = ('prop/bike/wheel-front', 'prop/bike/wheel-rear')
+BIKE_GENERATOR = 'generator/bike/wheels'
+# The tracked donor sources of the wheels, relative to games/yorimichi: the wheel constructor (build.py, wheel(); the
+# wheel settings 0.048 / 0.050 are its calls in the bike parts list), its extractor (world/bike_sources.py: one
+# independent constructor per part), and the exporter that writes each part's source data and FBX (vehicle_sources.py,
+# vehicle_atomic_build.py) with the modules those import. Each file hashes the same at the donor commit 7eec0f98dd.
+BIKE_GENERATOR_SOURCES = ('assets/vehicles/bike/build.py', 'world/bike_sources.py', 'world/vehicle_sources.py',
+                          'vehicle_atomic_build.py', 'region_exports.py', 'world/yori.py')
+DONOR_GAME = GAME.parent / 'yorimichi'
+
+
+def bike_wheel_generator() -> Generator:
+    """The bike wheel generator as a generator record: the donor sources above, read from the tracked donor tree."""
+    return Generator(BIKE_GENERATOR, 'shared/japan/assets/bike', [DONOR_GAME / rel for rel in BIKE_GENERATOR_SOURCES],
+                     'bike wheel generator: the wheel constructor, its extractor and the exporter that writes the wheel source data')
 
 
 def atomic_rows(donor: Path, step: str) -> list[tuple[dict, Path]]:
@@ -634,7 +661,8 @@ def plan_japan_assets(game: Path, donor: Path, owner: dict[str, str], all_owner:
     mega ramp (3) and the tree house frame and trunks (2). Each one's single slot binds the material the donor's import
     script sets (M_Bike, M_SailboatCloth / M_SailboatWake, M_ZeppelinFabric on the airship's fabric slot, else M_Village).
     The bike's triangle count is the donor import report's (Unreal merges duplicate points of the vehicle parts, so it
-    is lower than the export's, down to 76 % on the crank); the two wheels need CPU access, which the importer cannot set.
+    is lower than the export's, down to 76 % on the crank). The two wheels keep CPU access (allow_cpu_access, read by
+    import_settings.py) and reference the bike wheel generator (bike_wheel_generator), which pins the constructor they came from.
     Not planned: the tree house props (UCX hulls with simple-as-complex), Hidamari props (donor-made LODs), and the trees,
     bushes, houses, rocks and other kit meshes, which other donor generators write."""
     generated, unmapped = [], []
@@ -647,14 +675,17 @@ def plan_japan_assets(game: Path, donor: Path, owner: dict[str, str], all_owner:
     bike = _json(donor / 'bike' / 'import-report.json')['parts']
     for row, path in atomic_rows(donor, 'vehicle_bike'):
         name = row['asset']
-        if name in ('BK_WheelFront', 'BK_WheelRear'):
-            unmapped.append(f'{path.relative_to(donor)} ({name}: the donor sets allow_cpu_access on the wheels; '
-                            'the V2 importer has no such setting)')
-            continue
         if bike[name]['source_triangles'] != row['triangles']:
             raise RecoverError(f'{name}: the bike import report and the export disagree on the source triangles')
+        wheel = name in BIKE_WHEELS     # import_bike.py sets allow_cpu_access on the wheels, and only on them
+        before = len(generated)
         add(row, path, f'bike/{ident(name[len("BK_"):])}', ['/Game/Japan/Materials/M_Bike'], {},
-            f'{name}: a bike part ({bike[name]["triangles"]} triangles after the import)', triangles=bike[name]['triangles'])
+            f'{name}: a bike {"wheel" if wheel else "part"} ({bike[name]["triangles"]} triangles after the import)',
+            triangles=bike[name]['triangles'], **({'allow_cpu_access': True} if wheel else {}))
+        for gen in generated[before:]:
+            if wheel:
+                gen.references = sorted({*gen.references, BIKE_GENERATOR})
+    generators = [bike_wheel_generator()] if any(g.id in BIKE_WHEEL_IDS for g in generated) else []
     sailboat = {'SB_Sail': '/Game/Japan/Materials/M_SailboatCloth', 'SB_Wake': '/Game/Japan/Materials/M_SailboatWake'}
     for row, path in atomic_rows(donor, 'vehicle_sailboat'):
         name = row['asset']
@@ -681,7 +712,7 @@ def plan_japan_assets(game: Path, donor: Path, owner: dict[str, str], all_owner:
             and not p.rsplit('/', 1)[-1].startswith(('TH_P_', 'HD_P_', 'BK_Wheel'))]
     if rest:
         unmapped.append(f'{len(rest)} package(s) of other donor generators (foliage, houses, props, sky): {", ".join(rest)}')
-    return Plan('japan/assets', generated, unmapped, {})
+    return Plan('japan/assets', generated, unmapped, {}, generators=generators)
 
 
 def treehouse_slot_map(slots: list[str], parent: str) -> dict[str, str]:
@@ -1008,6 +1039,19 @@ def _record_text(gen: Generated, digests: list[tuple[str, str]]) -> str:
     return '\n'.join(lines)
 
 
+def _generator_text(gen: Generator, digests: list[tuple[str, str]]) -> str:
+    """A generator record (the form adoption gives the Hidamari generator): pinned sources, no outputs, no recipe."""
+    lines = [f'# Donor generator (tools/migrate/recover.py): {gen.about}.',
+             '# It owns no package. Its sources are copied into src/ and pinned by sha256; the records it generated',
+             '# reference it. Editor-owned: nothing here is imported.',
+             'schema = 1', f'id = "{gen.id}"', 'kind = "generator"', 'authority = "editor"', f'owner = "{gen.owner}"',
+             'license = "owner-published (docs/DECISIONS.md D05 group 1)"',
+             'provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"']
+    for name, digest in digests:
+        lines += ['', '[[sources]]', f'path = "src/{name}"', f'sha256 = "{digest}"']
+    return '\n'.join(lines) + '\n'
+
+
 def _drop_outputs(text: str, packages: set[str]) -> str:
     """The asset.toml text without the [[outputs]] blocks of the given packages (other lines stay byte for byte)."""
     head, *blocks = re.split(r'(?m)^(?=\[\[outputs\]\]\n)', text)
@@ -1062,6 +1106,20 @@ def apply(game: Path, plan: Plan, donor: Path, settle: bool = False) -> dict:
             raise RecoverError(f'{folder} exists and is not a record of this tool; refusing to write over it')
         (folder / 'src').mkdir(parents=True, exist_ok=True)
         for path in gen.files():
+            shutil.copy2(path, folder / 'src' / path.name)
+        (folder / 'asset.toml').write_text(text)
+        changed['created'].append(gen.id)
+    for gen in plan.generators:
+        folder = game / 'assets' / gen.id
+        digests = [(path.name, records.sha256_file(path)) for path in gen.sources]
+        text = _generator_text(gen, digests)
+        if ((folder / 'asset.toml').is_file() and (folder / 'asset.toml').read_text() == text
+                and all((folder / 'src' / path.name).is_file() for path in gen.sources)):
+            continue
+        if folder.exists() and any(folder.iterdir()) and not (folder / 'asset.toml').is_file():
+            raise RecoverError(f'{folder} exists and is not a record of this tool; refusing to write over it')
+        (folder / 'src').mkdir(parents=True, exist_ok=True)
+        for path in gen.sources:
             shutil.copy2(path, folder / 'src' / path.name)
         (folder / 'asset.toml').write_text(text)
         changed['created'].append(gen.id)

@@ -677,9 +677,15 @@ def test_vehicle_and_kit_meshes_bind_the_materials_of_the_donor_imports(tmp_path
     atomic(donor, 'mega', {'Mega_Ramp': (22462, ['MegaPalette']), 'Mega_Trim': (44, ['MegaPalette'])})
     plan = recover.build_plan(game, 'japan/assets', donor)
     by_id = {g.id: g for g in plan.generated}
-    assert sorted(by_id) == ['prop/bike/frame', 'prop/mega/ramp', 'prop/mega/trim', 'prop/sailboat/hull',
-                             'prop/sailboat/sail', 'prop/zeppelin/airship', 'prop/zeppelin/gate']
+    assert sorted(by_id) == ['prop/bike/frame', 'prop/bike/wheel-front', 'prop/mega/ramp', 'prop/mega/trim',
+                             'prop/sailboat/hull', 'prop/sailboat/sail', 'prop/zeppelin/airship', 'prop/zeppelin/gate']
     assert by_id['prop/bike/frame'].settings == {'slot_materials': ['/Game/Japan/Materials/M_Bike'], 'triangles': 25094}
+    # The wheel keeps CPU access (import_settings.py) and references the generator that pins its constructor.
+    assert by_id['prop/bike/wheel-front'].settings == {'slot_materials': ['/Game/Japan/Materials/M_Bike'],
+                                                      'triangles': 26060, 'allow_cpu_access': True}
+    assert by_id['prop/bike/wheel-front'].references == ['adopted/japan/materials/base-materials', 'generator/bike/wheels']
+    assert 'generator/bike/wheels' not in by_id['prop/bike/frame'].references
+    assert [g.id for g in plan.generators] == ['generator/bike/wheels']
     assert by_id['prop/sailboat/sail'].settings['slot_materials'] == ['/Game/Japan/Materials/M_SailboatCloth']
     assert by_id['prop/sailboat/hull'].settings['slot_materials'] == ['/Game/Japan/Materials/M_Village']
     assert by_id['prop/zeppelin/airship'].settings['slot_map'] == {
@@ -689,10 +695,34 @@ def test_vehicle_and_kit_meshes_bind_the_materials_of_the_donor_imports(tmp_path
     assert (by_id['prop/mega/trim'].settings['collision'], by_id['prop/mega/trim'].settings['boxes']) == ('boxes', [])
     assert by_id['prop/mega/ramp'].settings['collision'] == 'complex'
     reasons = ' '.join(plan.unmapped_outputs)
-    assert 'BK_WheelFront' in reasons and 'allow_cpu_access' in reasons      # the importer cannot set CPU access
+    assert 'BK_Wheel' not in reasons                                        # both wheels are planned now
     assert 'TH_P_bell' in reasons and 'report_meshes' in reasons and 'Rock_A' in reasons
     assert plan.kept['adopted/japan/assets/sailboat'] == []
-    assert plan.kept['adopted/japan/assets/bike'] == [f'{assets}/BK_WheelFront']
+    assert plan.kept['adopted/japan/assets/bike'] == []                     # nothing of the bike record is left
+
+
+def test_bike_wheels_keep_cpu_access_and_apply_pins_the_generator_they_came_from(tmp_path):
+    game, donor = tmp_path / 'game', japan_donor(tmp_path)
+    assets = '/Game/Japan/Assets'
+    japan_adopted(game, 'adopted/japan/assets/bike', f'{assets}/BK_Frame', f'{assets}/BK_WheelFront')
+    japan_adopted(game, 'adopted/japan/materials/base-materials', '/Game/Japan/Materials/M_Bike')
+    atomic(donor, 'vehicle_bike', {'BK_Frame': (25666, ['BikePalette']), 'BK_WheelFront': (26060, ['BikePalette'])})
+    write(donor / 'bike/import-report.json', json.dumps({'parts': {'BK_Frame': {'source_triangles': 25666, 'triangles': 25094},
+                                                                   'BK_WheelFront': {'source_triangles': 26060, 'triangles': 26060}}}))
+    plan = recover.build_plan(game, 'japan/assets', donor)
+    first = recover.apply(game, plan, donor)
+    assert 'prop/bike/wheel-front' in first['created'] and 'generator/bike/wheels' in first['created']
+    wheel = (game / 'assets/prop/bike/wheel-front/asset.toml').read_text()
+    assert 'allow_cpu_access = true' in wheel and '"generator/bike/wheels"' in wheel
+    generator = records.load_asset(game / 'assets/generator/bike/wheels/asset.toml')
+    assert generator.kind == 'generator' and generator.outputs == [] and generator.recipe is None
+    assert [s.path for s in generator.sources] == [f'src/{name}' for name in (
+        'build.py', 'bike_sources.py', 'vehicle_sources.py', 'vehicle_atomic_build.py', 'region_exports.py', 'yori.py')]
+    build = next(s for s in generator.sources if s.path == 'src/build.py')
+    assert build.sha256 == '460f61c1cfb60fa810f1b32a2a61fd33617107c12e0c9bf45e1ec5ecdcf61084'
+    assert not (game / 'assets/adopted/japan/assets/bike').exists()
+    again = recover.apply(game, plan, donor)
+    assert again['created'] == [] and again['deleted'] == [] and again['shrunk'] == []
 
 
 def test_a_bike_report_that_disagrees_with_the_export_stops_the_plan(tmp_path):
