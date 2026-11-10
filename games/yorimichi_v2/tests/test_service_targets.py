@@ -82,7 +82,7 @@ def test_railway_pieces_and_groups_are_each_saved_exactly_once():
     names = [p['name'] for p in track['pieces']]
     names += [f"{mesh_name(g['mesh'])}#{g['key']}" for g in track['instances']]
     saved = [route for routes in objects_of('railway').values() for route in routes]
-    # A group split into its rows ("mesh#key@i", railway_fittings.py) is held once all of its rows are, and never also whole.
+    # A group split into its rows ("mesh#key@i", from the retired railway_fittings.py) is held once all of its rows are, and never also whole.
     sizes = {f"{mesh_name(g['mesh'])}#{g['key']}": len(g['instances']) for g in track['instances']}
     rows = Counter(route.rsplit('@', 1)[0] for route in saved if '@' in route)
     assert all(n == sizes.get(group) and group not in saved for group, n in rows.items()), rows

@@ -11,7 +11,7 @@ tracked in [sources.md](sources.md), and unfinished useful-object boundaries in 
 | City surfaces | 1,048 generated `prop/citysurfaces/*` records, plus the adopted generator record | Accepted per-record source/import ownership; saved placements still have their own region ownership |
 | Island terrain | Recovered per-piece generated records; the old adopted family retains its generator record | Terrain recovery is no longer an unwritten units-map proposal |
 | Belmonte train | 67 generated mesh records, 138 texture records and 21 material-instance records | The seven residual adopted records are retired: #796 imported their 459 packages (138 textures and 321 instances), with matching read-back. The 14 unused standalone LOD packages were retired in #790; vehicle records retain their LOD chains |
-| Gondola | 26 adopted records / 96 packages, 16 saved route placements | Saved stations; the ten towers are saved as their own objects (`gondola_pylons.py`) and the three pylon groups are retired |
+| Gondola | 26 adopted records / 96 packages, 16 saved route placements | Saved stations; the ten towers are saved as their own objects (by the retired `gondola_pylons.py`, see git history) and the three pylon groups are retired |
 | Ferry | 4 adopted records / 66 packages, 2 saved terminal placements | Both terminals have saved placement ownership |
 | Railway | 14 adopted records / 146 packages, 24 saved route placements | Stations, bridge and track sections have saved ownership. The twelve per-fitting objects are saved and the old group retired (#790) |
 | SkateRide | 692 adopted records / 3,331 packages, including 691 clip-family records | The prefix/chunk split proposal has landed; clip originals and importer code follow the restricted manifest |

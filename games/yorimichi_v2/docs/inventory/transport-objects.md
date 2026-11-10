@@ -10,7 +10,7 @@ stations are saved. [INVENTORY](../INVENTORY.md) tracks port status; this note d
 |---|---|---|---|
 | Ferry | 2: Hidamari and Brine Cove terminals (`w17-ferry/objects.saved.json`) | 4 adopted records / 66 packages | The ship, gates, hinged brows and live timetable remain dynamic services |
 | Gondola | 16: six stations and ten per-tower pylons (`w18-gondola/objects.saved.json`, [PR #790](https://github.com/fontanierh/atelier/pull/790)) | 26 adopted records / 96 packages | Each tower is its own saved object; cabins and ropes remain dynamic |
-| Railway | 24, including Belmonte station, overbridge, track sections, tunnels and twelve per-fitting objects (`w20-railway/objects.saved.json`, [PR #790](https://github.com/fontanierh/atelier/pull/790)) | 14 adopted records / 146 packages | Track areas are not proof that each useful piece is independently editable. The fittings are saved one per object (2 buffer stops, 2 stop boards, 2 turnouts, 6 tunnel portals, each routed by its row; `tools/migrate/railway_fittings.py`) |
+| Railway | 24, including Belmonte station, overbridge, track sections, tunnels and twelve per-fitting objects (`w20-railway/objects.saved.json`, [PR #790](https://github.com/fontanierh/atelier/pull/790)) | 14 adopted records / 146 packages | Track areas are not proof that each useful piece is independently editable. The fittings are saved one per object (2 buffer stops, 2 stop boards, 2 turnouts, 6 tunnel portals, each routed by its row; split by the retired `tools/migrate/railway_fittings.py`) |
 | Zeppelin | Four station meshes saved with their owning region scenery | Recovered Japan model records; the old single `adopted/japan/assets/zeppelin` proposal is obsolete | Dock gates and the ship move; boarding, line and station data must stay aligned |
 | Train rolling stock | 67 recovered generated mesh records under `prop/belmontetrain/` | Mesh records preserve LOD/collision/material settings; #796 recovered 459 residual packages through 138 texture and 21 material-instance records | Vehicles are dynamic gameplay objects, separate from fixed station/track placements |
 
@@ -31,14 +31,15 @@ stations are saved. [INVENTORY](../INVENTORY.md) tracks port status; this note d
 - `AV2ScenePatch::ClimbExempt` recognizes the saved source keys (`railway:`, `ferry:`, `gondola:`, parks and pier),
   so the old service-actor `NoClimb` tag is not the only path protecting saved scenery.
 - Gondola pylons are saved as ten per-tower objects (`object/gondola/pylon-l<line>-<n>`) by
-  `tools/migrate/gondola_pylons.py`; the three line groups are retired ([PR #790](https://github.com/fontanierh/atelier/pull/790); see the pylon section below). Cabins, ropes, the cable plan and station data are not part of that split.
+  the retired `tools/migrate/gondola_pylons.py` (git history); the three line groups are retired ([PR #790](https://github.com/fontanierh/atelier/pull/790); see the pylon section below). Cabins, ropes, the cable plan and station data are not part of that split.
 - Rendering batches may remain for performance. Several useful towers or fittings in one editable group still
   require independent editing boundaries under the whole-game authoring requirement.
 
 ## Gondola pylon split (saved)
 
 Status on main: **saved and retired** ([PR #790](https://github.com/fontanierh/atelier/pull/790)). `w18-gondola/objects.saved.json`
-holds the six stations and the ten pylons. `tools/migrate/gondola_pylons.py --check` reports the state of the tree.
+holds the six stations and the ten pylons. The split tool, `tools/migrate/gondola_pylons.py`, is retired (see git history); the
+steps below are the historical record of how the split ran.
 
 - Selection: the ten `GD_L<line>_<n>_Tower` static entries of `gondola/runtime.json`, lines in id order, and within a
   line by straight distance from its lower station (L1 Hidamari, L2 Belmonte, L3 Floor). At most 20 are taken; all ten are.
@@ -65,7 +66,7 @@ Between the steps the map is consistent: prepare leaves the groups drawing, and 
 rerun of prepare says so and retire refuses. The Unreal manifest is never edited; its names are the tower names. The
 replacement records of a failed save are not created by these steps, so retire has nothing to delete for them.
 
-### Coordinator sequence
+### Coordinator sequence (historical; the tool is retired)
 
 ```sh
 gp() { uv run python games/yorimichi_v2/tools/migrate/gondola_pylons.py "$@"; }
