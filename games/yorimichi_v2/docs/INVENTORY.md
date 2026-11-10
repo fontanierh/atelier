@@ -1,6 +1,6 @@
 # Inventory
 
-**Current checkpoint: 2026-11-10, [PR #797](https://github.com/fontanierh/atelier/pull/797) head `2850d8e498` (main `5d29a3644a` plus the first small-families batch), packaged.**
+**Current checkpoint: 2026-11-10. [PR #797](https://github.com/fontanierh/atelier/pull/797) is merged, and so is [PR #798](https://github.com/fontanierh/atelier/pull/798) (Brine Cove signal mast and shipyard slip). The packaged checkpoint is still package `bb451f636160` at #797 head `2850d8e498`; it predates #798, so #798 is in main but not yet packaged.**
 This is the status index for the full original-game port.
 The source baseline `7eec0f98dd` is documented separately in [features](inventory/features.md) and
 [world](inventory/world.md); those pages describe the donor, not today's V2 completion state.
@@ -23,7 +23,7 @@ The source baseline `7eec0f98dd` is documented separately in [features](inventor
 | Whole island | W00–W20 have committed coverage (29 world region scopes); W14 keeps its disabled baseline. The region records contain 2,450 saved object definitions. | [Regions](../world/regions/), `actors.verified.json`, `objects.saved.json`; these counts are not the number of independently split source models. |
 | Recovered models | Merged:<br>- 1,048 city records;<br>- 67 train mesh records, plus 159 train texture and material records (459 packages);<br>- ten families with 141 meshes and 29 textures;<br>- 100 Japan props;<br>- 72 Brine Cove plants and city tree residuals;<br>- the two Japan leaf instances.<br>The first small-families batch (21 records, 48 packages) is in #797. | [PR #784](https://github.com/fontanierh/atelier/pull/784), [PR #786](https://github.com/fontanierh/atelier/pull/786), [PR #792](https://github.com/fontanierh/atelier/pull/792), [PR #794](https://github.com/fontanierh/atelier/pull/794), [PR #796](https://github.com/fontanierh/atelier/pull/796); the read-back results are below. Source completeness and remaining fused objects are tracked below. |
 | Restricted and Adventure originals | 6,768 restricted package entries and 124 Adventure/animation entries have source routes; the manifest records 6,086 original pins. | [restricted.originals.json](../restricted.originals.json), [PR #785](https://github.com/fontanierh/atelier/pull/785). Private bytes stay on the pinned restricted route. This is not closure of every open source family. |
-| Brine Cove individual objects | All 21 market stalls, all 265 town objects, the two harbour Soft fragments, eleven small props and three ship objects have saved placements in main ([PR #787](https://github.com/fontanierh/atelier/pull/787)). Other scenery still includes fused models/patches. | [Brine Cove scope](inventory/brinecove-objects.md), [split work](inventory/brinecove-split.md), [remaining exceptions](inventory/exceptions.md). |
+| Brine Cove individual objects | All 21 market stalls, all 265 town objects, the two harbour Soft fragments, eleven small props and three ship objects have saved placements in main ([PR #787](https://github.com/fontanierh/atelier/pull/787)). The signal mast and the shipyard slip are saved and merged ([PR #798](https://github.com/fontanierh/atelier/pull/798)); package `bb451f636160` predates them, so they are in main but not yet packaged. Other scenery still includes fused models/patches. | [Brine Cove scope](inventory/brinecove-objects.md), [split work](inventory/brinecove-split.md), [remaining exceptions](inventory/exceptions.md). |
 | Transport objects | The 10 gondola pylons and 12 railway fittings are saved as their own objects; their fused groups and the train LOD records are retired. | [PR #790](https://github.com/fontanierh/atelier/pull/790), [exceptions](inventory/exceptions.md). |
 | Desktop package | Built 2026-11-10 06:12 Paris from the #797 head `2850d8e498` (fingerprint `bb451f636160`). All automated checks pass; first launch and shutdown were observed passing. The previous `f5947da8e8c2` (#790) app is kept. | [Package guide](PACKAGE.md). Human input, travel, gameplay, sound and persistence checks are not claimed complete. |
 | Appearance | Whole-island captures exist, as well as the earlier slice route/package measurements. | [PARITY](PARITY.md) retains their exact revisions and limits; those earlier captures do not accept every later split. |
@@ -32,7 +32,8 @@ The source baseline `7eec0f98dd` is documented separately in [features](inventor
 
 Saved, prepared and packaged totals are kept separate:
 - **Saved and packaged:** everything in the table above is in the `bb451f636160` package. Main has all of it
-  except the small-families batch, which lands with #797. The package includes these imports:
+  except the small-families batch (#797, now merged) and the Brine Cove signal mast and shipyard slip (#798, merged),
+  which package `bb451f636160` predates. The package includes these imports:
   - The two used Japan leaf instances (MI_LeafAmber, MI_LeafCrimson) are material-instance records imported
     from their recipe ([PR #792](https://github.com/fontanierh/atelier/pull/792)). They read identical to the
     packaged ones.
@@ -59,6 +60,8 @@ Saved, prepared and packaged totals are kept separate:
 Remaining construction work:
 - Close the other useful-object/source gaps in [exceptions](inventory/exceptions.md) and
   [sources](inventory/sources.md); an imported package with an unknown original stays unfinished.
+- Merged preparation, not source closure: [PR #799](https://github.com/fontanierh/atelier/pull/799) prepares the
+  material-master records and a recovery inventory for the held generator masters. It does not close source completeness.
 - Integrate the accepted follow-ups and produce the next useful package checkpoint. Keep the existing package
   available while this proceeds. Forecast (Paris time, unconfirmed): the held source set by about 14:00 on
   2026-11-10, and the remaining useful-object splitting by about 20:00. Final owner-led playtesting follows construction.
@@ -133,7 +136,7 @@ W10 shares W06's region scope; W19's stations belong to their host regions, so t
 | W06 | Forest lake | Saved [lake/treehouse](../world/regions/w06-lake-treehouse/) scenery/objects. |
 | W07 | Hidamari | Saved [harbour](../world/regions/w07-hidamari-harbour/) and [station](../world/regions/w07-hidamari-station/) scenery/objects; 1,048 city source records recovered. |
 | W08 | Southwest | Saved across coast, terrace and isle-east scopes in [regions](../world/regions/); recovered models in main. |
-| W09 | Brine Cove | Saved [region](../world/regions/w09-brinecove/): small props, ships, the 21 market stalls and the 265 town objects (#787), with the fused originals preserved and the emptied tiles retired. The signal mast and the shipyard slip are still fused. |
+| W09 | Brine Cove | Saved [region](../world/regions/w09-brinecove/): small props, ships, the 21 market stalls and the 265 town objects (#787), with the fused originals preserved and the emptied tiles retired. The signal mast and the shipyard slip are saved and merged ([PR #798](https://github.com/fontanierh/atelier/pull/798)); package `bb451f636160` predates them. |
 | W10 | Tree house | Saved under [W06](../world/regions/w06-lake-treehouse/); recovered models in main. |
 | W11 | Super Ultra Mega Park and its own map | Saved [island region](../world/regions/w11-megapark/) and standalone map/profile; rights cleared. |
 | W12 | Volcano and Crater Park | Saved [Crater Park](../world/regions/w12-craterpark/) plus three volcano scopes; restricted original routes linked. |
