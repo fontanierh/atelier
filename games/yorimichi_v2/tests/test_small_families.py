@@ -237,6 +237,11 @@ def claim_trees(tmp_path, monkeypatch):
     (game / 'assets/adopted/japan/textures/plaza-harbor/verified.json').write_text('{"files": {}}')
     units = {'packages': {p: {'note': 'fixture'} for p in plaza + ['/Game/Japan/Textures/T_Other']}}
     (game / 'assets/adopted/japan/textures/units.json').write_text(json.dumps(units, indent=1, ensure_ascii=False) + '\n')
+    (game / sf.PLAZA_READ).parent.mkdir(parents=True, exist_ok=True)
+    plaza_read = {package: {'srgb': True, 'max_texture_size': 1024, 'lod_group': 'TEXTUREGROUP_WORLD',
+                            'compression': 'TC_EDITOR_ICON', 'address_x': 'TA_MIRROR', 'address_y': 'TA_MIRROR'}
+                  for package in sf.PLAZA_TEXTURES}
+    (game / sf.PLAZA_READ).write_text(json.dumps(plaza_read, indent=1, sort_keys=True))
     (game / 'assets/object/hippodrome/tote-board').mkdir(parents=True)
     (game / 'assets/object/hippodrome/tote-board/asset.toml').write_text(OBJECT_TOTE)
     return donor, game

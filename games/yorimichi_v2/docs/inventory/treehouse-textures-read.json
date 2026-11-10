@@ -1,0 +1,26 @@
+{
+ "/Game/Japan/Treehouse/Textures/T_TH_flat": {
+  "address_x": "TA_WRAP",
+  "address_y": "TA_WRAP",
+  "compression": "TC_DEFAULT",
+  "lod_group": "TEXTUREGROUP_WORLD",
+  "max_texture_size": 1024,
+  "srgb": true
+ },
+ "/Game/Japan/Treehouse/Textures/T_TH_glass": {
+  "address_x": "TA_WRAP",
+  "address_y": "TA_WRAP",
+  "compression": "TC_DEFAULT",
+  "lod_group": "TEXTUREGROUP_WORLD",
+  "max_texture_size": 1024,
+  "srgb": true
+ },
+ "/Game/Japan/Treehouse/Textures/T_TH_rope": {
+  "address_x": "TA_WRAP",
+  "address_y": "TA_WRAP",
+  "compression": "TC_DEFAULT",
+  "lod_group": "TEXTUREGROUP_WORLD",
+  "max_texture_size": 1024,
+  "srgb": true
+ }
+}

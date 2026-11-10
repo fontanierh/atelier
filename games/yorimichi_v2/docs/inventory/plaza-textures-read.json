@@ -1,0 +1,34 @@
+{
+ "/Game/Japan/Textures/T_Arcade_paving": {
+  "address_x": "TA_MIRROR",
+  "address_y": "TA_MIRROR",
+  "compression": "TC_EDITOR_ICON",
+  "lod_group": "TEXTUREGROUP_WORLD",
+  "max_texture_size": 1024,
+  "srgb": true
+ },
+ "/Game/Japan/Textures/T_Arcade_timber": {
+  "address_x": "TA_MIRROR",
+  "address_y": "TA_MIRROR",
+  "compression": "TC_EDITOR_ICON",
+  "lod_group": "TEXTUREGROUP_WORLD",
+  "max_texture_size": 1024,
+  "srgb": true
+ },
+ "/Game/Japan/Textures/T_Harbor_paving": {
+  "address_x": "TA_MIRROR",
+  "address_y": "TA_MIRROR",
+  "compression": "TC_EDITOR_ICON",
+  "lod_group": "TEXTUREGROUP_WORLD",
+  "max_texture_size": 1024,
+  "srgb": true
+ },
+ "/Game/Japan/Textures/T_Harbor_timber": {
+  "address_x": "TA_MIRROR",
+  "address_y": "TA_MIRROR",
+  "compression": "TC_EDITOR_ICON",
+  "lod_group": "TEXTUREGROUP_WORLD",
+  "max_texture_size": 1024,
+  "srgb": true
+ }
+}

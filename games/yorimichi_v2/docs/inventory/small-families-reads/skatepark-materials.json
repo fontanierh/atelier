@@ -1,0 +1,13 @@
+{
+ "instances": {},
+ "not_instances": [
+  "M_BoardDissolve",
+  "M_Pier_basalt",
+  "M_Pier_ceramic",
+  "M_Pier_concrete",
+  "M_Pier_mural",
+  "M_Pier_painted",
+  "M_Pier_steel",
+  "M_Pier_wood"
+ ]
+}

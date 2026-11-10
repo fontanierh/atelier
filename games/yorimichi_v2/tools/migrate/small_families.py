@@ -25,7 +25,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import json
 import re
 import struct
@@ -54,7 +54,7 @@ TREEHOUSE_TEXTURES = {   # T_TH_<slug> <- build/yorimichi/treehouse/textures/<fi
 }
 ALPHA_PARENTS = ('M_RetailOpaque', 'M_RetailMasked', 'M_RetailTranslucent')   # import_megapark.py:76
 
-MASTER_NOTE = ' Classified, not blocked: a generator-built master keeps its editor-authority record, and its saved package is the only byte-level original of an editor-scripted generator; read-confirmed once the native read runs.'
+MASTER_NOTE = ' Loaded by the read as materials, not instances (report_materials cannot read them), so their parameters are unread. Classified, not blocked: a generator-built master keeps its editor-authority record, and its saved package is the only byte-level original of an editor-scripted generator.'
 # adopted record -> (family, origin, donor evidence, status, blocker or note)
 REGISTRY = {
     'adopted/hippodrome/loose_files': ('hippodrome', 'generated static mesh (GLB, region/glb)',
@@ -62,7 +62,7 @@ REGISTRY = {
         'static-mesh recipe needs the GLB copied to src/ and a native import; object records still reference this record'),
     'adopted/hippodrome/materials': ('hippodrome', 'generator master materials M_HD_Structure and M_HD_<surface>',
         'import_hippodrome.py:32-33 (SURFACES), :60-61 (M_HD_Structure)', 'need-read',
-        'generator-built masters; not yet read.'+MASTER_NOTE),
+        'generator-built masters; loaded, parameters unread.'+MASTER_NOTE),
     'adopted/hippodrome/meshes': ('hippodrome', 'Interchange sub-objects of the loose GLB imports',
         'import_hippodrome.py:102-103 (Meshes/<name> folder per GLB)', 'blocked',
         'referenced by the four loose meshes (18 files under unreal/Content name Hippodrome/Meshes/); retire only after a loose re-import'),
@@ -93,7 +93,7 @@ REGISTRY = {
         'import_megapark.py:20-28 (LEVEL), :347 (main)', 'unreal-authored',
         'keeps its editor-saved form (authority editor); a native read lists the actors it references'),
     'adopted/skatepark/board': ('skatepark', 'generator master M_BoardDissolve',
-        'board_dissolve_material.py:11-15', 'need-read', 'generator-built master; not yet read.'+MASTER_NOTE),
+        'board_dissolve_material.py:11-15', 'need-read', 'generator-built master; loaded, parameters unread.'+MASTER_NOTE),
     'adopted/skatepark/materials': ('skatepark', 'generator masters M_Pier_<surface>',
         'import_skatepark.py:137-173 (M_Pier_ and T_Pier_ textures)', 'need-read',
         'generator-built masters; not yet read; their textures are owned by texture/skatepark records.'+MASTER_NOTE),
@@ -118,7 +118,7 @@ REGISTRY = {
         'city_material.py (hidamari generator), tools/hidamari_textures.py', 'need-read',
         'parent M_HDCity and T_HD_plaster are owned by adopted/japan/hidamari records'),
     'adopted/racing': ('racing', 'generator master M_RacingTv',
-        'racing_tv_material.py:12-16', 'need-read', 'generator-built master; not yet read.'+MASTER_NOTE),
+        'racing_tv_material.py:12-16', 'need-read', 'generator-built master; loaded, parameters unread.'+MASTER_NOTE),
     'adopted/seethrough': ('seethrough', 'generator material parameter collection MPC_SeeThrough',
         'see_through.py:47 and :246-253', 'blocked', 'no importer for parameter collections'),
     'adopted/skateruntime': ('skateruntime', 'generated RuntimeData data asset (31 MB)',
@@ -302,6 +302,14 @@ TREE_CLAIM = {   # the tree house textures (import_treehouse.py:3-4 and :39-46):
 TREE_SETTINGS = {'srgb': True, 'max_texture_size': 1024, 'lod_group': 'TEXTUREGROUP_WORLD'}
 # The tree house textures are claimable only once the texture read (report_textures.py, its JSON) confirms these settings.
 TREE_READ = 'docs/inventory/treehouse-textures-read.json'
+# The plaza textures: the read shows the saved packages' full settings. The importer states all five: the donor scripts
+# set sRGB only, and the saved compression (TC_EDITOR_ICON) and mirrored addressing are what the packages carry.
+PLAZA_SETTINGS = {'srgb': True, 'max_texture_size': 1024, 'lod_group': 'TEXTUREGROUP_WORLD',
+                  'compression': 'TC_EDITOR_ICON', 'address': 'mirror'}
+PLAZA_READ = 'docs/inventory/plaza-textures-read.json'
+PLAZA_TEXTURES = (   # the four plaza packages (PLAZA_CLAIM) by their read key
+    '/Game/Japan/Textures/T_Arcade_paving', '/Game/Japan/Textures/T_Arcade_timber',
+    '/Game/Japan/Textures/T_Harbor_paving', '/Game/Japan/Textures/T_Harbor_timber')
 PINS = {   # donor-relative path -> sha256 (the region GLBs equal the exports; the plaza PNGs are tracked donor sources)
     f'{GLB_DIR}/SM_HD_FinishPost.glb': '123ab4602df5111d1df5345185183557b6488595ff9d5c3d58aebf57c9e9b3b4',
     f'{GLB_DIR}/SM_HD_Grandstand.glb': '92add5b3492eb839b9c6909d055c1d54d9692070e546a3429b2af9fd6ed9ae8f',
@@ -339,31 +347,56 @@ class NewRecord:
     outputs: list
     adopted: str      # the adopted record that gives up this package
     about: str
+    inputs: list = field(default_factory=list)   # input_dependencies: the adopted records whose packages it binds
+
+
+ADDRESS_MODES = {'TA_WRAP': 'wrap', 'TA_MIRROR': 'mirror'}   # report_textures.py's names -> a record's address setting
+
+
+def read_view(row):
+    """A read row in the records' setting vocabulary: address_x and address_y must agree and name a mode the importer
+    states; any other address leaves the key out, so no setting can match it."""
+    if row is None:
+        return None
+    view = dict(row)
+    x, y = row.get('address_x'), row.get('address_y')
+    if x is not None and x == y and x in ADDRESS_MODES:
+        view['address'] = ADDRESS_MODES[x]
+    return view
+
+
+def read_status(game: Path, read_rel: str, packages, settings: dict) -> tuple:
+    """(confirmed, reason): a texture family is claimable when the read file holds, for every package, each setting the
+    records state, as report_textures.py reads them back."""
+    path = game / read_rel
+    if not path.is_file():
+        return False, f'{read_rel} is missing: the texture read has not confirmed the settings'
+    read = json.loads(path.read_text())
+    for package in packages:
+        row = read_view(read.get(package))
+        if row is None:
+            return False, f'{package} is not in {read_rel}'
+        for key, want in settings.items():
+            if row.get(key) != want:
+                return False, f'{package}: {key} reads back {row.get(key)!r}, not {want!r}'
+    return True, f'the settings are confirmed by {read_rel}'
 
 
 def treehouse_status(game: Path) -> tuple:
-    """(confirmed, reason): the tree house textures are claimable when TREE_READ holds, for every package, the settings
-    report_textures.py reads back, as TREE_SETTINGS states them."""
-    path = game / TREE_READ
-    if not path.is_file():
-        return False, f'{TREE_READ} is missing: the texture read has not confirmed the settings'
-    read = json.loads(path.read_text())
-    for package in TREE_CLAIM:
-        row = read.get(package)
-        if row is None:
-            return False, f'{package} is not in {TREE_READ}'
-        for key, want in TREE_SETTINGS.items():
-            if row.get(key) != want:
-                return False, f'{package}: {key} reads back {row.get(key)!r}, not {want!r}'
-    return True, f'the settings are confirmed by {TREE_READ}'
+    return read_status(game, TREE_READ, TREE_CLAIM, TREE_SETTINGS)
+
+
+def plaza_status(game: Path) -> tuple:
+    return read_status(game, PLAZA_READ, PLAZA_TEXTURES, PLAZA_SETTINGS)
 
 
 def claim_records(donor: Path, game: Path) -> list:
-    """The new records. Every donor file is checked against its pin first; a mismatch refuses the plan. The tree house
-    records are included only when treehouse_status confirms them."""
-    confirmed, _ = treehouse_status(game)
-    needed = [rel for rel in PINS if rel.startswith(GLB_DIR) or rel.startswith(PNG_DIR)
-              or (confirmed and rel.startswith(TREE_DIR))]
+    """The new records. Every donor file the plan needs is checked against its pin first; a mismatch refuses the plan.
+    The tree house and plaza records are included only when their read gates confirm them (treehouse_status, plaza_status)."""
+    tree_ok, _ = treehouse_status(game)
+    plaza_ok, _ = plaza_status(game)
+    needed = [rel for rel in PINS if rel.startswith(GLB_DIR)
+              or (plaza_ok and rel.startswith(PNG_DIR)) or (tree_ok and rel.startswith(TREE_DIR))]
     for rel in needed:
         path = donor / rel
         if not path.is_file():
@@ -376,21 +409,24 @@ def claim_records(donor: Path, game: Path) -> list:
         rel = f'{GLB_DIR}/{name}.glb'
         out.append(NewRecord(
             id=f'prop/hippodrome/{slug}', kind='static-mesh', owner=f'shared/hippodrome/{slug}',
-            references=['adopted/hippodrome/materials'],
+            references=['adopted/hippodrome/materials'], inputs=['adopted/hippodrome/meshes'],
             sources=[(f'src/{name}.glb', PINS[rel], donor / rel)],
-            settings={'slot_materials': ['/Game/Hippodrome/Materials/M_HD_Structure'],
+            # The read (docs/inventory/small-families-reads/hippodrome-meshes.json): one slot, bound to the mesh's own
+            # material instance, which the adopted meshes record owns; one LOD; complex collision as simple.
+            settings={'slot_materials': [hippo_slot(name)],
                       'triangles': int(report[name]['triangles']), 'collision': 'complex'},
             outputs=[package], adopted='adopted/hippodrome/loose_files',
             about=f'{name}: the donor region GLB of one hippodrome course piece'))
-    for package, (slug, png) in PLAZA_CLAIM.items():
-        rel = f'{PNG_DIR}/{png}'
-        name = package.rsplit('/', 1)[1]
-        out.append(NewRecord(
-            id=f'texture/japan/{slug}', kind='texture', owner=f'shared/japan/{slug}', references=[],
-            sources=[(f'src/{name}.png', PINS[rel], donor / rel)], settings={'srgb': True},
-            outputs=[package], adopted='adopted/japan/textures/plaza-harbor',
-            about=f'{name}: the donor PNG {png} imported sRGB (arcade_material.py and harbor_material.py)'))
-    if confirmed:
+    if plaza_ok:
+        for package, (slug, png) in PLAZA_CLAIM.items():
+            rel = f'{PNG_DIR}/{png}'
+            name = package.rsplit('/', 1)[1]
+            out.append(NewRecord(
+                id=f'texture/japan/{slug}', kind='texture', owner=f'shared/japan/{slug}', references=[],
+                sources=[(f'src/{name}.png', PINS[rel], donor / rel)], settings=dict(PLAZA_SETTINGS),
+                outputs=[package], adopted='adopted/japan/textures/plaza-harbor',
+                about=f'{name}: the donor PNG {png}, imported with the saved packages\' settings (the plaza read)'))
+    if tree_ok:
         for package, (slug, png, adopted) in TREE_CLAIM.items():
             rel = f'{TREE_DIR}/{png}'
             name = package.rsplit('/', 1)[1]
@@ -402,6 +438,12 @@ def claim_records(donor: Path, game: Path) -> list:
     return out
 
 
+def hippo_slot(name: str) -> str:
+    """The loose mesh's material instance in the adopted meshes folder (SM_HD_<x> -> .../SM_HD_<x>/HD_<x>)."""
+    part = name[len('SM_HD_'):]
+    return f'/Game/Hippodrome/Meshes/{name}/HD_{part}'
+
+
 def record_text(rec: NewRecord) -> str:
     lines = [f'# Recovered from the donor (tools/migrate/small_families.py): {rec.about}.',
              '# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and',
@@ -410,6 +452,8 @@ def record_text(rec: NewRecord) -> str:
              f'license = "{LICENSE}"', f'provenance = "{PROVENANCE}"']
     if rec.references:
         lines.append('references = [' + ', '.join(f'"{r}"' for r in rec.references) + ']')
+    if rec.inputs:   # a top-level key: it must come before the first [[sources]] table
+        lines.append('input_dependencies = [' + ', '.join(f'"{r}"' for r in rec.inputs) + ']')
     for path, sha, _ in rec.sources:
         lines += ['', '[[sources]]', f'path = "{path}"', f'sha256 = "{sha}"']
     lines += ['', '[recipe]', f'importer = "{rec.kind}"', 'version = 1', '', '[recipe.settings]']
@@ -523,8 +567,8 @@ def locked_paths(game_rels: list) -> set:
 
 
 def print_paths(game: Path, donor: Path) -> None:
-    confirmed, reason = treehouse_status(game)
-    print(f'note: tree house textures {"claimed" if confirmed else "not claimed"}: {reason}')
+    for family, (confirmed, reason) in (('tree house', treehouse_status(game)), ('plaza', plaza_status(game))):
+        print(f'note: {family} textures {"claimed" if confirmed else "not claimed"}: {reason}')
     ops = claim_ops(game, donor)
     paths = sorted(set(ops['writes']) | set(ops['deletes']))
     full = [f'{GAME_REL}/{rel}' for rel in paths]
