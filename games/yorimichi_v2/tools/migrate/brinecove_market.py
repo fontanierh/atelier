@@ -45,6 +45,8 @@ PRIOR_EXPECTED = ('split-batch1.json',)      # earlier batches that already took
 
 # One entry per loop whose body makes whole objects. `component` is the donor constructor (module = function name);
 # `loop` is the loop header's source text; `key` is evaluated on the frame's locals when a face is made inside the body.
+# A `call` entry names one statement instead, by the start of its source text. Where scopes nest, the innermost one owns
+# the face.
 SCOPES = (
     dict(component='Market', module='market', loop='for i, (x, y, w, d, cloth) in enumerate(L.MARKET_STALLS):',
          key="'stall-%02d' % (i + 1)"),
@@ -74,6 +76,20 @@ SCOPES = (
          key="'lantern-quay-%s%d' % ('w' if x < 0 else 'e', abs(x))"),
     dict(component='Props', module='props', loop='for x in range(-300, 321, 40):',
          key="'lantern-upper-%s%d' % ('w' if x < 0 else 'e', abs(x))"),
+    # The loose quay, terrace and pier barrels and crates: each `barrel(...)` / `crate(...)` call is one object. A `call`
+    # scope is the statement whose source starts with that text (it must be found exactly once).
+    dict(component='Props', module='props', call='barrel(b, x + RNG.uniform(-1.5, 1.5), y + RNG.uniform(-1, 1), 4.7,',
+         key="'barrel-quay-%s%d-%d' % ('w' if x < 0 else 'e', abs(x), y)"),
+    dict(component='Props', module='props', call='crate(b, x + RNG.uniform(-2, 2), 176 + RNG.uniform(-1, 1), 4.7,',
+         key="'crate-quay-%s%d' % ('w' if x < 0 else 'e', abs(x))"),
+    dict(component='Props', module='props', call='barrel(b, x, 370, L.UPPER_Z, 0.9)',
+         key="'barrel-upper-%s%d' % ('w' if x < 0 else 'e', abs(x))"),
+    dict(component='Props', module='props', call='crate(b, x + 3, 366, L.UPPER_Z, 0.8, 12)',
+         key="'crate-upper-%s%d' % ('w' if x < 0 else 'e', abs(x))"),
+    dict(component='Props', module='props', call='barrel(b, px + width * 0.25, yy, 5.25, 0.9)',
+         key="'barrel-pier-%s-%s' % (_, 'shore' if yy == y0 - 24 else 'sea')"),
+    dict(component='Props', module='props', call='crate(b, px - width * 0.25, yy - 3, 5.25, 1.0, 20)',
+         key="'crate-pier-%s-%s' % (_, 'shore' if yy == y0 - 24 else 'sea')"),
     # Harbour structures (procedural/harbor.py): each pier (deck, piles, braces, T-head, bollards and its two lanterns) and
     # each quay palm with its stone planter is its loop body. The quay wall, paving and steps belong to no object.
     dict(component='Harbor', module='harbor', loop='for name, px, y0, y1, width in L.PIERS:', key="'pier-' + name"),
@@ -97,20 +113,25 @@ def donor_source(donor: Path, override: Path | None = None) -> Path:
 
 
 def loop_ranges(source: str, scopes) -> list[tuple[int, int, dict]]:
-    """(first line, last line, scope) of each scope's loop body, found by the loop header's text in the module source."""
+    """(first line, last line, scope) of each scope's loop body, found by the loop header's text in the module source,
+    or of each `call` scope's statement, found by the start of its text; each exactly once. Outermost first, so the
+    last range that holds a line is the innermost."""
     tree = ast.parse(source)
     lines = source.splitlines()
     found = []
     for node in ast.walk(tree):
-        if isinstance(node, ast.For):
-            header = ' '.join(lines[node.lineno - 1].split())
-            for scope in scopes:
-                if header == ' '.join(scope['loop'].split()):
-                    found.append((node.body[0].lineno, node.end_lineno, scope))
-    missing = [s['loop'] for s in scopes if not any(f[2] is s for f in found)]
-    if missing:
-        raise MarketError(f'loop header(s) not found in the donor module: {missing}')
-    return found
+        if not isinstance(node, ast.stmt):
+            continue
+        header = ' '.join(lines[node.lineno - 1].split())
+        for scope in scopes:
+            if 'loop' in scope and isinstance(node, ast.For) and header == ' '.join(scope['loop'].split()):
+                found.append((node.body[0].lineno, node.end_lineno, scope))
+            elif 'call' in scope and isinstance(node, ast.Expr) and header.startswith(' '.join(scope['call'].split())):
+                found.append((node.lineno, node.end_lineno, scope))
+    wrong = [s.get('loop') or s['call'] for s in scopes if sum(f[2] is s for f in found) != 1]
+    if wrong:
+        raise MarketError(f'loop header(s) or call(s) not found exactly once in the donor module: {wrong}')
+    return sorted(found, key=lambda f: f[0] - f[1])
 
 
 def _forget():
@@ -309,6 +330,14 @@ BATCHES['props3'] = tuple(f'props-lantern-quay-{"w" if x < 0 else "e"}{abs(x)}' 
 # The harbour: the three piers and the twelve quay palms in their stone planters (procedural/harbor.py).
 BATCHES['harbor1'] = ('harbor-pier-central', 'harbor-pier-west', 'harbor-pier-east') + tuple(
     f'harbor-palm-{"w" if x < 0 else "e"}{abs(x)}' for x in (-330, -280, -180, -110, 110, 180, 280, 330, -200, 200, -300, 300))
+# The loose barrels and crates: 7 quay groups (two barrels and a crate each), 6 upper-terrace pairs and both ends of
+# the three piers (a barrel and a crate each).
+_SIDE = lambda x: f'{"w" if x < 0 else "e"}{abs(x)}'   # noqa: E731
+BATCHES['props4'] = tuple(f'props-barrel-quay-{_SIDE(x)}-{y}' for x in (-320, -270, -210, 150, 205, 270, 320) for y in (146, 184)) + \
+    tuple(f'props-crate-quay-{_SIDE(x)}' for x in (-320, -270, -210, 150, 205, 270, 320)) + \
+    tuple(f'props-{kind}-upper-{_SIDE(x)}' for x in (-250, -190, 70, 130, 190, 250) for kind in ('barrel', 'crate')) + \
+    tuple(f'props-{kind}-pier-{pier}-{end}' for pier in ('central', 'west', 'east') for end in ('shore', 'sea')
+          for kind in ('barrel', 'crate'))
 
 COMPONENT_OF = {'market-': 'Market', 'town-lower-': 'TownLower', 'town-upper-': 'TownUpper', 'props-': 'Props', 'harbor-pier-': 'Harbor', 'harbor-palm-': 'Harbor'}
 ALL_OBJECTS = frozenset(o for names in BATCHES.values() for o in names)
