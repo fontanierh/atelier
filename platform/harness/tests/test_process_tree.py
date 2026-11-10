@@ -3,12 +3,13 @@
 Everything is mocked: no process is started and nothing is signalled.
 """
 from contextlib import ExitStack, contextmanager
+import errno
 import signal
 from types import SimpleNamespace
 
 import pytest
 
-from atelier.harness.safety import guarded, process_tree
+from atelier.harness.safety import guarded, memory_guard, process_tree
 
 
 class Then(list):
@@ -128,6 +129,21 @@ def test_process_identity_sampling_failure_is_not_an_exit(monkeypatch):
     monkeypatch.setattr(process_tree, 'usage', unreadable)
     with pytest.raises(PermissionError, match='telemetry unavailable'):
         process_tree.started(77)
+
+
+@pytest.mark.parametrize('error', [errno.ESRCH, errno.EPERM, errno.EIO])
+def test_darwin_identity_only_treats_missing_process_as_exited(monkeypatch, error):
+    """The native sampler must preserve errno classification before identity checks handle absence."""
+    monkeypatch.setattr(memory_guard, 'DARWIN', True)
+    monkeypatch.setattr(memory_guard, 'LIB', SimpleNamespace(proc_pid_rusage=lambda *args: -1))
+    monkeypatch.setattr(memory_guard.ctypes, 'get_errno', lambda: error)
+    if error == errno.ESRCH:
+        assert process_tree.started(77) is None
+    else:
+        with pytest.raises(OSError) as failure:
+            process_tree.started(77)
+        assert failure.value.errno == error
+        assert not isinstance(failure.value, ProcessLookupError)
 
 
 def test_a_guard_is_not_attached_to_a_different_process_on_the_same_pid(tmp_path):
