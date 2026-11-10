@@ -36,14 +36,19 @@ import ast
 import hashlib
 import json
 import re
+import subprocess
 import sys
+import tomllib
 from collections import defaultdict
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
+REPO = HERE.parents[3]
 sys.path.insert(0, str(HERE))
 import brinecove_market as market  # noqa: E402  (glb_point, face_index, owners_of, donor_source)
 import brinecove_split as split  # noqa: E402
+sys.path.insert(0, str(HERE.parents[1] / 'tools' / 'content'))
+import carve  # noqa: E402
 import recover  # noqa: E402
 
 GAME_REL = 'games/yorimichi_v2'
@@ -101,10 +106,13 @@ def _under(frame_path: str, parts: tuple) -> bool:
 
 
 def owner_rule(name: str, source: str):
-    """@cc [owner:fontanierh,label:correctness] brinecove-mastslip-owner-rule
+    """
+    @cc [owner:fontanierh,label:correctness] brinecove-mastslip-owner-rule
     (frame, material) -> owner name or None. The frame is the face's maker; the walk goes outward to the constructor.
-    A face belongs to the mast only inside the source block between its comment headers, and to the slip only when
-    _slipway() made it and it is stone; any other face is nobody's, so it stays in the residual tile."""
+    A face belongs to the mast only inside the source block between its comment headers. A face of `_slipway()` belongs
+    to the slip whatever its material: the stone, the kerbs and the wood sleepers and ground ways are one object, so the
+    slip is whole. Any other face is nobody's and stays in its residual tile.
+    """
     if name == 'signal-mast':
         first, last = block_lines(source)
 
@@ -277,6 +285,7 @@ def claim_set(donor: Path | None, summaries: dict, result: dict | None = None) -
     # file the groups go into, and the region objects that get the two new parts
     paths.add(f'{GAME_REL}/assets/{YARD_RECORD}/asset.toml')
     paths.add(f'{GAME_REL}/assets/{YARD_RECORD}/src/{YARD_SRC}')
+    paths.add(f'{GAME_REL}/assets/{YARD_RECORD}/{YARD_CARVE}')
     paths.add(f'{GAME_REL}/world/regions/{REGION}/split-batch1.json')
     paths.add(f'{GAME_REL}/unreal/Content/{RUNTIME}')
     for name in OBJECTS:
@@ -389,6 +398,7 @@ def plan(donor: Path, src: Path, game: Path = HERE.parents[1]) -> dict:
 BATCH = 'mastslip'
 YARD_RECORD = 'prop/brinecove/shipyard-yard'
 YARD_SRC = 'SM_BC_ShipyardYard.glb'
+YARD_BEFORE = 9558         # the donor yard (batch 1's own cut, the original GLB)
 YARD_AFTER = 9352          # 8,926 - 192 + 632 - 14 (the yard's Harbor_5_3 and Harbor_5_4 shares, batch 1)
 BATCH1 = 'split-batch1.json'
 
@@ -436,16 +446,68 @@ def yard_recut(game: Path, donor: Path, src: Path, files: dict, expected_removed
             'max': [round(v, 4) for v in hi]}
 
 
-def yard_text_edits(asset_text: str, objects_text: str | None, sha: str, triangles: int) -> tuple[str, str | None]:
-    """The yard record's source hash and triangle count, and the objects.toml description of the yard, updated in place."""
-    asset_text = re.sub(r'(?m)^(\[\[sources\]\]\npath = "src/SM_BC_ShipyardYard\.glb"\nsha256 = ")[0-9a-f]{64}(")',
-                        lambda m: m.group(1) + sha + m.group(2), asset_text)
-    asset_text = re.sub(r'(?m)^triangles = \d+$', f'triangles = {triangles}', asset_text)
-    asset_text = re.sub(r'\(9558 triangles\)', f'({triangles} triangles)', asset_text)
-    if objects_text is not None:
-        objects_text = re.sub(r'(?m)(id = "object/brinecove/shipyard-yard"\n(?:.*\n)*?about = "[^"]*?)\(9558 triangles\)',
-                              lambda m: m.group(1) + f'({triangles} triangles)', objects_text, count=1)
-    return asset_text, objects_text
+def yard_about_text(objects_text: str, triangles: int) -> str:
+    """The objects.toml description of the yard, with the triangle count of the derived mesh."""
+    return re.sub(r'(id = "object/brinecove/shipyard-yard"\n(?:.*\n)*?about = "[^"]*?)\(9558 triangles\)',
+                  lambda m: m.group(1) + f'({triangles} triangles)', objects_text, count=1)
+
+
+def yard_asset_text(base: str, selection_sha: str) -> str:
+    """The yard record's asset.toml as a carved record: the donor's original stays the first pinned source, the selection
+    is the second, [derive] names both (tools/content/carve.py), and the recipe counts the derived mesh's triangles."""
+    m = re.search(r'(?m)^\[\[sources\]\]\npath = "src/SM_BC_ShipyardYard\.glb"\nsha256 = "[0-9a-f]{64}"\n', base)
+    if m is None:
+        raise MastSlipError('the yard asset.toml does not pin its original GLB as its first source')
+    text = (base[:m.end()] + f'\n[[sources]]\npath = "src/SM_BC_ShipyardYard.carve.json"\nsha256 = "{selection_sha}"\n'
+            + base[m.end():])
+    text = re.sub(r'(?m)^triangles = \d+$', f'triangles = {YARD_AFTER}', text)
+    return carve.with_derive(text, 'src/SM_BC_ShipyardYard.glb', 'src/SM_BC_ShipyardYard.carve.json')
+
+
+YARD_CARVE = 'src/SM_BC_ShipyardYard.carve.json'
+YARD_ORIGINAL = 'src/SM_BC_ShipyardYard.glb'
+YARD_ORIGINAL_SHA = '4e9d5402b8207f45a2753cefcb73b62df61658f0861220cd96da1d273e29ebcc'   # main's pin, batch 1's own cut
+
+
+def yard_selection(total: int, removed_yard) -> str:
+    """The yard's selection file: the original's triangles the derived yard keeps (removed_yard are the slip's)."""
+    gone = set(removed_yard)
+    return carve.selection_text(total, [i for i in range(total) if i not in gone])
+
+
+def yard_problems(folder: Path, expected_sha: str, slip_keys: set) -> list[str]:
+    """@cc [owner:fontanierh,label:correctness] brinecove-yard-through-carve
+    The yard record is checked through its carve only: the derived mesh (tools/content/carve.py's own derivation from the
+    pinned original and the selection) must be the expected bytes, have the expected triangles, and hold no slip triangle.
+    The committed src/ folder never holds the derived mesh."""
+    problems: list[str] = []
+    try:
+        asset = tomllib.loads((folder / 'asset.toml').read_text())
+    except (OSError, ValueError) as error:
+        return [f'the yard asset.toml does not parse: {error}']
+    sources = {Path(x['path']).name: x['sha256'] for x in asset.get('sources', [])}
+    derive = asset.get('derive', {})
+    if derive.get('kind') != carve.DERIVE_KIND or derive.get('original') != YARD_ORIGINAL or derive.get('selection') != YARD_CARVE:
+        return ['the yard asset.toml has no [derive] carve of its original and selection']
+    for name in (YARD_ORIGINAL, YARD_CARVE):
+        data = (folder / name).read_bytes() if (folder / name).is_file() else b''
+        if not data or hashlib.sha256(data).hexdigest() != sources.get(Path(name).name):
+            problems.append(f'{name} is missing or differs from its pinned sha256')
+    if problems:
+        return problems
+    try:
+        derived = carve.derive(folder, derive)
+    except carve.CarveError as error:
+        return [f'the yard carve does not derive: {error}']
+    if hashlib.sha256(derived).hexdigest() != expected_sha:
+        problems.append('the derived yard differs from the expected bytes')
+    tris = list(split.triangles(carve.parse_glb(derived, YARD_ORIGINAL)))
+    if len(tris) != YARD_AFTER:
+        problems.append(f'the derived yard has {len(tris)} triangles, expected {YARD_AFTER}')
+    holds = yard_holds_slip(tris, slip_keys)
+    if holds:
+        problems.append(f'the derived yard still holds {len(holds)} slip triangle(s)')
+    return problems
 
 
 def build_plan(game: Path, donor: Path, src: Path, stage: Path) -> tuple[dict, dict]:
@@ -547,35 +609,27 @@ def apply(game: Path, donor: Path, src: Path, stage: Path, claim: str) -> dict:
         both = sorted(slip & yards.get(stem, set()))
         if both:
             expected_removed[stem] = both
+    yard_dir = game / 'assets' / YARD_RECORD
+    original = (yard_dir / 'src' / YARD_ORIGINAL).read_bytes()
+    if hashlib.sha256(original).hexdigest() != YARD_ORIGINAL_SHA:
+        raise MastSlipError('the yard GLB is not main\'s original (it is already carved): run yard-carve, not apply')
     recut = yard_recut(game, donor, src, files, expected_removed)
-    yard_record = game / 'assets' / YARD_RECORD
-    asset_text = (yard_record / 'asset.toml').read_text()
+    selection = yard_selection(YARD_BEFORE, recut['removed_yard']).encode()
+    writes[f'assets/{YARD_RECORD}/{YARD_CARVE}'] = selection
+    writes[f'assets/{YARD_RECORD}/asset.toml'] = yard_asset_text(
+        (yard_dir / 'asset.toml').read_text(), hashlib.sha256(selection).hexdigest()).encode()
     objects_rel = f'world/regions/{apply_.REGION}/objects.toml'
     objects_text = writes.get(objects_rel)   # apply's compute holds the new objects.toml as bytes
     objects_text = (game / objects_rel).read_text() if objects_text is None else objects_text.decode()
-    asset_new, objects_new = yard_text_edits(asset_text, objects_text, recut['sha256'], YARD_AFTER)
-    batch1_path = game / 'world' / 'regions' / apply_.REGION / BATCH1
-    batch1 = json.loads(batch1_path.read_text())
-    part = batch1['parts'][YARD_RECORD]
-    part.update(sha256=recut['sha256'], triangles=YARD_AFTER, min=recut['min'], max=recut['max'],
-                materials=sorted(set(recut['used'])))
-    for stem, share in list(batch1['shares'].items()):
-        if YARD_RECORD in share and stem in expected_removed:
-            share[YARD_RECORD] = share[YARD_RECORD] - len(expected_removed[stem])
+    writes[objects_rel] = yard_about_text(objects_text, YARD_AFTER).encode()
     expect = json.loads(writes[apply_.EXPECTED].decode()) if apply_.EXPECTED in writes else json.loads(
         (game / apply_.EXPECTED).read_text())
-    expect['yard'] = {'record': YARD_RECORD, 'before': YARD_TRIANGLES, 'after': YARD_AFTER,
-                      'sha256': recut['sha256'], 'removed_donor': {s: ranges(v) for s, v in expected_removed.items()},
-                      'removed_yard': ranges(recut['removed_yard'])}
+    expect['yard'] = yard_expectation(expected_removed, recut, selection)
     writes[apply_.EXPECTED] = (json.dumps(expect, indent=2, sort_keys=True) + '\n').encode()
-    writes[f'assets/{YARD_RECORD}/src/{YARD_SRC}'] = recut['bytes']
-    writes[f'assets/{YARD_RECORD}/asset.toml'] = asset_new.encode()
-    writes[objects_rel] = objects_new.encode()
-    writes[f'world/regions/{apply_.REGION}/{BATCH1}'] = (json.dumps(batch1, indent=2, sort_keys=True) + '\n').encode()
     all_ops = {'writes': writes, 'deletes': ops['deletes']}
     info = apply_.touched(game, plan, False, all_ops)
-    extra = {f'{GAME_REL}/assets/{YARD_RECORD}/src/{YARD_SRC}', f'{GAME_REL}/assets/{YARD_RECORD}/asset.toml',
-             f'{GAME_REL}/world/regions/{apply_.REGION}/{BATCH1}', f'{GAME_REL}/{objects_rel}'}
+    extra = {f'{GAME_REL}/assets/{YARD_RECORD}/{YARD_CARVE}', f'{GAME_REL}/assets/{YARD_RECORD}/asset.toml',
+             f'{GAME_REL}/{objects_rel}'}
     paths = sorted(set(info['paths']) | extra)
     scopes = set(info['scopes']) | {(f'asset/{YARD_RECORD}', f'shared/brinecove/{YARD_RECORD.rsplit("/", 1)[1]}'),
                                     f'region/{apply_.REGION}'}
@@ -583,28 +637,36 @@ def apply(game: Path, donor: Path, src: Path, stage: Path, claim: str) -> dict:
     return apply_.execute(game, all_ops, scopes=scopes)
 
 
+def yard_expectation(expected_removed: dict, recut: dict, selection: bytes) -> dict:
+    """The mast/slip expectation's yard section: the yard's derived sha, its carve, and the removed ordinals per source file
+    (donor ordinals and the yard part's own ordinals), so check can prove removed = slip ∩ yard."""
+    return {'record': YARD_RECORD, 'before': YARD_BEFORE, 'after': YARD_AFTER, 'sha256': recut['sha256'],
+            'carve': {'original': YARD_ORIGINAL, 'original_sha256': YARD_ORIGINAL_SHA, 'selection': YARD_CARVE,
+                      'selection_sha256': hashlib.sha256(selection).hexdigest()},
+            'removed_donor': {s: ranges(v) for s, v in expected_removed.items()},
+            'removed_yard': ranges(recut['removed_yard'])}
+
+
 def check(game: Path, donor: Path, src: Path) -> list[str]:
-    """Problems with the applied batch, proved from the committed files and the donor: the yard holds no slip triangle,
-    its recorded re-cut is exactly slip ∩ yard, the expectation's parts and the yard's hash match their files."""
+    """Problems with the applied batch, proved from the committed files and the donor: the yard, read through its carve
+    (yard_problems), holds no slip triangle; its recorded re-cut is exactly slip ∩ yard; batch 1 still describes its own
+    cut (the original yard GLB); and the parts match their expectation."""
     apply_ = market.set_batch(BATCH)
-    problems: list[str] = []
     expect_path = game / apply_.EXPECTED
     if not expect_path.is_file():
         return [f'{apply_.EXPECTED} is missing: apply has not run']
     expect = json.loads(expect_path.read_text())
+    yard = expect.get('yard')
+    if not yard:
+        return ['the expectation has no yard section: apply has not run']
+    problems: list[str] = []
     batch1 = json.loads((game / 'world' / 'regions' / apply_.REGION / BATCH1).read_text())
-    yard_path = game / 'assets' / YARD_RECORD / 'src' / YARD_SRC
-    yard_model = split.read_glb(yard_path)
-    yard_tris = list(split.triangles(yard_model))
-    if len(yard_tris) != YARD_AFTER:
-        problems.append(f'the yard has {len(yard_tris)} triangles, expected {YARD_AFTER}')
-    sha = hashlib.sha256(yard_path.read_bytes()).hexdigest()
-    if batch1['parts'][YARD_RECORD]['sha256'] != sha:
-        problems.append('batch 1 pins a different yard hash than the yard file')
+    if batch1['parts'][YARD_RECORD]['sha256'] != YARD_ORIGINAL_SHA:
+        problems.append('batch 1 does not describe its own cut: its yard part is not the original GLB')
     files = donor_owned(donor, src)
     yards = yard_ordinals(donor / 'brinecove' / 'glb')
     slip_keys = set()
-    recorded = expect.get('yard', {}).get('removed_donor', {})
+    recorded = yard.get('removed_donor', {})
     for stem, f in files.items():
         slip = {i for i, o in enumerate(f['owners']) if o == 'shipyard-slip'}
         slip_keys |= {yard_key(f['tris'][i][1]) for i in slip}
@@ -612,9 +674,7 @@ def check(game: Path, donor: Path, src: Path) -> list[str]:
         have = [i for a, b in recorded.get(stem, []) for i in range(a, b)]
         if want != sorted(have):
             problems.append(f'{stem}: the re-cut records {len(have)} removed triangles, slip ∩ yard is {len(want)}')
-    holds = yard_holds_slip(yard_tris, slip_keys)
-    if holds:
-        problems.append(f'the yard still holds {len(holds)} slip triangle(s)')
+    problems += yard_problems(game / 'assets' / YARD_RECORD, yard['sha256'], slip_keys)
     for record, part in expect.get('parts', {}).items():
         path = game / 'assets' / record / 'src' / f'{part["mesh"]}.glb'
         if not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest() != part['sha256']:
@@ -622,9 +682,69 @@ def check(game: Path, donor: Path, src: Path) -> list[str]:
     return problems
 
 
+def git_bytes(ref: str, rel: str) -> bytes:
+    """A file's bytes at a commit, its LFS object read from the local store (the working tree is not needed)."""
+    raw = subprocess.run(['git', 'show', f'{ref}:{rel}'], check=True, capture_output=True, cwd=REPO).stdout
+    if raw.startswith(b'version https://git-lfs'):
+        raw = subprocess.run(['git', 'lfs', 'smudge', '--', rel], input=raw, check=True, capture_output=True,
+                             cwd=REPO).stdout
+    return raw
+
+
+def yard_carve_paths() -> dict:
+    """The exact touched set of yard-carve (repository-relative paths and the claim scopes)."""
+    yard = f'{GAME_REL}/assets/{YARD_RECORD}'
+    paths = [f'{yard}/{YARD_ORIGINAL}', f'{yard}/{YARD_CARVE}', f'{yard}/asset.toml',
+             f'{GAME_REL}/world/regions/{REGION}/{BATCH1}', f'{GAME_REL}/world/regions/{REGION}/{EXPECTED_NAME}']
+    scopes = [f'asset/{YARD_RECORD} or shared/brinecove/{YARD_RECORD.rsplit("/", 1)[1]}', f'region/{REGION}']
+    return {'paths': sorted(paths), 'scopes': scopes}
+
+
+def yard_carve(game: Path, claim: str, base_ref: str = 'origin/main') -> dict:
+    """Move an applied yard (the recut GLB) to its carved form, from the current committed state: restore the original
+    GLB from base_ref, write the selection and the carved asset.toml, put batch 1's expectation back as base_ref has it,
+    and renew the mast/slip expectation's yard carve. The derived bytes must be the recorded ones. Journaled and claim-
+    authorized like apply; the touched set is yard_carve_paths()."""
+    apply_ = market.set_batch(BATCH)
+    yard_dir = f'{GAME_REL}/assets/{YARD_RECORD}'
+    original = git_bytes(base_ref, f'{yard_dir}/{YARD_ORIGINAL}')
+    if hashlib.sha256(original).hexdigest() != YARD_ORIGINAL_SHA:
+        raise MastSlipError(f'{base_ref}: the yard GLB is not the original pinned by batch 1')
+    base_asset = git_bytes(base_ref, f'{yard_dir}/asset.toml').decode()
+    batch1 = git_bytes(base_ref, f'{GAME_REL}/world/regions/{REGION}/{BATCH1}')
+    expect_path = game / apply_.EXPECTED
+    expect = json.loads(expect_path.read_text())
+    yard = expect.get('yard')
+    if not yard:
+        raise MastSlipError('no yard section in the expectation: apply has not run')
+    total = sum(1 for _ in split.triangles(carve.parse_glb(original, YARD_ORIGINAL)))
+    removed = [i for a, b in yard['removed_yard'] for i in range(a, b)]
+    selection = yard_selection(total, removed).encode()
+    kept = [i for i in range(total) if i not in set(removed)]
+    derived = carve.remainder_bytes(original, Path(YARD_ORIGINAL).name, kept, total)
+    if hashlib.sha256(derived).hexdigest() != yard['sha256']:
+        raise MastSlipError('the carve of the original does not derive the recorded yard bytes; nothing written')
+    yard['carve'] = {'original': YARD_ORIGINAL, 'original_sha256': YARD_ORIGINAL_SHA, 'selection': YARD_CARVE,
+                     'selection_sha256': hashlib.sha256(selection).hexdigest()}
+    writes = {
+        f'assets/{YARD_RECORD}/{YARD_ORIGINAL}': original,
+        f'assets/{YARD_RECORD}/{YARD_CARVE}': selection,
+        f'assets/{YARD_RECORD}/asset.toml': yard_asset_text(base_asset, hashlib.sha256(selection).hexdigest()).encode(),
+        f'world/regions/{REGION}/{BATCH1}': batch1,
+        apply_.EXPECTED: (json.dumps(expect, indent=2, sort_keys=True) + '\n').encode(),
+    }
+    apply_.Journal(game).recover(claim)
+    exact = yard_carve_paths()
+    scopes = {(f'asset/{YARD_RECORD}', f'shared/brinecove/{YARD_RECORD.rsplit("/", 1)[1]}'), f'region/{REGION}'}
+    apply_.authority.authorize(exact['paths'], claim, 'Brine Cove yard carve', scopes=scopes)
+    return apply_.execute(game, {'writes': writes, 'deletes': []}, scopes=scopes)
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split('\n\n')[0])
-    parser.add_argument('command', choices=('paths', 'plan', 'apply', 'check'))
+    parser.add_argument('command', choices=('paths', 'plan', 'apply', 'check', 'yard-carve'))
+    parser.add_argument('--base-ref', default='origin/main',
+                        help='yard-carve: the commit whose original yard GLB, asset.toml and batch 1 are restored')
     parser.add_argument('--stage', type=Path, default=HERE.parents[3] / 'build' / 'yorimichi_v2' / 'brinecove-mastslip',
                         help='apply: the staging folder for the new GLBs (outside the repository by default)')
     parser.add_argument('--claim', help='apply: the active claim (task ID) that must cover the touched set')
@@ -636,6 +756,12 @@ def main(argv=None) -> int:
     try:
         donor = args.donor.resolve() if args.donor else None
         src = market.donor_source(donor, args.donor_src) if donor else None
+        if args.command == 'yard-carve':
+            if not args.claim:
+                parser.error('yard-carve needs --claim TASK (its touched set is printed by `paths`)')
+            done = yard_carve(args.game.resolve(), args.claim, args.base_ref)
+            print(f'yard-carve: wrote {len(done["written"])}')
+            return 0
         if args.command in ('plan', 'apply', 'check'):
             if donor is None or src is None:
                 parser.error(f'{args.command} needs --donor (the donor GLB triangles)')
@@ -659,8 +785,18 @@ def main(argv=None) -> int:
         summaries: dict = {}
         for name in OBJECTS:
             summaries.update(summary(replay(src, name)))
-        result = plan(donor, src, args.game.resolve()) if donor else None
+        result = None
+        if donor:
+            try:
+                result = plan(donor, src, args.game.resolve())
+            except MastSlipError:
+                # applied already: plan() runs on the un-carved remainder only. The applied expectation names the tiles.
+                expect_path = args.game.resolve() / market.set_batch(BATCH).EXPECTED
+                if not expect_path.is_file() or not json.loads(expect_path.read_text()).get('tiles'):
+                    raise
+                result = {'trimmed': {stem: {} for stem in json.loads(expect_path.read_text())['tiles']}}
         info = claim_set(donor, summaries, result)
+        info['yard_carve'] = yard_carve_paths()     # the exact touched set of `yard-carve`
         if args.json:
             print(json.dumps(info, indent=2))
         else:
@@ -670,6 +806,9 @@ def main(argv=None) -> int:
             print('\n'.join(info['scopes']))
             print('# locks: ' + ', '.join(info['locks']))
             print('# residual tiles: ' + ', '.join(info['residual_tiles']))
+            print('# yard-carve (exact touched set; claim these for `yard-carve --claim TASK`)')
+            print('\n'.join(info['yard_carve']['paths']))
+            print('# yard-carve scopes: ' + ' ; '.join(info['yard_carve']['scopes']))
             if info['donor_glb_stems'] is None:
                 print('# piece names need --donor: the Market tiles are cut into _PieceN models')
         return 0

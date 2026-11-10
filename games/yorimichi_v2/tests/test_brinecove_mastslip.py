@@ -1,7 +1,9 @@
 """Brine Cove signal mast and stone shipyard slip: owner replay from the generator's source blocks, claim paths and the
 plan's GLB matching. The generator replays are pure Python (no bpy); the donor GLBs are synthetic, written from the
 generator's own triangles, so no LFS data is needed."""
+import hashlib
 import sys
+import tomllib
 from pathlib import Path
 
 import pytest
@@ -237,13 +239,105 @@ def test_yard_holds_slip_names_each_slip_triangle_left_in_the_yard():
     assert mast.yard_holds_slip([b], slip) == []
 
 
-def test_yard_text_edits_update_the_hash_count_and_the_description_only():
-    asset = ('[[sources]]\npath = "src/SM_BC_ShipyardYard.glb"\nsha256 = "' + '0' * 64 + '"\n\n[recipe.settings]\n'
-             'triangles = 9558\ncollision = "complex"\n')
+BASE_YARD_ASSET = ('''schema = 1
+id = "prop/brinecove/shipyard-yard"
+
+[[sources]]
+path = "src/SM_BC_ShipyardYard.glb"
+sha256 = "{orig}"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Brinecove/Materials/MI_BC_wood"]
+triangles = 9558
+collision = "complex"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_ShipyardYard"
+''')
+
+
+def test_yard_asset_is_a_carve_of_the_original_with_the_derived_count():
+    text = mast.yard_asset_text(BASE_YARD_ASSET.format(orig='4e9d' + '0' * 60), 'b' * 64)
+    data = tomllib.loads(text)
+    assert [x['path'] for x in data['sources']] == ['src/SM_BC_ShipyardYard.glb', 'src/SM_BC_ShipyardYard.carve.json']
+    assert data['sources'][1]['sha256'] == 'b' * 64
+    assert data['derive'] == {'kind': 'carve', 'version': 1, 'original': 'src/SM_BC_ShipyardYard.glb',
+                              'selection': 'src/SM_BC_ShipyardYard.carve.json'}
+    assert data['recipe']['settings']['triangles'] == 9352
+    with pytest.raises(mast.MastSlipError, match='does not pin its original'):
+        mast.yard_asset_text('schema = 1\n[recipe]\n', 'b' * 64)
+
+
+def test_yard_about_text_changes_only_the_yard_description():
     objects = ('[[objects]]\nid = "object/brinecove/quay-anchor"\nabout = "the quay anchor (2052 triangles)"\n\n'
                '[[objects]]\nid = "object/brinecove/shipyard-yard"\ngroup = "SM_BC_ShipyardYard"\n'
                'about = "the shipyard yard, cut from its fused tile (9558 triangles)"\n')
-    new_asset, new_objects = mast.yard_text_edits(asset, objects, 'a' * 64, 9352)
-    assert 'sha256 = "' + 'a' * 64 + '"' in new_asset and 'triangles = 9352' in new_asset
-    assert 'the shipyard yard, cut from its fused tile (9352 triangles)' in new_objects
-    assert '(2052 triangles)' in new_objects                      # another object's text is untouched
+    new = mast.yard_about_text(objects, 9352)
+    assert 'the shipyard yard, cut from its fused tile (9352 triangles)' in new
+    assert '(2052 triangles)' in new
+
+
+def test_carve_derivation_is_byte_identical_to_the_recut_part(tmp_path):
+    """carve.py's derivation from the original and the selection equals the bytes the re-cut writes (the committed yard)."""
+    from glb_subset import parse_glb
+    import carve
+    tris = [('BC_wood', ((0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0))),
+            ('BC_metal', ((2.0, 0.0, 0.0), (3.0, 0.0, 0.0), (2.0, 1.0, 0.0))),
+            ('BC_wood', ((4.0, 0.0, 0.0), (5.0, 0.0, 0.0), (4.0, 1.0, 0.0))),
+            ('BC_rope', ((6.0, 0.0, 0.0), (7.0, 0.0, 0.0), (6.0, 1.0, 0.0)))]
+    original = _fixture_glb(tmp_path / 'SM_BC_ShipyardYard.glb', tris).read_bytes()
+    model = parse_glb(original, 'SM_BC_ShipyardYard.glb')
+    recut, _ = split_apply.recut_part(model, [1, 3], 'SM_BC_ShipyardYard')
+    kept = [0, 2]
+    assert carve.remainder_bytes(original, 'SM_BC_ShipyardYard.glb', kept, 4) == recut
+    selection = mast.yard_selection(4, [1, 3])
+    assert carve.load_selection(selection.encode()) == (4, kept)
+
+
+def _carved_yard(folder, tris, removed):
+    """A yard record folder: the original GLB, the selection that removes `removed`, and the carved asset.toml."""
+    import carve
+    (folder / 'src').mkdir(parents=True)
+    original = _fixture_glb(folder / 'src' / 'SM_BC_ShipyardYard.glb', tris).read_bytes()
+    total = len(tris)
+    selection = mast.yard_selection(total, removed)
+    (folder / 'src' / 'SM_BC_ShipyardYard.carve.json').write_text(selection)
+    text = mast.yard_asset_text(BASE_YARD_ASSET.format(orig=hashlib.sha256(original).hexdigest()),
+                                hashlib.sha256(selection.encode()).hexdigest())
+    (folder / 'asset.toml').write_text(text)
+    derived = carve.remainder_bytes(original, 'SM_BC_ShipyardYard.glb', [i for i in range(total) if i not in removed], total)
+    return hashlib.sha256(derived).hexdigest()
+
+
+def test_yard_check_refuses_a_derived_yard_that_still_holds_a_slip_triangle(tmp_path):
+    a = ('BC_wood', ((0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0)))     # a slip triangle
+    b = ('BC_wood', ((5.0, 0.0, 0.0), (6.0, 0.0, 0.0), (5.0, 1.0, 0.0)))
+    expected = _carved_yard(tmp_path, [a, b], removed=[])                     # the carve keeps everything: a is left
+    problems = mast.yard_problems(tmp_path, expected, {mast.yard_key(a[1])})
+    assert any('still holds 1 slip triangle' in p for p in problems)
+
+
+def test_yard_check_accepts_a_derived_yard_without_slip_triangles_and_names_the_count(tmp_path):
+    a = ('BC_wood', ((0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0)))
+    b = ('BC_wood', ((5.0, 0.0, 0.0), (6.0, 0.0, 0.0), (5.0, 1.0, 0.0)))
+    expected = _carved_yard(tmp_path, [a, b], removed=[0])                    # the slip triangle is carved out
+    problems = mast.yard_problems(tmp_path, expected, {mast.yard_key(a[1])})
+    assert not any('still holds' in p for p in problems)
+    assert any('triangles, expected 9352' in p for p in problems)             # the fixture is not the real yard size
+    wrong = mast.yard_problems(tmp_path, 'f' * 64, set())
+    assert any('differs from the expected bytes' in p for p in wrong)
+
+
+def test_yard_carve_touches_exactly_the_listed_paths():
+    exact = mast.yard_carve_paths()
+    yard = 'games/yorimichi_v2/assets/prop/brinecove/shipyard-yard'
+    assert exact['paths'] == sorted([
+        f'{yard}/asset.toml', f'{yard}/src/SM_BC_ShipyardYard.carve.json', f'{yard}/src/SM_BC_ShipyardYard.glb',
+        'games/yorimichi_v2/world/regions/w09-brinecove/split-batch1.json',
+        'games/yorimichi_v2/world/regions/w09-brinecove/split-mastslip.json'])
+    assert any(s.startswith('asset/prop/brinecove/shipyard-yard') for s in exact['scopes'])
+    assert 'region/w09-brinecove' in exact['scopes']
