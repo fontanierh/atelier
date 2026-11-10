@@ -28,14 +28,16 @@ except ImportError:   # outside the editor only the pure functions are usable
 SETTINGS = ('blend_mode', 'shading_model', 'two_sided', 'material_domain', 'opacity_mask_clip_value',
             'used_with_instanced_static_meshes', 'used_with_skeletal_mesh', 'used_with_static_lighting',
             'translucency_lighting_mode',   # written by the translucent sailboat wake (japan_base_masters.sailboat_material)
-            'compute_fog_per_pixel', 'tangent_space_normal')   # written by both sea masters (japan_sea_masters)
+            'compute_fog_per_pixel', 'tangent_space_normal',   # written by both sea masters (japan_sea_masters)
+            'dithered_lod_transition')   # the forest impostor and the northern mountains (japan_terrain_masters)
 PROPERTY_PINS = ('MP_BASE_COLOR', 'MP_NORMAL', 'MP_ROUGHNESS', 'MP_METALLIC', 'MP_SPECULAR', 'MP_EMISSIVE_COLOR',
                  'MP_OPACITY', 'MP_OPACITY_MASK', 'MP_AMBIENT_OCCLUSION', 'MP_WORLD_POSITION_OFFSET', 'MP_REFRACTION',
                  'MP_PIXEL_DEPTH_OFFSET', 'MP_SUBSURFACE_COLOR', 'MP_CUSTOM_DATA0', 'MP_CUSTOM_DATA1', 'MP_TANGENT',
                  'MP_ANISOTROPY', 'MP_SHADING_MODEL')   # a pin this engine does not have is skipped on both sides alike
 EXPRESSION_PROPERTIES = ('parameter_name', 'default_value', 'r', 'constant', 'const_a', 'const_b', 'texture',
                          'sampler_type', 'code', 'coordinate_index', 'output_type', 'data_index', 'const_default_value',
-                         'inputs')   # a Custom node's inputs, recorded by name
+                         'inputs',   # a Custom node's inputs, recorded by name
+                         'collection')   # a collection parameter's parameter collection (M_NorthMountains reads MPC_Wind)
 LISTS = ('expressions', 'connections', 'property_connections')
 SETS = ('parameters',)
 

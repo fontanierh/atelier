@@ -168,6 +168,10 @@ def _value(value) -> str:
         return 'true' if value else 'false'
     if isinstance(value, str):
         return '"' + value.replace('\\', '\\\\').replace('"', '\\"') + '"'
+    if isinstance(value, (list, tuple)):
+        return '[' + ', '.join(_value(v) for v in value) + ']'
+    if isinstance(value, dict):   # an inline table: build-output values such as japan_terrain's north_snow.json subset
+        return '{ ' + ', '.join(f'{k} = {_value(v)}' for k, v in value.items()) + ' }'
     return repr(float(value)) if isinstance(value, float) else str(value)
 
 
