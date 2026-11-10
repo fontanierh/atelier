@@ -172,6 +172,24 @@ def _print(value):
     return 0
 
 
+def _print_release(value):
+    """@cc [owner:fontanierh,label:correctness] incomplete-release-exit
+    Release commands MUST return nonzero while any returned claim still holds its reservation or has a
+    lock awaiting release or reconciliation, including a late lock on an already ended claim.
+    """
+    _print(value)
+    pending = [claim for claim in value.get('claims', [value])
+               if claim['state'] in ('pending', 'active', 'releasing', 'uncertain')
+               or any(lock['state'] in ('releasing', 'requested', 'uncertain') for lock in claim['locks'])]
+    for claim in pending:
+        print(f'claims: release incomplete for claim {claim["id"]} ({claim["state"]}); '
+              f'inspect with `atelier claims show {claim["id"]}`. '
+              f'Retry releasing locks as their owner with `atelier claims unlock {claim["id"]}`; '
+              'uncertain locks require reconciliation. The recorded merge or cancellation is retained.',
+              file=sys.stderr)
+    return 1 if pending else 0
+
+
 def serve(args):
     from .remote import GitCli, GitLfsCli, LfsHttp
     from .service import Service
@@ -275,9 +293,9 @@ def main(args):
             return _print(client.call('GET', f'/claims/{args.claim}'))
         if action == 'cancel':
             view = client.call('POST', f'/claims/{args.claim}/cancel', {'disposition': args.disposition, 'note': args.note})
-            return _print(release_locks(client, view, _locker(args)))
+            return _print_release(release_locks(client, view, _locker(args)))
         if action == 'unlock':
-            return _print(release_locks(client, client.call('GET', f'/claims/{args.claim}'), _locker(args)))
+            return _print_release(release_locks(client, client.call('GET', f'/claims/{args.claim}'), _locker(args)))
         if action == 'recover':
             return _print(client.call('POST', f'/claims/{args.claim}/recover', {
                 'action': args.action, 'reason': args.reason, 'old_writer_stopped': args.old_writer_stopped,
@@ -320,9 +338,9 @@ def _task_action(args, client):
     if t == 'merged':
         view = client.call('POST', f'/tasks/{args.id}/merged', {'revision': args.revision})
         view['claims'] = [release_locks(client, claim, _locker(args)) for claim in view['claims']]
-        return _print(view)
+        return _print_release(view)
     if t == 'cancel':
         view = client.call('POST', f'/tasks/{args.id}/cancel', {'disposition': args.disposition, 'note': args.note})
         view['claims'] = [release_locks(client, claim, _locker(args)) for claim in view['claims']]
-        return _print(view)
+        return _print_release(view)
     raise SystemExit(f'unknown task action {t}')
