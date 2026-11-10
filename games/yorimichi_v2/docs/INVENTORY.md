@@ -70,10 +70,15 @@ Saved, prepared and packaged totals are kept separate:
 - **Hippodrome residuals closed in #804:** four texture and four instance records were imported, the four dependent
   props re-imported, and six unused course instances retired after a reference check. Native before/after reads
   agree. The old adopted owner is retired; this batch is merged and included in `c89f535441be`.
-- **Remaining source/detail work:** the two Mega Park seam instances with two-sided base-property overrides, the standalone
-  Mega Park map's reference check, `MI_TH_pane`, the Hidamari `MI_HD_flat` instance and the 41 Japan
-  material instances. Parent-master recovery alone does not close their instance records. Bike and runtime/collection
-  source routes also remain open in [exceptions](inventory/exceptions.md#current-source-classification).
+- **Saved on the branch, not yet packaged:** claim `JAPANMI` (branch `jim5/yv2-japan-instances`) closes the 45
+  material instances: the 41 Japan instances, `MI_HD_flat`, `MI_TH_pane` and the two two-sided Mega Park seams become
+  10 generated `material-instance` records (`tools/migrate/held_instances.py`), replacing their adopted owners. Each
+  row agrees with a native editor read that now includes the base-property overrides (LOD blending, masking, two-sided),
+  and each import read back equal to the read before it. See
+  [exceptions](inventory/exceptions.md#current-source-classification).
+- **Remaining source/detail work:** the standalone Mega Park map's reference check, the bike wheels (`Bike.blend`, their
+  generator, is not recorded) and the `MPC_SeeThrough` and `RuntimeData` routes: 4 records / 5 packages in
+  [exceptions](inventory/exceptions.md#current-source-classification).
 
 Remaining construction work:
 - Close the other useful-object/source gaps in [exceptions](inventory/exceptions.md) and

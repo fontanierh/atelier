@@ -251,15 +251,16 @@ def megapark_report(donor: Path | None) -> dict:
             'names': sorted('MI_' + key[2:] for key in materials)}
 
 
-# The adopted records a later write moved into generated records (SMALLFAM, PR #797; MASTERHD and MASTERS2, the material masters);
-# their rows report `migrated`.
+# The adopted records a later write moved into generated records (SMALLFAM, PR #797; MASTERHD and MASTERS2, the material masters;
+# JAPANMI, held_instances.py); their rows report `migrated`.
 MIGRATED = frozenset({
     'adopted/belmonte/shared-metal-glass', 'adopted/belmonte/shared-water', 'adopted/hippodrome/loose_files',
     'adopted/hippodrome/materials', 'adopted/hippodrome/meshes', 'adopted/skatepark/materials', 'adopted/skatepark/board', 'adopted/fx', 'adopted/racing',
     'adopted/swordcamp/materials',
     'adopted/japan/textures/plaza-harbor', 'adopted/japan/treehouse/surface-flat', 'adopted/japan/treehouse/surface-glass',
     'adopted/japan/treehouse/surface-rope', 'adopted/japan/treehouse/surface-trunk',
-    'adopted/megapark/shared-materials-pavement', 'adopted/megapark/shared-materials-wood'})
+    'adopted/megapark/shared-materials-pavement', 'adopted/megapark/shared-materials-wood',
+    'adopted/japan/hidamari/surface-flat', 'adopted/japan/treehouse/surface-pane', 'adopted/megapark/seam'})
 
 
 def _family_counts(out: dict, family: str) -> dict:
