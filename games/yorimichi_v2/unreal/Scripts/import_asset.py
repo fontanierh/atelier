@@ -561,14 +561,14 @@ def main():
             if resolve is not None:
                 # The collision settings rebuild the mesh, whose screen sizes then read 0: the chain's are set again.
                 _static_mesh_editor().set_lod_screen_sizes(asset, [screen for _, screen, _, _ in settings['lod_chain']])
-            plan = import_settings.reduction_plan(settings)
-            if existing is None and plan is not None and asset.get_num_lods() == 1:
+            reduction = import_settings.reduction_plan(settings)
+            if existing is None and reduction is not None and asset.get_num_lods() == 1:
                 # A new package takes the record's reduction plan (the donor's generate_lods, which the donor ran on every
                 # Brine Cove plant): preserve() below restores a chain only when the package already had one.
                 levels = _static_mesh_editor()
-                if levels.set_lods(asset, _reduction_options(plan)) != len(plan):
-                    raise RuntimeError(f'{package}: the LOD reduction plan did not set {len(plan)} levels')
-                levels.set_lod_screen_sizes(asset, [screen for _, screen in plan])
+                if levels.set_lods(asset, _reduction_options(reduction)) != len(reduction):
+                    raise RuntimeError(f'{package}: the LOD reduction plan did not set {len(reduction)} levels')
+                levels.set_lod_screen_sizes(asset, [screen for _, screen in reduction])
             after = lod_preservation.preserve(_static_mesh_editor(), asset, before, settings.get('lods'),
                                               _reduction_options)
             lod_results[package] = {'before': before, 'after': after}
