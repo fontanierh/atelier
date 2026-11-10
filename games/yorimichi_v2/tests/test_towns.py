@@ -91,6 +91,14 @@ def test_piece_keys_round_trip():
     assert towns.split_piece('SM_BM_BT_Terrain_0_0') is None
 
 
+def test_record_unit_folds_cell_pieces_into_their_unit():
+    # A recovered plant record names its unit and the unit's cell pieces; two distinct units are still refused.
+    units = {'prop/bc/fern0': {'plant-fern', 'plant-fern-m2-0', 'plant-fern-3-m1'}}
+    assert towns.record_unit('bc', 'SM_Fern0#1', 'prop/bc/fern0', units) == 'plant-fern'
+    with pytest.raises(towns.TownError):
+        towns.record_unit('bc', 'SM_Fern0#1', 'prop/bc/fern0', {'prop/bc/fern0': {'plant-fern', 'plant-moss'}})
+
+
 def test_check_group_keys_refuses_unknown_keys():
     data = {'groups': [{'asset': '/Game/A/SM_One.SM_One', 'transforms': []}]}
     towns.check_group_keys('t', ['SM_One', 'SM_One@1_2'], data)
