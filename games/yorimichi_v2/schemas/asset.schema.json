@@ -29,6 +29,7 @@
         "animation",
         "material",
         "material-instance",
+        "material-master",
         "texture",
         "audio",
         "map",
