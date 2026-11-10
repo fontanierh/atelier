@@ -44,16 +44,18 @@ An imported model needs its model, textures and applicable rig/animation inputs.
 settings and inputs. A package genuinely authored in Unreal can be its own original. A saved package or an
 ownership map alone does not establish the original of an imported asset.
 
-## Remaining source work
+## On-demand source work
 
-- Finish source closure for the current material/settings, bike and runtime/collection rows identified
-  in [exceptions.md](exceptions.md). Do not rerun completed mesh imports just to change a tally.
+- Migration is complete by owner decision (2026-11-10). For a requested edit, find the selected model's owning
+  record and recoverable inputs; consult [exceptions.md](exceptions.md) for its source classification.
+  Preserve accepted imports and original sources.
 - **Completed: Brine Cove carved tiles keep their fused original** ([PR #787](https://github.com/fontanierh/atelier/pull/787)).
   Each of the 148 carved tile records pins the fused original and a recorded triangle selection; the remainder is
   derived under `build/yorimichi_v2/` during targeted import and reproduces the accepted remainder byte-identically.
   Accepted package bytes and placements were preserved; the two untouched harbour Soft tiles stay as recovered.
-- Source recovery and independently editable placements are different deliverables. Continue the useful-object
-  splits even where the source has already been recovered.
+- Source recovery and independently editable placements are different deliverables. Further useful-object
+  splitting is on demand for the selected edit. Before changing generated geometry, follow the
+  [independent-model workflow](../../../../docs/WORLD_BUILD_PRACTICES.md#make-a-model-independent-before-editing-it).
 
 ## Supported routes
 
