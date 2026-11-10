@@ -1111,8 +1111,13 @@ def write_generator_records(game: Path, generators: list[Generator]) -> list[str
         folder = game / 'assets' / gen.id
         digests = [(path.name, records.sha256_file(path)) for path in gen.sources]
         text = _generator_text(gen, digests)
-        if ((folder / 'asset.toml').is_file() and (folder / 'asset.toml').read_text() == text
-                and all((folder / 'src' / path.name).is_file() for path in gen.sources)):
+        if (folder / 'asset.toml').is_file() and (folder / 'asset.toml').read_text() == text:
+            # Already written: every committed src/ copy must still be its pinned donor bytes (targeted authoring).
+            stale = [name for name, digest in digests if not (folder / 'src' / name).is_file()
+                     or records.sha256_file(folder / 'src' / name) != digest]
+            if stale:
+                raise RecoverError(f'{gen.id}: src/{", src/".join(stale)} differs from its pinned donor source; restore it '
+                                   f'from the donor (recover.py writes the generator, owner {gen.owner}), never edit it here')
             continue
         if folder.exists() and any(folder.iterdir()) and not (folder / 'asset.toml').is_file():
             raise RecoverError(f'{folder} exists and is not a record of this tool; refusing to write over it')

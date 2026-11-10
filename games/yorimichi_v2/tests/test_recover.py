@@ -943,3 +943,15 @@ def test_generator_records_refuse_a_folder_that_is_not_a_record(tmp_path):
     write(game / 'assets/generator/skate/runtime/notes.txt', 'mine')
     with pytest.raises(recover.RecoverError, match='not a record of this tool'):
         recover.write_generator_records(game, list(recover.GENERATOR_FAMILIES['skateruntime']))
+
+
+def test_generator_records_refuse_a_pinned_source_edited_in_place(tmp_path):
+    """A written generator whose src/ copy no longer has its pinned bytes is refused, naming the file and the route,
+    instead of being accepted as already written (yorimichi-v2-targeted-authoring)."""
+    game = tmp_path / 'game'
+    generators = list(recover.GENERATOR_FAMILIES['seethrough'])
+    recover.write_generator_records(game, generators)
+    edited = game / 'assets/generator/seethrough/collection/src/see_through.py'
+    edited.write_text(edited.read_text() + '\n# edited here\n')
+    with pytest.raises(recover.RecoverError, match='src/see_through.py differs from its pinned donor source'):
+        recover.write_generator_records(game, generators)
