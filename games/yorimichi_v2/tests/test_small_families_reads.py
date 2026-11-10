@@ -83,3 +83,21 @@ def test_the_bike_wheel_read_gives_one_palette_slot_and_one_lod():
     for wheel in bike.values():
         assert wheel['slots'] == [['BikePalette', '/Game/Japan/Materials/M_Bike']]
         assert [t for _, t in wheel['lods']] == [26060]
+
+
+def test_the_standalone_mega_park_map_references_resolve_to_their_records():
+    """The native read of SuperUltraMegaPark: no unresolved /Game dependency, each one owned by the record the read names
+    (the 29 collision meshes are the cell records' UC_MP_<hash>_0 packages), and every mesh component loads its mesh."""
+    refs = json.loads((READS / 'megapark-map-refs.json').read_text())
+    assert refs['map'] == '/Game/MegaPark/Maps/SuperUltraMegaPark' and refs['unresolved'] == []
+    deps = refs['dependencies']
+    assert len(deps) == 79 and all(d['holds'] and d['owner'] for d in deps.values())
+    collision = {k: d for k, d in deps.items() if '/UC_MP_' in k}
+    assert len(collision) == 29
+    for package, dep in collision.items():
+        name = package.rsplit('/', 1)[1]
+        assert name.endswith('_0') and dep['holds'] == [f'StaticMesh:{name}']
+        assert dep['owner'].startswith('adopted/megapark/cell-')
+        record = sf.records.load_asset(ROOT / 'assets' / dep['owner'] / 'asset.toml')
+        assert package in {o.package for o in record.outputs}
+    assert refs['mesh_components'] == 79 and refs['components_without_mesh'] == 0

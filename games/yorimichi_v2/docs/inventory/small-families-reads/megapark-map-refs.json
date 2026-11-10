@@ -1,0 +1,492 @@
+{
+ "about": "Native read of the standalone Mega Park level (unreal/Scripts/report_map_refs.py, read-only editor.run at fb9e644179): every /Game package dependency of the map from the asset registry, the assets it holds and the record that owns it; the actors by class and how many static mesh components load their mesh. tools/migrate/small_families.py reads it for the standalone-level row.",
+ "actors": {
+  "DirectionalLight": 1,
+  "MegaParkLayout": 1,
+  "PlayerStart": 1,
+  "PostProcessVolume": 1,
+  "SkyAtmosphere": 1,
+  "SkyLight": 1,
+  "StaticMeshActor": 79
+ },
+ "components_without_mesh": 0,
+ "dependencies": {
+  "/Game/MegaPark/Meshes/SM_MP_04CCB1FDB63D6C87": {
+   "holds": [
+    "StaticMesh:SM_MP_04CCB1FDB63D6C87"
+   ],
+   "owner": "adopted/megapark/cell-x350-zm650"
+  },
+  "/Game/MegaPark/Meshes/SM_MP_072BEA8B3D376763": {
+   "holds": [
+    "StaticMesh:SM_MP_072BEA8B3D376763"
+   ],
+   "owner": "adopted/megapark/cell-x250-zm850"
+  },
+  "/Game/MegaPark/Meshes/SM_MP_0D601DA7CE12176C": {
+   "holds": [
+    "StaticMesh:SM_MP_0D601DA7CE12176C"
+   ],
+   "owner": "adopted/megapark/cell-x250-zm450"
+  },
+  "/Game/MegaPark/Meshes/SM_MP_1700B3D8FB9AB703": {
+   "holds": [
+    "StaticMesh:SM_MP_1700B3D8FB9AB703"
+   ],
+   "owner": "adopted/megapark/cell-x250-zm550"
+  },
+  "/Game/MegaPark/Meshes/SM_MP_1E077DDD5C16EF04": {
+   "holds": [
+    "StaticMesh:SM_MP_1E077DDD5C16EF04"
+   ],
+   "owner": "adopted/megapark/cell-x350-zm750"
+  },
+  "/Game/MegaPark/Meshes/SM_MP_20EF3EEEEFC658B7": {
+   "holds": [
+    "StaticMesh:SM_MP_20EF3EEEEFC658B7"
+   ],
+   "owner": "adopted/megapark/cell-x550-zm650"
+  },
+  "/Game/MegaPark/Meshes/SM_MP_2386D0A7C698F48A": {
+   "holds": [
+    "StaticMesh:SM_MP_2386D0A7C698F48A"
+   ],
+   "owner": "adopted/megapark/cell-x150-zm550"
+  },
+  "/Game/MegaPark/Meshes/SM_MP_23BEE1BECD19BE5A": {
+   "holds": [
+    "StaticMesh:SM_MP_23BEE1BECD19BE5A"
+   ],
+   "owner": "adopted/megapark/cell-x150-zm850"
+  },
+  "/Game/MegaPark/Meshes/SM_MP_2A4ACEDB492E1152": {
+   "holds": [
+    "StaticMesh:SM_MP_2A4ACEDB492E1152"
+   ],
+   "owner": "adopted/megapark/cell-x150-zm750"
+  },
+  "/Game/MegaPark/Meshes/SM_MP_44214047ACFF84CE": {
+   "holds": [
+    "StaticMesh:SM_MP_44214047ACFF84CE"
+   ],
+   "owner": "adopted/megapark/cell-x250-zm650"
+  },
+  "/Game/MegaPark/Meshes/SM_MP_497D79468122553D": {
+   "holds": [
+    "StaticMesh:SM_MP_497D79468122553D"
+   ],
+   "owner": "adopted/megapark/cell-x550-zm550"
+  },
+  "/Game/MegaPark/Meshes/SM_MP_49FCE212AF609520": {
+   "holds": [
+    "StaticMesh:SM_MP_49FCE212AF609520"
+   ],
+   "owner": "adopted/megapark/cell-x350-zm550"
+  },
+  "/Game/MegaPark/Meshes/SM_MP_4F30D544AAE05618": {
+   "holds": [
+    "StaticMesh:SM_MP_4F30D544AAE05618"
+   ],
+   "owner": "adopted/megapark/cell-x250-zm450"
+  },
+  "/Game/MegaPark/Meshes/SM_MP_517C499144026147": {
+   "holds": [
+    "StaticMesh:SM_MP_517C499144026147"
+   ],
+   "owner": "adopted/megapark/cell-x350-zm750"
+  },
+  "/Game/MegaPark/Meshes/SM_MP_5B3CA6D5163630B2": {
+   "holds": [
+    "StaticMesh:SM_MP_5B3CA6D5163630B2"
+   ],
+   "owner": "adopted/megapark/cell-x250-zm650"
+  },
+  "/Game/MegaPark/Meshes/SM_MP_6988628140DF5E40": {
+   "holds": [
+    "StaticMesh:SM_MP_6988628140DF5E40"
+   ],
+   "owner": "adopted/megapark/cell-x450-zm650"
+  },
+  "/Game/MegaPark/Meshes/SM_MP_6A5170620386E3BA": {
+   "holds": [
+    "StaticMesh:SM_MP_6A5170620386E3BA"
+   ],
+   "owner": "adopted/megapark/cell-x350-zm450"
+  },
+  "/Game/MegaPark/Meshes/SM_MP_78C490ADD37F1397": {
+   "holds": [
+    "StaticMesh:SM_MP_78C490ADD37F1397"
+   ],
+   "owner": "adopted/megapark/cell-x450-zm750"
+  },
+  "/Game/MegaPark/Meshes/SM_MP_78DABDFB1C74ABB9": {
+   "holds": [
+    "StaticMesh:SM_MP_78DABDFB1C74ABB9"
+   ],
+   "owner": "adopted/megapark/cell-x350-zm650"
+  },
+  "/Game/MegaPark/Meshes/SM_MP_7D05C890200776E1": {
+   "holds": [
+    "StaticMesh:SM_MP_7D05C890200776E1"
+   ],
+   "owner": "adopted/megapark/cell-x250-zm450"
+  },
+  "/Game/MegaPark/Meshes/SM_MP_7F33C0EB48F375F5": {
+   "holds": [
+    "StaticMesh:SM_MP_7F33C0EB48F375F5"
+   ],
+   "owner": "adopted/megapark/cell-x350-zm750"
+  },
+  "/Game/MegaPark/Meshes/SM_MP_80C8F2395B012D9F": {
+   "holds": [
+    "StaticMesh:SM_MP_80C8F2395B012D9F"
+   ],
+   "owner": "adopted/megapark/cell-x350-zm750"
+  },
+  "/Game/MegaPark/Meshes/SM_MP_97881E4457D561E6": {
+   "holds": [
+    "StaticMesh:SM_MP_97881E4457D561E6"
+   ],
+   "owner": "adopted/megapark/cell-x350-zm650"
+  },
+  "/Game/MegaPark/Meshes/SM_MP_97E970447A822ABF": {
+   "holds": [
+    "StaticMesh:SM_MP_97E970447A822ABF"
+   ],
+   "owner": "adopted/megapark/cell-x150-zm450"
+  },
+  "/Game/MegaPark/Meshes/SM_MP_9D8FA15A3EB6BF2F": {
+   "holds": [
+    "StaticMesh:SM_MP_9D8FA15A3EB6BF2F"
+   ],
+   "owner": "adopted/megapark/cell-x450-zm650"
+  },
+  "/Game/MegaPark/Meshes/SM_MP_A41E3A10C48B5DA3": {
+   "holds": [
+    "StaticMesh:SM_MP_A41E3A10C48B5DA3"
+   ],
+   "owner": "adopted/megapark/cell-x550-zm550"
+  },
+  "/Game/MegaPark/Meshes/SM_MP_A79ABAE2264637B0": {
+   "holds": [
+    "StaticMesh:SM_MP_A79ABAE2264637B0"
+   ],
+   "owner": "adopted/megapark/cell-x250-zm750"
+  },
+  "/Game/MegaPark/Meshes/SM_MP_B482B33EDA279C4A": {
+   "holds": [
+    "StaticMesh:SM_MP_B482B33EDA279C4A"
+   ],
+   "owner": "adopted/megapark/cell-x350-zm850"
+  },
+  "/Game/MegaPark/Meshes/SM_MP_B5FC108CCBDF28D8": {
+   "holds": [
+    "StaticMesh:SM_MP_B5FC108CCBDF28D8"
+   ],
+   "owner": "adopted/megapark/cell-x250-zm750"
+  },
+  "/Game/MegaPark/Meshes/SM_MP_B99C161736634778": {
+   "holds": [
+    "StaticMesh:SM_MP_B99C161736634778"
+   ],
+   "owner": "adopted/megapark/cell-x450-zm650"
+  },
+  "/Game/MegaPark/Meshes/SM_MP_BB462637C794A55E": {
+   "holds": [
+    "StaticMesh:SM_MP_BB462637C794A55E"
+   ],
+   "owner": "adopted/megapark/cell-x450-zm650"
+  },
+  "/Game/MegaPark/Meshes/SM_MP_BD340E588EB1B8A8": {
+   "holds": [
+    "StaticMesh:SM_MP_BD340E588EB1B8A8"
+   ],
+   "owner": "adopted/megapark/cell-x250-zm750"
+  },
+  "/Game/MegaPark/Meshes/SM_MP_BFD920538C420ABC": {
+   "holds": [
+    "StaticMesh:SM_MP_BFD920538C420ABC"
+   ],
+   "owner": "adopted/megapark/cell-x250-zm650"
+  },
+  "/Game/MegaPark/Meshes/SM_MP_C41D333E7557EA22": {
+   "holds": [
+    "StaticMesh:SM_MP_C41D333E7557EA22"
+   ],
+   "owner": "adopted/megapark/cell-x450-zm550"
+  },
+  "/Game/MegaPark/Meshes/SM_MP_C809B0BD30B056FC": {
+   "holds": [
+    "StaticMesh:SM_MP_C809B0BD30B056FC"
+   ],
+   "owner": "adopted/megapark/cell-x350-zm450"
+  },
+  "/Game/MegaPark/Meshes/SM_MP_C888FCF815E09C53": {
+   "holds": [
+    "StaticMesh:SM_MP_C888FCF815E09C53"
+   ],
+   "owner": "adopted/megapark/cell-x150-zm650"
+  },
+  "/Game/MegaPark/Meshes/SM_MP_D0A698D4B8E19DA3": {
+   "holds": [
+    "StaticMesh:SM_MP_D0A698D4B8E19DA3"
+   ],
+   "owner": "adopted/megapark/cell-x250-zm650"
+  },
+  "/Game/MegaPark/Meshes/SM_MP_D20218BAEC3CAEF8": {
+   "holds": [
+    "StaticMesh:SM_MP_D20218BAEC3CAEF8"
+   ],
+   "owner": "adopted/megapark/cell-x450-zm750"
+  },
+  "/Game/MegaPark/Meshes/SM_MP_D9800C0C164BE6DF": {
+   "holds": [
+    "StaticMesh:SM_MP_D9800C0C164BE6DF"
+   ],
+   "owner": "adopted/megapark/cell-x450-zm650"
+  },
+  "/Game/MegaPark/Meshes/SM_MP_DBDE3D0EED110A40": {
+   "holds": [
+    "StaticMesh:SM_MP_DBDE3D0EED110A40"
+   ],
+   "owner": "adopted/megapark/cell-x450-zm450"
+  },
+  "/Game/MegaPark/Meshes/SM_MP_DCEFF8F63009B573": {
+   "holds": [
+    "StaticMesh:SM_MP_DCEFF8F63009B573"
+   ],
+   "owner": "adopted/megapark/cell-x250-zm450"
+  },
+  "/Game/MegaPark/Meshes/SM_MP_DE2ECF040F079D1C": {
+   "holds": [
+    "StaticMesh:SM_MP_DE2ECF040F079D1C"
+   ],
+   "owner": "adopted/megapark/cell-x550-zm450"
+  },
+  "/Game/MegaPark/Meshes/SM_MP_E12A6008908C21E6": {
+   "holds": [
+    "StaticMesh:SM_MP_E12A6008908C21E6"
+   ],
+   "owner": "adopted/megapark/cell-x150-zm450"
+  },
+  "/Game/MegaPark/Meshes/SM_MP_E33675EB8A7CAFB7": {
+   "holds": [
+    "StaticMesh:SM_MP_E33675EB8A7CAFB7"
+   ],
+   "owner": "adopted/megapark/cell-x250-zm750"
+  },
+  "/Game/MegaPark/Meshes/SM_MP_EB6AB76807F5192A": {
+   "holds": [
+    "StaticMesh:SM_MP_EB6AB76807F5192A"
+   ],
+   "owner": "adopted/megapark/cell-x450-zm550"
+  },
+  "/Game/MegaPark/Meshes/SM_MP_F03BD8AEFE8D7AA1": {
+   "holds": [
+    "StaticMesh:SM_MP_F03BD8AEFE8D7AA1"
+   ],
+   "owner": "adopted/megapark/cell-x350-zm550"
+  },
+  "/Game/MegaPark/Meshes/SM_MP_F1A2EEC1D33D38AF": {
+   "holds": [
+    "StaticMesh:SM_MP_F1A2EEC1D33D38AF"
+   ],
+   "owner": "adopted/megapark/cell-x350-zm650"
+  },
+  "/Game/MegaPark/Meshes/SM_MP_F3ACAD491674B546": {
+   "holds": [
+    "StaticMesh:SM_MP_F3ACAD491674B546"
+   ],
+   "owner": "adopted/megapark/cell-x450-zm450"
+  },
+  "/Game/MegaPark/Meshes/SM_MP_FA1B51A9664C0BC5": {
+   "holds": [
+    "StaticMesh:SM_MP_FA1B51A9664C0BC5"
+   ],
+   "owner": "adopted/megapark/cell-x350-zm750"
+  },
+  "/Game/MegaPark/Meshes/SM_MP_FCCBD6F3DD6D6D2E": {
+   "holds": [
+    "StaticMesh:SM_MP_FCCBD6F3DD6D6D2E"
+   ],
+   "owner": "adopted/megapark/cell-x250-zm550"
+  },
+  "/Game/MegaPark/Meshes/UC_MP_010DC6B25668810F_0": {
+   "holds": [
+    "StaticMesh:UC_MP_010DC6B25668810F_0"
+   ],
+   "owner": "adopted/megapark/cell-x450-zm650"
+  },
+  "/Game/MegaPark/Meshes/UC_MP_01880F3528AF906B_0": {
+   "holds": [
+    "StaticMesh:UC_MP_01880F3528AF906B_0"
+   ],
+   "owner": "adopted/megapark/cell-x350-zm450"
+  },
+  "/Game/MegaPark/Meshes/UC_MP_0AA6238270286C2E_0": {
+   "holds": [
+    "StaticMesh:UC_MP_0AA6238270286C2E_0"
+   ],
+   "owner": "adopted/megapark/cell-x250-zm750"
+  },
+  "/Game/MegaPark/Meshes/UC_MP_141DD6F757FB62D6_0": {
+   "holds": [
+    "StaticMesh:UC_MP_141DD6F757FB62D6_0"
+   ],
+   "owner": "adopted/megapark/cell-x250-zm550"
+  },
+  "/Game/MegaPark/Meshes/UC_MP_1E789931B316F679_0": {
+   "holds": [
+    "StaticMesh:UC_MP_1E789931B316F679_0"
+   ],
+   "owner": "adopted/megapark/cell-x150-zm450"
+  },
+  "/Game/MegaPark/Meshes/UC_MP_393316F6A0664791_0": {
+   "holds": [
+    "StaticMesh:UC_MP_393316F6A0664791_0"
+   ],
+   "owner": "adopted/megapark/cell-x350-zm850"
+  },
+  "/Game/MegaPark/Meshes/UC_MP_40A58EF9D5F1AE6E_0": {
+   "holds": [
+    "StaticMesh:UC_MP_40A58EF9D5F1AE6E_0"
+   ],
+   "owner": "adopted/megapark/cell-x350-zm750"
+  },
+  "/Game/MegaPark/Meshes/UC_MP_550AC3210EC10CB1_0": {
+   "holds": [
+    "StaticMesh:UC_MP_550AC3210EC10CB1_0"
+   ],
+   "owner": "adopted/megapark/cell-x150-zm850"
+  },
+  "/Game/MegaPark/Meshes/UC_MP_5DB95324F1AA68C6_0": {
+   "holds": [
+    "StaticMesh:UC_MP_5DB95324F1AA68C6_0"
+   ],
+   "owner": "adopted/megapark/cell-x350-zm450"
+  },
+  "/Game/MegaPark/Meshes/UC_MP_65313BFD727B566A_0": {
+   "holds": [
+    "StaticMesh:UC_MP_65313BFD727B566A_0"
+   ],
+   "owner": "adopted/megapark/cell-x350-zm550"
+  },
+  "/Game/MegaPark/Meshes/UC_MP_68E1C35F248107AC_0": {
+   "holds": [
+    "StaticMesh:UC_MP_68E1C35F248107AC_0"
+   ],
+   "owner": "adopted/megapark/cell-x150-zm550"
+  },
+  "/Game/MegaPark/Meshes/UC_MP_715219D1D6FFC624_0": {
+   "holds": [
+    "StaticMesh:UC_MP_715219D1D6FFC624_0"
+   ],
+   "owner": "adopted/megapark/cell-x150-zm650"
+  },
+  "/Game/MegaPark/Meshes/UC_MP_79BF297E1999261B_0": {
+   "holds": [
+    "StaticMesh:UC_MP_79BF297E1999261B_0"
+   ],
+   "owner": "adopted/megapark/cell-x450-zm550"
+  },
+  "/Game/MegaPark/Meshes/UC_MP_85B482F74109D22C_0": {
+   "holds": [
+    "StaticMesh:UC_MP_85B482F74109D22C_0"
+   ],
+   "owner": "adopted/megapark/cell-x450-zm450"
+  },
+  "/Game/MegaPark/Meshes/UC_MP_977D6BD059BA8AD7_0": {
+   "holds": [
+    "StaticMesh:UC_MP_977D6BD059BA8AD7_0"
+   ],
+   "owner": "adopted/megapark/cell-x550-zm650"
+  },
+  "/Game/MegaPark/Meshes/UC_MP_B117BE4BFBAC7F57_0": {
+   "holds": [
+    "StaticMesh:UC_MP_B117BE4BFBAC7F57_0"
+   ],
+   "owner": "adopted/megapark/cell-x450-zm750"
+  },
+  "/Game/MegaPark/Meshes/UC_MP_B26DDF218A25D8BE_0": {
+   "holds": [
+    "StaticMesh:UC_MP_B26DDF218A25D8BE_0"
+   ],
+   "owner": "adopted/megapark/cell-x250-zm450"
+  },
+  "/Game/MegaPark/Meshes/UC_MP_B9117148FE4DDA75_0": {
+   "holds": [
+    "StaticMesh:UC_MP_B9117148FE4DDA75_0"
+   ],
+   "owner": "adopted/megapark/cell-x450-zm550"
+  },
+  "/Game/MegaPark/Meshes/UC_MP_B919FC9A9E030611_0": {
+   "holds": [
+    "StaticMesh:UC_MP_B919FC9A9E030611_0"
+   ],
+   "owner": "adopted/megapark/cell-x250-zm450"
+  },
+  "/Game/MegaPark/Meshes/UC_MP_BE312953A8A85B86_0": {
+   "holds": [
+    "StaticMesh:UC_MP_BE312953A8A85B86_0"
+   ],
+   "owner": "adopted/megapark/cell-x250-zm850"
+  },
+  "/Game/MegaPark/Meshes/UC_MP_CB45D603D6D5E8AE_0": {
+   "holds": [
+    "StaticMesh:UC_MP_CB45D603D6D5E8AE_0"
+   ],
+   "owner": "adopted/megapark/cell-x550-zm550"
+  },
+  "/Game/MegaPark/Meshes/UC_MP_D904B17D5E3AB505_0": {
+   "holds": [
+    "StaticMesh:UC_MP_D904B17D5E3AB505_0"
+   ],
+   "owner": "adopted/megapark/cell-x550-zm550"
+  },
+  "/Game/MegaPark/Meshes/UC_MP_DC5A848A9C1D9A30_0": {
+   "holds": [
+    "StaticMesh:UC_MP_DC5A848A9C1D9A30_0"
+   ],
+   "owner": "adopted/megapark/cell-x350-zm550"
+  },
+  "/Game/MegaPark/Meshes/UC_MP_DE463D6F91D30023_0": {
+   "holds": [
+    "StaticMesh:UC_MP_DE463D6F91D30023_0"
+   ],
+   "owner": "adopted/megapark/cell-x250-zm650"
+  },
+  "/Game/MegaPark/Meshes/UC_MP_DF7E3E667186E81A_0": {
+   "holds": [
+    "StaticMesh:UC_MP_DF7E3E667186E81A_0"
+   ],
+   "owner": "adopted/megapark/cell-x150-zm750"
+  },
+  "/Game/MegaPark/Meshes/UC_MP_E3F9D354AB7015F2_0": {
+   "holds": [
+    "StaticMesh:UC_MP_E3F9D354AB7015F2_0"
+   ],
+   "owner": "adopted/megapark/cell-x450-zm450"
+  },
+  "/Game/MegaPark/Meshes/UC_MP_E9DF0292DA1846B5_0": {
+   "holds": [
+    "StaticMesh:UC_MP_E9DF0292DA1846B5_0"
+   ],
+   "owner": "adopted/megapark/cell-x250-zm550"
+  },
+  "/Game/MegaPark/Meshes/UC_MP_F43DB60DE9FB598C_0": {
+   "holds": [
+    "StaticMesh:UC_MP_F43DB60DE9FB598C_0"
+   ],
+   "owner": "adopted/megapark/cell-x550-zm450"
+  },
+  "/Game/MegaPark/Meshes/UC_MP_F88E770813AA4764_0": {
+   "holds": [
+    "StaticMesh:UC_MP_F88E770813AA4764_0"
+   ],
+   "owner": "adopted/megapark/cell-x350-zm650"
+  }
+ },
+ "map": "/Game/MegaPark/Maps/SuperUltraMegaPark",
+ "mesh_components": 79,
+ "unresolved": []
+}

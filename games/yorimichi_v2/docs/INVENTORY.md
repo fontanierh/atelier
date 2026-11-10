@@ -78,8 +78,8 @@ Saved, prepared and packaged totals are kept separate:
   [exceptions](inventory/exceptions.md#current-source-classification). Brine Cove `props1` (13 harbour objects, claim
   `BCPROPS1`, [PR #813](https://github.com/fontanierh/atelier/pull/813)) is merged too. Package `c89f535441be` predates
   both.
-- **Remaining source/detail work:** the standalone Mega Park map's reference check and the `MPC_SeeThrough` and
-  `RuntimeData` routes: 3 records / 3 packages in
+- **Remaining source/detail work:** the `MPC_SeeThrough` and `RuntimeData` routes (their generators are pinned, an
+  importer for each is missing): 2 records / 2 packages in
   [exceptions](inventory/exceptions.md#current-source-classification).
 
 Remaining construction work:
