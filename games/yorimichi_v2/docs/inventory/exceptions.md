@@ -20,11 +20,11 @@ For imported content, an editor-saved package is not a substitute for the import
 
 | Area | Landed | Still open |
 |---|---|---|
-| Brine Cove small props | Eleven placements saved, including the corrected crane/fish-shed split, and the two harbour Soft fragments (#787) | Finish any remaining useful fused objects (signal mast, shipyard slip); preserve each whole palm |
+| Brine Cove small props | Eleven placements saved, including the corrected crane/fish-shed split, and the two harbour Soft fragments (#787) | Finish any remaining useful fused objects (signal mast, shipyard slip: prepared, not saved, see the next section's row); preserve each whole palm |
 | Brine Cove ships | Nightjar, sloop and Adventure hull placements saved with per-instance hull groups | Retire the three emptied ship tiles and obsolete grouped placements after accepted replacement checks |
 | Brine Cove market | All 21 stalls saved on main (market1–3, #786 and #787) | None for the stalls themselves |
 | Brine Cove town | All 265 town objects saved on main (#787); the 42 emptied tiles and the three ship tiles are retired | None for the town objects |
-| Other Brine Cove features | Existing fort, lighthouse and other saved units remain | The signal mast, stone shipyard slip and other useful objects still bundled in residual tiles need a real object boundary, not just a smaller package |
+| Other Brine Cove features | Existing fort, lighthouse and other saved units remain | The signal mast, stone shipyard slip and other useful objects still bundled in residual tiles need a real object boundary, not just a smaller package. **Signal mast and shipyard slip: prepared, not saved.** Boundaries found by generator replay (`tools/migrate/brinecove_mastslip.py`, `paths` and `plan`): mast 508 triangles in Market_3_4 and Market_4_4; slip stone 48 triangles in Harbor_5_3; the slip's wood ways stay with `shipyard-yard` and the residual, pending a decision |
 | Transport groups | Two ferry terminals, nine gondola route objects, thirteen railway route objects, the ten gondola pylons and the twelve railway fittings saved | Pylon groups and the track-fittings group are retired (`gondola_pylons.py`, `railway_fittings.py`; fittings routed by row, `SM_TK_<mesh>#@<i>`). Preserve route data and moving services while splitting their editing boundaries |
 | Area patches (G6) | Saved terrain, ground and scatter patches are legitimate scopes | A patch-name tally is only a candidate list. Any patch that still bundles several useful buildings or props remains unfinished until they are independently editable |
 
