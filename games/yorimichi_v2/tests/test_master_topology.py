@@ -140,6 +140,22 @@ def test_texture_coordinate_scale_changes_reject(axis):
     assert digest.accept(saved, digest.read(material))
 
 
+@pytest.mark.parametrize(('prop', 'changed'), [
+    ('transform_source_type', 'TRANSFORMPOSSOURCE_LOCAL'),
+    ('transform_type', 'TRANSFORMPOSSOURCE_WORLD'),
+])
+def test_position_transform_space_changes_reject(prop, changed):
+    """The board-dissolve fallback must keep both coordinate spaces even when its wiring is unchanged."""
+    world = node('MaterialExpressionWorldPosition', 'world')
+    position = node('MaterialExpressionTransformPosition', 'position', inputs=[('Input', world, '')],
+                    transform_source_type='TRANSFORMPOSSOURCE_WORLD', transform_type='TRANSFORMPOSSOURCE_LOCAL')
+    material = Material([world, position], {'MP_EMISSIVE_COLOR': (position, '')})
+    saved = digest.read(material)
+    assert digest.accept(saved, digest.read(material)) == []
+    position.props[prop] = changed
+    assert 'rendered topology differs at MP_EMISSIVE_COLOR' in digest.accept(saved, digest.read(material))
+
+
 @pytest.mark.parametrize('setting', ['is_sky', 'blendable_location', 'dithered_lod_transition',
                                      'tangent_space_normal', 'compute_fog_per_pixel'])
 def test_upcoming_render_settings_are_compared(setting):

@@ -40,7 +40,8 @@ EXPRESSION_PROPERTIES = ('parameter_name', 'default_value', 'r', 'constant', 'co
                          'sampler_type', 'code', 'coordinate_index', 'u_tiling', 'v_tiling',
                          'output_type', 'data_index', 'const_default_value',
                          'inputs', 'scene_texture_id', 'collection', 'g', 'b', 'a', 'material_function',
-                         'use_custom_primitive_data', 'primitive_data_index')   # desc is editor-only metadata
+                         'use_custom_primitive_data', 'primitive_data_index',
+                         'transform_source_type', 'transform_type')   # desc is editor-only metadata
 LISTS = ('expressions', 'connections', 'property_connections')
 SETS = ('parameters',)
 TOPOLOGY_VERSION = 2
