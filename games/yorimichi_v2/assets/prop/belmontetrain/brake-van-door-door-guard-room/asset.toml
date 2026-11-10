@@ -6,7 +6,7 @@ id = "prop/belmontetrain/brake-van-door-door-guard-room"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/belmontetrain/brake-van"
-references = ["adopted/belmontetrain/brake-van"]
+references = ["material/belmontetrain/brake-van-lod0", "material/belmontetrain/brake-van-lod1", "material/belmontetrain/brake-van-lod2", "texture/belmontetrain/brake-van-lod0-blue-panel", "texture/belmontetrain/brake-van-lod0-crest", "texture/belmontetrain/brake-van-lod0-ivory", "texture/belmontetrain/brake-van-lod0-panel-tall", "texture/belmontetrain/brake-van-lod0-panel-wide", "texture/belmontetrain/brake-van-lod0-roof", "texture/belmontetrain/brake-van-lod0-tiles", "texture/belmontetrain/brake-van-lod0-underframe", "texture/belmontetrain/brake-van-lod0-walnut", "texture/belmontetrain/brake-van-lod0-walnut1", "texture/belmontetrain/brake-van-lod1-blue-panel", "texture/belmontetrain/brake-van-lod1-crest", "texture/belmontetrain/brake-van-lod1-ivory", "texture/belmontetrain/brake-van-lod1-roof", "texture/belmontetrain/brake-van-lod1-tiles", "texture/belmontetrain/brake-van-lod1-underframe", "texture/belmontetrain/brake-van-lod1-walnut", "texture/belmontetrain/brake-van-lod1-walnut1", "texture/belmontetrain/brake-van-lod2-brake-van-interior", "texture/belmontetrain/brake-van-lod2-ivory", "texture/belmontetrain/brake-van-lod2-roof", "texture/belmontetrain/brake-van-lod2-underframe"]
 
 [[sources]]
 path = "src/SM_BTD_BrakeVan_door_guard_room.glb"

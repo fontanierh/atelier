@@ -233,8 +233,16 @@ def real_donor() -> Path:
     return Path(REAL_DONOR).expanduser() / 'belmonte-train'
 
 
+@pytest.fixture(scope='module')
+def unprepared():
+    """The plan tests need the seven adopted records; once the move ran on the real tree they skip (see the split test)."""
+    current, _ = m.state(REAL_GAME)
+    if current != 'unprepared':
+        pytest.skip(f'the real tree is {current}, not unprepared: the move already ran')
+
+
 @RESIDUAL_SKIP
-def test_real_tree_plans_all_459_packages_without_unmapped_ones():
+def test_real_tree_plans_all_459_packages_without_unmapped_ones(unprepared):
     p = m.plan(REAL_GAME, real_donor())
     assert p.unmapped == []
     assert len(p.textures) == 138 and len(p.materials) == 21
@@ -243,7 +251,7 @@ def test_real_tree_plans_all_459_packages_without_unmapped_ones():
 
 
 @RESIDUAL_SKIP
-def test_real_tree_committed_bytes_confirm_the_material_facts_and_leave_the_texture_sRGB_read():
+def test_real_tree_committed_bytes_confirm_the_material_facts_and_leave_the_texture_sRGB_read(unprepared):
     p = m.plan(REAL_GAME, real_donor())
     packages = [i['package'] for r in p.materials for i in r.instances] + [t.package for t in p.textures]
     pointers = [pk for pk in packages if records.is_lfs_pointer(REAL_GAME / 'unreal' / 'Content' / (pk[len('/Game/'):] + '.uasset'))]
@@ -256,3 +264,41 @@ def test_real_tree_committed_bytes_confirm_the_material_facts_and_leave_the_text
         status, notes = checks[t.package]
         assert status == 'read' and notes[-1].startswith('sRGB flag'), (t.package, notes)
         assert all('is not in the bytes' not in n for n in notes), (t.package, notes)
+
+
+def test_the_real_tree_is_split():
+    """After the move: 138 texture and 21 material records list the 459 packages, and the seven adopted records list none."""
+    current, detail = m.state(REAL_GAME)
+    if current == 'unprepared':
+        pytest.skip('the move has not run on the real tree yet')
+    assert (current, detail) == ('done', '159 records list the packages; the seven adopted records list none')
+    plan = m.records_plan(REAL_GAME)
+    assert len(plan.textures) == 138 and len(plan.materials) == 21
+    assert sum(len(r.outputs) for r in plan.materials) == 321
+    for unit in m.UNITS:
+        path = REAL_GAME / m.RECORDS / unit / 'asset.toml'
+        assert not path.is_file() or not records.load_asset(path).outputs, unit
+
+
+@pytest.mark.skipif(not REAL_DONOR or not (Path(REAL_DONOR).expanduser() / 'belmonte-train' / 'service' / 'import-report.json').is_file(),
+                    reason='needs the donor build (YV2_DONOR_BUILD)')
+def test_the_move_applied_to_a_copy_reaches_done_and_the_written_records_agree_with_the_evidence(tmp_path, unprepared):
+    """The move applied to a copy of the records (no claim; the real tree is not written): the state is done, the written
+    records agree with the committed evidence, and they list the packages the list files name."""
+    import shutil
+    game = tmp_path / 'game'
+    shutil.copytree(ROOT / 'assets', game / 'assets')
+    plan = m.plan(game, real_donor())
+    ops = m.build_writes(game, plan)
+    for rel, data in ops['writes'].items():
+        target = game / rel
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(data)
+    for rel in ops['deletes']:
+        (game / rel).unlink()
+    assert m.state(game)[0] == 'done'
+    written = m.records_plan(game)
+    evidence = json.loads((ROOT / 'docs' / 'inventory' / 'belmontetrain-read.json').read_text())
+    assert m.disagreements(written, evidence) == []
+    assert sorted(t.package for t in written.textures) == sorted((ROOT / 'docs' / 'inventory' / 'belmontetrain-texture-packages.txt').read_text().split())
+    assert sorted(p for r in written.materials for p in r.outputs) == sorted((ROOT / 'docs' / 'inventory' / 'belmontetrain-material-packages.txt').read_text().split())

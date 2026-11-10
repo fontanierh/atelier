@@ -1,0 +1,25 @@
+# Planned from the donor Belmonte train (tools/migrate/belmontetrain_materials.py): T_BT_Roof in restaurant LOD0, the donor image T_BT_Roof.jpg.
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "texture/belmontetrain/restaurant-lod0-roof"
+kind = "texture"
+authority = "generated"
+owner = "shared/belmontetrain/restaurant"
+
+[[sources]]
+path = "src/T_BT_Roof.jpg"
+sha256 = "0269313a909dcbca91d7e983df314b3ce1fa4b0b689de73d0accb8f672cb4998"
+
+[recipe]
+importer = "texture"
+version = 1
+
+[recipe.settings]
+srgb = true
+compression = "TC_DEFAULT"
+lod_group = "TEXTUREGROUP_WORLD"
+address = "wrap"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Restaurant/LOD0/T_BT_Roof"

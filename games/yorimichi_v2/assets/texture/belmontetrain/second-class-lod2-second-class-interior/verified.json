@@ -1,0 +1,12 @@
+{
+  "asset": "texture/belmontetrain/second-class-lod2-second-class-interior",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_SecondClass/LOD2/T_BT_SecondClassInterior.uasset": "280e11d2075fc33e059841e65b644a35c28af08a6b61c6fdfe39db2fc6291b32"
+  },
+  "input_fingerprint": "0382b49cc73013c1c0b55c71fe0111228179de6dd231b6b786b75c050351471b",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

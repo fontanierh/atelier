@@ -1,0 +1,12 @@
+{
+  "asset": "texture/belmontetrain/restaurant-lod0-crest",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Restaurant/LOD0/T_BT_Crest.uasset": "2e32e71ef7c757e6a92f1507ceff68193a78e6593bcd44d4b112bf317039d4c9"
+  },
+  "input_fingerprint": "dac9176c9d8378099f572fbf2184415698fcbfc6025f437c91f4f2c2e883b3ae",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

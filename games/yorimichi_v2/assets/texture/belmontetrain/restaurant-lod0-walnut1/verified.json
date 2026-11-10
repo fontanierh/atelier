@@ -1,0 +1,12 @@
+{
+  "asset": "texture/belmontetrain/restaurant-lod0-walnut1",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Restaurant/LOD0/T_BT_Walnut1.uasset": "881ddcfc12f61f4519289b841974369160cd883a976645ad533e4d0805c9c670"
+  },
+  "input_fingerprint": "54b8e0026b8bca5774a9772e14d594c379a42f33a4c35996538d1edf323187cd",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

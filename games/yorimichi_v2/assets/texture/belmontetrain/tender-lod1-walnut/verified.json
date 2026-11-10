@@ -1,0 +1,12 @@
+{
+  "asset": "texture/belmontetrain/tender-lod1-walnut",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Tender/LOD1/T_BT_Walnut.uasset": "93da67f3b2955d6f41aee3e0ada013ad73615c14fb64616b4716e4d6dc9d9723"
+  },
+  "input_fingerprint": "0042c01b1b67f3f184d798df96a55b42740265f18216b4e35a0ab62a5e6b6668",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

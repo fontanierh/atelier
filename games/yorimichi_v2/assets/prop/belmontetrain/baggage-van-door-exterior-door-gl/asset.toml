@@ -6,7 +6,7 @@ id = "prop/belmontetrain/baggage-van-door-exterior-door-gl"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/belmontetrain/baggage-van"
-references = ["adopted/belmontetrain/baggage-van"]
+references = ["material/belmontetrain/baggage-van-lod0", "material/belmontetrain/baggage-van-lod1", "material/belmontetrain/baggage-van-lod2", "texture/belmontetrain/baggage-van-lod0-blue-panel", "texture/belmontetrain/baggage-van-lod0-crest", "texture/belmontetrain/baggage-van-lod0-ivory", "texture/belmontetrain/baggage-van-lod0-panel-tall", "texture/belmontetrain/baggage-van-lod0-panel-wide", "texture/belmontetrain/baggage-van-lod0-roof", "texture/belmontetrain/baggage-van-lod0-underframe", "texture/belmontetrain/baggage-van-lod0-walnut", "texture/belmontetrain/baggage-van-lod0-walnut1", "texture/belmontetrain/baggage-van-lod1-blue-panel", "texture/belmontetrain/baggage-van-lod1-crest", "texture/belmontetrain/baggage-van-lod1-ivory", "texture/belmontetrain/baggage-van-lod1-roof", "texture/belmontetrain/baggage-van-lod1-underframe", "texture/belmontetrain/baggage-van-lod1-walnut", "texture/belmontetrain/baggage-van-lod1-walnut1", "texture/belmontetrain/baggage-van-lod2-baggage-van-interior", "texture/belmontetrain/baggage-van-lod2-ivory", "texture/belmontetrain/baggage-van-lod2-roof", "texture/belmontetrain/baggage-van-lod2-underframe"]
 
 [[sources]]
 path = "src/SM_BTD_BaggageVan_exterior_door_gl.glb"

@@ -1,0 +1,12 @@
+{
+  "asset": "texture/belmontetrain/first-class-lod1-walnut",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_FirstClass/LOD1/T_BT_Walnut.uasset": "8367c0b4aa8929004de5d4b4118886e1f955a014c92683151a1ff653bf2b5748"
+  },
+  "input_fingerprint": "dd5f0f72ddae6006dc4c40ca6fd2d85ee578864ccf731e72a215cb48ed4cf239",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

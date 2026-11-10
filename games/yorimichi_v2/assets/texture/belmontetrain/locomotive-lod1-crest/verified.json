@@ -1,0 +1,12 @@
+{
+  "asset": "texture/belmontetrain/locomotive-lod1-crest",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Locomotive/LOD1/T_BT_Crest.uasset": "d566c19d6e08616a4563664eb2c98aec4e036a99f82ddc74284a1bca752cb154"
+  },
+  "input_fingerprint": "39aac2bcc282834ed45444c4e51199fc17a2ff324df13bdb5a74fccd030f2b1c",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

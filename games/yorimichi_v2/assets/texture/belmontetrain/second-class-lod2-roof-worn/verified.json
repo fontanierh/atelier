@@ -1,0 +1,12 @@
+{
+  "asset": "texture/belmontetrain/second-class-lod2-roof-worn",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_SecondClass/LOD2/T_BT_RoofWorn.uasset": "1aeb234555907a9d7c40e81bc6c5ef7ba9f64bee33682e66dd0a1ec4c6a75fba"
+  },
+  "input_fingerprint": "459ca946612099e9f18755445b3ad49befc9d06afb2094762ae76f9a9977eb3b",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

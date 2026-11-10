@@ -1,0 +1,12 @@
+{
+  "asset": "texture/belmontetrain/tender-lod0-crest",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Tender/LOD0/T_BT_Crest.uasset": "9f79e13df50b4f6684de66f3523023ef72f8cbc3bac5ba1e233aa30a8fbcb363"
+  },
+  "input_fingerprint": "1253532fde04e3618d779ab269ca0617d91343005e9dd040ff824addea2d9a20",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

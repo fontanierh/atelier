@@ -1,0 +1,12 @@
+{
+  "asset": "texture/belmontetrain/brake-van-lod0-underframe",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BrakeVan/LOD0/T_BT_Underframe.uasset": "9a436e43964642abda88ed49116938721e2c3ff527dd6080ed6013208d0900a6"
+  },
+  "input_fingerprint": "a9c56c805b85f711b5e7f7aa05496aec715f7b5f10c924532e8c15b631ef4e12",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

@@ -1,0 +1,12 @@
+{
+  "asset": "texture/belmontetrain/first-class-lod1-tiles",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_FirstClass/LOD1/T_BT_Tiles.uasset": "acb91222ae3073ae36885f38d9505c2c4f535be85acfe7d1e4223739b94ecec9"
+  },
+  "input_fingerprint": "90e511bbf7510f3bbf569c6cce0b7439b46e3ecabd1d654e0753bc323abf2724",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

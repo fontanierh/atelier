@@ -1,0 +1,12 @@
+{
+  "asset": "texture/belmontetrain/first-class-lod1-roof",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_FirstClass/LOD1/T_BT_Roof.uasset": "65b0abaf7367e53c34bc2b623bb7997828350d4e03bfb3a9034d8a8160e9c211"
+  },
+  "input_fingerprint": "7b74ee4eb52c4180e7083699350dc81c5761b7f4b33ccc2a7201ad38bc68d826",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

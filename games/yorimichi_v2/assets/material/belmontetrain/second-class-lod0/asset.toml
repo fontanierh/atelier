@@ -1,0 +1,276 @@
+# Planned from the donor Belmonte train (tools/migrate/belmontetrain_materials.py): the 25 material instances of second-class LOD0, read from the donor SM_BT_SecondClass_LOD0.glb (not committed).
+# The instances' parameters are the GLB facts, confirmed by the committed bytes; the import writes each
+# instance from its row and reads every value back. Built by the V2 editor, never edited by hand.
+schema = 1
+id = "material/belmontetrain/second-class-lod0"
+kind = "material-instance"
+authority = "generated"
+owner = "shared/belmontetrain/second-class"
+input_dependencies = ["texture/belmontetrain/second-class-lod0-blue-panel-worn", "texture/belmontetrain/second-class-lod0-blue-worn", "texture/belmontetrain/second-class-lod0-dark-worn", "texture/belmontetrain/second-class-lod0-ivory-worn", "texture/belmontetrain/second-class-lod0-lino", "texture/belmontetrain/second-class-lod0-paint-peel", "texture/belmontetrain/second-class-lod0-roof-worn", "texture/belmontetrain/second-class-lod0-tiles", "texture/belmontetrain/second-class-lod0-tiles-grimy", "texture/belmontetrain/second-class-lod0-two", "texture/belmontetrain/second-class-lod0-underframe"]
+
+[recipe]
+importer = "material-instance"
+version = 2
+
+[recipe.settings]
+
+[[recipe.settings.instances]]
+package = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/M_BT_GlassGrimy"
+parent = "/InterchangeAssets/gltf/MaterialInstances/MI_Default_Blend_DS"
+scalars = {MetallicFactor = 0.0, RoughnessFactor = 0.30000001192092896}
+vectors = {BaseColorFactor = [0.699999988079071, 0.6800000071525574, 0.550000011920929, 0.3499999940395355]}
+switches = {bHasBaseColorTexture = false, bHasNormalTexture = false, bHasEmissiveTexture = false, bHasOcclusionTexture = false, bHasMetallicRoughnessTexture = false, bHasSpecularTexture = false, bHasIridescence = false, bHasAnisotropyTextureAndOrRotation = false}
+
+[[recipe.settings.instances]]
+package = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/M_BT_BrassDull"
+parent = "/InterchangeAssets/gltf/MaterialInstances/MI_Default_Opaque_DS"
+scalars = {MetallicFactor = 0.6000000238418579, RoughnessFactor = 0.6499999761581421}
+vectors = {BaseColorFactor = [0.36000001430511475, 0.30000001192092896, 0.17000000178813934, 1]}
+switches = {bHasBaseColorTexture = false, bHasNormalTexture = false, bHasEmissiveTexture = false, bHasOcclusionTexture = false, bHasMetallicRoughnessTexture = false, bHasSpecularTexture = false, bHasIridescence = false, bHasAnisotropyTextureAndOrRotation = false}
+
+[[recipe.settings.instances]]
+package = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/M_BT_CurtainFabric"
+parent = "/InterchangeAssets/gltf/MaterialInstances/MI_Default_Opaque_DS"
+scalars = {MetallicFactor = 0.0, RoughnessFactor = 0.949999988079071}
+vectors = {BaseColorFactor = [0.3400000035762787, 0.23999999463558197, 0.09000000357627869, 1]}
+switches = {bHasBaseColorTexture = false, bHasNormalTexture = false, bHasEmissiveTexture = false, bHasOcclusionTexture = false, bHasMetallicRoughnessTexture = false, bHasSpecularTexture = false, bHasIridescence = false, bHasAnisotropyTextureAndOrRotation = false}
+
+[[recipe.settings.instances]]
+package = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/M_BT_IronBlack"
+parent = "/InterchangeAssets/gltf/MaterialInstances/MI_Default_Opaque_DS"
+scalars = {MetallicFactor = 0.550000011920929, RoughnessFactor = 0.41999998688697815}
+vectors = {BaseColorFactor = [0.014000000432133675, 0.014000000432133675, 0.014999999664723873, 1]}
+switches = {bHasBaseColorTexture = false, bHasNormalTexture = false, bHasEmissiveTexture = false, bHasOcclusionTexture = false, bHasMetallicRoughnessTexture = false, bHasSpecularTexture = false, bHasIridescence = false, bHasAnisotropyTextureAndOrRotation = false}
+
+[[recipe.settings.instances]]
+package = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/M_BT_EnamelGrimy"
+parent = "/InterchangeAssets/gltf/MaterialInstances/MI_Default_Opaque_DS"
+scalars = {MetallicFactor = 0.0, RoughnessFactor = 0.550000011920929}
+vectors = {BaseColorFactor = [0.550000011920929, 0.5, 0.4000000059604645, 1]}
+switches = {bHasBaseColorTexture = false, bHasNormalTexture = false, bHasEmissiveTexture = false, bHasOcclusionTexture = false, bHasMetallicRoughnessTexture = false, bHasSpecularTexture = false, bHasIridescence = false, bHasAnisotropyTextureAndOrRotation = false}
+
+[[recipe.settings.instances]]
+package = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/M_BT_EndDarkWorn"
+parent = "/InterchangeAssets/gltf/MaterialInstances/MI_Default_Opaque_DS"
+textures = {BaseColorTexture = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/T_BT_DarkWorn"}
+scalars = {MetallicFactor = 0.20000000298023224, RoughnessFactor = 0.800000011920929}
+vectors = {BaseColorFactor = [1, 1, 1, 1]}
+switches = {bHasBaseColorTexture = true, bHasNormalTexture = false, bHasEmissiveTexture = false, bHasOcclusionTexture = false, bHasMetallicRoughnessTexture = false, bHasSpecularTexture = false, bHasIridescence = false, bHasAnisotropyTextureAndOrRotation = false}
+
+[[recipe.settings.instances]]
+package = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/M_BT_EnamelWhite"
+parent = "/InterchangeAssets/gltf/MaterialInstances/MI_Default_Opaque_DS"
+scalars = {MetallicFactor = 0.0, RoughnessFactor = 0.3499999940395355}
+vectors = {BaseColorFactor = [0.7799999713897705, 0.7599999904632568, 0.699999988079071, 1]}
+switches = {bHasBaseColorTexture = false, bHasNormalTexture = false, bHasEmissiveTexture = false, bHasOcclusionTexture = false, bHasMetallicRoughnessTexture = false, bHasSpecularTexture = false, bHasIridescence = false, bHasAnisotropyTextureAndOrRotation = false}
+
+[[recipe.settings.instances]]
+package = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/M_BT_EnamelSoot"
+parent = "/InterchangeAssets/gltf/MaterialInstances/MI_Default_Opaque_DS"
+scalars = {MetallicFactor = 0.0, RoughnessFactor = 0.800000011920929}
+vectors = {BaseColorFactor = [0.09000000357627869, 0.07999999821186066, 0.07000000029802322, 1]}
+switches = {bHasBaseColorTexture = false, bHasNormalTexture = false, bHasEmissiveTexture = false, bHasOcclusionTexture = false, bHasMetallicRoughnessTexture = false, bHasSpecularTexture = false, bHasIridescence = false, bHasAnisotropyTextureAndOrRotation = false}
+
+[[recipe.settings.instances]]
+package = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/M_BT_LampWhite"
+parent = "/InterchangeAssets/gltf/MaterialInstances/MI_Default_Opaque_DS"
+scalars = {MetallicFactor = 0.0, RoughnessFactor = 0.20000000298023224, EmissiveStrength = 2.0}
+vectors = {BaseColorFactor = [1, 0.9300000071525574, 0.7799999713897705, 1], EmissiveFactor = [1, 0.9300000071525574, 0.7799999713897705, 1.0]}
+switches = {bHasBaseColorTexture = false, bHasNormalTexture = false, bHasEmissiveTexture = false, bHasOcclusionTexture = false, bHasMetallicRoughnessTexture = false, bHasSpecularTexture = false, bHasIridescence = false, bHasAnisotropyTextureAndOrRotation = false}
+
+[[recipe.settings.instances]]
+package = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/M_BT_MenuBoard"
+parent = "/InterchangeAssets/gltf/MaterialInstances/MI_Default_Opaque_DS"
+scalars = {MetallicFactor = 0.0, RoughnessFactor = 0.699999988079071}
+vectors = {BaseColorFactor = [0.019999999552965164, 0.019999999552965164, 0.019999999552965164, 1]}
+switches = {bHasBaseColorTexture = false, bHasNormalTexture = false, bHasEmissiveTexture = false, bHasOcclusionTexture = false, bHasMetallicRoughnessTexture = false, bHasSpecularTexture = false, bHasIridescence = false, bHasAnisotropyTextureAndOrRotation = false}
+
+[[recipe.settings.instances]]
+package = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/M_BT_EnamelCream"
+parent = "/InterchangeAssets/gltf/MaterialInstances/MI_Default_Opaque_DS"
+scalars = {MetallicFactor = 0.0, RoughnessFactor = 0.550000011920929}
+vectors = {BaseColorFactor = [0.6600000262260437, 0.5799999833106995, 0.41999998688697815, 1]}
+switches = {bHasBaseColorTexture = false, bHasNormalTexture = false, bHasEmissiveTexture = false, bHasOcclusionTexture = false, bHasMetallicRoughnessTexture = false, bHasSpecularTexture = false, bHasIridescence = false, bHasAnisotropyTextureAndOrRotation = false}
+
+[[recipe.settings.instances]]
+package = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/M_BT_Cord"
+parent = "/InterchangeAssets/gltf/MaterialInstances/MI_Default_Opaque_DS"
+scalars = {MetallicFactor = 0.0, RoughnessFactor = 0.8999999761581421}
+vectors = {BaseColorFactor = [0.23999999463558197, 0.1899999976158142, 0.11999999731779099, 1]}
+switches = {bHasBaseColorTexture = false, bHasNormalTexture = false, bHasEmissiveTexture = false, bHasOcclusionTexture = false, bHasMetallicRoughnessTexture = false, bHasSpecularTexture = false, bHasIridescence = false, bHasAnisotropyTextureAndOrRotation = false}
+
+[[recipe.settings.instances]]
+package = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/M_BT_Tile"
+parent = "/InterchangeAssets/gltf/MaterialInstances/MI_Default_Opaque_DS"
+textures = {BaseColorTexture = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/T_BT_Tiles"}
+scalars = {MetallicFactor = 0.0, RoughnessFactor = 0.3499999940395355}
+vectors = {BaseColorFactor = [1, 1, 1, 1]}
+switches = {bHasBaseColorTexture = true, bHasNormalTexture = false, bHasEmissiveTexture = false, bHasOcclusionTexture = false, bHasMetallicRoughnessTexture = false, bHasSpecularTexture = false, bHasIridescence = false, bHasAnisotropyTextureAndOrRotation = false}
+
+[[recipe.settings.instances]]
+package = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/M_BT_TilesGrimy"
+parent = "/InterchangeAssets/gltf/MaterialInstances/MI_Default_Opaque_DS"
+textures = {BaseColorTexture = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/T_BT_TilesGrimy"}
+scalars = {MetallicFactor = 0.0, RoughnessFactor = 0.5}
+vectors = {BaseColorFactor = [1, 1, 1, 1]}
+switches = {bHasBaseColorTexture = true, bHasNormalTexture = false, bHasEmissiveTexture = false, bHasOcclusionTexture = false, bHasMetallicRoughnessTexture = false, bHasSpecularTexture = false, bHasIridescence = false, bHasAnisotropyTextureAndOrRotation = false}
+
+[[recipe.settings.instances]]
+package = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/M_BT_Lino"
+parent = "/InterchangeAssets/gltf/MaterialInstances/MI_Default_Opaque_DS"
+textures = {BaseColorTexture = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/T_BT_Lino"}
+scalars = {MetallicFactor = 0.0, RoughnessFactor = 0.75}
+vectors = {BaseColorFactor = [1, 1, 1, 1]}
+switches = {bHasBaseColorTexture = true, bHasNormalTexture = false, bHasEmissiveTexture = false, bHasOcclusionTexture = false, bHasMetallicRoughnessTexture = false, bHasSpecularTexture = false, bHasIridescence = false, bHasAnisotropyTextureAndOrRotation = false}
+
+[[recipe.settings.instances]]
+package = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/M_BT_PaintPeel"
+parent = "/InterchangeAssets/gltf/MaterialInstances/MI_Default_Opaque_DS"
+textures = {BaseColorTexture = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/T_BT_PaintPeel"}
+scalars = {MetallicFactor = 0.0, RoughnessFactor = 0.8500000238418579}
+vectors = {BaseColorFactor = [1, 1, 1, 1]}
+switches = {bHasBaseColorTexture = true, bHasNormalTexture = false, bHasEmissiveTexture = false, bHasOcclusionTexture = false, bHasMetallicRoughnessTexture = false, bHasSpecularTexture = false, bHasIridescence = false, bHasAnisotropyTextureAndOrRotation = false}
+
+[[recipe.settings.instances]]
+package = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/M_BT_CeilingDingy"
+parent = "/InterchangeAssets/gltf/MaterialInstances/MI_Default_Opaque_DS"
+scalars = {MetallicFactor = 0.0, RoughnessFactor = 0.8500000238418579}
+vectors = {BaseColorFactor = [0.5, 0.4300000071525574, 0.3100000023841858, 1]}
+switches = {bHasBaseColorTexture = false, bHasNormalTexture = false, bHasEmissiveTexture = false, bHasOcclusionTexture = false, bHasMetallicRoughnessTexture = false, bHasSpecularTexture = false, bHasIridescence = false, bHasAnisotropyTextureAndOrRotation = false}
+
+[[recipe.settings.instances]]
+package = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/M_BT_RoofWorn"
+parent = "/InterchangeAssets/gltf/MaterialInstances/MI_Default_Opaque_DS"
+textures = {BaseColorTexture = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/T_BT_RoofWorn"}
+scalars = {MetallicFactor = 0.20000000298023224, RoughnessFactor = 0.800000011920929}
+vectors = {BaseColorFactor = [1, 1, 1, 1]}
+switches = {bHasBaseColorTexture = true, bHasNormalTexture = false, bHasEmissiveTexture = false, bHasOcclusionTexture = false, bHasMetallicRoughnessTexture = false, bHasSpecularTexture = false, bHasIridescence = false, bHasAnisotropyTextureAndOrRotation = false}
+
+[[recipe.settings.instances]]
+package = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/M_BT_Steel"
+parent = "/InterchangeAssets/gltf/MaterialInstances/MI_Default_Opaque_DS"
+scalars = {MetallicFactor = 1.0, RoughnessFactor = 0.44999998807907104}
+vectors = {BaseColorFactor = [0.30000001192092896, 0.30000001192092896, 0.3100000023841858, 1]}
+switches = {bHasBaseColorTexture = false, bHasNormalTexture = false, bHasEmissiveTexture = false, bHasOcclusionTexture = false, bHasMetallicRoughnessTexture = false, bHasSpecularTexture = false, bHasIridescence = false, bHasAnisotropyTextureAndOrRotation = false}
+
+[[recipe.settings.instances]]
+package = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/M_BT_Undercarriage"
+parent = "/InterchangeAssets/gltf/MaterialInstances/MI_Default_Opaque_DS"
+textures = {BaseColorTexture = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/T_BT_Underframe"}
+scalars = {MetallicFactor = 0.30000001192092896, RoughnessFactor = 0.6000000238418579}
+vectors = {BaseColorFactor = [1, 1, 1, 1]}
+switches = {bHasBaseColorTexture = true, bHasNormalTexture = false, bHasEmissiveTexture = false, bHasOcclusionTexture = false, bHasMetallicRoughnessTexture = false, bHasSpecularTexture = false, bHasIridescence = false, bHasAnisotropyTextureAndOrRotation = false}
+
+[[recipe.settings.instances]]
+package = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/M_BT_Rubber"
+parent = "/InterchangeAssets/gltf/MaterialInstances/MI_Default_Opaque_DS"
+scalars = {MetallicFactor = 0.0, RoughnessFactor = 0.800000011920929}
+vectors = {BaseColorFactor = [0.012000000104308128, 0.012000000104308128, 0.013000000268220901, 1]}
+switches = {bHasBaseColorTexture = false, bHasNormalTexture = false, bHasEmissiveTexture = false, bHasOcclusionTexture = false, bHasMetallicRoughnessTexture = false, bHasSpecularTexture = false, bHasIridescence = false, bHasAnisotropyTextureAndOrRotation = false}
+
+[[recipe.settings.instances]]
+package = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/M_BT_DecalTwo"
+parent = "/InterchangeAssets/gltf/MaterialInstances/MI_Default_Blend_DS"
+textures = {BaseColorTexture = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/T_BT_Two"}
+scalars = {MetallicFactor = 0.0, RoughnessFactor = 0.6000000238418579}
+vectors = {BaseColorFactor = [1, 1, 1, 1]}
+switches = {bHasBaseColorTexture = true, bHasNormalTexture = false, bHasEmissiveTexture = false, bHasOcclusionTexture = false, bHasMetallicRoughnessTexture = false, bHasSpecularTexture = false, bHasIridescence = false, bHasAnisotropyTextureAndOrRotation = false}
+
+[[recipe.settings.instances]]
+package = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/M_BT_LiveryBlueWorn"
+parent = "/InterchangeAssets/gltf/MaterialInstances/MI_ClearCoat_Opaque_DS"
+textures = {BaseColorTexture = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/T_BT_BlueWorn"}
+scalars = {MetallicFactor = 0.0, RoughnessFactor = 0.550000011920929, ClearCoatFactor = 0.20000000298023224}
+vectors = {BaseColorFactor = [1, 1, 1, 1]}
+switches = {bHasBaseColorTexture = true, bHasNormalTexture = false, bHasEmissiveTexture = false, bHasOcclusionTexture = false, bHasMetallicRoughnessTexture = false, bHasSpecularTexture = false, bHasIridescence = false, bHasClearCoatTexture = false}
+
+[[recipe.settings.instances]]
+package = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/M_BT_LiveryIvoryWorn"
+parent = "/InterchangeAssets/gltf/MaterialInstances/MI_ClearCoat_Opaque_DS"
+textures = {BaseColorTexture = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/T_BT_IvoryWorn"}
+scalars = {MetallicFactor = 0.0, RoughnessFactor = 0.5799999833106995, ClearCoatFactor = 0.20000000298023224}
+vectors = {BaseColorFactor = [1, 1, 1, 1]}
+switches = {bHasBaseColorTexture = true, bHasNormalTexture = false, bHasEmissiveTexture = false, bHasOcclusionTexture = false, bHasMetallicRoughnessTexture = false, bHasSpecularTexture = false, bHasIridescence = false, bHasClearCoatTexture = false}
+
+[[recipe.settings.instances]]
+package = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/M_BT_LiveryPanelWorn"
+parent = "/InterchangeAssets/gltf/MaterialInstances/MI_ClearCoat_Opaque_DS"
+textures = {BaseColorTexture = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/T_BT_BluePanelWorn"}
+scalars = {MetallicFactor = 0.0, RoughnessFactor = 0.550000011920929, ClearCoatFactor = 0.20000000298023224}
+vectors = {BaseColorFactor = [1, 1, 1, 1]}
+switches = {bHasBaseColorTexture = true, bHasNormalTexture = false, bHasEmissiveTexture = false, bHasOcclusionTexture = false, bHasMetallicRoughnessTexture = false, bHasSpecularTexture = false, bHasIridescence = false, bHasClearCoatTexture = false}
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/M_BT_GlassGrimy"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/M_BT_BrassDull"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/M_BT_CurtainFabric"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/M_BT_IronBlack"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/M_BT_EnamelGrimy"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/M_BT_EndDarkWorn"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/M_BT_EnamelWhite"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/M_BT_EnamelSoot"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/M_BT_LampWhite"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/M_BT_MenuBoard"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/M_BT_EnamelCream"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/M_BT_Cord"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/M_BT_Tile"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/M_BT_TilesGrimy"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/M_BT_Lino"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/M_BT_PaintPeel"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/M_BT_CeilingDingy"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/M_BT_RoofWorn"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/M_BT_Steel"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/M_BT_Undercarriage"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/M_BT_Rubber"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/M_BT_DecalTwo"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/M_BT_LiveryBlueWorn"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/M_BT_LiveryIvoryWorn"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/M_BT_LiveryPanelWorn"

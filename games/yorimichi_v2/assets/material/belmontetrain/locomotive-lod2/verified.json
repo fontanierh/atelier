@@ -1,0 +1,16 @@
+{
+  "asset": "material/belmontetrain/locomotive-lod2",
+  "dependencies": {
+    "texture/belmontetrain/locomotive-lod2-underframe": "c2fd23b70eac69958447aaecfff1fd9372f1514fff5ab3ce38c3fa3f0e46b2aa"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Locomotive/LOD2/M_BT_IronBlack.uasset": "77c264698533dadd53416d6a6700bef4def3dc0060918a80c383cfb388f01d77",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Locomotive/LOD2/M_BT_LocoBlack.uasset": "ee95b1d27be7bcca6b123cab74b848e3e420542b1cd1bc369fd8bf005643d13b",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Locomotive/LOD2/M_BT_Undercarriage.uasset": "fab4946a548efebd731f3073912a769ac64b6079a7bb565ea48eea68f9e226df"
+  },
+  "input_fingerprint": "59d9f67eed92edb57301d08ec394cd71b6833248e03e6d04cb189c8984a94ae1",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "material-instance@2"
+}

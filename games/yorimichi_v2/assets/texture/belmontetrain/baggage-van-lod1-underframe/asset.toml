@@ -1,0 +1,25 @@
+# Planned from the donor Belmonte train (tools/migrate/belmontetrain_materials.py): T_BT_Underframe in baggage-van LOD1, the donor image T_BT_Underframe.jpg.
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "texture/belmontetrain/baggage-van-lod1-underframe"
+kind = "texture"
+authority = "generated"
+owner = "shared/belmontetrain/baggage-van"
+
+[[sources]]
+path = "src/T_BT_Underframe.jpg"
+sha256 = "e16f7c563c1c8e88bb51e8a202ac78591e8d11a44911d47cb26617d434024748"
+
+[recipe]
+importer = "texture"
+version = 1
+
+[recipe.settings]
+srgb = true
+compression = "TC_DEFAULT"
+lod_group = "TEXTUREGROUP_WORLD"
+address = "wrap"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_BaggageVan/LOD1/T_BT_Underframe"

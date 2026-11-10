@@ -1,0 +1,12 @@
+{
+  "asset": "texture/belmontetrain/restaurant-lod2-restaurant-interior",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Restaurant/LOD2/T_BT_RestaurantInterior.uasset": "6a93d830e9486fbc74d8cdde8856ff1c33b6b2ca5ffbc6f6f2b74367db25cf46"
+  },
+  "input_fingerprint": "c58ae5ece4bd8a54de4ec5a987f3e0bb238796b4dbcb46418f3430a593473c1a",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

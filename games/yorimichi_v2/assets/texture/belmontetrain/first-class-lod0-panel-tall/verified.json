@@ -1,0 +1,12 @@
+{
+  "asset": "texture/belmontetrain/first-class-lod0-panel-tall",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_FirstClass/LOD0/T_BT_PanelTall.uasset": "17341134ee9459ae4bf3516d5ac2b3e070cffec47fb3567154ea2e9e10c2f549"
+  },
+  "input_fingerprint": "ffe47dfe6ffac32bba686e74a94a9e4038faac2d2c6bdf02c10e584f1d0aff12",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

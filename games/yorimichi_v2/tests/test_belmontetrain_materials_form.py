@@ -14,6 +14,24 @@ sys.path.insert(0, str(ROOT / 'unreal' / 'Scripts'))
 import check  # noqa: E402
 import import_settings as s  # noqa: E402
 import records  # noqa: E402
+sys.path.insert(0, str(ROOT / 'tools' / 'migrate'))
+import belmontetrain_materials as bm  # noqa: E402
+
+UNITS = ['baggage-van', 'brake-van', 'first-class', 'locomotive', 'restaurant', 'second-class', 'tender']
+
+
+def recorded_packages(kind: str) -> list:
+    """The packages of one kind the tree records: the seven adopted records before the move, the written records after it."""
+    current, _ = bm.state(ROOT)
+    if current == 'done':
+        plan = bm.records_plan(ROOT)
+        if kind == 'textures':
+            return sorted(t.package for t in plan.textures)
+        return sorted(p for r in plan.materials for p in r.outputs)
+    prefix = 'T_BT_' if kind == 'textures' else 'M_BT_'
+    return sorted(o.package for u in UNITS for o in
+                  records.load_asset(ROOT / 'assets' / 'adopted' / 'belmontetrain' / u / 'asset.toml').outputs
+                  if o.package.rsplit('/', 1)[1].startswith(prefix))
 
 REPORT = ROOT / 'unreal' / 'Scripts' / 'report_textures.py'
 TEXTURES = ROOT / 'docs' / 'inventory' / 'belmontetrain-texture-packages.txt'
@@ -139,11 +157,7 @@ def test_the_texture_list_is_the_138_texture_packages_of_the_seven_records():
     listed = TEXTURES.read_text().split()
     assert len(listed) == len(set(listed)) == 138
     assert all(p.startswith('/Game/BelmonteTrain/Source/SM_BT_') and p.rsplit('/', 1)[1].startswith('T_BT_') for p in listed)
-    units = ['baggage-van', 'brake-van', 'first-class', 'locomotive', 'restaurant', 'second-class', 'tender']
-    recorded = [o.package for u in units for o in
-                records.load_asset(ROOT / 'assets' / 'adopted' / 'belmontetrain' / u / 'asset.toml').outputs
-                if o.package.rsplit('/', 1)[1].startswith('T_BT_')]
-    assert sorted(listed) == sorted(recorded)
+    assert sorted(listed) == recorded_packages('textures')
 
 
 def test_check_reports_a_generated_record_without_verified_json_as_fatal(tmp_path):
@@ -185,6 +199,11 @@ def test_the_import_rows_carry_the_switches_and_a_texture_may_keep_only_a_relati
     assert rows[0]['switches'] == {'bHasBaseColorTexture': True}
     assert s.donor_named(['games/yorimichi_v2/unreal/Content/x.glb', '', '/work/checkout'], '/work/checkout') == []
     assert s.donor_named(['/donor-build/x.glb'], '/work/checkout') == ['/donor-build/x.glb']
+    # The editor reports the portable source resolved against its working folder: that path is not a donor path.
+    portable = 'games/yorimichi_v2/assets/texture/t/src/T.png'
+    assert s.donor_named(['/engine/bin/' + portable], '/engine/bin', portable) == []
+    assert s.donor_named(['/engine/bin/' + portable], '/engine/bin') == ['/engine/bin/' + portable]
+    assert s.donor_named(['/donor-build/T.png'], '/engine/bin', portable) == ['/donor-build/T.png']
 
 
 REPORT_MATERIALS = ROOT / 'unreal' / 'Scripts' / 'report_materials.py'
@@ -245,11 +264,7 @@ def test_the_material_list_is_the_321_m_bt_packages_of_the_seven_records():
     listed = (ROOT / 'docs' / 'inventory' / 'belmontetrain-material-packages.txt').read_text().split()
     assert len(listed) == len(set(listed)) == 321
     assert all(p.rsplit('/', 1)[1].startswith('M_BT_') for p in listed)
-    units = ['baggage-van', 'brake-van', 'first-class', 'locomotive', 'restaurant', 'second-class', 'tender']
-    recorded = [o.package for u in units for o in
-                records.load_asset(ROOT / 'assets' / 'adopted' / 'belmontetrain' / u / 'asset.toml').outputs
-                if o.package.rsplit('/', 1)[1].startswith('M_BT_')]
-    assert sorted(listed) == sorted(recorded)
+    assert sorted(listed) == recorded_packages('materials')
 
 
 def test_a_version_1_material_recipe_is_refused_in_both_forms(tmp_path):

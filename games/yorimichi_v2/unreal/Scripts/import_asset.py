@@ -351,13 +351,13 @@ def _scrub_import_data(asset, package):
         raise RuntimeError(f'{package} still names {left} after the scrub; not saved')
 
 
-def _refuse_donor_names(asset, package):
+def _refuse_donor_names(asset, package, portable):
     """A texture's import data may keep only its repository-relative source: an absolute name (a checkout's, a home
     folder's) refuses the save. Checked after the portable source is set."""
     data = asset.get_editor_property('asset_import_data')
     if data is None:
         return
-    left = import_settings.donor_named(data.extract_filenames(), os.getcwd())
+    left = import_settings.donor_named(data.extract_filenames(), os.getcwd(), portable)
     if left:
         raise RuntimeError(f'{package} names a donor path {left} after the portable source; not saved')
 
@@ -426,7 +426,9 @@ def _material_instances(plan, settings):
     MEL = U.MaterialEditingLibrary
     for row in import_settings.material_instances(settings, plan['packages']):
         package, parent_path = row['package'], row['parent']
-        parent = EAL.load_asset(parent_path)
+        # EditorAssetLibrary does not load engine plugin content (the Interchange default instances) and logs an error that
+        # fails the session, so a parent outside /Game goes through unreal.load_asset (a read-only probe, 2026-11-10).
+        parent = EAL.load_asset(parent_path) if parent_path.startswith('/Game/') else U.load_asset(parent_path)
         if parent is None:
             raise RuntimeError(f'the parent {parent_path} is not in the project')
         if EAL.does_asset_exist(package):
@@ -582,7 +584,7 @@ def main():
             raise RuntimeError(f'no editor importer {plan["importer"]}')
         _portable_source(asset, portable)
         if plan['importer'] == 'texture':
-            _refuse_donor_names(asset, package)
+            _refuse_donor_names(asset, package, portable)
         if not EAL.save_asset(package, only_if_is_dirty=False):
             raise RuntimeError(f'could not save {package}')
         U.log(f'V2 import wrote {package} from {portable}')

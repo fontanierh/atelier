@@ -1,0 +1,12 @@
+{
+  "asset": "texture/belmontetrain/first-class-lod0-ivory",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_FirstClass/LOD0/T_BT_Ivory.uasset": "e8793e4ffd461ec57f5ec10e6862d245ed2d2a6c6abe44b463f6fbed81b0f0a2"
+  },
+  "input_fingerprint": "e3043d670f8de991f183522e1dd29209804b54aef1ea9a58cf2dc8c819cc40de",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

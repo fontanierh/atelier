@@ -1,0 +1,12 @@
+{
+  "asset": "texture/belmontetrain/first-class-lod0-crest",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_FirstClass/LOD0/T_BT_Crest.uasset": "fb1daa45aa72f870c90a3adf287a823ae8e4b5a39e99237f6615ced19edca0c8"
+  },
+  "input_fingerprint": "fef5a92918a1b1038334722718cdc78465b5a71a9b59fdd211f7c50bc21daf25",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

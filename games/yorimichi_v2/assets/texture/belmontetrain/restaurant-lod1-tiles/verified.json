@@ -1,0 +1,12 @@
+{
+  "asset": "texture/belmontetrain/restaurant-lod1-tiles",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Restaurant/LOD1/T_BT_Tiles.uasset": "e8036a08ebfeb03eda3f60b1c4b4b57f4f7c6db8218d07cab9f3b5644763b654"
+  },
+  "input_fingerprint": "1673cc3332120792acf828329880af392656ad35b2f026f6987acf73076e2b06",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

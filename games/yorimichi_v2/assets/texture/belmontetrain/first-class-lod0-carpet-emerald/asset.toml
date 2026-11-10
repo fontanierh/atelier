@@ -1,0 +1,25 @@
+# Planned from the donor Belmonte train (tools/migrate/belmontetrain_materials.py): T_BT_CarpetEmerald in first-class LOD0, the donor image T_BT_CarpetEmerald.png.
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "texture/belmontetrain/first-class-lod0-carpet-emerald"
+kind = "texture"
+authority = "generated"
+owner = "shared/belmontetrain/first-class"
+
+[[sources]]
+path = "src/T_BT_CarpetEmerald.png"
+sha256 = "69cb063ec5f11cf20dcf039949a66996a0a866c6182888bc30feed4fd1c1c08e"
+
+[recipe]
+importer = "texture"
+version = 1
+
+[recipe.settings]
+srgb = true
+compression = "TC_DEFAULT"
+lod_group = "TEXTUREGROUP_WORLD"
+address = "wrap"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_FirstClass/LOD0/T_BT_CarpetEmerald"

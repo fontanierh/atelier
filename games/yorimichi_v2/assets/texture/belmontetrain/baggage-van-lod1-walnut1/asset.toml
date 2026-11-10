@@ -1,0 +1,25 @@
+# Planned from the donor Belmonte train (tools/migrate/belmontetrain_materials.py): T_BT_Walnut1 in baggage-van LOD1, the donor image T_BT_Walnut.png.
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "texture/belmontetrain/baggage-van-lod1-walnut1"
+kind = "texture"
+authority = "generated"
+owner = "shared/belmontetrain/baggage-van"
+
+[[sources]]
+path = "src/T_BT_Walnut.png"
+sha256 = "82a95ac294405a14fd5a5648247a5637cb1c2cb25a52676c7b505a9b70147658"
+
+[recipe]
+importer = "texture"
+version = 1
+
+[recipe.settings]
+srgb = true
+compression = "TC_DEFAULT"
+lod_group = "TEXTUREGROUP_WORLD"
+address = "wrap"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_BaggageVan/LOD1/T_BT_Walnut1"

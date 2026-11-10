@@ -1,0 +1,27 @@
+{
+  "asset": "material/belmontetrain/tender-lod1",
+  "dependencies": {
+    "texture/belmontetrain/tender-lod1-crest": "abb7acfd44556d8518b28146892129f2e03fb22276f3c72215037ab9806a007d",
+    "texture/belmontetrain/tender-lod1-roof": "5d9d7f3c316d6ef763f175d6ae2c01da10eea614b81b28873a21e349cf923480",
+    "texture/belmontetrain/tender-lod1-underframe": "7fa904af1ab627f47aa2288e2d00db48e16a86ac708bffcb78cbba1163effc42",
+    "texture/belmontetrain/tender-lod1-walnut": "ee1d91897d2317844c88fb425bc7139cdcbcc6a18f9df99feb5c914b3a53cdc7"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Tender/LOD1/M_BT_Brass.uasset": "6fd87528de0111b0bb3e51fc6875bf75a272c5d3443576252fdb5f908bef6a51",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Tender/LOD1/M_BT_Coal.uasset": "206bb286debe5cd7d034be1975b198460b873bb385c018f606dca51931520479",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Tender/LOD1/M_BT_Crest.uasset": "bc69cccc7a8665f5b4fdd5767b982fcfa707f22ee5f8f15481f0c0e07ac0616a",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Tender/LOD1/M_BT_EndDark.uasset": "3800451205c901c619ad9d9b0cb14f09c7348d024120cc278e0cf6c86fa4b2c8",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Tender/LOD1/M_BT_IronBlack.uasset": "0aa693db2f6d4d3c1b70b2257acd315556309b950c9650c9555967738247c0e1",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Tender/LOD1/M_BT_LocoBlack.uasset": "3697ca8a92329e3c58873622e195419d47abfa6befc747aebb8597270802f227",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Tender/LOD1/M_BT_Parquet.uasset": "e2fde3cc1da74d2a60478fcecf1f6033ebdaf88869fbc099f2c364a6001efc6d",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Tender/LOD1/M_BT_Roof.uasset": "61009a56d2b02ae4f82e4f6c4e710c8ea972eb2f721afd52860bda4792304a20",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Tender/LOD1/M_BT_Rubber.uasset": "fd348acbcbffcc9b51c6b030b64bd028e309e5ba5502db32e921fd1675fb8ee3",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Tender/LOD1/M_BT_Steel.uasset": "5962cf9828538ff6b188d6a8ee7d435c4c47bf619a0f620a71c432c70a989e3c",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Tender/LOD1/M_BT_Undercarriage.uasset": "03c56b301e54b8012979af6df8bb9564c03cd1d920c762e1efcfe88779746fe7"
+  },
+  "input_fingerprint": "9ae5d77487665ed9bde029a533b564a484b892206afa55af75dac84dbff8f111",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "material-instance@2"
+}

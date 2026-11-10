@@ -1,0 +1,12 @@
+{
+  "asset": "texture/belmontetrain/baggage-van-lod2-underframe",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BaggageVan/LOD2/T_BT_Underframe.uasset": "120aa1f916eb55c8ecf1042561c91565a99969a9b50f36da97028607c2fbbb72"
+  },
+  "input_fingerprint": "267b67c5379b5a5928caba8723c6216b8d0661342cb09b0cdbb0129132424887",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

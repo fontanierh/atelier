@@ -1,0 +1,12 @@
+{
+  "asset": "texture/belmontetrain/first-class-lod2-first-class-interior",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_FirstClass/LOD2/T_BT_FirstClassInterior.uasset": "4ed2c30091159a979ae099c42a7d5df89889993082785f48019871bc9aa0b9bf"
+  },
+  "input_fingerprint": "b62c80e6a13ef392ca6dc5f61ea419fb702980958f3712cc3f8e527799938eb4",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

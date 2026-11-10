@@ -1,0 +1,25 @@
+# Planned from the donor Belmonte train (tools/migrate/belmontetrain_materials.py): T_BT_RoofWorn in second-class LOD2, the donor image T_BT_RoofWorn.jpg.
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "texture/belmontetrain/second-class-lod2-roof-worn"
+kind = "texture"
+authority = "generated"
+owner = "shared/belmontetrain/second-class"
+
+[[sources]]
+path = "src/T_BT_RoofWorn.jpg"
+sha256 = "4d56f63b37fc385077ece67061ec48be83746900d48fd95757aca72268c1c0fc"
+
+[recipe]
+importer = "texture"
+version = 1
+
+[recipe.settings]
+srgb = true
+compression = "TC_DEFAULT"
+lod_group = "TEXTUREGROUP_WORLD"
+address = "wrap"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_SecondClass/LOD2/T_BT_RoofWorn"

@@ -1,0 +1,12 @@
+{
+  "asset": "texture/belmontetrain/tender-lod0-roof",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Tender/LOD0/T_BT_Roof.uasset": "afb9df67823b52171f6b821820bbbb547de1a3c557964b583ef0a216c4dd6e41"
+  },
+  "input_fingerprint": "57787962810add61d51e045d3668b526f21e9f28c1bad20a55137777c5528eb1",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

@@ -139,10 +139,16 @@ def test_the_plan_states_only_the_switches_the_evidence_can_confirm_on_fake_rows
                                         'bHasIridescence', 'bHasAnisotropyTextureAndOrRotation', 'bHasClearCoatTexture'}
 
 
-@pytest.mark.skipif(not os.environ.get('YV2_DONOR_BUILD'), reason='needs the donor build (YV2_DONOR_BUILD) to plan')
 def test_the_plan_agrees_with_the_committed_read_evidence():
-    donor = Path(os.environ['YV2_DONOR_BUILD']).expanduser() / 'belmonte-train'
-    plan = m.plan(ROOT, donor)
+    """Before the move the donor plan is checked; after it, the written records are, with no donor needed."""
+    current, _ = m.state(ROOT)
+    if current == 'unprepared':
+        donor = os.environ.get('YV2_DONOR_BUILD')
+        if not donor:
+            pytest.skip('needs the donor build (YV2_DONOR_BUILD) before the move')
+        plan = m.plan(ROOT, Path(donor).expanduser() / 'belmonte-train')
+    else:
+        plan = m.records_plan(ROOT)
     evidence = json.loads(EVIDENCE.read_text())
     assert m.disagreements(plan, evidence) == []
     assert len(evidence['materials']) == 321 and len(evidence['textures']) == 138

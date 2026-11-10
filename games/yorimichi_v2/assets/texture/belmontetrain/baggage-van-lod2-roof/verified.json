@@ -1,0 +1,12 @@
+{
+  "asset": "texture/belmontetrain/baggage-van-lod2-roof",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BaggageVan/LOD2/T_BT_Roof.uasset": "cd2fddfb9bfc70e0f77bae8a28d8ac434dae569ef69de08341d5257b303e6b37"
+  },
+  "input_fingerprint": "59100037784ce8a9e4f6d1e570ec8f837bbffefe761c3de57077d890a52a29db",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

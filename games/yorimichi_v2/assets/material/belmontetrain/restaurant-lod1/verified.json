@@ -1,0 +1,39 @@
+{
+  "asset": "material/belmontetrain/restaurant-lod1",
+  "dependencies": {
+    "texture/belmontetrain/restaurant-lod1-blue-panel": "a26ab53adecc9aa42d3ab8e98fcb62fd51e16ba4b0dce5bb2b8134386c74425e",
+    "texture/belmontetrain/restaurant-lod1-carpet-burgundy": "0d2ff3d35eab6ed894aab3342f061447ee445077a93cd2fcfbe9460fd197a5e1",
+    "texture/belmontetrain/restaurant-lod1-crest": "eed1862eb68ab22c187c3264f39716ef69df2f3707fad1345e438b12cd8e1538",
+    "texture/belmontetrain/restaurant-lod1-ivory": "db93eb513e02c1fadc2505fa465441eb8f3af7d45817cb6c5985ee239ef965e2",
+    "texture/belmontetrain/restaurant-lod1-roof": "490649a2f44737717ed96851d81b663350a8c38ea81c3db3c464f00868b33b4f",
+    "texture/belmontetrain/restaurant-lod1-tiles": "a81cab1b594b465fed7b7062262b749191c28281e9dbcf6bd4b48ac515f8375e",
+    "texture/belmontetrain/restaurant-lod1-underframe": "fa9bf20e2ef54efbcc9000e7c93c630bcaf06d9e00dd058ab31a753b5b7fb5af",
+    "texture/belmontetrain/restaurant-lod1-walnut": "769989583b3b74aa2a92af19b93998fc6deaee1bf87c8e0887f187d3d9e280d1",
+    "texture/belmontetrain/restaurant-lod1-walnut1": "a8e6ca66397705527354003b97d0f449da79e5c16fcadebd57e03e19c17fea69"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Restaurant/LOD1/M_BT_Brass.uasset": "e9e988efabe89ee7f277b01ea741d344d5ee6f7dbd0bedb5a4c6fb6e103fdcbe",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Restaurant/LOD1/M_BT_CarpetBurgundy.uasset": "73d81a3545eced89a11281d9b2426c76fd5fbb0db6939b461d95f4707e99d019",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Restaurant/LOD1/M_BT_Ceiling.uasset": "60c100a1b265f1c007115285c24889fdd4bb56f0d2948a263fec16b4fe5c92f2",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Restaurant/LOD1/M_BT_Crest.uasset": "a49f7e703b6bcc2ca121687efdf51e14e0bb9c79cdf54c133a51b24bef17a755",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Restaurant/LOD1/M_BT_EndDark.uasset": "b8d55b733d9555df906a95b31c1ffabd12de71e5d504809563429ee9fa2842af",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Restaurant/LOD1/M_BT_Glass.uasset": "43bfbfd83e0a6cca99377a045b0f4c5f87c1aa8c912c6abb86bfaba56963c389",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Restaurant/LOD1/M_BT_GlassFrosted.uasset": "a0337e6f39c13100951f27297763b0b00c4f085d0c3657b3572666f280abd2c5",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Restaurant/LOD1/M_BT_LiveryBlue.uasset": "d1dc54a08a7d83a8d8bb9965f298b127ccd1f8735e1f2bff65d6b5c8b287d38f",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Restaurant/LOD1/M_BT_LiveryIvory.uasset": "f2d1addcfa1965a4ed4bddf50fbd09cdfb8a8c9961da01cac630935b3ee5fdb2",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Restaurant/LOD1/M_BT_LiveryPanel.uasset": "752fd8a93dd3e09d3885d80c3c71406f266ed75b296bfaa9bfb22cf5825bdbd3",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Restaurant/LOD1/M_BT_Parquet.uasset": "cb82c23f28dd2e1aeaa49b7d075cccedc3263639617d5176187ee200cd115c2f",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Restaurant/LOD1/M_BT_Roof.uasset": "817cf68b34327bd2c27bd010fc30944fb1e404ba1745a3763dee76ddb2129ce6",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Restaurant/LOD1/M_BT_Rubber.uasset": "05a01212bd8661dc51dbf6be789f5dc470a7fd9d55d6d5ffc1fc7f1e0534e940",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Restaurant/LOD1/M_BT_Steel.uasset": "f88a27ba4d789394e7ef6d7d41bc9260bd345cab1457a8dd8c6bbd8244c9cfa6",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Restaurant/LOD1/M_BT_Tile.uasset": "2c97cd3ac08e60f4f2302779bfe14e20464a37e3bbb229c3ac35fd4f49ec7b75",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Restaurant/LOD1/M_BT_Undercarriage.uasset": "2493d991401fd9d1996cbb2aa63277c95ad8960795dc104b71e5483416314fc7",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Restaurant/LOD1/M_BT_VelvetBurgundy.uasset": "7fd88a9e862df0c98b735fdb746f47141faf450357b72ba5a7575816bba80696",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Restaurant/LOD1/M_BT_Walnut.uasset": "3a8dddb134efc7987d0174f39f9c8c2643fde7e716b9f82a2ac98ab92abefae7"
+  },
+  "input_fingerprint": "cc83f79b9ac9e1d29ae8f2496310d48c1418fa1aab9d8dac35e13e38f5ee817b",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "material-instance@2"
+}

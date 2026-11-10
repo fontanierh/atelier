@@ -1,0 +1,12 @@
+{
+  "asset": "texture/belmontetrain/locomotive-lod0-underframe",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Locomotive/LOD0/T_BT_Underframe.uasset": "a62948f14ba43d5cb858763d55d639b83a6bc387aeebf572ffd529ea92e59592"
+  },
+  "input_fingerprint": "85503292958bcb64857c8755a9469373d9c9038c3f84ff12b6bcaf3dc5fb663e",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

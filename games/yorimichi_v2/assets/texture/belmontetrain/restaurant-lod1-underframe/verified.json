@@ -1,0 +1,12 @@
+{
+  "asset": "texture/belmontetrain/restaurant-lod1-underframe",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Restaurant/LOD1/T_BT_Underframe.uasset": "bb3504560d5a75622e627c837ab11fe324c1391e89fa39447405ad3158f676ab"
+  },
+  "input_fingerprint": "b037e9f41377497de719784db56f1469a64bd3ded60bf3042514822f5db47903",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

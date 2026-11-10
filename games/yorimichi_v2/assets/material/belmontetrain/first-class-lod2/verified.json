@@ -1,0 +1,23 @@
+{
+  "asset": "material/belmontetrain/first-class-lod2",
+  "dependencies": {
+    "texture/belmontetrain/first-class-lod2-first-class-interior": "477587f135f6417d4badc54092b40c64192123d037e62ce424fbbb9c0dbc000f",
+    "texture/belmontetrain/first-class-lod2-ivory": "7a498434726af037bdf8763298a31cfbd851c59a40ccfabebf86c52b299396ea",
+    "texture/belmontetrain/first-class-lod2-roof": "18d9583c3e0b9edcd40d26400249e6dd0eaa25938c20d30e735254f2947bced4",
+    "texture/belmontetrain/first-class-lod2-underframe": "309d7e01a20b6564ad6c155edf9bddde5499f677f5da55c380f7d684eea6bcca"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_FirstClass/LOD2/M_BT_GlassDark.uasset": "3bde442e0637625f9971ff216b2cee1ef0349ec7b0ad4258a1e1c47b10b69666",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_FirstClass/LOD2/M_BT_LiveryBlue.uasset": "9b0b92e3816baf697e0dedeafa53508bc4be16b3e3bc283b2fc4b93c49e2fcbb",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_FirstClass/LOD2/M_BT_LiveryIvory.uasset": "1756e4e55d528c2e1c88415601151ab4f89a815b41347d6420ff39179a7b31d1",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_FirstClass/LOD2/M_BT_Roof.uasset": "cffb53cd0435cbd7955b7b4a93bab752f1b6b46417da37e7575909b069254cdc",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_FirstClass/LOD2/M_BT_Rubber.uasset": "0cd9345301129767626e4ccac96d0b02bb0ae643c68ab67225ac09cb69262c99",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_FirstClass/LOD2/M_BT_Undercarriage.uasset": "d19ea4c6a1ae90b5823865c7b3fbc84f9e2a00e45528797bb5865325e189ef68",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_FirstClass/LOD2/M_BT_WindowInteriorFirstClass.uasset": "4e79dd39cc9fd4737818d1b9029afcc54bca28751686061d4e279592c18a296a"
+  },
+  "input_fingerprint": "452a8ef117081846e7e52aad8f7d708cf8b2cf6087e3f9fb37db6c35a7c16e17",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "material-instance@2"
+}

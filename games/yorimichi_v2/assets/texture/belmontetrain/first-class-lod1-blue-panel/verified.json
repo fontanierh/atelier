@@ -1,0 +1,12 @@
+{
+  "asset": "texture/belmontetrain/first-class-lod1-blue-panel",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_FirstClass/LOD1/T_BT_BluePanel.uasset": "1fe81cd169afc386ee7df5a9837ec74f1c91cd94ccbd3f61a90474d125041481"
+  },
+  "input_fingerprint": "ee2f25a304e2e14f565215770fb909f4c6d45d19abf28501316a338eb3805fd9",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

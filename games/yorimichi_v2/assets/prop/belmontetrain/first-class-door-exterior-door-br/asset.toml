@@ -6,7 +6,7 @@ id = "prop/belmontetrain/first-class-door-exterior-door-br"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/belmontetrain/first-class"
-references = ["adopted/belmontetrain/first-class"]
+references = ["material/belmontetrain/first-class-lod0", "material/belmontetrain/first-class-lod1", "material/belmontetrain/first-class-lod2", "texture/belmontetrain/first-class-lod0-blue-panel", "texture/belmontetrain/first-class-lod0-carpet-emerald", "texture/belmontetrain/first-class-lod0-crest", "texture/belmontetrain/first-class-lod0-ivory", "texture/belmontetrain/first-class-lod0-panel-tall", "texture/belmontetrain/first-class-lod0-panel-wide", "texture/belmontetrain/first-class-lod0-roof", "texture/belmontetrain/first-class-lod0-tiles", "texture/belmontetrain/first-class-lod0-underframe", "texture/belmontetrain/first-class-lod0-walnut", "texture/belmontetrain/first-class-lod0-walnut1", "texture/belmontetrain/first-class-lod1-blue-panel", "texture/belmontetrain/first-class-lod1-carpet-emerald", "texture/belmontetrain/first-class-lod1-crest", "texture/belmontetrain/first-class-lod1-ivory", "texture/belmontetrain/first-class-lod1-roof", "texture/belmontetrain/first-class-lod1-tiles", "texture/belmontetrain/first-class-lod1-underframe", "texture/belmontetrain/first-class-lod1-walnut", "texture/belmontetrain/first-class-lod1-walnut1", "texture/belmontetrain/first-class-lod2-first-class-interior", "texture/belmontetrain/first-class-lod2-ivory", "texture/belmontetrain/first-class-lod2-roof", "texture/belmontetrain/first-class-lod2-underframe"]
 
 [[sources]]
 path = "src/SM_BTD_FirstClass_exterior_door_br.glb"

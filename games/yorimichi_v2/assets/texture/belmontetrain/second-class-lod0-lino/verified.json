@@ -1,0 +1,12 @@
+{
+  "asset": "texture/belmontetrain/second-class-lod0-lino",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_SecondClass/LOD0/T_BT_Lino.uasset": "87c460219797d36e1e68148a9f714611d4a9f62709ab6489065abe0c23eb120c"
+  },
+  "input_fingerprint": "3838dc44edf0fe2770bad8c797ea940357e31dd699eba78bd297351ea04e5ed9",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

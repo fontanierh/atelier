@@ -54,6 +54,7 @@ CELL_M = 128.0              # V2MigrationTowns::PieceCellM
 BLOCK_CELLS = 4             # the cell pieces of a large plant group share an object per 4 x 4 cells (512 m)
 REASONS = ('outside', 'no record')
 PIECE = re.compile(r'^(?P<key>[^@]+)@(?P<x>-?\d+)_(?P<y>-?\d+)$')
+CELL = re.compile(r'm?\d+-m?\d+')     # cell_label: the cell suffix of a split unit (plant-fern-m2-0)
 CLEARANCE = GAME / 'unreal' / 'Content' / 'Data' / 'gondola' / 'runtime.json'
 
 
@@ -198,8 +199,11 @@ def record_unit(tag: str, key: str, record: str, units: dict[str, set[str]] | No
     if record.startswith('adopted/'):
         return unit_of(record)
     # A unit classify suffixed with -planting (its base id is taken by the region's own objects) folds back to the base.
-    named = sorted({unit.removesuffix('-planting') if f'object/{tag}/{unit.removesuffix("-planting")}' in taken else unit
-                    for unit in (units or {}).get(record, ())})
+    named = {unit.removesuffix('-planting') if f'object/{tag}/{unit.removesuffix("-planting")}' in taken else unit
+             for unit in (units or {}).get(record, ())}
+    # A cell piece (<unit>-<cell_label>) of a saved unit is that unit's split, not another unit.
+    named = sorted(unit for unit in named
+                   if not any(unit.startswith(f'{base}-') and CELL.fullmatch(unit[len(base) + 1:]) for base in named))
     if len(named) > 1:
         raise TownError(f'{tag}: {key} is owned by {record}, which saved objects {named} of {tag} all name; a recovered '
                         'record must keep the one unit its saved object took')

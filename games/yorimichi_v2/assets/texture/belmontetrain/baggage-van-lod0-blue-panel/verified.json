@@ -1,0 +1,12 @@
+{
+  "asset": "texture/belmontetrain/baggage-van-lod0-blue-panel",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BaggageVan/LOD0/T_BT_BluePanel.uasset": "64df5c85f5c20d2bbd7f0ba361f081c73ff9296e6dc622b26c664090b6c6d175"
+  },
+  "input_fingerprint": "ad773ced7f074390cb1d4df152c7ec2a14bc796745b7a7f483b554d0d819dece",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

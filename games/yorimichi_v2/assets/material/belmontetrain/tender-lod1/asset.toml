@@ -1,0 +1,129 @@
+# Planned from the donor Belmonte train (tools/migrate/belmontetrain_materials.py): the 11 material instances of tender LOD1, read from the donor SM_BT_Tender_LOD1.glb (not committed).
+# The instances' parameters are the GLB facts, confirmed by the committed bytes; the import writes each
+# instance from its row and reads every value back. Built by the V2 editor, never edited by hand.
+schema = 1
+id = "material/belmontetrain/tender-lod1"
+kind = "material-instance"
+authority = "generated"
+owner = "shared/belmontetrain/tender"
+input_dependencies = ["texture/belmontetrain/tender-lod1-crest", "texture/belmontetrain/tender-lod1-roof", "texture/belmontetrain/tender-lod1-underframe", "texture/belmontetrain/tender-lod1-walnut"]
+
+[recipe]
+importer = "material-instance"
+version = 2
+
+[recipe.settings]
+
+[[recipe.settings.instances]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Tender/LOD1/M_BT_EndDark"
+parent = "/InterchangeAssets/gltf/MaterialInstances/MI_Default_Opaque_DS"
+scalars = {MetallicFactor = 0.0, RoughnessFactor = 0.5}
+vectors = {BaseColorFactor = [0.017999999225139618, 0.01899999938905239, 0.02199999988079071, 1]}
+switches = {bHasBaseColorTexture = false, bHasNormalTexture = false, bHasEmissiveTexture = false, bHasOcclusionTexture = false, bHasMetallicRoughnessTexture = false, bHasSpecularTexture = false, bHasIridescence = false, bHasAnisotropyTextureAndOrRotation = false}
+
+[[recipe.settings.instances]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Tender/LOD1/M_BT_Brass"
+parent = "/InterchangeAssets/gltf/MaterialInstances/MI_Default_Opaque_DS"
+scalars = {MetallicFactor = 1.0, RoughnessFactor = 0.2800000011920929}
+vectors = {BaseColorFactor = [0.800000011920929, 0.5600000023841858, 0.23999999463558197, 1]}
+switches = {bHasBaseColorTexture = false, bHasNormalTexture = false, bHasEmissiveTexture = false, bHasOcclusionTexture = false, bHasMetallicRoughnessTexture = false, bHasSpecularTexture = false, bHasIridescence = false, bHasAnisotropyTextureAndOrRotation = false}
+
+[[recipe.settings.instances]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Tender/LOD1/M_BT_LocoBlack"
+parent = "/InterchangeAssets/gltf/MaterialInstances/MI_ClearCoat_Opaque_DS"
+scalars = {MetallicFactor = 0.0, RoughnessFactor = 0.25999999046325684, ClearCoatFactor = 0.6000000238418579}
+vectors = {BaseColorFactor = [0.010999999940395355, 0.010999999940395355, 0.012000000104308128, 1]}
+switches = {bHasBaseColorTexture = false, bHasNormalTexture = false, bHasEmissiveTexture = false, bHasOcclusionTexture = false, bHasMetallicRoughnessTexture = false, bHasSpecularTexture = false, bHasIridescence = false, bHasClearCoatTexture = false}
+
+[[recipe.settings.instances]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Tender/LOD1/M_BT_Undercarriage"
+parent = "/InterchangeAssets/gltf/MaterialInstances/MI_Default_Opaque_DS"
+textures = {BaseColorTexture = "/Game/BelmonteTrain/Source/SM_BT_Tender/LOD1/T_BT_Underframe"}
+scalars = {MetallicFactor = 0.30000001192092896, RoughnessFactor = 0.6000000238418579}
+vectors = {BaseColorFactor = [1, 1, 1, 1]}
+switches = {bHasBaseColorTexture = true, bHasNormalTexture = false, bHasEmissiveTexture = false, bHasOcclusionTexture = false, bHasMetallicRoughnessTexture = false, bHasSpecularTexture = false, bHasIridescence = false, bHasAnisotropyTextureAndOrRotation = false}
+
+[[recipe.settings.instances]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Tender/LOD1/M_BT_Steel"
+parent = "/InterchangeAssets/gltf/MaterialInstances/MI_Default_Opaque_DS"
+scalars = {MetallicFactor = 1.0, RoughnessFactor = 0.44999998807907104}
+vectors = {BaseColorFactor = [0.30000001192092896, 0.30000001192092896, 0.3100000023841858, 1]}
+switches = {bHasBaseColorTexture = false, bHasNormalTexture = false, bHasEmissiveTexture = false, bHasOcclusionTexture = false, bHasMetallicRoughnessTexture = false, bHasSpecularTexture = false, bHasIridescence = false, bHasAnisotropyTextureAndOrRotation = false}
+
+[[recipe.settings.instances]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Tender/LOD1/M_BT_Rubber"
+parent = "/InterchangeAssets/gltf/MaterialInstances/MI_Default_Opaque_DS"
+scalars = {MetallicFactor = 0.0, RoughnessFactor = 0.800000011920929}
+vectors = {BaseColorFactor = [0.012000000104308128, 0.012000000104308128, 0.013000000268220901, 1]}
+switches = {bHasBaseColorTexture = false, bHasNormalTexture = false, bHasEmissiveTexture = false, bHasOcclusionTexture = false, bHasMetallicRoughnessTexture = false, bHasSpecularTexture = false, bHasIridescence = false, bHasAnisotropyTextureAndOrRotation = false}
+
+[[recipe.settings.instances]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Tender/LOD1/M_BT_Crest"
+parent = "/InterchangeAssets/gltf/MaterialInstances/MI_Default_Blend_DS"
+textures = {BaseColorTexture = "/Game/BelmonteTrain/Source/SM_BT_Tender/LOD1/T_BT_Crest"}
+scalars = {MetallicFactor = 0.800000011920929, RoughnessFactor = 0.30000001192092896}
+vectors = {BaseColorFactor = [1, 1, 1, 1]}
+switches = {bHasBaseColorTexture = true, bHasNormalTexture = false, bHasEmissiveTexture = false, bHasOcclusionTexture = false, bHasMetallicRoughnessTexture = false, bHasSpecularTexture = false, bHasIridescence = false, bHasAnisotropyTextureAndOrRotation = false}
+
+[[recipe.settings.instances]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Tender/LOD1/M_BT_Coal"
+parent = "/InterchangeAssets/gltf/MaterialInstances/MI_Default_Opaque_DS"
+scalars = {MetallicFactor = 0.10000000149011612, RoughnessFactor = 0.75}
+vectors = {BaseColorFactor = [0.00800000037997961, 0.00800000037997961, 0.008999999612569809, 1]}
+switches = {bHasBaseColorTexture = false, bHasNormalTexture = false, bHasEmissiveTexture = false, bHasOcclusionTexture = false, bHasMetallicRoughnessTexture = false, bHasSpecularTexture = false, bHasIridescence = false, bHasAnisotropyTextureAndOrRotation = false}
+
+[[recipe.settings.instances]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Tender/LOD1/M_BT_Parquet"
+parent = "/InterchangeAssets/gltf/MaterialInstances/MI_Default_Opaque_DS"
+textures = {BaseColorTexture = "/Game/BelmonteTrain/Source/SM_BT_Tender/LOD1/T_BT_Walnut"}
+scalars = {MetallicFactor = 0.0, RoughnessFactor = 0.44999998807907104}
+vectors = {BaseColorFactor = [1, 1, 1, 1]}
+switches = {bHasBaseColorTexture = true, bHasNormalTexture = false, bHasEmissiveTexture = false, bHasOcclusionTexture = false, bHasMetallicRoughnessTexture = false, bHasSpecularTexture = false, bHasIridescence = false, bHasAnisotropyTextureAndOrRotation = false}
+
+[[recipe.settings.instances]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Tender/LOD1/M_BT_IronBlack"
+parent = "/InterchangeAssets/gltf/MaterialInstances/MI_Default_Opaque_DS"
+scalars = {MetallicFactor = 0.550000011920929, RoughnessFactor = 0.41999998688697815}
+vectors = {BaseColorFactor = [0.014000000432133675, 0.014000000432133675, 0.014999999664723873, 1]}
+switches = {bHasBaseColorTexture = false, bHasNormalTexture = false, bHasEmissiveTexture = false, bHasOcclusionTexture = false, bHasMetallicRoughnessTexture = false, bHasSpecularTexture = false, bHasIridescence = false, bHasAnisotropyTextureAndOrRotation = false}
+
+[[recipe.settings.instances]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Tender/LOD1/M_BT_Roof"
+parent = "/InterchangeAssets/gltf/MaterialInstances/MI_Default_Opaque_DS"
+textures = {BaseColorTexture = "/Game/BelmonteTrain/Source/SM_BT_Tender/LOD1/T_BT_Roof"}
+scalars = {MetallicFactor = 0.0, RoughnessFactor = 0.550000011920929}
+vectors = {BaseColorFactor = [1, 1, 1, 1]}
+switches = {bHasBaseColorTexture = true, bHasNormalTexture = false, bHasEmissiveTexture = false, bHasOcclusionTexture = false, bHasMetallicRoughnessTexture = false, bHasSpecularTexture = false, bHasIridescence = false, bHasAnisotropyTextureAndOrRotation = false}
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Tender/LOD1/M_BT_EndDark"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Tender/LOD1/M_BT_Brass"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Tender/LOD1/M_BT_LocoBlack"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Tender/LOD1/M_BT_Undercarriage"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Tender/LOD1/M_BT_Steel"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Tender/LOD1/M_BT_Rubber"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Tender/LOD1/M_BT_Crest"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Tender/LOD1/M_BT_Coal"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Tender/LOD1/M_BT_Parquet"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Tender/LOD1/M_BT_IronBlack"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_Tender/LOD1/M_BT_Roof"

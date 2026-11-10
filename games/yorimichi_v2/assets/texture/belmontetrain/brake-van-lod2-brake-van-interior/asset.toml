@@ -1,0 +1,25 @@
+# Planned from the donor Belmonte train (tools/migrate/belmontetrain_materials.py): T_BT_BrakeVanInterior in brake-van LOD2, the donor image T_BT_BrakeVanInterior.png.
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "texture/belmontetrain/brake-van-lod2-brake-van-interior"
+kind = "texture"
+authority = "generated"
+owner = "shared/belmontetrain/brake-van"
+
+[[sources]]
+path = "src/T_BT_BrakeVanInterior.png"
+sha256 = "3eeb003ecb82826ba26368532a8fa2dc9af35a96c394b05c3456323342d78e8d"
+
+[recipe]
+importer = "texture"
+version = 1
+
+[recipe.settings]
+srgb = true
+compression = "TC_DEFAULT"
+lod_group = "TEXTUREGROUP_WORLD"
+address = "wrap"
+
+[[outputs]]
+package = "/Game/BelmonteTrain/Source/SM_BT_BrakeVan/LOD2/T_BT_BrakeVanInterior"

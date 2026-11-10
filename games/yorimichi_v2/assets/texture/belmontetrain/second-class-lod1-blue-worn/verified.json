@@ -1,0 +1,12 @@
+{
+  "asset": "texture/belmontetrain/second-class-lod1-blue-worn",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_SecondClass/LOD1/T_BT_BlueWorn.uasset": "2728c87ada87d804b3dc3a8b4564027b4ee743bef70efa7c55e54bf8ad0ff25d"
+  },
+  "input_fingerprint": "b6266f47e4cdb7650204a802c772994004cecb495bb2656f6f3505c4f32f1da0",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

@@ -1,0 +1,12 @@
+{
+  "asset": "texture/belmontetrain/second-class-lod1-tiles-grimy",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_SecondClass/LOD1/T_BT_TilesGrimy.uasset": "68d60226a991acfb7fd02dea3e23579a5904d9d98b836c7c50b3e12d67f03bdb"
+  },
+  "input_fingerprint": "4cdbba6c397081060d85b31aeecac001a96ad2b98c743b6a364604c8205585f1",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}

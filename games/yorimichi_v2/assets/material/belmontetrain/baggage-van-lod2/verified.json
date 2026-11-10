@@ -1,0 +1,23 @@
+{
+  "asset": "material/belmontetrain/baggage-van-lod2",
+  "dependencies": {
+    "texture/belmontetrain/baggage-van-lod2-baggage-van-interior": "ea2b874457d964403ccb577b99bc7455b05b4b49ddba2e2864307f641f225ac5",
+    "texture/belmontetrain/baggage-van-lod2-ivory": "1fd7485b3efcbf29bfd966b67af25cea9d684bddb524b071b075a4c177fb01fb",
+    "texture/belmontetrain/baggage-van-lod2-roof": "ac5cd490106ff2efc5627717d9a75ceedc0432707b94075cd253af13096d9092",
+    "texture/belmontetrain/baggage-van-lod2-underframe": "56b6028aa94b8cfbfd60ab6aba6bdc2a3ee100068cef584b6e59b1fd2474c081"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BaggageVan/LOD2/M_BT_GlassDark.uasset": "97eeb66a0e8b4876d4cb0d07649cc0941f78ae306e3dd1e40ccb3dba34126a60",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BaggageVan/LOD2/M_BT_LiveryBlue.uasset": "af7d562739325d6837b19a839e70467fe9963e587696704815a09c3bccce446f",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BaggageVan/LOD2/M_BT_LiveryIvory.uasset": "6f7fb88d2676a4c358fd9f72d14502b8b6c7c9af854f28b639a8abe7821af5e3",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BaggageVan/LOD2/M_BT_Roof.uasset": "266af342d907003f64e2d1fc2e8f2215c577aa17ba22aed756a46c20f17e235f",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BaggageVan/LOD2/M_BT_Rubber.uasset": "f024a1636825cb224eb87b16e53d5c9c9543b9f557c12f1f731df426acf0b65c",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BaggageVan/LOD2/M_BT_Undercarriage.uasset": "c3742caa5dcc79e902ea0c5a3e79bca4d08e28ab8ace090ab71c2b68e10d90c9",
+    "unreal/Content/BelmonteTrain/Source/SM_BT_BaggageVan/LOD2/M_BT_WindowInteriorBaggageVan.uasset": "afba63f810668f3e7116f1bb360c2b42c2449dc0c905e93bc9fb188efa84d171"
+  },
+  "input_fingerprint": "246db469960e38fdce39530f5b954c1fc2c4d6498451ffbd653d5df4379c9372",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "material-instance@2"
+}

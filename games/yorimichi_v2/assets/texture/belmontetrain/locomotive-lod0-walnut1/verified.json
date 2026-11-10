@@ -1,0 +1,12 @@
+{
+  "asset": "texture/belmontetrain/locomotive-lod0-walnut1",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/BelmonteTrain/Source/SM_BT_Locomotive/LOD0/T_BT_Walnut1.uasset": "169c8abe7aaf77be8a9ecbecb6b5e67621da90caf45e9ad935c671813a9c331b"
+  },
+  "input_fingerprint": "d58520b23bd70e2c0d4b1f950b4e478f2a17f23d30d9e0a584ab2d62411d0b03",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "texture@1"
+}
