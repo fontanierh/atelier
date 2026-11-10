@@ -6,7 +6,7 @@ id = "prop/hippodrome/rails"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/hippodrome/rails"
-references = ["adopted/hippodrome/materials"]
+references = ["master/hippodrome/rail"]
 
 [[sources]]
 path = "src/SM_HD_Rails.glb"

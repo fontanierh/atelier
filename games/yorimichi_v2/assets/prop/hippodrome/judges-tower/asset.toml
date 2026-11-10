@@ -8,7 +8,7 @@ authority = "generated"
 owner = "shared/hippodrome/judges-tower"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02); pinned by sha256"
-references = ["adopted/hippodrome/materials"]
+references = ["master/hippodrome/structure"]
 input_dependencies = ["adopted/hippodrome/meshes"]
 
 [[sources]]

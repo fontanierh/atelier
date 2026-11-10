@@ -6,7 +6,7 @@ id = "prop/hippodrome/ground"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/hippodrome/ground"
-references = ["adopted/hippodrome/materials"]
+references = ["master/hippodrome/grass"]
 
 [[sources]]
 path = "src/SM_HD_Ground.glb"
