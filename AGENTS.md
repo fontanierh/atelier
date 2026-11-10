@@ -44,7 +44,7 @@ uv run pytest path/to/test_file.py -q     # focused local tests; full suite runs
   Preserve completed remote assets and rerun the same command after interruption; never clobber conflicts or publish
   an unfinished draft manually. Uploading an existing verified package does not require another cook.
 - Never prefix pull request titles with `[codex]` unless explicitly asked.
-- GitHub-hosted CI runs the Python suite on macOS and checks code contracts. Paid advisory review uses
+- GitHub-hosted CI runs the active Python suites and checks code contracts. Paid advisory review uses
   `gpt-6.1-sol`, medium reasoning, only when a writer posts a new PR comment containing exactly `r? cc`.
   **Agents must request this paid review once every code PR is ready**, after batching intermediate edits.
   Pushes/opening a PR never request it. Request again after substantive changes to reviewed code, not for
