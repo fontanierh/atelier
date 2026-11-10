@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/harbor-pier-central-rope52",
+  "dependencies": {
+    "prop/brinecove/harbor-pier-central-rope52": "cedd02ba48f68e90e904fed3278b13086e3565fc129d2bba36f98fbda85e379d"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/8/8J/J122QM489FHA2AFRVDIF8O.uasset": "3a4092941c4cf40a4fd267f82081419dc516b84392f1188a8575ab6bbe810d2c"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

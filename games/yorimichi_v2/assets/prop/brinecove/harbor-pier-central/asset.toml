@@ -1,4 +1,4 @@
-# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_HarborPierCentral: the harbor pier central, cut from the fused tile(s) Harbor_3_2, Harbor_3_3, Harbor_4_2, Harbor_4_3 (3672 triangles).
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_HarborPierCentral: the harbor pier central, cut from the fused tile(s) Harbor_3_2, Harbor_3_3, Harbor_4_2, Harbor_4_3 (2940 triangles, its cargo split off by the re-split).
 # The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
 # verified by tools/import/run.py, never edited by hand.
 schema = 1
@@ -6,19 +6,29 @@ id = "prop/brinecove/harbor-pier-central"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/brinecove/harbor-pier-central"
-references = ["adopted/brinecove/materials"]
+references = ["adopted/brinecove/materials", "generator/brinecove/piers"]
 
 [[sources]]
 path = "src/SM_BC_HarborPierCentral.glb"
 sha256 = "69683d4f6361182413c9c3280b23afbbce31909684c7130c88b764a959957d40"
+
+[[sources]]
+path = "src/SM_BC_HarborPierCentral.carve.json"
+sha256 = "d5f0e4f12d23edcb8afaeed6ac74017094bea94b3723a3486b8429b3b7964cdc"
+
+[derive]
+kind = "carve"
+version = 1
+original = "src/SM_BC_HarborPierCentral.glb"
+selection = "src/SM_BC_HarborPierCentral.carve.json"
 
 [recipe]
 importer = "static-mesh"
 version = 1
 
 [recipe.settings]
-slot_materials = ["/Game/Brinecove/Materials/MI_BC_lantern", "/Game/Brinecove/Materials/MI_BC_metal", "/Game/Brinecove/Materials/MI_BC_wood_dark", "/Game/Brinecove/Materials/MI_BC_wood_light", "/Game/Brinecove/Materials/MI_BC_rope", "/Game/Brinecove/Materials/MI_BC_wood"]
-triangles = 3672
+slot_materials = ["/Game/Brinecove/Materials/MI_BC_lantern", "/Game/Brinecove/Materials/MI_BC_metal", "/Game/Brinecove/Materials/MI_BC_wood_dark", "/Game/Brinecove/Materials/MI_BC_wood_light"]
+triangles = 2940
 collision = "complex"
 full_precision_uvs = true
 

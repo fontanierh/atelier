@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/harbor-pier-west-rope78",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_HarborPierWestRope78.uasset": "0e8f638985a7370d8ae4971b5952cff16a0f4c729ad1e670c8ac6f878c1854fc"
+  },
+  "input_fingerprint": "538beaa454949034c7b97c38b745818f1f12a438316ca61d76b0c527ccb5d724",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_HarborPierWestRope78": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

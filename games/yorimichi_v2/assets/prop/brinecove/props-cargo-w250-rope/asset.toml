@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_PropsCargoW250Rope: the props cargo w250 rope, cut from the fused tile(s) Props_3_3 (144 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/brinecove/props-cargo-w250-rope"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/brinecove/props-cargo-w250-rope"
+references = ["adopted/brinecove/materials"]
+
+[[sources]]
+path = "src/SM_BC_PropsCargoW250Rope.glb"
+sha256 = "d60175c4ac7f2b05b03824e104cbf95804753d63fa3bd6f6c8820700a92c260b"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Brinecove/Materials/MI_BC_rope"]
+triangles = 144
+collision = "complex"
+full_precision_uvs = true
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_PropsCargoW250Rope"

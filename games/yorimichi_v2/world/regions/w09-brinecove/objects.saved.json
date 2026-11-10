@@ -961,6 +961,86 @@
         "prop/brinecove/harbor-pier-central"
       ]
     },
+    "object/brinecove/harbor-pier-central-barrel22": {
+      "groups": [
+        "SM_BC_HarborPierCentralBarrel22"
+      ],
+      "id": "object/brinecove/harbor-pier-central-barrel22",
+      "model": "prop/brinecove/harbor-pier-central-barrel22",
+      "models": [
+        "prop/brinecove/harbor-pier-central-barrel22"
+      ]
+    },
+    "object/brinecove/harbor-pier-central-barrel52": {
+      "groups": [
+        "SM_BC_HarborPierCentralBarrel52"
+      ],
+      "id": "object/brinecove/harbor-pier-central-barrel52",
+      "model": "prop/brinecove/harbor-pier-central-barrel52",
+      "models": [
+        "prop/brinecove/harbor-pier-central-barrel52"
+      ]
+    },
+    "object/brinecove/harbor-pier-central-barrel78": {
+      "groups": [
+        "SM_BC_HarborPierCentralBarrel78"
+      ],
+      "id": "object/brinecove/harbor-pier-central-barrel78",
+      "model": "prop/brinecove/harbor-pier-central-barrel78",
+      "models": [
+        "prop/brinecove/harbor-pier-central-barrel78"
+      ]
+    },
+    "object/brinecove/harbor-pier-central-crate22": {
+      "groups": [
+        "SM_BC_HarborPierCentralCrate22"
+      ],
+      "id": "object/brinecove/harbor-pier-central-crate22",
+      "model": "prop/brinecove/harbor-pier-central-crate22",
+      "models": [
+        "prop/brinecove/harbor-pier-central-crate22"
+      ]
+    },
+    "object/brinecove/harbor-pier-central-crate52": {
+      "groups": [
+        "SM_BC_HarborPierCentralCrate52"
+      ],
+      "id": "object/brinecove/harbor-pier-central-crate52",
+      "model": "prop/brinecove/harbor-pier-central-crate52",
+      "models": [
+        "prop/brinecove/harbor-pier-central-crate52"
+      ]
+    },
+    "object/brinecove/harbor-pier-central-crate78": {
+      "groups": [
+        "SM_BC_HarborPierCentralCrate78"
+      ],
+      "id": "object/brinecove/harbor-pier-central-crate78",
+      "model": "prop/brinecove/harbor-pier-central-crate78",
+      "models": [
+        "prop/brinecove/harbor-pier-central-crate78"
+      ]
+    },
+    "object/brinecove/harbor-pier-central-rope52": {
+      "groups": [
+        "SM_BC_HarborPierCentralRope52"
+      ],
+      "id": "object/brinecove/harbor-pier-central-rope52",
+      "model": "prop/brinecove/harbor-pier-central-rope52",
+      "models": [
+        "prop/brinecove/harbor-pier-central-rope52"
+      ]
+    },
+    "object/brinecove/harbor-pier-central-rope78": {
+      "groups": [
+        "SM_BC_HarborPierCentralRope78"
+      ],
+      "id": "object/brinecove/harbor-pier-central-rope78",
+      "model": "prop/brinecove/harbor-pier-central-rope78",
+      "models": [
+        "prop/brinecove/harbor-pier-central-rope78"
+      ]
+    },
     "object/brinecove/harbor-pier-east": {
       "groups": [
         "SM_BC_HarborPierEast"
@@ -971,6 +1051,86 @@
         "prop/brinecove/harbor-pier-east"
       ]
     },
+    "object/brinecove/harbor-pier-east-barrel22": {
+      "groups": [
+        "SM_BC_HarborPierEastBarrel22"
+      ],
+      "id": "object/brinecove/harbor-pier-east-barrel22",
+      "model": "prop/brinecove/harbor-pier-east-barrel22",
+      "models": [
+        "prop/brinecove/harbor-pier-east-barrel22"
+      ]
+    },
+    "object/brinecove/harbor-pier-east-barrel52": {
+      "groups": [
+        "SM_BC_HarborPierEastBarrel52"
+      ],
+      "id": "object/brinecove/harbor-pier-east-barrel52",
+      "model": "prop/brinecove/harbor-pier-east-barrel52",
+      "models": [
+        "prop/brinecove/harbor-pier-east-barrel52"
+      ]
+    },
+    "object/brinecove/harbor-pier-east-barrel78": {
+      "groups": [
+        "SM_BC_HarborPierEastBarrel78"
+      ],
+      "id": "object/brinecove/harbor-pier-east-barrel78",
+      "model": "prop/brinecove/harbor-pier-east-barrel78",
+      "models": [
+        "prop/brinecove/harbor-pier-east-barrel78"
+      ]
+    },
+    "object/brinecove/harbor-pier-east-crate22": {
+      "groups": [
+        "SM_BC_HarborPierEastCrate22"
+      ],
+      "id": "object/brinecove/harbor-pier-east-crate22",
+      "model": "prop/brinecove/harbor-pier-east-crate22",
+      "models": [
+        "prop/brinecove/harbor-pier-east-crate22"
+      ]
+    },
+    "object/brinecove/harbor-pier-east-crate52": {
+      "groups": [
+        "SM_BC_HarborPierEastCrate52"
+      ],
+      "id": "object/brinecove/harbor-pier-east-crate52",
+      "model": "prop/brinecove/harbor-pier-east-crate52",
+      "models": [
+        "prop/brinecove/harbor-pier-east-crate52"
+      ]
+    },
+    "object/brinecove/harbor-pier-east-crate78": {
+      "groups": [
+        "SM_BC_HarborPierEastCrate78"
+      ],
+      "id": "object/brinecove/harbor-pier-east-crate78",
+      "model": "prop/brinecove/harbor-pier-east-crate78",
+      "models": [
+        "prop/brinecove/harbor-pier-east-crate78"
+      ]
+    },
+    "object/brinecove/harbor-pier-east-rope52": {
+      "groups": [
+        "SM_BC_HarborPierEastRope52"
+      ],
+      "id": "object/brinecove/harbor-pier-east-rope52",
+      "model": "prop/brinecove/harbor-pier-east-rope52",
+      "models": [
+        "prop/brinecove/harbor-pier-east-rope52"
+      ]
+    },
+    "object/brinecove/harbor-pier-east-rope78": {
+      "groups": [
+        "SM_BC_HarborPierEastRope78"
+      ],
+      "id": "object/brinecove/harbor-pier-east-rope78",
+      "model": "prop/brinecove/harbor-pier-east-rope78",
+      "models": [
+        "prop/brinecove/harbor-pier-east-rope78"
+      ]
+    },
     "object/brinecove/harbor-pier-west": {
       "groups": [
         "SM_BC_HarborPierWest"
@@ -979,6 +1139,86 @@
       "model": "prop/brinecove/harbor-pier-west",
       "models": [
         "prop/brinecove/harbor-pier-west"
+      ]
+    },
+    "object/brinecove/harbor-pier-west-barrel22": {
+      "groups": [
+        "SM_BC_HarborPierWestBarrel22"
+      ],
+      "id": "object/brinecove/harbor-pier-west-barrel22",
+      "model": "prop/brinecove/harbor-pier-west-barrel22",
+      "models": [
+        "prop/brinecove/harbor-pier-west-barrel22"
+      ]
+    },
+    "object/brinecove/harbor-pier-west-barrel52": {
+      "groups": [
+        "SM_BC_HarborPierWestBarrel52"
+      ],
+      "id": "object/brinecove/harbor-pier-west-barrel52",
+      "model": "prop/brinecove/harbor-pier-west-barrel52",
+      "models": [
+        "prop/brinecove/harbor-pier-west-barrel52"
+      ]
+    },
+    "object/brinecove/harbor-pier-west-barrel78": {
+      "groups": [
+        "SM_BC_HarborPierWestBarrel78"
+      ],
+      "id": "object/brinecove/harbor-pier-west-barrel78",
+      "model": "prop/brinecove/harbor-pier-west-barrel78",
+      "models": [
+        "prop/brinecove/harbor-pier-west-barrel78"
+      ]
+    },
+    "object/brinecove/harbor-pier-west-crate22": {
+      "groups": [
+        "SM_BC_HarborPierWestCrate22"
+      ],
+      "id": "object/brinecove/harbor-pier-west-crate22",
+      "model": "prop/brinecove/harbor-pier-west-crate22",
+      "models": [
+        "prop/brinecove/harbor-pier-west-crate22"
+      ]
+    },
+    "object/brinecove/harbor-pier-west-crate52": {
+      "groups": [
+        "SM_BC_HarborPierWestCrate52"
+      ],
+      "id": "object/brinecove/harbor-pier-west-crate52",
+      "model": "prop/brinecove/harbor-pier-west-crate52",
+      "models": [
+        "prop/brinecove/harbor-pier-west-crate52"
+      ]
+    },
+    "object/brinecove/harbor-pier-west-crate78": {
+      "groups": [
+        "SM_BC_HarborPierWestCrate78"
+      ],
+      "id": "object/brinecove/harbor-pier-west-crate78",
+      "model": "prop/brinecove/harbor-pier-west-crate78",
+      "models": [
+        "prop/brinecove/harbor-pier-west-crate78"
+      ]
+    },
+    "object/brinecove/harbor-pier-west-rope52": {
+      "groups": [
+        "SM_BC_HarborPierWestRope52"
+      ],
+      "id": "object/brinecove/harbor-pier-west-rope52",
+      "model": "prop/brinecove/harbor-pier-west-rope52",
+      "models": [
+        "prop/brinecove/harbor-pier-west-rope52"
+      ]
+    },
+    "object/brinecove/harbor-pier-west-rope78": {
+      "groups": [
+        "SM_BC_HarborPierWestRope78"
+      ],
+      "id": "object/brinecove/harbor-pier-west-rope78",
+      "model": "prop/brinecove/harbor-pier-west-rope78",
+      "models": [
+        "prop/brinecove/harbor-pier-west-rope78"
       ]
     },
     "object/brinecove/hero-harbor-capstan": {
@@ -3707,64 +3947,304 @@
         "prop/brinecove/props-buoy-w90"
       ]
     },
-    "object/brinecove/props-cargo-e120": {
+    "object/brinecove/props-cargo-e120-barrel1": {
       "groups": [
-        "SM_BC_PropsCargoE120"
+        "SM_BC_PropsCargoE120Barrel1"
       ],
-      "id": "object/brinecove/props-cargo-e120",
-      "model": "prop/brinecove/props-cargo-e120",
+      "id": "object/brinecove/props-cargo-e120-barrel1",
+      "model": "prop/brinecove/props-cargo-e120-barrel1",
       "models": [
-        "prop/brinecove/props-cargo-e120"
+        "prop/brinecove/props-cargo-e120-barrel1"
       ]
     },
-    "object/brinecove/props-cargo-e270": {
+    "object/brinecove/props-cargo-e120-barrel2": {
       "groups": [
-        "SM_BC_PropsCargoE270"
+        "SM_BC_PropsCargoE120Barrel2"
       ],
-      "id": "object/brinecove/props-cargo-e270",
-      "model": "prop/brinecove/props-cargo-e270",
+      "id": "object/brinecove/props-cargo-e120-barrel2",
+      "model": "prop/brinecove/props-cargo-e120-barrel2",
       "models": [
-        "prop/brinecove/props-cargo-e270"
+        "prop/brinecove/props-cargo-e120-barrel2"
       ]
     },
-    "object/brinecove/props-cargo-e60": {
+    "object/brinecove/props-cargo-e120-crate1": {
       "groups": [
-        "SM_BC_PropsCargoE60"
+        "SM_BC_PropsCargoE120Crate1"
       ],
-      "id": "object/brinecove/props-cargo-e60",
-      "model": "prop/brinecove/props-cargo-e60",
+      "id": "object/brinecove/props-cargo-e120-crate1",
+      "model": "prop/brinecove/props-cargo-e120-crate1",
       "models": [
-        "prop/brinecove/props-cargo-e60"
+        "prop/brinecove/props-cargo-e120-crate1"
       ]
     },
-    "object/brinecove/props-cargo-w170": {
+    "object/brinecove/props-cargo-e120-crate2": {
       "groups": [
-        "SM_BC_PropsCargoW170"
+        "SM_BC_PropsCargoE120Crate2"
       ],
-      "id": "object/brinecove/props-cargo-w170",
-      "model": "prop/brinecove/props-cargo-w170",
+      "id": "object/brinecove/props-cargo-e120-crate2",
+      "model": "prop/brinecove/props-cargo-e120-crate2",
       "models": [
-        "prop/brinecove/props-cargo-w170"
+        "prop/brinecove/props-cargo-e120-crate2"
       ]
     },
-    "object/brinecove/props-cargo-w250": {
+    "object/brinecove/props-cargo-e120-rope": {
       "groups": [
-        "SM_BC_PropsCargoW250"
+        "SM_BC_PropsCargoE120Rope"
       ],
-      "id": "object/brinecove/props-cargo-w250",
-      "model": "prop/brinecove/props-cargo-w250",
+      "id": "object/brinecove/props-cargo-e120-rope",
+      "model": "prop/brinecove/props-cargo-e120-rope",
       "models": [
-        "prop/brinecove/props-cargo-w250"
+        "prop/brinecove/props-cargo-e120-rope"
       ]
     },
-    "object/brinecove/props-cargo-w60": {
+    "object/brinecove/props-cargo-e270-barrel1": {
       "groups": [
-        "SM_BC_PropsCargoW60"
+        "SM_BC_PropsCargoE270Barrel1"
       ],
-      "id": "object/brinecove/props-cargo-w60",
-      "model": "prop/brinecove/props-cargo-w60",
+      "id": "object/brinecove/props-cargo-e270-barrel1",
+      "model": "prop/brinecove/props-cargo-e270-barrel1",
       "models": [
-        "prop/brinecove/props-cargo-w60"
+        "prop/brinecove/props-cargo-e270-barrel1"
+      ]
+    },
+    "object/brinecove/props-cargo-e270-barrel2": {
+      "groups": [
+        "SM_BC_PropsCargoE270Barrel2"
+      ],
+      "id": "object/brinecove/props-cargo-e270-barrel2",
+      "model": "prop/brinecove/props-cargo-e270-barrel2",
+      "models": [
+        "prop/brinecove/props-cargo-e270-barrel2"
+      ]
+    },
+    "object/brinecove/props-cargo-e270-crate1": {
+      "groups": [
+        "SM_BC_PropsCargoE270Crate1"
+      ],
+      "id": "object/brinecove/props-cargo-e270-crate1",
+      "model": "prop/brinecove/props-cargo-e270-crate1",
+      "models": [
+        "prop/brinecove/props-cargo-e270-crate1"
+      ]
+    },
+    "object/brinecove/props-cargo-e270-crate2": {
+      "groups": [
+        "SM_BC_PropsCargoE270Crate2"
+      ],
+      "id": "object/brinecove/props-cargo-e270-crate2",
+      "model": "prop/brinecove/props-cargo-e270-crate2",
+      "models": [
+        "prop/brinecove/props-cargo-e270-crate2"
+      ]
+    },
+    "object/brinecove/props-cargo-e270-rope": {
+      "groups": [
+        "SM_BC_PropsCargoE270Rope"
+      ],
+      "id": "object/brinecove/props-cargo-e270-rope",
+      "model": "prop/brinecove/props-cargo-e270-rope",
+      "models": [
+        "prop/brinecove/props-cargo-e270-rope"
+      ]
+    },
+    "object/brinecove/props-cargo-e60-barrel1": {
+      "groups": [
+        "SM_BC_PropsCargoE60Barrel1"
+      ],
+      "id": "object/brinecove/props-cargo-e60-barrel1",
+      "model": "prop/brinecove/props-cargo-e60-barrel1",
+      "models": [
+        "prop/brinecove/props-cargo-e60-barrel1"
+      ]
+    },
+    "object/brinecove/props-cargo-e60-barrel2": {
+      "groups": [
+        "SM_BC_PropsCargoE60Barrel2"
+      ],
+      "id": "object/brinecove/props-cargo-e60-barrel2",
+      "model": "prop/brinecove/props-cargo-e60-barrel2",
+      "models": [
+        "prop/brinecove/props-cargo-e60-barrel2"
+      ]
+    },
+    "object/brinecove/props-cargo-e60-crate1": {
+      "groups": [
+        "SM_BC_PropsCargoE60Crate1"
+      ],
+      "id": "object/brinecove/props-cargo-e60-crate1",
+      "model": "prop/brinecove/props-cargo-e60-crate1",
+      "models": [
+        "prop/brinecove/props-cargo-e60-crate1"
+      ]
+    },
+    "object/brinecove/props-cargo-e60-crate2": {
+      "groups": [
+        "SM_BC_PropsCargoE60Crate2"
+      ],
+      "id": "object/brinecove/props-cargo-e60-crate2",
+      "model": "prop/brinecove/props-cargo-e60-crate2",
+      "models": [
+        "prop/brinecove/props-cargo-e60-crate2"
+      ]
+    },
+    "object/brinecove/props-cargo-e60-rope": {
+      "groups": [
+        "SM_BC_PropsCargoE60Rope"
+      ],
+      "id": "object/brinecove/props-cargo-e60-rope",
+      "model": "prop/brinecove/props-cargo-e60-rope",
+      "models": [
+        "prop/brinecove/props-cargo-e60-rope"
+      ]
+    },
+    "object/brinecove/props-cargo-w170-barrel1": {
+      "groups": [
+        "SM_BC_PropsCargoW170Barrel1"
+      ],
+      "id": "object/brinecove/props-cargo-w170-barrel1",
+      "model": "prop/brinecove/props-cargo-w170-barrel1",
+      "models": [
+        "prop/brinecove/props-cargo-w170-barrel1"
+      ]
+    },
+    "object/brinecove/props-cargo-w170-barrel2": {
+      "groups": [
+        "SM_BC_PropsCargoW170Barrel2"
+      ],
+      "id": "object/brinecove/props-cargo-w170-barrel2",
+      "model": "prop/brinecove/props-cargo-w170-barrel2",
+      "models": [
+        "prop/brinecove/props-cargo-w170-barrel2"
+      ]
+    },
+    "object/brinecove/props-cargo-w170-crate1": {
+      "groups": [
+        "SM_BC_PropsCargoW170Crate1"
+      ],
+      "id": "object/brinecove/props-cargo-w170-crate1",
+      "model": "prop/brinecove/props-cargo-w170-crate1",
+      "models": [
+        "prop/brinecove/props-cargo-w170-crate1"
+      ]
+    },
+    "object/brinecove/props-cargo-w170-crate2": {
+      "groups": [
+        "SM_BC_PropsCargoW170Crate2"
+      ],
+      "id": "object/brinecove/props-cargo-w170-crate2",
+      "model": "prop/brinecove/props-cargo-w170-crate2",
+      "models": [
+        "prop/brinecove/props-cargo-w170-crate2"
+      ]
+    },
+    "object/brinecove/props-cargo-w170-rope": {
+      "groups": [
+        "SM_BC_PropsCargoW170Rope"
+      ],
+      "id": "object/brinecove/props-cargo-w170-rope",
+      "model": "prop/brinecove/props-cargo-w170-rope",
+      "models": [
+        "prop/brinecove/props-cargo-w170-rope"
+      ]
+    },
+    "object/brinecove/props-cargo-w250-barrel1": {
+      "groups": [
+        "SM_BC_PropsCargoW250Barrel1"
+      ],
+      "id": "object/brinecove/props-cargo-w250-barrel1",
+      "model": "prop/brinecove/props-cargo-w250-barrel1",
+      "models": [
+        "prop/brinecove/props-cargo-w250-barrel1"
+      ]
+    },
+    "object/brinecove/props-cargo-w250-barrel2": {
+      "groups": [
+        "SM_BC_PropsCargoW250Barrel2"
+      ],
+      "id": "object/brinecove/props-cargo-w250-barrel2",
+      "model": "prop/brinecove/props-cargo-w250-barrel2",
+      "models": [
+        "prop/brinecove/props-cargo-w250-barrel2"
+      ]
+    },
+    "object/brinecove/props-cargo-w250-crate1": {
+      "groups": [
+        "SM_BC_PropsCargoW250Crate1"
+      ],
+      "id": "object/brinecove/props-cargo-w250-crate1",
+      "model": "prop/brinecove/props-cargo-w250-crate1",
+      "models": [
+        "prop/brinecove/props-cargo-w250-crate1"
+      ]
+    },
+    "object/brinecove/props-cargo-w250-crate2": {
+      "groups": [
+        "SM_BC_PropsCargoW250Crate2"
+      ],
+      "id": "object/brinecove/props-cargo-w250-crate2",
+      "model": "prop/brinecove/props-cargo-w250-crate2",
+      "models": [
+        "prop/brinecove/props-cargo-w250-crate2"
+      ]
+    },
+    "object/brinecove/props-cargo-w250-rope": {
+      "groups": [
+        "SM_BC_PropsCargoW250Rope"
+      ],
+      "id": "object/brinecove/props-cargo-w250-rope",
+      "model": "prop/brinecove/props-cargo-w250-rope",
+      "models": [
+        "prop/brinecove/props-cargo-w250-rope"
+      ]
+    },
+    "object/brinecove/props-cargo-w60-barrel1": {
+      "groups": [
+        "SM_BC_PropsCargoW60Barrel1"
+      ],
+      "id": "object/brinecove/props-cargo-w60-barrel1",
+      "model": "prop/brinecove/props-cargo-w60-barrel1",
+      "models": [
+        "prop/brinecove/props-cargo-w60-barrel1"
+      ]
+    },
+    "object/brinecove/props-cargo-w60-barrel2": {
+      "groups": [
+        "SM_BC_PropsCargoW60Barrel2"
+      ],
+      "id": "object/brinecove/props-cargo-w60-barrel2",
+      "model": "prop/brinecove/props-cargo-w60-barrel2",
+      "models": [
+        "prop/brinecove/props-cargo-w60-barrel2"
+      ]
+    },
+    "object/brinecove/props-cargo-w60-crate1": {
+      "groups": [
+        "SM_BC_PropsCargoW60Crate1"
+      ],
+      "id": "object/brinecove/props-cargo-w60-crate1",
+      "model": "prop/brinecove/props-cargo-w60-crate1",
+      "models": [
+        "prop/brinecove/props-cargo-w60-crate1"
+      ]
+    },
+    "object/brinecove/props-cargo-w60-crate2": {
+      "groups": [
+        "SM_BC_PropsCargoW60Crate2"
+      ],
+      "id": "object/brinecove/props-cargo-w60-crate2",
+      "model": "prop/brinecove/props-cargo-w60-crate2",
+      "models": [
+        "prop/brinecove/props-cargo-w60-crate2"
+      ]
+    },
+    "object/brinecove/props-cargo-w60-rope": {
+      "groups": [
+        "SM_BC_PropsCargoW60Rope"
+      ],
+      "id": "object/brinecove/props-cargo-w60-rope",
+      "model": "prop/brinecove/props-cargo-w60-rope",
+      "models": [
+        "prop/brinecove/props-cargo-w60-rope"
       ]
     },
     "object/brinecove/props-crate-pier-central-sea": {

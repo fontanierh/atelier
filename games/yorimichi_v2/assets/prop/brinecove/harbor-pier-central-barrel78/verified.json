@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/harbor-pier-central-barrel78",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_HarborPierCentralBarrel78.uasset": "07fba9c83b99e60ebdc55a25797bf60a862c711d817e87799b8b2bbc124e3ec7"
+  },
+  "input_fingerprint": "c3e7ffc0d95220c3f451bd298a25d78cebd82351a98ab54790a45248a5965e49",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_HarborPierCentralBarrel78": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

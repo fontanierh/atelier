@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/props-cargo-e270-crate1",
+  "dependencies": {
+    "prop/brinecove/props-cargo-e270-crate1": "d190d8e0b15a5059bcac0428187387dbd297a42c2d71dffd0f242ef06b48be0c"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/0/QC/UJL49P9WJMEA7Z90EJV5HE.uasset": "dd8161deefe2f6a04db5f7ed1725fca7ade18df913342bd5993891b6d22007a8"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

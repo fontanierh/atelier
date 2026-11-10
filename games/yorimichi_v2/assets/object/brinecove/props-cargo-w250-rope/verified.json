@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/props-cargo-w250-rope",
+  "dependencies": {
+    "prop/brinecove/props-cargo-w250-rope": "9f5b5ea3992c68d9dca0aba102adf6127472f8be1deea34e544fb14c564be894"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/1/D9/OHFUXMCRV0I1QJ784V05TY.uasset": "b5dfcb8efefca56d31622449eabcf16ed5fb6373137ce6142e7039a5fb7a6550"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

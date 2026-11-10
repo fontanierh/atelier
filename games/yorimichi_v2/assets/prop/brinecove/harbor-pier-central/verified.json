@@ -3,9 +3,9 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Brinecove/Meshes/SM_BC_HarborPierCentral.uasset": "148cd84a6a98996fdd8a17b5016993294bb56603db1b612ca14e386036ecb927"
+    "unreal/Content/Brinecove/Meshes/SM_BC_HarborPierCentral.uasset": "4c922e17cb241d10469c4cbb36602420a3811abc6e546d1d2547431cb772acdd"
   },
-  "input_fingerprint": "bd56dfac94d4eb90f75d4c79cb640a70132c678fcc3532f5dd5f74e915c0e093",
+  "input_fingerprint": "f649a53d59537a7de869394af5964818a16942a586fe82489e520ee28ad8dddd",
   "kind": "imported",
   "lods": {
     "/Game/Brinecove/Meshes/SM_BC_HarborPierCentral": {
@@ -18,7 +18,15 @@
           0.0
         ]
       },
-      "before": null
+      "before": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          2.0
+        ]
+      }
     }
   },
   "schema": 1,
