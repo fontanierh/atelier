@@ -141,7 +141,7 @@ READ_FILE = {'megapark': 'megapark', 'belmonte': 'belmonte', 'treehouse': 'treeh
 
 
 def _package(path: str) -> str:
-    """/Game/X/T_Y.T_Y -> /Game/X/T_Y: an object path's package, compared whole."""
+    """An object path's package (the path up to its first '.'), compared whole."""
     return path.split('.')[0]
 
 
