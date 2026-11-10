@@ -6,7 +6,7 @@ id = "prop/citysurfaces/bench"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/citysurfaces/bench"
-references = ["adopted/japan/materials/base-materials"]
+references = ["master/japan/surfaces/village"]
 
 [[sources]]
 path = "src/HD_Bench.fbx"

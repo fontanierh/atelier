@@ -6,7 +6,7 @@ id = "prop/southwest/island-cell-m1-0"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/southwest/island-cell-m1-0"
-references = ["adopted/japan/materials/base-materials"]
+references = ["master/japan/surfaces/village"]
 
 [[sources]]
 path = "src/SW_Island_cell_-1_0.fbx"

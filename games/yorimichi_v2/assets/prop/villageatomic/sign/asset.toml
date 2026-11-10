@@ -6,7 +6,7 @@ id = "prop/villageatomic/sign"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/villageatomic/sign"
-references = ["adopted/japan/materials/base-materials"]
+references = ["master/japan/surfaces/village"]
 
 [[sources]]
 path = "src/Village_Sign.fbx"

@@ -6,7 +6,7 @@ id = "prop/villageatomic/planting-cell-0-0-piece30"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/villageatomic/planting-cell-0-0-piece30"
-references = ["adopted/japan/materials/base-materials"]
+references = ["master/japan/surfaces/village"]
 
 [[sources]]
 path = "src/Village_Planting_cell_0_0_Piece30.fbx"

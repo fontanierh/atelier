@@ -2028,18 +2028,7 @@
   "note": "The 27 packages the adopted record owns (docs/inventory/master-sources.md, section 10). Planned rows are the thirteen masters of tools/migrate/master_families/japan_base.py; kept rows stay in the record until the planner has a keeps mechanism.",
   "fallback": "master/japan/base/forest-lake-water",
   "kept": [
-   "/Game/Japan/Materials/MPC_Wind",
-   "/Game/Japan/Materials/M_CoastRock",
-   "/Game/Japan/Materials/M_Foliage",
-   "/Game/Japan/Materials/M_ForestGround",
-   "/Game/Japan/Materials/M_ForestImpostor",
-   "/Game/Japan/Materials/M_Grass",
-   "/Game/Japan/Materials/M_NorthGate",
-   "/Game/Japan/Materials/M_NorthMountains",
-   "/Game/Japan/Materials/M_Painted",
-   "/Game/Japan/Materials/M_Painterly",
-   "/Game/Japan/Materials/M_Sky",
-   "/Game/Japan/Materials/M_Village"
+   "/Game/Japan/Materials/MPC_Wind"
   ],
   "masters": [
    {
@@ -2199,8 +2188,8 @@
      }
     ],
     "fit": "needs helper",
-    "record": null,
-    "status": "kept",
+    "record": "master/japan/terrain/coast-rock",
+    "status": "imported (family japan_terrain)",
     "reason": "atmosphere (aerial perspective) and the pinned coast_rock_look code"
    },
    {
@@ -2238,8 +2227,8 @@
      }
     ],
     "fit": "needs helper",
-    "record": null,
-    "status": "kept",
+    "record": "master/japan/surfaces/foliage",
+    "status": "imported (family japan_vegetation)",
     "reason": "shared master(); atmosphere, lit path"
    },
    {
@@ -2286,8 +2275,8 @@
      }
     ],
     "fit": "needs helper",
-    "record": null,
-    "status": "kept",
+    "record": "master/japan/terrain/forest-ground",
+    "status": "imported (family japan_terrain_ground)",
     "reason": "atmosphere and ground_grain"
    },
    {
@@ -2325,8 +2314,8 @@
      }
     ],
     "fit": "needs helper",
-    "record": null,
-    "status": "kept",
+    "record": "master/japan/terrain/forest-impostor",
+    "status": "imported (family japan_terrain)",
     "reason": "atmosphere; the default normal is a caller argument"
    },
    {
@@ -2387,8 +2376,8 @@
      }
     ],
     "fit": "needs helper",
-    "record": null,
-    "status": "kept",
+    "record": "master/japan/surfaces/grass",
+    "status": "imported (family japan_vegetation)",
     "reason": "calls the shared master(masked=True)"
    },
    {
@@ -2496,8 +2485,8 @@
      }
     ],
     "fit": "needs helper",
-    "record": null,
-    "status": "kept",
+    "record": "master/japan/terrain/north-gate",
+    "status": "imported (family japan_terrain_ground)",
     "reason": "atmosphere (SHARE and glow)"
    },
    {
@@ -2563,8 +2552,8 @@
      }
     ],
     "fit": "needs helper",
-    "record": null,
-    "status": "kept",
+    "record": "master/japan/terrain/north-mountains",
+    "status": "imported (family japan_terrain_ground)",
     "reason": "atmosphere; crater and floor HLSL; reads hidamari build metadata (north_snow.json, not pinned)"
    },
    {
@@ -2597,8 +2586,8 @@
      }
     ],
     "fit": "needs helper",
-    "record": null,
-    "status": "kept",
+    "record": "master/japan/surfaces/painted",
+    "status": "imported (family japan_surfaces)",
     "reason": "shared master(); atmosphere, lit path"
    },
    {
@@ -2625,8 +2614,8 @@
      }
     ],
     "fit": "needs helper",
-    "record": null,
-    "status": "kept",
+    "record": "master/japan/base/painterly",
+    "status": "imported (family japan_sky_painterly)",
     "reason": "post-process; the Kuwahara kernel is pinned in painterly_kernel.py"
    },
    {
@@ -2773,8 +2762,8 @@
     ],
     "helpers": [],
     "fit": "direct",
-    "record": null,
-    "status": "kept",
+    "record": "master/japan/base/sky",
+    "status": "imported (family japan_sky_painterly)",
     "reason": "unlit path skips atmosphere; fits once master() is split out"
    },
    {
@@ -2801,8 +2790,8 @@
      }
     ],
     "fit": "needs helper",
-    "record": null,
-    "status": "kept",
+    "record": "master/japan/surfaces/village",
+    "status": "imported (family japan_surfaces)",
     "reason": "atmosphere.apply on the lit base and glow"
    },
    {

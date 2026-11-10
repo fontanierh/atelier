@@ -19,7 +19,7 @@ sys.modules[spec.name] = run
 spec.loader.exec_module(run)
 
 LEAVES = {'amber': 'MI_LeafAmber', 'crimson': 'MI_LeafCrimson'}
-BASE = ROOT / 'assets/adopted/japan/materials/base-materials/asset.toml'
+FOLIAGE_MASTER = ROOT / 'assets/master/japan/surfaces/foliage/asset.toml'   # M_Foliage, moved out of base-materials
 ATLASES = ROOT / 'assets/adopted/japan/textures/leaf-atlases/asset.toml'
 FOLIAGE = ROOT / 'assets/adopted/japan/materials/foliage'
 
@@ -66,11 +66,11 @@ def test_each_used_leaf_is_a_generated_material_instance_with_its_recipe(name, p
         'settings': {'parent': '/Game/Japan/Materials/M_Foliage',
                      'textures': {'Tex': f'/Game/Japan/Textures/T_leaf_{name}'},
                      'scalars': {}, 'vectors': {}}}
-    assert asset.input_dependencies == ['adopted/japan/materials/base-materials', 'adopted/japan/textures/leaf-atlases']
+    assert asset.input_dependencies == ['master/japan/surfaces/foliage', 'adopted/japan/textures/leaf-atlases']
 
 
 def test_the_inputs_are_owned_by_the_records_they_name():
-    base, atlases = records.load_asset(BASE), records.load_asset(ATLASES)
+    base, atlases = records.load_asset(FOLIAGE_MASTER), records.load_asset(ATLASES)
     outputs_of = {base.id: {o.package for o in base.outputs}, atlases.id: {o.package for o in atlases.outputs}}
     for name in LEAVES:
         asset = records.load_asset(ROOT / f'assets/material/japan/leaf-{name}/asset.toml')

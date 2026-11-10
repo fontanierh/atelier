@@ -6,7 +6,7 @@ id = "prop/citysurfaces/bush-hd-ball"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/citysurfaces/bush-hd-ball"
-references = ["adopted/japan/materials/base-materials"]
+references = ["master/japan/surfaces/village"]
 
 [[sources]]
 path = "src/Bush_HD_Ball.fbx"

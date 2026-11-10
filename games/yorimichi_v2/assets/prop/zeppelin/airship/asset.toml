@@ -6,7 +6,7 @@ id = "prop/zeppelin/airship"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/zeppelin/airship"
-references = ["master/japan/base/zeppelin-fabric", "adopted/japan/materials/base-materials"]
+references = ["master/japan/base/zeppelin-fabric", "master/japan/surfaces/village"]
 
 [[sources]]
 path = "src/ZP_Airship.fbx"

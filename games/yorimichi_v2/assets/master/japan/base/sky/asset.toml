@@ -1,0 +1,27 @@
+# Recovered as a material master (tools/migrate/master_records.py): /Game/Japan/Materials/M_Sky.
+# The builder is src/sky_painterly_masters.py, pinned by sha256; the master is rebuilt by the V2 editor and read back
+# against its saved original, never edited by hand.
+schema = 1
+id = "master/japan/base/sky"
+kind = "material-master"
+authority = "generated"
+owner = "shared/japan/materials/base-materials"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+provenance = "donor generator games/yorimichi/unreal/Scripts/shared_materials.py and painterly_kernel.py at the V2 source baseline (docs/DECISIONS.md D01, D02), sky_material lines shared_materials.py 169-221, material_assets.py 34-42"
+input_dependencies = ["texture/japan/sky"]
+
+[[sources]]
+path = "src/sky_painterly_masters.py"
+sha256 = "ba37a6280fbe9da9e76d88513c659eb9538fdad4c7c44a2936246317803af93d"
+
+[recipe]
+importer = "material-master"
+version = 1
+
+[recipe.settings]
+builder = "sky_material"
+reads = ["/Game/Japan/Textures/T_sky"]
+arguments = { texture = "/Game/Japan/Textures/T_sky" }
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_Sky"

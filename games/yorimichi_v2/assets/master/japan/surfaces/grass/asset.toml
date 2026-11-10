@@ -1,0 +1,31 @@
+# Recovered as a material master (tools/migrate/master_records.py): /Game/Japan/Materials/M_Grass.
+# The builder is src/japan_surface_masters.py, pinned by sha256; the master is rebuilt by the V2 editor and read back
+# against its saved original, never edited by hand.
+schema = 1
+id = "master/japan/surfaces/grass"
+kind = "material-master"
+authority = "generated"
+owner = "shared/japan/materials/base-materials"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+provenance = "donor generator games/yorimichi/unreal/Scripts at 7eec0f98dd (pins in docs/inventory/japan-surfaces-prep.md) at the V2 source baseline (docs/DECISIONS.md D01, D02), grass_material lines shared_materials.py 224-248, plus foliage_material dependencies; see_through.py 517-520"
+input_dependencies = ["texture/japan/white", "adopted/japan/materials/base-materials", "adopted/seethrough"]
+
+[[sources]]
+path = "src/japan_surface_masters.py"
+sha256 = "e8efd891daddf6dfaa3382b290a2619a733077cf2c6d881972c01ccc80150ca4"
+
+[[sources]]
+path = "src/master_haze.py"
+sha256 = "329f98441c026c766803a3ce1d1d5e1aba5e09927ee91e12fc51152b8b77a49b"
+
+[recipe]
+importer = "material-master"
+version = 1
+
+[recipe.settings]
+builder = "grass_material"
+reads = ["/Game/Japan/Textures/T_white", "/Game/Japan/Materials/MPC_Wind", "/Engine/Functions/Engine_MaterialFunctions02/Utility/DitherTemporalAA", "/Game/SeeThrough/MPC_SeeThrough"]
+arguments = { white = "/Game/Japan/Textures/T_white", wind = "/Game/Japan/Materials/MPC_Wind", coverage = "/Engine/Functions/Engine_MaterialFunctions02/Utility/DitherTemporalAA", see_through = "/Game/SeeThrough/MPC_SeeThrough" }
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_Grass"

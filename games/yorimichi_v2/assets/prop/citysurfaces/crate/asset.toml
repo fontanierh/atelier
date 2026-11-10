@@ -6,7 +6,7 @@ id = "prop/citysurfaces/crate"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/citysurfaces/crate"
-references = ["adopted/japan/materials/base-materials"]
+references = ["master/japan/surfaces/village"]
 
 [[sources]]
 path = "src/HD_Crate.fbx"

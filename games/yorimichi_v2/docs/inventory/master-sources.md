@@ -308,7 +308,7 @@ The inventory rows are `japan_base` in [master-sources.json](master-sources.json
 their imported records there. Hashes are the sha256 of the donor blob at `7eec0f98dd`. Line ranges are the donor's, not V2's.
 
 Counts: **14 direct, 12 needs helper, 1 not a material master**. Imported (MASTERS2, `run.py --batch 13`, each digest-accepted against its original): **13** (the 13 direct masters below, except
-`M_Sky`). Kept in the record: **12** (`MPC_Wind` and the 11 others). `M_Sea` and `M_HarborWater` were kept at first and are now imported by the `japan_sea` family (builders in unreal/Scripts/material_masters/japan_sea_masters.py, with sea_look.py lines 38-150 and coast_water.HARBOR_RECT copied in; both trace call for call as the donor functions).
+`M_Sky`). Kept in the record: **1** (`MPC_Wind`, a collection). The other 11 kept at first are imported by five families sharing the record (MASTERS2, `run.py --batch 14`, each digest-accepted against its original through the native input reader): `japan_terrain` (M_ForestImpostor, M_CoastRock), `japan_terrain_ground` (M_ForestGround, M_NorthGate, M_NorthMountains), `japan_sky_painterly` (M_Sky, M_Painterly), `japan_surfaces` (M_Painted, M_Village) and `japan_vegetation` (M_Foliage, M_Grass); all take the pinned master_haze helper where the donor took atmosphere.py. `M_Sea` and `M_HarborWater` were kept at first and are now imported by the `japan_sea` family (builders in unreal/Scripts/material_masters/japan_sea_masters.py, with sea_look.py lines 38-150 and coast_water.HARBOR_RECT copied in; both trace call for call as the donor functions).
 
 | Package | Donor generator (file:lines, function) | Blob sha256 (prefix) | Inputs (V2 owner) | Helpers | Fit | Record |
 |---|---|---|---|---|---|---|
@@ -317,26 +317,26 @@ Counts: **14 direct, 12 needs helper, 1 not a material master**. Imported (MASTE
 | `M_ArcadePaving` | arcade_material.py:24-63 `material(paving=True)`, colour at 45 | 21ca3cbc | T_Arcade_paving (texture/japan/arcade-paving) | - | direct | imported `master/japan/base/arcade-paving` (MASTERS2) |
 | `M_Bike` | bike_material.py:6-32 `material` | 0750998b | none | - | direct | imported `master/japan/base/bike` (MASTERS2) |
 | `M_CloudShadow` | shared_materials.py:84-100 `cloud_shadow_material` | 8cf144f9 | T_cloudmask (texture/japan/cloudmask) | material_assets.py:34-42 node, link (copied) | direct | imported `master/japan/base/cloud-shadow` (MASTERS2) |
-| `M_CoastRock` | forest_ground.py:62-112 `rock_material` | 90c1256d | T_CoastRock (adopted/japan/textures/rock) | atmosphere.py; coast_rock_look.py | needs helper | kept |
-| `M_Foliage` | shared_materials.py:169-223 `master(masked=True)` | 8cf144f9 | T_white (texture/japan/white); MPC_Wind (kept) | atmosphere.py | needs helper | kept |
-| `M_ForestGround` | forest_ground.py:16-59 `material` | 90c1256d | T_ground, T_ground_detail (adopted/japan/textures/ground) | atmosphere.py; ground_grain.py | needs helper | kept |
-| `M_ForestImpostor` | forest_impostor_material.py:6-53 `parent` | c7aa76c7 | WhiteSquareTexture (engine); default normal from the caller | atmosphere.py | needs helper | kept |
+| `M_CoastRock` | forest_ground.py:62-112 `rock_material` | 90c1256d | T_CoastRock (adopted/japan/textures/rock) | atmosphere.py; coast_rock_look.py | needs helper | imported `master/japan/terrain/coast-rock` (japan_terrain) |
+| `M_Foliage` | shared_materials.py:169-223 `master(masked=True)` | 8cf144f9 | T_white (texture/japan/white); MPC_Wind (kept) | atmosphere.py | needs helper | imported `master/japan/surfaces/foliage` (japan_vegetation) |
+| `M_ForestGround` | forest_ground.py:16-59 `material` | 90c1256d | T_ground, T_ground_detail (adopted/japan/textures/ground) | atmosphere.py; ground_grain.py | needs helper | imported `master/japan/terrain/forest-ground` (japan_terrain_ground) |
+| `M_ForestImpostor` | forest_impostor_material.py:6-53 `parent` | c7aa76c7 | WhiteSquareTexture (engine); default normal from the caller | atmosphere.py | needs helper | imported `master/japan/terrain/forest-impostor` (japan_terrain) |
 | `M_ForestLakeWater` | forest_lake_material.py:20-36 RIPPLE, 39-86 `create` | 0a5a3ac6 | none | - | direct | imported `master/japan/base/forest-lake-water` (MASTERS2) |
-| `M_Grass` | shared_materials.py:224-250 `grass_material` (calls `master`) | 8cf144f9 | T_grass (adopted/japan/textures/ground); T_white; MPC_Wind (kept) | atmosphere.py | needs helper | kept |
+| `M_Grass` | shared_materials.py:224-250 `grass_material` (calls `master`) | 8cf144f9 | T_grass (adopted/japan/textures/ground); T_white; MPC_Wind (kept) | atmosphere.py | needs helper | imported `master/japan/surfaces/grass` (japan_vegetation) |
 | `M_Harbor` | harbor_material.py:39-61 and 143-176 `material(water=False)` | 7681f254 | T_Harbor_paving, T_Harbor_timber (texture/japan/harbor-paving, harbor-timber) | - | direct | imported `master/japan/base/harbor` (MASTERS2) |
 | `M_HarborWater` | harbor_material.py:39-61 and 62-142 `material(water=True)` | 7681f254 | none (constants) | sea_look.py; world/coast_water.py (HARBOR_RECT) | needs helper | imported `master/japan/sea/harbor-water` (japan_sea) |
-| `M_NorthGate` | mountain_material.py:257-296 `gate_material`, _seamless 249-255 | 21238502 | T_ground (adopted/japan/textures/ground) | atmosphere.py | needs helper | kept |
-| `M_NorthMountains` | mountain_material.py:42-233 `material`; crater_hlsl and floor_hlsl 18-40 | 21238502 | T_VolcanicRock, T_NorthSnowMask, T_NorthCraterMask, T_NorthCraterFloor (adopted/japan/textures/rock) | atmosphere.py; ground_grain.py | needs helper | kept |
-| `M_Painted` | shared_materials.py:169-223 `master(masked=False)` | 8cf144f9 | T_white (texture/japan/white) | atmosphere.py | needs helper | kept |
-| `M_Painterly` | shared_materials.py:103-166 `painterly_material` | 8cf144f9 | none | painterly_kernel.py:1-57 | needs helper | kept |
+| `M_NorthGate` | mountain_material.py:257-296 `gate_material`, _seamless 249-255 | 21238502 | T_ground (adopted/japan/textures/ground) | atmosphere.py | needs helper | imported `master/japan/terrain/north-gate` (japan_terrain_ground) |
+| `M_NorthMountains` | mountain_material.py:42-233 `material`; crater_hlsl and floor_hlsl 18-40 | 21238502 | T_VolcanicRock, T_NorthSnowMask, T_NorthCraterMask, T_NorthCraterFloor (adopted/japan/textures/rock) | atmosphere.py; ground_grain.py | needs helper | imported `master/japan/terrain/north-mountains` (japan_terrain_ground) |
+| `M_Painted` | shared_materials.py:169-223 `master(masked=False)` | 8cf144f9 | T_white (texture/japan/white) | atmosphere.py | needs helper | imported `master/japan/surfaces/painted` (japan_surfaces) |
+| `M_Painterly` | shared_materials.py:103-166 `painterly_material` | 8cf144f9 | none | painterly_kernel.py:1-57 | needs helper | imported `master/japan/base/painterly` (japan_sky_painterly) |
 | `M_PlazaPaving` | plaza_material.py:37-68 `paving_material` | c25bcab3 | T_Arcade_paving (texture/japan/arcade-paving) | - | direct | imported `master/japan/base/plaza-paving` (MASTERS2) |
 | `M_PlazaWater` | plaza_material.py:5-34 `water_material(pond=False)` | c25bcab3 | none | - | direct | imported `master/japan/base/plaza-water` (MASTERS2) |
 | `M_PondWater` | plaza_material.py:5-34 `water_material(pond=True)`, overrides 16, 22 | c25bcab3 | none | - | direct | imported `master/japan/base/pond-water` (MASTERS2) |
 | `M_SailboatCloth` | sailboat_material.py:5-40 `material(wake=False)` | fd875fed | none | - | direct | imported `master/japan/base/sailboat-cloth` (MASTERS2) |
 | `M_SailboatWake` | sailboat_material.py:5-40 `material(wake=True)` | fd875fed | none | - | direct | imported `master/japan/base/sailboat-wake` (MASTERS2) |
 | `M_Sea` | import_southwest.py:32-70 `sea_material` | 2c7377af | none | sea_look.py | needs helper | imported `master/japan/sea/open-sea` (japan_sea) |
-| `M_Sky` | shared_materials.py:169-223 `master(unlit=True, fixed_tex=T_sky)` | 8cf144f9 | T_sky (texture/japan/sky) | none (unlit skips atmosphere) | direct | kept (fits once `master` is split) |
-| `M_Village` | import_village.py:17-60 `material` | fccc0aae | none | atmosphere.py | needs helper | kept |
+| `M_Sky` | shared_materials.py:169-223 `master(unlit=True, fixed_tex=T_sky)` | 8cf144f9 | T_sky (texture/japan/sky) | none (unlit skips atmosphere) | direct | imported `master/japan/base/sky` (japan_sky_painterly) |
+| `M_Village` | import_village.py:17-60 `material` | fccc0aae | none | atmosphere.py | needs helper | imported `master/japan/surfaces/village` (japan_surfaces) |
 | `M_VillageResident` | import_village.py:63-85 `resident_material` | fccc0aae | none | - | direct | imported `master/japan/base/village-resident` (MASTERS2) |
 | `M_ZeppelinFabric` | import_zeppelin.py:13-30 `fabric_material` | 0896301e | none | - | direct | imported `master/japan/base/zeppelin-fabric` (MASTERS2) |
 

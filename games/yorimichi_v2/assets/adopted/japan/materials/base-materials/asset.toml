@@ -178,36 +178,3 @@ sha256 = "2abacfc5e937251ae247614d0caca9839ee39f68e67567a7b44ac49c6581e3bf"
 
 [[outputs]]
 package = "/Game/Japan/Materials/MPC_Wind"
-
-[[outputs]]
-package = "/Game/Japan/Materials/M_CoastRock"
-
-[[outputs]]
-package = "/Game/Japan/Materials/M_Foliage"
-
-[[outputs]]
-package = "/Game/Japan/Materials/M_ForestGround"
-
-[[outputs]]
-package = "/Game/Japan/Materials/M_ForestImpostor"
-
-[[outputs]]
-package = "/Game/Japan/Materials/M_Grass"
-
-[[outputs]]
-package = "/Game/Japan/Materials/M_NorthGate"
-
-[[outputs]]
-package = "/Game/Japan/Materials/M_NorthMountains"
-
-[[outputs]]
-package = "/Game/Japan/Materials/M_Painted"
-
-[[outputs]]
-package = "/Game/Japan/Materials/M_Painterly"
-
-[[outputs]]
-package = "/Game/Japan/Materials/M_Sky"
-
-[[outputs]]
-package = "/Game/Japan/Materials/M_Village"

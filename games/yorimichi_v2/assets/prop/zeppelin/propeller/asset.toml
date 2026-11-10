@@ -6,7 +6,7 @@ id = "prop/zeppelin/propeller"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/zeppelin/propeller"
-references = ["adopted/japan/materials/base-materials"]
+references = ["master/japan/surfaces/village"]
 
 [[sources]]
 path = "src/ZP_Propeller.fbx"

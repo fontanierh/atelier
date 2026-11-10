@@ -152,8 +152,8 @@ def reference_rewrites(game: Path, family: dict) -> dict:
             current = getattr(asset, key)
             if adopted not in current:
                 continue
-            if asset.id in feeds:   # never depend on, or reference, what this record feeds
-                masters = [adopted] if key == 'references' and family.get('generator') else []
+            if asset.id in feeds:   # never depend on what this record feeds; a staying record keeps its reference
+                masters = [adopted] if key == 'references' and (family.get('generator') or kept) else []
             elif family.get('generator'):   # the record stays: a reference keeps it, a dependency moves to the masters
                 masters = [adopted] + moved if key == 'references' else (moved or fallback_ids(family))
             elif kept:   # the record stays: a record still using it, or naming no moved master, keeps the mention

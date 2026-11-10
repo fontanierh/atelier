@@ -6,7 +6,7 @@ id = "prop/mega/trim"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/mega/trim"
-references = ["adopted/japan/materials/base-materials"]
+references = ["master/japan/surfaces/village"]
 
 [[sources]]
 path = "src/Mega_Trim.fbx"

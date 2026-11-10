@@ -17,7 +17,8 @@ sys.path.insert(0, str(ROOT / 'tools' / 'migrate'))
 import records  # noqa: E402
 import master_records as planner  # noqa: E402
 
-FAMILY = planner.load_families()['japan_base']
+FAMILIES = planner.load_families()
+FAMILY = FAMILIES['japan_base']
 MASTERS = {m['package']: m for m in FAMILY['masters']}
 
 spec = importlib.util.spec_from_file_location('v2_japan_base_masters', SCRIPTS / 'material_masters' / 'japan_base_masters.py')
@@ -36,6 +37,9 @@ KEPT = {
 }
 SEA = {'/Game/Japan/Materials/M_Sea', '/Game/Japan/Materials/M_HarborWater'}
 ADOPTED_PACKAGES = KEPT | SEA | set(MASTERS)
+# The packages later families sharing the record moved out of it (japan_sea, the terrain, sky and surface families).
+LATER = {m['package'] for name, f in FAMILIES.items() if name != 'japan_base' and f['adopted'] == FAMILY['adopted']
+         for m in f['masters']}
 
 
 class Recorder:
@@ -131,8 +135,9 @@ def test_the_fallback_is_one_of_the_family_masters():
 def test_every_master_package_moved_out_and_the_adopted_record_lists_exactly_the_kept_packages():
     adopted = records.load_asset(ROOT / 'assets' / FAMILY['adopted'] / 'asset.toml')
     listed = {o.package for o in adopted.outputs}
-    assert listed == set(KEPT) and not set(MASTERS) & listed
-    assert set(MASTERS) | listed | SEA == ADOPTED_PACKAGES, sorted((set(MASTERS) | listed | SEA) ^ ADOPTED_PACKAGES)
+    assert SEA <= LATER <= KEPT | SEA
+    assert listed == KEPT - LATER and not set(MASTERS) & listed
+    assert set(MASTERS) | listed | LATER == ADOPTED_PACKAGES, sorted((set(MASTERS) | listed | LATER) ^ ADOPTED_PACKAGES)
     for master in FAMILY['masters']:
         record = records.load_asset(ROOT / 'assets' / master['id'] / 'asset.toml')
         assert [o.package for o in record.outputs] == [master['package']]
@@ -146,7 +151,7 @@ def test_the_kept_packages_stay_in_the_slimmed_adopted_record():
     assert planner.claim_ops(ROOT, FAMILY) == {'writes': {}, 'deletes': []}
     folder = ROOT / 'assets' / FAMILY['adopted']
     files = json.loads((folder / 'verified.json').read_text())['files']
-    assert {f.rsplit('.', 1)[0] for f in files} == {'unreal/Content/' + k[len('/Game/'):] for k in KEPT}
+    assert {f.rsplit('.', 1)[0] for f in files} == {'unreal/Content/' + k[len('/Game/'):] for k in KEPT - LATER}
     moved = {m['id'] for m in FAMILY['masters']}
     pointing = [p for p in records.record_paths(ROOT) if set(records.load_asset(p).references) & moved]
     assert pointing

@@ -6,7 +6,7 @@ id = "prop/skatepark/skate-wheel"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/skatepark/skate-wheel"
-references = ["adopted/japan/materials/base-materials"]
+references = ["master/japan/surfaces/village"]
 
 [[sources]]
 path = "src/SM_SkateWheel.fbx"

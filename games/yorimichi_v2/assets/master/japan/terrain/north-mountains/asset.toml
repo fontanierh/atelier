@@ -1,0 +1,31 @@
+# Recovered as a material master (tools/migrate/master_records.py): /Game/Japan/Materials/M_NorthMountains.
+# The builder is src/japan_terrain_masters.py, pinned by sha256; the master is rebuilt by the V2 editor and read back
+# against its saved original, never edited by hand.
+schema = 1
+id = "master/japan/terrain/north-mountains"
+kind = "material-master"
+authority = "generated"
+owner = "shared/japan/materials/base-materials"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+provenance = "donor generator games/yorimichi/unreal/Scripts (one file per builder, see donor_lines), with atmosphere.py 17-62 and ground_grain.py at the V2 source baseline (docs/DECISIONS.md D01, D02), north_mountains lines mountain_material.py 14-40, 42-233"
+input_dependencies = ["adopted/japan/textures/rock", "adopted/japan/textures/ground", "adopted/japan/materials/base-materials"]
+
+[[sources]]
+path = "src/japan_terrain_masters.py"
+sha256 = "9c09add91e61f8c1fdc97dd0d7f6efcc405441dad496a57ee5cf45ad4c5477ed"
+
+[[sources]]
+path = "src/master_haze.py"
+sha256 = "329f98441c026c766803a3ce1d1d5e1aba5e09927ee91e12fc51152b8b77a49b"
+
+[recipe]
+importer = "material-master"
+version = 1
+
+[recipe.settings]
+builder = "north_mountains"
+reads = ["/Game/Japan/Textures/T_VolcanicRock", "/Game/Japan/Textures/T_ground_detail", "/Game/Japan/Textures/T_NorthSnowMask", "/Game/Japan/Textures/T_NorthCraterMask", "/Game/Japan/Textures/T_NorthCraterFloor", "/Game/Japan/Materials/MPC_Wind"]
+arguments = { rock = "/Game/Japan/Textures/T_VolcanicRock", ground_detail = "/Game/Japan/Textures/T_ground_detail", snow_mask = "/Game/Japan/Textures/T_NorthSnowMask", crater_mask = "/Game/Japan/Textures/T_NorthCraterMask", crater_floor = "/Game/Japan/Textures/T_NorthCraterFloor", collection = "/Game/Japan/Materials/MPC_Wind", bounds_x0_m = -430.0, bounds_y0_m = 1120.0, bounds_x1_m = 2127.5, bounds_y1_m = 3677.5, step_m = 2.5, mask_size = 1024, volcano_x_m = 850.0, volcano_y_m = 2400.0, rock_radius_inner_m = 1263.906976744186, rock_radius_outer_m = 1433.0232558139535, rock_prominence_low_m = 175.5, rock_prominence_high_m = 337.5, south_join_m = 3600.0, floor_metres = 16, floor_mean_r = 100, floor_mean_g = 98, floor_mean_b = 100 }
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_NorthMountains"

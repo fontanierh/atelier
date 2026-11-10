@@ -6,7 +6,7 @@ id = "prop/southwest/dock"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/southwest/dock"
-references = ["adopted/japan/materials/base-materials"]
+references = ["master/japan/surfaces/village"]
 
 [[sources]]
 path = "src/SW_Dock.fbx"

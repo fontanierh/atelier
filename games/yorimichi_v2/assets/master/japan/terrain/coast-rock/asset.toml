@@ -1,0 +1,31 @@
+# Recovered as a material master (tools/migrate/master_records.py): /Game/Japan/Materials/M_CoastRock.
+# The builder is src/japan_terrain_masters.py, pinned by sha256; the master is rebuilt by the V2 editor and read back
+# against its saved original, never edited by hand.
+schema = 1
+id = "master/japan/terrain/coast-rock"
+kind = "material-master"
+authority = "generated"
+owner = "shared/japan/materials/base-materials"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+provenance = "donor generator games/yorimichi/unreal/Scripts (one file per builder, see donor_lines), with atmosphere.py 17-62 and coast_rock_look.py at the V2 source baseline (docs/DECISIONS.md D01, D02), coast_rock lines forest_ground.py 62-112; coast_rock_look.py; material_assets.py 45-67"
+input_dependencies = ["adopted/japan/textures/rock"]
+
+[[sources]]
+path = "src/japan_terrain_masters.py"
+sha256 = "9c09add91e61f8c1fdc97dd0d7f6efcc405441dad496a57ee5cf45ad4c5477ed"
+
+[[sources]]
+path = "src/master_haze.py"
+sha256 = "329f98441c026c766803a3ce1d1d5e1aba5e09927ee91e12fc51152b8b77a49b"
+
+[recipe]
+importer = "material-master"
+version = 1
+
+[recipe.settings]
+builder = "coast_rock"
+reads = ["/Game/Japan/Textures/T_CoastRock"]
+arguments = { texture = "/Game/Japan/Textures/T_CoastRock" }
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_CoastRock"

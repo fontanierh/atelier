@@ -6,7 +6,7 @@ id = "prop/citysurfaces/north-park-trail"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/citysurfaces/north-park-trail"
-references = ["adopted/japan/materials/base-materials"]
+references = ["master/japan/terrain/north-mountains"]
 
 [[sources]]
 path = "src/HD_NorthParkTrail.fbx"

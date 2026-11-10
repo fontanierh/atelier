@@ -1,0 +1,31 @@
+# Recovered as a material master (tools/migrate/master_records.py): /Game/Japan/Materials/M_ForestGround.
+# The builder is src/japan_terrain_masters.py, pinned by sha256; the master is rebuilt by the V2 editor and read back
+# against its saved original, never edited by hand.
+schema = 1
+id = "master/japan/terrain/forest-ground"
+kind = "material-master"
+authority = "generated"
+owner = "shared/japan/materials/base-materials"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+provenance = "donor generator games/yorimichi/unreal/Scripts (one file per builder, see donor_lines), with atmosphere.py 17-62 and ground_grain.py at the V2 source baseline (docs/DECISIONS.md D01, D02), forest_ground lines forest_ground.py 16-59"
+input_dependencies = ["adopted/japan/textures/ground"]
+
+[[sources]]
+path = "src/japan_terrain_masters.py"
+sha256 = "9c09add91e61f8c1fdc97dd0d7f6efcc405441dad496a57ee5cf45ad4c5477ed"
+
+[[sources]]
+path = "src/master_haze.py"
+sha256 = "329f98441c026c766803a3ce1d1d5e1aba5e09927ee91e12fc51152b8b77a49b"
+
+[recipe]
+importer = "material-master"
+version = 1
+
+[recipe.settings]
+builder = "forest_ground"
+reads = ["/Game/Japan/Textures/T_ground", "/Game/Japan/Textures/T_ground_detail"]
+arguments = { near = "/Game/Japan/Textures/T_ground", detail = "/Game/Japan/Textures/T_ground_detail", south_join_m = 3600.0 }
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_ForestGround"

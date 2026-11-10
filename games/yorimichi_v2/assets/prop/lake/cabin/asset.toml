@@ -6,7 +6,7 @@ id = "prop/lake/cabin"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/lake/cabin"
-references = ["adopted/japan/materials/base-materials"]
+references = ["master/japan/surfaces/village"]
 
 [[sources]]
 path = "src/Lake_Cabin.fbx"

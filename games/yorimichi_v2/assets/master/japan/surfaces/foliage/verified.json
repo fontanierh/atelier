@@ -1,0 +1,16 @@
+{
+  "asset": "master/japan/surfaces/foliage",
+  "dependencies": {
+    "adopted/japan/materials/base-materials": "cf8c1d285e35a9b944ae8db9f167ba98559f618d588660673d5c24ac43b048ba",
+    "adopted/seethrough": "5d874079698cfb138f83a1eb8b24e3b96ca62a422d00c359aa64f0506ab79897",
+    "texture/japan/white": "5d52155722629ce5afa73ac696017dd3c663ebb3e376a74037b961092e3b6349"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Materials/M_Foliage.uasset": "ae46b950e75db610c984237ccf111c027cd34e52f9662668bd690b3c8600c9f0"
+  },
+  "input_fingerprint": "a87478ef4d8af990071aeadcad198ef25a5ee58bdd990819a78d5b99052716dd",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "material-master@1"
+}

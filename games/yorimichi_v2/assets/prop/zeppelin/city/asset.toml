@@ -6,7 +6,7 @@ id = "prop/zeppelin/city"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/zeppelin/city"
-references = ["adopted/japan/materials/base-materials"]
+references = ["master/japan/surfaces/village"]
 
 [[sources]]
 path = "src/ZP_City.fbx"

@@ -6,7 +6,7 @@ id = "prop/southwest/stone-stairs"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/southwest/stone-stairs"
-references = ["adopted/japan/materials/base-materials"]
+references = ["master/japan/surfaces/village"]
 
 [[sources]]
 path = "src/SW_StoneStairs.fbx"

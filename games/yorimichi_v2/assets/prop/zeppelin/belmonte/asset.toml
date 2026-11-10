@@ -6,7 +6,7 @@ id = "prop/zeppelin/belmonte"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/zeppelin/belmonte"
-references = ["adopted/japan/materials/base-materials"]
+references = ["master/japan/surfaces/village"]
 
 [[sources]]
 path = "src/ZP_Belmonte.fbx"

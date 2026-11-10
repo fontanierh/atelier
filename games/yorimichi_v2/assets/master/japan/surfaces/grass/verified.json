@@ -1,0 +1,16 @@
+{
+  "asset": "master/japan/surfaces/grass",
+  "dependencies": {
+    "adopted/japan/materials/base-materials": "cf8c1d285e35a9b944ae8db9f167ba98559f618d588660673d5c24ac43b048ba",
+    "adopted/seethrough": "5d874079698cfb138f83a1eb8b24e3b96ca62a422d00c359aa64f0506ab79897",
+    "texture/japan/white": "5d52155722629ce5afa73ac696017dd3c663ebb3e376a74037b961092e3b6349"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Materials/M_Grass.uasset": "a29ea733145f26c0573177032500ecfd41267cc5139a12739ebd70932b6c3f64"
+  },
+  "input_fingerprint": "db2dd82de6871a4013b334b7af90135eba3cd07410cc3aa51b3cc4c0d9b2c0e2",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "material-master@1"
+}

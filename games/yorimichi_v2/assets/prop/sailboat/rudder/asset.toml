@@ -6,7 +6,7 @@ id = "prop/sailboat/rudder"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/sailboat/rudder"
-references = ["adopted/japan/materials/base-materials"]
+references = ["master/japan/surfaces/village"]
 
 [[sources]]
 path = "src/SB_Rudder.fbx"

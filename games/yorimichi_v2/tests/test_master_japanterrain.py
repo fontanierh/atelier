@@ -146,3 +146,15 @@ def test_the_planned_records_are_material_masters_pinned_to_the_builder(tmp_path
         assert [(s.path, s.sha256) for s in asset.sources] == [
             (f'src/{source.name}', hashlib.sha256(source.read_bytes()).hexdigest()) for source in planner.builder_sources(family)]
         assert [o.package for o in asset.outputs] == [master['package']]
+
+
+def test_the_families_are_done_and_a_staying_record_keeps_its_reference_to_the_adopted_record():
+    """@cc [owner:fontanierh,label:correctness] master-keeps-feeding-references
+    The ground and rock textures feed the terrain masters and record that base-materials' generator scripts make them.
+    The adopted record stays under keeps, so they keep that reference and gain no master mention; nothing is left to write."""
+    for name in ('japan_terrain', 'japan_terrain_ground', 'japan_sky_painterly', 'japan_surfaces', 'japan_vegetation'):
+        assert planner.state(ROOT, FAMILIES[name]) == 'done'
+        assert planner.claim_ops(ROOT, FAMILIES[name]) == {'writes': {}, 'deletes': []}
+    for record in ('adopted/japan/textures/ground', 'adopted/japan/textures/rock'):
+        asset = records.load_asset(ROOT / f'assets/{record}/asset.toml')
+        assert asset.references == [FAMILIES['japan_terrain']['adopted']]

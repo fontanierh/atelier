@@ -8,7 +8,7 @@ id = "prop/megapark/kei-retro"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/megapark/kei-retro"
-references = ["adopted/japan/materials/base-materials"]
+references = ["master/japan/surfaces/village"]
 
 [[sources]]
 path = "src/SM_Kei_Retro.fbx"

@@ -6,7 +6,7 @@ id = "prop/citysurfaces/north-mountains-cell-7-24"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/citysurfaces/north-mountains-cell-7-24"
-references = ["adopted/japan/materials/base-materials"]
+references = ["master/japan/terrain/north-mountains"]
 
 [[sources]]
 path = "src/HD_NorthMountains_cell_7_24.fbx"

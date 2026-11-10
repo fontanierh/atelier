@@ -6,7 +6,7 @@ id = "prop/southwest/tree-pine-lean-a"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/southwest/tree-pine-lean-a"
-references = ["adopted/japan/materials/base-materials"]
+references = ["master/japan/surfaces/village"]
 
 [[sources]]
 path = "src/Tree_PineLean_A.fbx"
