@@ -1,11 +1,11 @@
 {
   "asset": "object/brinecove/harbor-2-3",
   "dependencies": {
-    "prop/brinecove/harbor-2-3": "831f81dc0f0ebd6df6ad5a1a6be8ca2c0fcef08e0ca4bce7988132ba279f91d0"
+    "prop/brinecove/harbor-2-3": "36392a5919eb0624626583cce6599b3520d0185b95454c51fccefef55220aa09"
   },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/__ExternalActors__/V2/Maps/Slice/2/OX/3FNJJLJA6ZD15NUQ8G5U10.uasset": "3ff7a19f1a5fb146fc05729ee07cebfd6d91e654e3a7e39a90bc916ae7f9dc8a"
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/2/OX/3FNJJLJA6ZD15NUQ8G5U10.uasset": "020835077e0ffb372c1b6b5550b70124616ea025e5281285cb73b9eae165f65d"
   },
   "kind": "editor-saved",
   "schema": 1

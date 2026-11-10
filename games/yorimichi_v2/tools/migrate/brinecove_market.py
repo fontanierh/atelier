@@ -922,6 +922,7 @@ def check(game: Path, donor: Path | None, batch: str, retired: bool = False, gro
     problems = [p for p in problems if not recarved_later(game, batch, p) and not split_later(exp, replaced, p)]
     problems += split_later_packages(game, exp, replaced)
     problems += recut_problems(game, exp)
+    problems += remainder_slot_problems(game, batch, exp)
     if retired or groups:
         gone = {f'SM_BC_{s}': t['record'] for s, t in exp['tiles'].items() if t['remainder'] is None}
         gone.update({c['mesh']: rid for rid, c in exp.get('replaced', {}).items() if c['after'] is None})
@@ -1497,6 +1498,53 @@ def recut_runtime_problems(game: Path, exp: dict) -> list[str]:
         elif groups[0]['materials'] != want:
             problems.append(f'{rid}: its runtime group binds {len(groups[0]["materials"])} materials, not the carve\'s '
                             f'{len(want)} slots {[m.rsplit(".", 1)[1] for m in want]}')
+    return problems
+
+
+def remainder_slot_problems(game: Path, batch: str, exp: dict) -> list[str]:
+    """@cc [owner:fontanierh,label:correctness] brinecove-remainder-slots-resaved
+    A tile that a batch cut can lose material slots (its remainder no longer draws a material), and the runtime group
+    then lists the remainder's slots. A saved placement binds its materials by slot index from the group it was saved
+    with, so each placement holding such a tile must have been saved from the tile's current state (its receipt depends
+    on the record's current verified state); otherwise its overrides put old materials on the new slots. The slots
+    before are the latest earlier split's remainder of that tile, or the donor tile's. A tile a later batch retired has
+    no record to check."""
+    records_ = _apply().records
+    region = game / 'world' / 'regions' / _apply().REGION
+    order = ['batch1', 'ships'] + split_order()
+    earlier = {}
+    for name in order[:order.index(batch)]:
+        path = region / f'split-{name}.json'
+        if path.is_file():
+            for s, tile in json.loads(path.read_text()).get('tiles', {}).items():
+                if isinstance(tile, dict) and tile.get('remainder'):
+                    earlier[s] = tile['remainder'].get('materials')
+    holders: dict[str, list[str]] = {}
+
+    def holding(group: str) -> list[str]:
+        if not holders:   # read only once a tile's slots changed
+            for obj in _apply().tomllib.loads((region / 'objects.toml').read_text()).get('objects', []):
+                for g in obj.get('groups', [obj['group']] if 'group' in obj else []):
+                    holders.setdefault(g, []).append(obj['id'])
+        return holders.get(group, [])
+
+    problems = []
+    for s, tile in sorted(exp['tiles'].items()):
+        if not tile.get('remainder'):
+            continue
+        before = earlier.get(s, (tile.get('original') or {}).get('materials'))
+        if before is None or tile['remainder'].get('materials') == before:
+            continue
+        verified = game / 'assets' / tile['record'] / 'verified.json'
+        if not verified.is_file():
+            continue
+        state = records_.state_fingerprint(records_.load_verified(verified))
+        for oid in holding(f'SM_BC_{s}'):
+            receipt = game / 'assets' / oid / 'verified.json'
+            deps = json.loads(receipt.read_text()).get('dependencies', {}) if receipt.is_file() else {}
+            if deps.get(tile['record']) != state:
+                problems.append(f'{oid}: saved before {s} lost material slots ({len(before)} to '
+                                f'{len(tile["remainder"]["materials"])}); save the placement again')
     return problems
 
 

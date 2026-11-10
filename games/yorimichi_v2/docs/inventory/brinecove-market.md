@@ -316,6 +316,12 @@ triangle of the component belongs to an object.
 | 6 | 1,056 | `Harbor_2_3`, `3_3`, `4_3`, `5_3`, `5_4` | 1 (`Harbor_4_2`) | 21 |
 
 The emptied tile is retired with the three stages above (`--batch harbor2`); its placement held only that tile.
+
+A cut can also drop a material slot from a tile that keeps a remainder, and the runtime group then lists only the
+remainder's slots. A placement binds its overrides by slot index from the group it was saved with, so `check` requires
+each placement holding such a tile to depend on the record's current state (`brinecove-remainder-slots-resaved`).
+Seven placements were saved before an earlier cut changed their tile's slots (`market-3-4`, `market-4-4`,
+`townlower-4-4`, `harbor-2-3`, `harbor-3-3`, `harbor-4-3`, `harbor-5-3`); `harbor2` saves them again.
 The rest of the harbour (quay wall, paving, water steps) belongs to no object. Further batches are on demand; see
 the backlog in [INVENTORY](../INVENTORY.md).
 

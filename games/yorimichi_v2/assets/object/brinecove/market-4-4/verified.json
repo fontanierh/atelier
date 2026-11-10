@@ -1,24 +1,24 @@
 {
   "asset": "object/brinecove/market-4-4",
   "dependencies": {
-    "prop/brinecove/market-4-4-piece000": "8302f97dd306e17303fb3eff078ff7edc6bca29602811ca1035df2b31f121a6d",
-    "prop/brinecove/market-4-4-piece001": "2f56563a0865e7d8a01a6b5f675fd8bd6f2d7c291de8ed3c30872cab41d10b95",
-    "prop/brinecove/market-4-4-piece002": "e430f9814351c43ac8764023b15ada0b769c8dfbceaf528709209ca947cca22f",
-    "prop/brinecove/market-4-4-piece003": "22750c6b21d91bdd697678a52d36cc56f20612f7db9fed1ed0943593f5fcb1fc",
-    "prop/brinecove/market-4-4-piece010": "7f93cf5a5e45242857b5e2d8b60dad79892d2b8d92d6f77072a4716a2a889257",
+    "prop/brinecove/market-4-4-piece000": "b0f18e14868fc578f4e5334958c1b0aef6f1e01262d4308f3465aa1452f1160a",
+    "prop/brinecove/market-4-4-piece001": "38d75bdb71a4eadfcd52c55802ec4391684cc0ae9c48d04e412386edd00042d3",
+    "prop/brinecove/market-4-4-piece002": "6e06a2c672a8430937f376abfc61736601bd9ed3d82fa7d838c469a44637788d",
+    "prop/brinecove/market-4-4-piece003": "024f4715c320b947f0c5444e535855288df292ad833dd485a9d5a43308c6a867",
+    "prop/brinecove/market-4-4-piece010": "8a2f8ba1f5cdd81ec35cc21d0f1b86ff1103d832674d48a566865ac971a6bb89",
     "prop/brinecove/market-4-4-piece011": "f8ce77c947c1c40a60fb655f77131b29862ea7ccf2599f4b0a9bfab3cecfe996",
     "prop/brinecove/market-4-4-piece012": "9465be8b148b985452178846878ab8f34599af76247f6416cce7a375270dfccf",
     "prop/brinecove/market-4-4-piece013": "683f3623ec6fa9d7cfcf32835c86d40e459dc8f0213e2b2f7b9250b7eeb9b83a",
-    "prop/brinecove/market-4-4-piece020": "e5b9a7f1b329732aef0c683d6e279a4bc7624a9380f21bbd452a424879dff410",
-    "prop/brinecove/market-4-4-piece021": "f6f6ffbb264d418ef1086f01281f036ceea2fd0449902bdbf72edf3fad79e03d",
-    "prop/brinecove/market-4-4-piece022": "e659909165332765d6bb4f44206ef12dcaf6eca1ae5c1ed59e31005aefc74bac",
-    "prop/brinecove/market-4-4-piece023": "ebf224a83712e732b5dca473c7c75dc5bb04d987d39d7f513ad12beb7defa041",
-    "prop/brinecove/market-4-4-piece03": "654899129bc591f0cab2ca81a6ae1bd39f5c0b5605342b4c07e2d01be5935cad",
-    "prop/brinecove/market-4-4-soft": "f7a546b0ef01ea53a2a1047a11e40b3288d9023e1023852a7da5dbe4bad9f9aa"
+    "prop/brinecove/market-4-4-piece020": "330cbd986a25cc078dae27a3cf3e81fbe8b871469531c1a5d6d4527b24396dc7",
+    "prop/brinecove/market-4-4-piece021": "e79425704b14579774a70606952791e5c349d044b45851f79b6066f06a83c978",
+    "prop/brinecove/market-4-4-piece022": "39d2c6dff6782cc1ec1484aef55643afe170434b0cf8558731713605b406f8f0",
+    "prop/brinecove/market-4-4-piece023": "82be713a99dcf045bc0a4b5205c22beb03d695486fb847700fd8aee568bc59fc",
+    "prop/brinecove/market-4-4-piece03": "b7c61c614d4042fa7253b3358f6d6e2a1f548eae3b00186c1a6bbc1d616fcd63",
+    "prop/brinecove/market-4-4-soft": "979e83d0c79dfa94279f375f7d5f3898ba54bb18091f1f58e0d5580871c3f372"
   },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/__ExternalActors__/V2/Maps/Slice/8/2W/8ZSF2H33ZHJCNV681FXECK.uasset": "0ad5a263ce8d8ca1c3e079b994d52d048cecc34b43714ed3817992cf69ec638c"
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/8/2W/8ZSF2H33ZHJCNV681FXECK.uasset": "f21022d8d1041036560676f7cdf016345fe2c7eccd000cd74faa19ed2d4ab506"
   },
   "kind": "editor-saved",
   "schema": 1

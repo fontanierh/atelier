@@ -1,5 +1,5 @@
 # One saved object of region/w09-brinecove (tools/migrate/objects.py, from its objects.toml): Brine Cove market-3-4 (11 groups).
-# Its placement is this actor package; its models are prop/brinecove/market-3-4-piece10, prop/brinecove/market-3-4-piece110, prop/brinecove/market-3-4-piece111, prop/brinecove/market-3-4-piece112, prop/brinecove/market-3-4-piece113, prop/brinecove/market-3-4-piece12, prop/brinecove/market-3-4-piece130, prop/brinecove/market-3-4-piece131, prop/brinecove/market-3-4-piece132, prop/brinecove/market-3-4-piece133, prop/brinecove/market-3-4-soft. Edit it in the editor and save-validate
+# Its placement is this actor package; its model is prop/brinecove/market-3-4-piece10, prop/brinecove/market-3-4-piece110, prop/brinecove/market-3-4-piece111, prop/brinecove/market-3-4-piece112, prop/brinecove/market-3-4-piece113, prop/brinecove/market-3-4-piece12, prop/brinecove/market-3-4-piece130, prop/brinecove/market-3-4-piece131, prop/brinecove/market-3-4-piece132, prop/brinecove/market-3-4-piece133, prop/brinecove/market-3-4-soft. Edit it in the editor and save-validate
 # this record: the region's other objects and actors are not part of it.
 schema = 1
 id = "object/brinecove/market-3-4"

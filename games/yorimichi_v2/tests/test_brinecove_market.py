@@ -177,6 +177,35 @@ def test_a_tile_a_later_batch_emptied_and_retired_has_no_remainder_problem(tmp_p
     assert not market.recarved_later(tmp_path, 'props1', 'prop/brinecove/props-2-3: record package differs')
 
 
+def test_a_placement_saved_before_its_tile_lost_slots_must_be_saved_again(tmp_path, monkeypatch):
+    """market2 cut Market_3_4 from two material slots to one: its placement binds overrides by slot index, so its
+    receipt must depend on the record's current state; an unchanged slot list asks nothing."""
+    region = tmp_path / 'world' / 'regions' / market._apply().REGION
+    region.mkdir(parents=True)
+    record = 'prop/brinecove/market-3-4'
+    (region / 'split-market1.json').write_text(json.dumps(
+        {'tiles': {'Market_3_4': {'record': record, 'remainder': {'materials': ['BC_wood', 'BC_cloth']}}}}))
+    (region / 'objects.toml').write_text(textwrap.dedent('''
+        [[objects]]
+        id = "object/brinecove/market-3-4"
+        groups = ["SM_BC_Market_3_4"]
+    '''))
+    for path, data in ((record, {'state': 'now'}), ('object/brinecove/market-3-4', {'dependencies': {record: 'then'}})):
+        (tmp_path / 'assets' / path).mkdir(parents=True)
+        (tmp_path / 'assets' / path / 'verified.json').write_text(json.dumps(data))
+    records_ = market._apply().records
+    monkeypatch.setattr(records_, 'load_verified', lambda path: json.loads(path.read_text()))
+    monkeypatch.setattr(records_, 'state_fingerprint', lambda verified: verified['state'])
+    cut = {'tiles': {'Market_3_4': {'record': record, 'remainder': {'materials': ['BC_wood']}}}}
+    assert market.remainder_slot_problems(tmp_path, 'market2', cut) == [
+        'object/brinecove/market-3-4: saved before Market_3_4 lost material slots (2 to 1); save the placement again']
+    same = {'tiles': {'Market_3_4': {'record': record, 'remainder': {'materials': ['BC_wood', 'BC_cloth']}}}}
+    assert market.remainder_slot_problems(tmp_path, 'market2', same) == []
+    receipt = tmp_path / 'assets' / 'object/brinecove/market-3-4' / 'verified.json'
+    receipt.write_text(json.dumps({'dependencies': {record: 'now'}}))
+    assert market.remainder_slot_problems(tmp_path, 'market2', cut) == []
+
+
 def test_the_mast_and_slip_split_counts_as_later_for_the_market_and_town_batches(tmp_path):
     """brinecove_mastslip.py re-cut market2's pieces after town9 and before props1, so market2's expected remainders of
     those pieces are stale by design, and a props batch does not see the mast split as later."""
