@@ -1,0 +1,27 @@
+# Recovered as a material master (tools/migrate/master_records.py): /Game/Japan/Hidamari/Materials/M_HDCity.
+# The builder is src/hidamari_city_masters.py, pinned by sha256; the master is rebuilt by the V2 editor and read back
+# against its saved original, never edited by hand.
+schema = 1
+id = "master/hidamari/city"
+kind = "material-master"
+authority = "generated"
+owner = "shared/japan/hidamari/generator"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+provenance = "donor generator games/yorimichi/unreal/Scripts/city_material.py at the V2 source baseline (docs/DECISIONS.md D01, D02), city_parent lines 42-95"
+input_dependencies = ["adopted/japan/hidamari/surface-plaster"]
+
+[[sources]]
+path = "src/hidamari_city_masters.py"
+sha256 = "9940b19f7fece3fdf2fdeef73ea7dac63fba5ff68e1c32a5ec0fed3df6b6c875"
+
+[recipe]
+importer = "material-master"
+version = 1
+
+[recipe.settings]
+builder = "city_parent"
+reads = ["/Game/Japan/Hidamari/Textures/T_HD_plaster"]
+arguments = { texture = "/Game/Japan/Hidamari/Textures/T_HD_plaster" }
+
+[[outputs]]
+package = "/Game/Japan/Hidamari/Materials/M_HDCity"

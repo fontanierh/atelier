@@ -7,7 +7,7 @@ authority = "editor"
 owner = "shared/japan/hidamari/prop-taxi"
 provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DECISIONS.md D01, D02)"
 license = "owner-published (docs/DECISIONS.md D05 group 1)"
-references = ["adopted/japan/hidamari/generator"]
+references = ["master/hidamari/city"]
 
 [[sources]]
 path = "source/assets/hidamari/props/taxi/concept.jpg"

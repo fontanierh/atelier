@@ -1,0 +1,14 @@
+{
+  "asset": "master/swordcamp/ronin-body",
+  "dependencies": {
+    "texture/swordcamp/atlas": "071d1bc5e6020f18b0485342f9bba05152ef8439e3159ade63225ec741671d93"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SwordCamp/Materials/M_RoninBody.uasset": "04cfdb76c81723a8e8ddcf1e05e33964e8f975c1975e8a2755d502bc8a93d8a5"
+  },
+  "input_fingerprint": "d8405f95c72b2c6c5ebc34701b40ab49804eeee59d4834bfbd8855ccc45e0a86",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "material-master@1"
+}

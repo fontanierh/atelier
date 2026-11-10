@@ -6,7 +6,7 @@ id = "prop/swordcamp/guard-jingasa"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/swordcamp/guard-jingasa"
-references = ["adopted/swordcamp/materials"]
+references = ["master/swordcamp/camp"]
 
 [[sources]]
 path = "src/SM_GuardJingasa.fbx"

@@ -545,7 +545,12 @@ def _material_master(plan):
     Rebuild one generator master from its pinned builder and save it only when its wiring digest equals the saved original's
     (master_digest.accept). The rebuild first goes to a transient package, which is compared and deleted and never saved. Only
     an accepted rebuild is saved, into the record's one output package, and read back against the same digest. Nothing else is
-    written: a builder error, a difference, or an unreadable digest refuses before the save."""
+    written: a builder error, a difference, or an unreadable digest refuses before the save.
+
+    Before the rebuild over the original, every expression of the original is deleted one by one and the graph is checked
+    empty: delete_all_material_expressions leaves some unwired leftovers in 5.8, and a rebuild over them would grow the
+    package on every import. The saved master is therefore the fresh build, and its read-back has exactly the fresh
+    build's unwired expressions."""
     if len(plan['sources']) != 1 or len(plan['packages']) != 1:
         raise RuntimeError('a material master names one builder source and builds one package')
     settings = plan['settings']
@@ -565,16 +570,27 @@ def _material_master(plan):
     if EAL.does_asset_exist(scratch):
         EAL.delete_asset(scratch)
     try:
-        problems = master_digest.accept(saved, master_digest.read(builder(scratch, reads, **arguments)))
+        fresh = master_digest.read(builder(scratch, reads, **arguments))
+        problems = master_digest.accept(saved, fresh)
     finally:
         if EAL.does_asset_exist(scratch):
             EAL.delete_asset(scratch)
     if problems:
         raise RuntimeError(f'{package} is not accepted: ' + '; '.join(problems[:8]))
+    original = EAL.load_asset(package)
+    MEL = U.MaterialEditingLibrary
+    for expression in list(MEL.get_material_expressions(original) or []):
+        MEL.delete_material_expression(original, expression)
+    if MEL.get_num_material_expressions(original):
+        raise RuntimeError(f'{package}: {MEL.get_num_material_expressions(original)} expression(s) survive deletion; nothing saved')
     builder(package, reads, **arguments)
     if not EAL.save_asset(package, only_if_is_dirty=False):
         raise RuntimeError(f'could not save {package}')
-    problems = master_digest.accept(saved, master_digest.read(EAL.load_asset(package)))
+    back = master_digest.read(EAL.load_asset(package))
+    problems = master_digest.accept(saved, back)
+    if 'error' not in back and sorted(back.get('unwired', [])) != sorted(fresh.get('unwired', [])):
+        problems.append(f'{len(back.get("unwired", []))} unwired expression(s) after the save, the fresh build has '
+                        f'{len(fresh.get("unwired", []))}')
     if problems:
         raise RuntimeError(f'{package} reads back different from its saved original: ' + '; '.join(problems[:8]))
     U.log(f'V2 import wrote {package} from {plan["portable_sources"][0]}')

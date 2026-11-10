@@ -1,0 +1,26 @@
+# Recovered as a material master (tools/migrate/master_records.py): /Game/Racing/M_RacingTv.
+# The builder is src/racing_masters.py, pinned by sha256; the master is rebuilt by the V2 editor and read back
+# against its saved original, never edited by hand.
+schema = 1
+id = "master/racing/tv"
+kind = "material-master"
+authority = "generated"
+owner = "shared/racing"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+provenance = "donor generator games/yorimichi/unreal/Scripts/racing_tv_material.py at the V2 source baseline (docs/DECISIONS.md D01, D02), racing_tv lines 1-57"
+
+[[sources]]
+path = "src/racing_masters.py"
+sha256 = "d8e78c5370ee7ad3cecb61a62ef26746f125510c3ee0f36988762a63366e7e51"
+
+[recipe]
+importer = "material-master"
+version = 1
+
+[recipe.settings]
+builder = "racing_tv"
+reads = ["/Engine/EngineResources/Black"]
+arguments = { brightness = 1.0 }
+
+[[outputs]]
+package = "/Game/Racing/M_RacingTv"

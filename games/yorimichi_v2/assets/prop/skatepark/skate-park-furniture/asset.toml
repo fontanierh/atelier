@@ -6,7 +6,7 @@ id = "prop/skatepark/skate-park-furniture"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/skatepark/skate-park-furniture"
-references = ["adopted/skatepark/materials"]
+references = ["master/skatepark/pier-basalt", "master/skatepark/pier-concrete", "master/skatepark/pier-mural", "master/skatepark/pier-steel", "master/skatepark/pier-wood"]
 
 [[sources]]
 path = "src/SM_SkateParkFurniture.fbx"

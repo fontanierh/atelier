@@ -1,0 +1,16 @@
+{
+  "asset": "master/skatepark/pier-ceramic",
+  "dependencies": {
+    "texture/skatepark/pier-ceramic-albedo": "c4e53ce6edb3f8db1c34e4e2660ac8ba9801c35a495e7aeffa4d1d417ec48e3d",
+    "texture/skatepark/pier-ceramic-normal": "161f19b1128ca26781b01e9c7a6f64f1fcfde40e5383cccad643f81281635f5f",
+    "texture/skatepark/pier-ceramic-roughness": "1012af314812f8a5002c4a2db802220b4e9a15c9ee00a3cd322e494f9f24229c"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkatePark/Materials/M_Pier_ceramic.uasset": "4d9f71bd6fc338f7e0337deb518246e708c4acdc7db280fa51535669de5a1b50"
+  },
+  "input_fingerprint": "cb4dc64c76d687e071dd0c2504440325b7e3c993d2ddb8a43b91cd0f72bbb98c",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "material-master@1"
+}

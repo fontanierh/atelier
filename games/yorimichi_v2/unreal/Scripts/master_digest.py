@@ -85,11 +85,19 @@ def accept(saved, rebuilt):
     return problems
 
 
+def _custom_input_name(value):
+    """The name of a Custom node input (a CustomInput struct exposes it only through get_editor_property), else None."""
+    if type(value).__name__ != 'CustomInput':
+        return None
+    return str(value.get_editor_property('input_name'))
+
+
 def _value(value):
-    if isinstance(value, (list, tuple)):
+    if isinstance(value, (list, tuple)) or type(value).__name__ == 'Array':   # an engine Array is not a list
         return [_value(v) for v in value]
-    if hasattr(value, 'input_name'):   # a Custom node input: its name, never the struct's text (which carries an address)
-        return str(value.input_name)
+    name = _custom_input_name(value)
+    if name is not None:   # a Custom node input: its name, never the struct's text
+        return name
     if hasattr(value, 'get_path_name'):
         return value.get_path_name().split('.')[0]
     if hasattr(value, 'r') and hasattr(value, 'a'):

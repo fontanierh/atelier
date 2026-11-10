@@ -1,0 +1,14 @@
+{
+  "asset": "master/swordcamp/camp",
+  "dependencies": {
+    "texture/swordcamp/atlas": "071d1bc5e6020f18b0485342f9bba05152ef8439e3159ade63225ec741671d93"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SwordCamp/Materials/M_SwordCamp.uasset": "c654088ea0a155a6681c10421c4f12a1f83dd1fac2859418db77210c62bc7ff8"
+  },
+  "input_fingerprint": "99560a3f01e92937b26081d39e00a19c2e2db077f161407e9ff432a29aff1653",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "material-master@1"
+}

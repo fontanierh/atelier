@@ -1,0 +1,26 @@
+# Recovered as a material master (tools/migrate/master_records.py): /Game/SkatePark/Board/M_BoardDissolve.
+# The builder is src/skatepark_board_masters.py, pinned by sha256; the master is rebuilt by the V2 editor and read back
+# against its saved original, never edited by hand.
+schema = 1
+id = "master/skatepark/board-dissolve"
+kind = "material-master"
+authority = "generated"
+owner = "shared/skatepark/board"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+provenance = "donor generator games/yorimichi/unreal/Scripts/board_dissolve_material.py at the V2 source baseline (docs/DECISIONS.md D01, D02), board_dissolve lines 1-95"
+
+[[sources]]
+path = "src/skatepark_board_masters.py"
+sha256 = "209f39837f7a411bcec84055edd1fa1dc82d70e56436c264eabc09ad5b2c0ca5"
+
+[recipe]
+importer = "material-master"
+version = 1
+
+[recipe.settings]
+builder = "board_dissolve"
+reads = []
+arguments = {  }
+
+[[outputs]]
+package = "/Game/SkatePark/Board/M_BoardDissolve"

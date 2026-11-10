@@ -6,7 +6,7 @@ id = "prop/swordcamp/captain-kabuto"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/swordcamp/captain-kabuto"
-references = ["adopted/swordcamp/materials"]
+references = ["master/swordcamp/camp"]
 
 [[sources]]
 path = "src/SM_CaptainKabuto.fbx"

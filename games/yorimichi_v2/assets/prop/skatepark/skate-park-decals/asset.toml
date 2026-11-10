@@ -6,7 +6,7 @@ id = "prop/skatepark/skate-park-decals"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/skatepark/skate-park-decals"
-references = ["adopted/skatepark/materials"]
+references = ["master/skatepark/pier-concrete"]
 
 [[sources]]
 path = "src/SM_SkateParkDecals.fbx"

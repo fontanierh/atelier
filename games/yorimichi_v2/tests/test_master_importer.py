@@ -400,3 +400,27 @@ def test_a_family_names_its_builder_and_a_fallback_among_its_masters(tmp_path):
     (folder / 'broken.py').write_text(f'FAMILY = {family!r}\n')
     with pytest.raises(planner.PlanError, match='fallback'):
         planner.load_families(folder)
+
+
+def test_custom_node_inputs_are_recorded_by_name_from_an_engine_array():
+    """@cc [owner:fontanierh,label:correctness] master-digest-custom-inputs
+    The engine hands Custom inputs over as an Array of CustomInput structs whose name is readable only through
+    get_editor_property; the digest records the names, so a renamed or extra input refuses."""
+    CustomInput = type('CustomInput', (), {'__init__': lambda self, n: setattr(self, 'n', n),
+                                           'get_editor_property': lambda self, key: self.n})
+    Array = type('Array', (list,), {})
+    assert digest._value(Array([CustomInput('C'), CustomInput('D')])) == ['C', 'D']
+
+
+def test_the_importer_clears_the_original_graph_and_saves_only_the_fresh_build():
+    """@cc [owner:fontanierh,label:correctness] master-import-idempotent
+    delete_all_material_expressions leaves unwired leftovers in 5.8, so a rebuild over them grows the package on every
+    import. The importer deletes each expression, refuses unless the graph is empty, and refuses a save whose unwired
+    expressions differ from the fresh build's."""
+    text = (SCRIPTS / 'import_asset.py').read_text()
+    body = text[text.index('def _material_master'):]
+    body = body[:body.index('\ndef ')]
+    assert 'MEL.delete_material_expression(original, expression)' in body
+    assert 'survive deletion; nothing saved' in body
+    assert "back.get('unwired', [])) != sorted(fresh.get('unwired', []))" in body
+    assert body.index('delete_material_expression') < body.index('builder(package, reads, **arguments)')

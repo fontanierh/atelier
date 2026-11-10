@@ -6,7 +6,7 @@ id = "prop/swordcamp/ronin-sode"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/swordcamp/ronin-sode"
-references = ["adopted/swordcamp/materials"]
+references = ["master/swordcamp/camp"]
 
 [[sources]]
 path = "src/SM_RoninSode.fbx"

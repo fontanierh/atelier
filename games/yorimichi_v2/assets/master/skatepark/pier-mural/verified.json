@@ -1,0 +1,14 @@
+{
+  "asset": "master/skatepark/pier-mural",
+  "dependencies": {
+    "texture/skatepark/pier-mural-albedo": "3672314cbcfcbc4f1b98a9dba4ce6540dba73f5a480b207d2c0f96cfb0062828"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkatePark/Materials/M_Pier_mural.uasset": "dce147552672d002a4137b04f5dec8429c056b731f7d0a9fc0356baa994160c8"
+  },
+  "input_fingerprint": "7e01e961f7eb0a45330e12dcb8dc561a49528594ec3e449171d0023fdaba9e59",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "material-master@1"
+}

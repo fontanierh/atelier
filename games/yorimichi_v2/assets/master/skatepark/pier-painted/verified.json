@@ -1,0 +1,16 @@
+{
+  "asset": "master/skatepark/pier-painted",
+  "dependencies": {
+    "texture/skatepark/pier-painted-albedo": "a2493f71fb29b2135e3c865276d0e2566f4be1c07952cffdbe053e7f59b6a414",
+    "texture/skatepark/pier-painted-normal": "d6aa10ffa4b7de065754d7c68aadfab9d872789d234c47b476043720d585824d",
+    "texture/skatepark/pier-painted-roughness": "d1b3d8dcc3ade958793fe0d3b18b7f0cc38731c0eba1472ad0638e9c1d085e59"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkatePark/Materials/M_Pier_painted.uasset": "3271323cb95c58a015a592648e2b1df6bd1caff2e0caf40a985871c7762d71f4"
+  },
+  "input_fingerprint": "54dcac1d81799b5e839f4a89ea8184d183afaf1ac54ad9c747c718d189c852c4",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "material-master@1"
+}

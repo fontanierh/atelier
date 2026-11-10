@@ -1,0 +1,14 @@
+{
+  "asset": "master/hidamari/city",
+  "dependencies": {
+    "adopted/japan/hidamari/surface-plaster": "96406cb083f126d95e744068b8f410040ffc91edb02f79c850bee80892855ff5"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Hidamari/Materials/M_HDCity.uasset": "6ea438b234e3972a7b4b689ac302b0035197fc02e73bc7e6c9e6a4b55a95522d"
+  },
+  "input_fingerprint": "518e90bc5702d37a677e60546c004c88233aa255eef6500e6d6be7a2da178804",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "material-master@1"
+}

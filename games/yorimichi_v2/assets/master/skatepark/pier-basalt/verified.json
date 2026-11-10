@@ -1,0 +1,16 @@
+{
+  "asset": "master/skatepark/pier-basalt",
+  "dependencies": {
+    "texture/skatepark/pier-basalt-albedo": "0b6c64ad5b413e117fb96c38e1f12533b83708cfc92d09c3998aa605d4588a3f",
+    "texture/skatepark/pier-basalt-normal": "d3ccd88f6cc5a6203e9f268472b22e0435995b73c11f2735e3af98bb1cf82089",
+    "texture/skatepark/pier-basalt-roughness": "f2edc95d94f559aaad6bbcffa47643ddacd41c37380d12ff4767f167e166ffdb"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkatePark/Materials/M_Pier_basalt.uasset": "aa15e6b48de2c85580587b0afb4fe792f6281b1cc467cb7933da0e278b81f1c1"
+  },
+  "input_fingerprint": "db70b1fb62e659d40e1be1dec364301d7fff2aca8f986df57dbad425448700af",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "material-master@1"
+}

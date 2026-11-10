@@ -1,0 +1,12 @@
+{
+  "asset": "master/skatepark/board-dissolve",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/SkatePark/Board/M_BoardDissolve.uasset": "8384abc5a876668e5d2d863d3b1dd282cacf1677627bb629bf1916c8a1558de5"
+  },
+  "input_fingerprint": "da14ec9a162936f606d55826adaa82db14251878398fb92501589abc282dda14",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "material-master@1"
+}
