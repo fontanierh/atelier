@@ -35,6 +35,7 @@ def steps(ctx):
              heavy=True,
              about='the V2 editor target: Yorimichi, YorimichiAssets, YorimichiImport and enabled plugins'),
         Step('unreal.package', [Call('check_package_inputs', _check_package_inputs),
+                                Call('network_identity', _network_identity),
                                 UnrealPackage('YorimichiV2', out / 'package' / 'archive')],
              inputs=[GAME / 'build.py', GAME / 'tools/package', ctx.uproject, UNREAL / 'Config', UNREAL / 'Source',
                      UNREAL / 'Plugins', UNREAL / 'Content', ctx.unreal_root / 'Engine/Build/Build.version'],
@@ -358,3 +359,14 @@ def _check_package_inputs(ctx, log):
     if failed:
         raise RuntimeError(f'cook configuration: {len(failed)} failure(s); see the log and '
                            'tools/package/cook_config.py')
+
+
+def _network_identity(ctx, log):
+    """The multiplayer content manifest (Content/Data/Network/session.json) for the code and content about to be
+    cooked; without it the package refuses to host or join (tools/package/network_identity.py)."""
+    import sys
+    sys.path.insert(0, str(GAME / 'tools/package'))
+    import network_identity
+    result = network_identity.write()
+    log.write(f'NETWORK IDENTITY {result["signature"]}: code {result["code"]}, {len(result["files"])} data files, '
+              f'{result["packages"]} packages\n')
