@@ -109,7 +109,7 @@ def test_claim_set_names_both_records_tiles_scopes_and_the_lock():
     assert info['locks'] == ['games/yorimichi_v2/runtime-data.lock.json']
     assert 'region/w09-brinecove' in info['scopes'] and 'region/w00-island' in info['scopes']
     assert info['paths'] == sorted(info['paths'])
-    assert not any('/Users/' in p or 'home' in p.lower() for p in paths)
+    assert not any(p.startswith('/') or p.startswith('~') for p in paths)    # repository-relative only
 
 
 def test_paths_command_prints_claim_lines(capsys):
@@ -117,7 +117,7 @@ def test_paths_command_prints_claim_lines(capsys):
     out = capsys.readouterr().out
     assert '# claim paths' in out and '# scopes' in out and '# locks:' in out
     assert 'games/yorimichi_v2/assets/prop/brinecove/signal-mast/' in out
-    assert '/Users/' not in out
+    assert not any(line.startswith('/') for line in out.splitlines())    # repository-relative only
 
 
 def test_plan_needs_a_donor(capsys):
