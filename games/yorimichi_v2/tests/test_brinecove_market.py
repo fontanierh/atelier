@@ -759,6 +759,27 @@ def test_an_earlier_check_drops_only_the_problems_a_later_split_explains():
     assert not any(market.split_later(exp, replaced, p) for p in kept)
 
 
+def test_a_carved_record_runtime_group_binds_exactly_its_derived_slots(tmp_path):
+    """A carved pier keeps 4 of its 6 material slots; its runtime group (and so the saved actor's overrides, made from
+    it) must list exactly those slots in order, or a slot keeps a cut-off piece's material."""
+    apply_ = market._apply()
+    slots = ['/Game/Brinecove/Materials/MI_BC_lantern', '/Game/Brinecove/Materials/MI_BC_wood_dark']
+    exp = {'replaced': {'prop/brinecove/harbor-pier-west': {'mesh': 'SM_BC_HarborPierWest', 'after': {'slots': slots}},
+                        'prop/brinecove/props-cargo-w60': {'mesh': 'SM_BC_PropsCargoW60', 'after': None}}}
+    runtime = tmp_path / 'unreal' / 'Content' / apply_.RUNTIME
+    runtime.parent.mkdir(parents=True)
+
+    def write(materials):
+        runtime.write_text(json.dumps({'groups': [{'asset': apply_.instance_path('/Game/Brinecove/Meshes/SM_BC_HarborPierWest'),
+                                                    'materials': [apply_.instance_path(m) for m in materials]}]}))
+    write(slots)
+    assert market.recut_runtime_problems(tmp_path, exp) == []
+    write(['/Game/Brinecove/Materials/MI_BC_lantern', '/Game/Brinecove/Materials/MI_BC_rope',
+           '/Game/Brinecove/Materials/MI_BC_wood_dark'])
+    problems = market.recut_runtime_problems(tmp_path, exp)
+    assert len(problems) == 1 and 'binds 3 materials' in problems[0]
+
+
 def test_a_carved_later_part_still_writes_its_expected_package(tmp_path):
     """split_later drops the carved pier's package-or-count problem, so the package is compared apart."""
     rid = 'prop/brinecove/harbor-pier-west'

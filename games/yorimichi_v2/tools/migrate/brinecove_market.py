@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import argparse
 import ast
+import hashlib
 import itertools
 import re
 import json
@@ -1346,6 +1347,20 @@ def apply_ops(game: Path, plan: dict, batch: str) -> tuple[dict, dict]:
             put(rel, data)
             extra.add(f'{apply_.GAME_REL}/{rel}')
         scopes.add((f'asset/{PIER_GENERATOR}', 'shared/brinecove/piers'))
+    runtime_rel = f'unreal/Content/{apply_.RUNTIME}'
+    runtime = json.loads(writes[runtime_rel] if runtime_rel in writes else (game / runtime_rel).read_bytes())
+    for group in runtime['groups']:          # a carved object's group binds its derived mesh's slots (recut_runtime_problems)
+        cut = next((c for c in cuts.values() if c['after'] is not None
+                    and group['asset'] == apply_.instance_path(c['package'])), None)
+        if cut is not None:
+            group['materials'] = [apply_.instance_path(m) for m in cut['after']['slots']]
+    runtime_bytes = json.dumps(runtime, separators=(',', ':')).encode()
+    put(runtime_rel, runtime_bytes)
+    # The runtime file's pin follows its bytes; every other data file keeps its pin (lock_text would hash a pointer).
+    lock_rel = apply_.LOCK
+    lock = json.loads(writes[lock_rel] if lock_rel in writes else (game / lock_rel).read_bytes())
+    lock['files'][apply_.RUNTIME] = hashlib.sha256(runtime_bytes).hexdigest()
+    put(lock_rel, (json.dumps(lock, indent=2, sort_keys=True) + '\n').encode())
     objects_rel = f'world/regions/{apply_.REGION}/objects.toml'
     text = writes[objects_rel].decode() if objects_rel in writes else (game / objects_rel).read_text()
     for rid, cut in cuts.items():       # a carved object's description counts what it keeps
@@ -1414,6 +1429,28 @@ def recut_problems(game: Path, exp: dict) -> list[str]:
             if any(_tri_key(c) in keys for _, c in split.triangles(split.read_glb(f))):
                 problems.append(f'{rid}: the derived re-cut still holds triangles of {piece}')
         problems += apply_.import_problems(game, asset)
+    return problems + recut_runtime_problems(game, exp)
+
+
+def recut_runtime_problems(game: Path, exp: dict) -> list[str]:
+    """@cc [owner:fontanierh,label:correctness] brinecove-recut-runtime-slots
+    A carved coarse record keeps fewer material slots than its original, and its runtime group binds materials by slot
+    index (the saved actor's overrides are made from it). Each carved record's group must list exactly its derived mesh's
+    slots, in their order, so no slot keeps a material of a cut-off piece; the actor is then saved again from it."""
+    apply_ = _apply()
+    runtime = json.loads((game / 'unreal' / 'Content' / apply_.RUNTIME).read_text())
+    problems = []
+    for rid, cut in sorted(exp.get('replaced', {}).items()):
+        if cut['after'] is None:
+            continue
+        mesh = apply_.instance_path(f'/Game/Brinecove/Meshes/{cut["mesh"]}')
+        groups = [g for g in runtime['groups'] if g['asset'] == mesh]
+        want = [apply_.instance_path(m) for m in cut['after']['slots']]
+        if len(groups) != 1:
+            problems.append(f'{rid}: {len(groups)} runtime groups draw {cut["mesh"]}, expected one')
+        elif groups[0]['materials'] != want:
+            problems.append(f'{rid}: its runtime group binds {len(groups[0]["materials"])} materials, not the carve\'s '
+                            f'{len(want)} slots {[m.rsplit(".", 1)[1] for m in want]}')
     return problems
 
 

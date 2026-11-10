@@ -272,6 +272,10 @@ Carving the cargo off a pier changes that model's geometry, so each pier first g
   2,868) and every triangle the carved pier draws (2,940 / 2,448 / 2,136) is generated exactly once, with equal counts.
   It also requires `pier_cargo.json` to equal a fresh replay. A donor test shows both models equal `harbor()`'s own faces
   and materials.
+- A carved pier keeps 4 of its 6 material slots (lantern, metal, wood dark, wood light, by name). Its runtime group binds
+  materials by slot index, and the saved actor's overrides are made from that group. So `apply` rewrites the group's
+  materials to the derived mesh's slots, and changes only that file's pin in `runtime-data.lock.json`. `check` requires
+  the match (`brinecove-recut-runtime-slots`). The three pier actors are then saved again (`objects.py --only`).
 
 The expectation's `replaced` section records each re-cut (before, removed ordinals, pieces, the derived mesh's hash and
 triangles). `check` proves each carve through its derivation and that it holds no piece triangle. The `props2` and
