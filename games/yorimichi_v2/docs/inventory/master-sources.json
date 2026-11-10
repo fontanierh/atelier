@@ -259,7 +259,7 @@
    "package": "/Game/SkatePark/Materials/M_Pier_basalt",
    "record": "master/skatepark/pier-basalt",
    "family": "skatepark",
-   "status": "planned (family skatepark)",
+   "status": "imported (family skatepark)",
    "generator": {
     "path": "games/yorimichi/unreal/Scripts/import_skatepark.py",
     "lines": [
@@ -332,7 +332,7 @@
    "package": "/Game/SkatePark/Materials/M_Pier_ceramic",
    "record": "master/skatepark/pier-ceramic",
    "family": "skatepark",
-   "status": "planned (family skatepark)",
+   "status": "imported (family skatepark)",
    "generator": {
     "path": "games/yorimichi/unreal/Scripts/import_skatepark.py",
     "lines": [
@@ -405,7 +405,7 @@
    "package": "/Game/SkatePark/Materials/M_Pier_concrete",
    "record": "master/skatepark/pier-concrete",
    "family": "skatepark",
-   "status": "planned (family skatepark)",
+   "status": "imported (family skatepark)",
    "generator": {
     "path": "games/yorimichi/unreal/Scripts/import_skatepark.py",
     "lines": [
@@ -478,7 +478,7 @@
    "package": "/Game/SkatePark/Materials/M_Pier_mural",
    "record": "master/skatepark/pier-mural",
    "family": "skatepark",
-   "status": "planned (family skatepark)",
+   "status": "imported (family skatepark)",
    "generator": {
     "path": "games/yorimichi/unreal/Scripts/import_skatepark.py",
     "lines": [
@@ -535,7 +535,7 @@
    "package": "/Game/SkatePark/Materials/M_Pier_painted",
    "record": "master/skatepark/pier-painted",
    "family": "skatepark",
-   "status": "planned (family skatepark)",
+   "status": "imported (family skatepark)",
    "generator": {
     "path": "games/yorimichi/unreal/Scripts/import_skatepark.py",
     "lines": [
@@ -608,7 +608,7 @@
    "package": "/Game/SkatePark/Materials/M_Pier_steel",
    "record": "master/skatepark/pier-steel",
    "family": "skatepark",
-   "status": "planned (family skatepark)",
+   "status": "imported (family skatepark)",
    "generator": {
     "path": "games/yorimichi/unreal/Scripts/import_skatepark.py",
     "lines": [
@@ -681,7 +681,7 @@
    "package": "/Game/SkatePark/Materials/M_Pier_wood",
    "record": "master/skatepark/pier-wood",
    "family": "skatepark",
-   "status": "planned (family skatepark)",
+   "status": "imported (family skatepark)",
    "generator": {
     "path": "games/yorimichi/unreal/Scripts/import_skatepark.py",
     "lines": [
@@ -754,7 +754,7 @@
    "package": "/Game/SkatePark/Board/M_BoardDissolve",
    "record": "master/skatepark/board-dissolve",
    "family": "skatepark_board",
-   "status": "planned (family skatepark_board)",
+   "status": "imported (family skatepark_board)",
    "generator": {
     "path": "games/yorimichi/unreal/Scripts/board_dissolve_material.py",
     "lines": [
@@ -878,7 +878,7 @@
    "reads": [
     "/Game/SwordCamp/Textures/T_SwordCampAtlas"
    ],
-   "status": "planned (family swordcamp)"
+   "status": "imported (family swordcamp)"
   },
   {
    "package": "/Game/SwordCamp/Materials/M_RoninBody",
@@ -932,7 +932,7 @@
    "reads": [
     "/Game/SwordCamp/Textures/T_SwordCampAtlas"
    ],
-   "status": "planned (family swordcamp)"
+   "status": "imported (family swordcamp)"
   },
   {
    "package": "/Game/Racing/M_RacingTv",
@@ -986,7 +986,7 @@
    "fit": "direct",
    "reason": "No texture is built by the generator; the Picture parameter is a runtime render target, so the read-back checks the graph and defaults only. The EyeAdaptationInverse pin name depends on the engine version.",
    "reads": [],
-   "status": "planned (family racing)"
+   "status": "imported (family racing)"
   },
   {
    "package": "/Game/FX/M_FX_Additive",
@@ -1042,7 +1042,7 @@
    "reads": [
     "/Game/FX/Textures/T_FX_Glow"
    ],
-   "status": "planned (family fx)"
+   "status": "imported (family fx)"
   },
   {
    "package": "/Game/FX/M_FX_Dust",
@@ -1084,7 +1084,7 @@
    "reads": [
     "/Game/FX/Textures/T_FX_Dust"
    ],
-   "status": "planned (family fx)"
+   "status": "imported (family fx)"
   },
   {
    "package": "/Game/FX/M_FX_Trail",
@@ -1121,7 +1121,7 @@
    "reads": [
     "/Game/FX/Textures/T_FX_Trail"
    ],
-   "status": "planned (family fx)"
+   "status": "imported (family fx)"
   },
   {
    "package": "/Game/MegaPark/Materials/M_RetailOpaque",
@@ -1188,7 +1188,7 @@
     "/Game/MegaPark/Textures/T_DefaultBlack",
     "/Game/MegaPark/Textures/T_DefaultNormal"
    ],
-   "status": "planned (family megapark)"
+   "status": "imported (family megapark)"
   },
   {
    "package": "/Game/MegaPark/Materials/M_RetailMasked",
@@ -1255,7 +1255,7 @@
     "/Game/MegaPark/Textures/T_DefaultBlack",
     "/Game/MegaPark/Textures/T_DefaultNormal"
    ],
-   "status": "planned (family megapark)"
+   "status": "imported (family megapark)"
   },
   {
    "package": "/Game/MegaPark/Materials/M_RetailTranslucent",
@@ -1322,7 +1322,7 @@
     "/Game/MegaPark/Textures/T_DefaultBlack",
     "/Game/MegaPark/Textures/T_DefaultNormal"
    ],
-   "status": "planned (family megapark)"
+   "status": "imported (family megapark)"
   },
   {
    "package": "/Game/Japan/Hidamari/Materials/M_HDCity",
@@ -1420,7 +1420,7 @@
    "reads": [
     "/Game/Japan/Hidamari/Textures/T_HD_plaster"
    ],
-   "status": "planned (family hidamari_city)"
+   "status": "imported (family hidamari_city)"
   },
   {
    "package": "/Game/Japan/Materials/M_Arcade",
@@ -1482,7 +1482,7 @@
    "reads": [
     "/Game/Japan/Textures/T_Arcade_timber"
    ],
-   "status": "planned (family japan_base)"
+   "status": "imported (family japan_base)"
   },
   {
    "package": "/Game/Japan/Materials/M_ArcadePaving",
@@ -1548,7 +1548,7 @@
    "reads": [
     "/Game/Japan/Textures/T_Arcade_paving"
    ],
-   "status": "planned (family japan_base)"
+   "status": "imported (family japan_base)"
   },
   {
    "package": "/Game/Japan/Materials/M_Harbor",
@@ -1627,7 +1627,7 @@
     "/Game/Japan/Textures/T_Harbor_paving",
     "/Game/Japan/Textures/T_Harbor_timber"
    ],
-   "status": "planned (family japan_base)"
+   "status": "imported (family japan_base)"
   },
   {
    "package": "/Game/Japan/Materials/M_HarborWater",
@@ -2083,7 +2083,7 @@
     "helpers": [],
     "fit": "direct",
     "record": "master/japan/base/arcade",
-    "status": "planned (family japan_base)",
+    "status": "imported (family japan_base)",
     "reason": "graph in the donor function; texture read"
    },
    {
@@ -2107,7 +2107,7 @@
     "helpers": [],
     "fit": "direct",
     "record": "master/japan/base/arcade-paving",
-    "status": "planned (family japan_base)",
+    "status": "imported (family japan_base)",
     "reason": "paving changes colour code, donor line 45"
    },
    {
@@ -2125,7 +2125,7 @@
     "helpers": [],
     "fit": "direct",
     "record": "master/japan/base/bike",
-    "status": "planned (family japan_base)",
+    "status": "imported (family japan_base)",
     "reason": "constants only"
    },
    {
@@ -2159,7 +2159,7 @@
     ],
     "fit": "direct",
     "record": "master/japan/base/cloud-shadow",
-    "status": "planned (family japan_base)",
+    "status": "imported (family japan_base)",
     "reason": "node and link copied from material_assets"
    },
    {
@@ -2346,7 +2346,7 @@
     "helpers": [],
     "fit": "direct",
     "record": "master/japan/base/forest-lake-water",
-    "status": "planned (family japan_base)",
+    "status": "imported (family japan_base)",
     "reason": "ripple constant lines 20-36 with the create body"
    },
    {
@@ -2419,7 +2419,7 @@
     "helpers": [],
     "fit": "direct",
     "record": "master/japan/base/harbor",
-    "status": "planned (family japan_base)",
+    "status": "imported (family japan_base)",
     "reason": "head 39-61 and the non-water branch 143-176"
    },
    {
@@ -2652,7 +2652,7 @@
     "helpers": [],
     "fit": "direct",
     "record": "master/japan/base/plaza-paving",
-    "status": "planned (family japan_base)",
+    "status": "imported (family japan_base)",
     "reason": "reads the arcade paving texture (donor line 45 of arcade)"
    },
    {
@@ -2670,7 +2670,7 @@
     "helpers": [],
     "fit": "direct",
     "record": "master/japan/base/plaza-water",
-    "status": "planned (family japan_base)",
+    "status": "imported (family japan_base)",
     "reason": "constants and time"
    },
    {
@@ -2688,7 +2688,7 @@
     "helpers": [],
     "fit": "direct",
     "record": "master/japan/base/pond-water",
-    "status": "planned (family japan_base)",
+    "status": "imported (family japan_base)",
     "reason": "pond overrides, donor lines 16 and 22"
    },
    {
@@ -2706,7 +2706,7 @@
     "helpers": [],
     "fit": "direct",
     "record": "master/japan/base/sailboat-cloth",
-    "status": "planned (family japan_base)",
+    "status": "imported (family japan_base)",
     "reason": "parameters SailFill and FlutterDirection"
    },
    {
@@ -2724,7 +2724,7 @@
     "helpers": [],
     "fit": "direct",
     "record": "master/japan/base/sailboat-wake",
-    "status": "planned (family japan_base)",
+    "status": "imported (family japan_base)",
     "reason": "parameter WakeAmount; translucent"
    },
    {
@@ -2822,7 +2822,7 @@
     "helpers": [],
     "fit": "direct",
     "record": "master/japan/base/village-resident",
-    "status": "planned (family japan_base)",
+    "status": "imported (family japan_base)",
     "reason": "ClothTint parameter; skeletal mesh"
    },
    {
@@ -2840,7 +2840,7 @@
     "helpers": [],
     "fit": "direct",
     "record": "master/japan/base/zeppelin-fabric",
-    "status": "planned (family japan_base)",
+    "status": "imported (family japan_base)",
     "reason": "SunDirection parameter; unlit"
    }
   ]

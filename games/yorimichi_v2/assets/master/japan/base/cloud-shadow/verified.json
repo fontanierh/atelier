@@ -1,0 +1,14 @@
+{
+  "asset": "master/japan/base/cloud-shadow",
+  "dependencies": {
+    "texture/japan/cloudmask": "a115a414725a708efd8526d71120e207d1621b34de61bad1efa301c9e7395cd8"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Materials/M_CloudShadow.uasset": "3d8e354fe467805ac768fe9ca493f131dca01381de76cadd16819b8efbaa6e63"
+  },
+  "input_fingerprint": "c25a1a152a8700e7955a55e8a7ed7b70553eb4cf2fdc870345ec2338967c0dc4",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "material-master@1"
+}

@@ -6,7 +6,7 @@ id = "prop/bike/kickstand"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/bike/kickstand"
-references = ["adopted/japan/materials/base-materials"]
+references = ["master/japan/base/bike"]
 
 [[sources]]
 path = "src/BK_Kickstand.fbx"

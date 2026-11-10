@@ -6,7 +6,7 @@ id = "prop/citysurfaces/arcade-lanterns"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/citysurfaces/arcade-lanterns"
-references = ["adopted/japan/materials/base-materials"]
+references = ["master/japan/base/arcade"]
 
 [[sources]]
 path = "src/HD_ArcadeLanterns.fbx"

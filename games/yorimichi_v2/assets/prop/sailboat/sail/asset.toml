@@ -6,7 +6,7 @@ id = "prop/sailboat/sail"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/sailboat/sail"
-references = ["adopted/japan/materials/base-materials"]
+references = ["master/japan/base/sailboat-cloth"]
 
 [[sources]]
 path = "src/SB_Sail.fbx"

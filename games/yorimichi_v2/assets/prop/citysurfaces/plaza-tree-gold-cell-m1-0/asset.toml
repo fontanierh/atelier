@@ -6,7 +6,7 @@ id = "prop/citysurfaces/plaza-tree-gold-cell-m1-0"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/citysurfaces/plaza-tree-gold-cell-m1-0"
-references = ["adopted/japan/materials/base-materials"]
+references = ["master/japan/base/arcade"]
 
 [[sources]]
 path = "src/HD_PlazaTreeGold_cell_-1_0.fbx"

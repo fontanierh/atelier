@@ -1,0 +1,12 @@
+{
+  "asset": "master/japan/base/forest-lake-water",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Materials/M_ForestLakeWater.uasset": "ed2be89a7ba67f3417afe713e7d6750f4adb01ce5f3601c18822118eb3d482c4"
+  },
+  "input_fingerprint": "4ed86b7e518b6f16d6ee471138e8b783d2e06fc1569a2ec2d7b2a17e34b681ac",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "material-master@1"
+}

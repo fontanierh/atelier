@@ -6,7 +6,7 @@ id = "prop/lake/water"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/lake/water"
-references = ["adopted/japan/materials/base-materials"]
+references = ["master/japan/base/forest-lake-water"]
 
 [[sources]]
 path = "src/Lake_Water.fbx"

@@ -1,0 +1,26 @@
+# Recovered as a material master (tools/migrate/master_records.py): /Game/Japan/Materials/M_PondWater.
+# The builder is src/japan_base_masters.py, pinned by sha256; the master is rebuilt by the V2 editor and read back
+# against its saved original, never edited by hand.
+schema = 1
+id = "master/japan/base/pond-water"
+kind = "material-master"
+authority = "generated"
+owner = "shared/japan/materials/base-materials"
+license = "owner-published (docs/DECISIONS.md D05 group 1)"
+provenance = "donor generator games/yorimichi/unreal/Scripts (one file per builder, see donor_lines) at the V2 source baseline (docs/DECISIONS.md D01, D02), plaza_water lines plaza_material.py 5-34"
+
+[[sources]]
+path = "src/japan_base_masters.py"
+sha256 = "ded8ca4345756472898e157a1a87155f8639909b7e865d02afb7bd300b6a4001"
+
+[recipe]
+importer = "material-master"
+version = 1
+
+[recipe.settings]
+builder = "plaza_water"
+reads = []
+arguments = { pond = true }
+
+[[outputs]]
+package = "/Game/Japan/Materials/M_PondWater"

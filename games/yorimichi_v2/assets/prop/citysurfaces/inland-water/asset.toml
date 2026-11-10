@@ -6,7 +6,7 @@ id = "prop/citysurfaces/inland-water"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/citysurfaces/inland-water"
-references = ["adopted/japan/materials/base-materials"]
+references = ["master/japan/base/pond-water"]
 
 [[sources]]
 path = "src/HD_InlandWater.fbx"

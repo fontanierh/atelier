@@ -6,7 +6,7 @@ id = "prop/citysurfaces/boat"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/citysurfaces/boat"
-references = ["adopted/japan/materials/base-materials"]
+references = ["master/japan/base/harbor"]
 
 [[sources]]
 path = "src/HD_Boat.fbx"

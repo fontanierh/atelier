@@ -1,0 +1,12 @@
+{
+  "asset": "master/japan/base/zeppelin-fabric",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Japan/Materials/M_ZeppelinFabric.uasset": "d09b3b56399849923959154e506e2cb796e09199c4ba070a9afb98dc4694de0b"
+  },
+  "input_fingerprint": "d87fb8c6cc2fd9a3de45d0c4ed09bae229701f5be5da16a71db2f28c33b11328",
+  "kind": "imported",
+  "schema": 1,
+  "tool": "material-master@1"
+}

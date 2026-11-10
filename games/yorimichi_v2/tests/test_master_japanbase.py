@@ -126,31 +126,28 @@ def test_the_fallback_is_one_of_the_family_masters():
     assert set(planner.fallback_ids(FAMILY)) <= {m['id'] for m in FAMILY['masters']}
 
 
-def test_every_master_package_is_a_material_package_of_the_adopted_record():
+def test_every_master_package_moved_out_and_the_adopted_record_lists_exactly_the_kept_packages():
     adopted = records.load_asset(ROOT / 'assets' / FAMILY['adopted'] / 'asset.toml')
     listed = {o.package for o in adopted.outputs}
-    assert set(MASTERS) <= listed
-    assert listed == ADOPTED_PACKAGES, sorted(listed ^ ADOPTED_PACKAGES)
+    assert listed == set(KEPT) and not set(MASTERS) & listed
+    assert set(MASTERS) | listed == ADOPTED_PACKAGES, sorted((set(MASTERS) | listed) ^ ADOPTED_PACKAGES)
+    for master in FAMILY['masters']:
+        record = records.load_asset(ROOT / 'assets' / master['id'] / 'asset.toml')
+        assert [o.package for o in record.outputs] == [master['package']]
 
 
 def test_the_kept_packages_stay_in_the_slimmed_adopted_record():
     """@cc [owner:fontanierh,label:correctness] master-records-keeps
-    With keeps, the planner accepts the record, slims its outputs and verified files to exactly the kept packages, and
-    rewrites only records that name a moved master; a record still naming a kept package keeps its mention."""
-    assert planner.state(ROOT, FAMILY) == 'unprepared'
-    ops = planner.claim_ops(ROOT, FAMILY)
-    assert ops['deletes'] == []
-    folder = f'assets/{FAMILY["adopted"]}'
-    slim = tomllib.loads(ops['writes'][f'{folder}/asset.toml'].decode())
-    assert sorted(o['package'] for o in slim['outputs']) == sorted(KEPT)
-    files = json.loads(ops['writes'][f'{folder}/verified.json'])['files']
+    With keeps, the claim slimmed the record's outputs and verified files to exactly the kept packages; nothing is left to
+    write, and no record depends on the adopted record for a moved master."""
+    assert planner.state(ROOT, FAMILY) == 'done'
+    assert planner.claim_ops(ROOT, FAMILY) == {'writes': {}, 'deletes': []}
+    folder = ROOT / 'assets' / FAMILY['adopted']
+    files = json.loads((folder / 'verified.json').read_text())['files']
     assert {f.rsplit('.', 1)[0] for f in files} == {'unreal/Content/' + k[len('/Game/'):] for k in KEPT}
     moved = {m['id'] for m in FAMILY['masters']}
-    for rel, data in ops['writes'].items():
-        if rel.startswith(('assets/master/', folder)):
-            continue
-        refs = tomllib.loads(data.decode()).get('references', [])
-        assert set(refs) & moved, rel
+    pointing = [p for p in records.record_paths(ROOT) if set(records.load_asset(p).references) & moved]
+    assert pointing
 
 
 def test_every_read_is_an_output_of_an_input_record_on_disk():

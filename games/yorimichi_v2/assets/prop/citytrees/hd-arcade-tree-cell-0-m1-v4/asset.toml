@@ -6,7 +6,7 @@ id = "prop/citytrees/hd-arcade-tree-cell-0-m1-v4"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/experiments/citytrees"
-references = ["adopted/japan/materials/base-materials"]
+references = ["master/japan/base/arcade"]
 
 [[sources]]
 path = "src/HD_ArcadeTree_cell_0_-1.fbx"

@@ -355,7 +355,7 @@ def re_slots(text):
     return re.findall(r'(Pier_\w+) = "', match.group(1)) if match else []
 
 
-def test_the_inventory_rows_for_these_masters_name_the_planned_record_and_family():
+def test_the_inventory_rows_for_these_masters_name_the_imported_record_and_family():
     """The inventory rows (docs/inventory/master-sources.json) for the eight masters name the record the family plans for each
     package, and the family that plans it."""
     rows = json.loads((ROOT / 'docs/inventory/master-sources.json').read_text())['masters']
@@ -365,4 +365,4 @@ def test_the_inventory_rows_for_these_masters_name_the_planned_record_and_family
     for row in skate:
         family_name, master = planned[row['package']]
         assert row['record'] == master['id'] and row['family'] == family_name, row['package']
-        assert row['status'] == f'planned (family {family_name})', row['package']
+        assert row['status'] == f'imported (family {family_name})', row['package']

@@ -6,7 +6,7 @@ id = "prop/sailboat/wake"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/sailboat/wake"
-references = ["adopted/japan/materials/base-materials"]
+references = ["master/japan/base/sailboat-wake"]
 
 [[sources]]
 path = "src/SB_Wake.fbx"

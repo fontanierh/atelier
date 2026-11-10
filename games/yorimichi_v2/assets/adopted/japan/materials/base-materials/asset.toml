@@ -180,18 +180,6 @@ sha256 = "2abacfc5e937251ae247614d0caca9839ee39f68e67567a7b44ac49c6581e3bf"
 package = "/Game/Japan/Materials/MPC_Wind"
 
 [[outputs]]
-package = "/Game/Japan/Materials/M_Arcade"
-
-[[outputs]]
-package = "/Game/Japan/Materials/M_ArcadePaving"
-
-[[outputs]]
-package = "/Game/Japan/Materials/M_Bike"
-
-[[outputs]]
-package = "/Game/Japan/Materials/M_CloudShadow"
-
-[[outputs]]
 package = "/Game/Japan/Materials/M_CoastRock"
 
 [[outputs]]
@@ -204,13 +192,7 @@ package = "/Game/Japan/Materials/M_ForestGround"
 package = "/Game/Japan/Materials/M_ForestImpostor"
 
 [[outputs]]
-package = "/Game/Japan/Materials/M_ForestLakeWater"
-
-[[outputs]]
 package = "/Game/Japan/Materials/M_Grass"
-
-[[outputs]]
-package = "/Game/Japan/Materials/M_Harbor"
 
 [[outputs]]
 package = "/Game/Japan/Materials/M_HarborWater"
@@ -228,21 +210,6 @@ package = "/Game/Japan/Materials/M_Painted"
 package = "/Game/Japan/Materials/M_Painterly"
 
 [[outputs]]
-package = "/Game/Japan/Materials/M_PlazaPaving"
-
-[[outputs]]
-package = "/Game/Japan/Materials/M_PlazaWater"
-
-[[outputs]]
-package = "/Game/Japan/Materials/M_PondWater"
-
-[[outputs]]
-package = "/Game/Japan/Materials/M_SailboatCloth"
-
-[[outputs]]
-package = "/Game/Japan/Materials/M_SailboatWake"
-
-[[outputs]]
 package = "/Game/Japan/Materials/M_Sea"
 
 [[outputs]]
@@ -250,9 +217,3 @@ package = "/Game/Japan/Materials/M_Sky"
 
 [[outputs]]
 package = "/Game/Japan/Materials/M_Village"
-
-[[outputs]]
-package = "/Game/Japan/Materials/M_VillageResident"
-
-[[outputs]]
-package = "/Game/Japan/Materials/M_ZeppelinFabric"

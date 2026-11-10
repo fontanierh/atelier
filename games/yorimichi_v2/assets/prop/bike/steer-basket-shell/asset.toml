@@ -6,7 +6,7 @@ id = "prop/bike/steer-basket-shell"
 kind = "static-mesh"
 authority = "generated"
 owner = "shared/bike/steer-basket-shell"
-references = ["adopted/japan/materials/base-materials"]
+references = ["master/japan/base/bike"]
 
 [[sources]]
 path = "src/BK_Steer_BasketShell.fbx"
