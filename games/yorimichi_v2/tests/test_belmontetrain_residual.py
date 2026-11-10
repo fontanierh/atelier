@@ -5,9 +5,13 @@ import re
 import sys
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'tools' / 'content'))
+sys.path.insert(0, str(ROOT / 'tools' / 'migrate'))
 import records  # noqa: E402
+import belmontetrain_materials as bm  # noqa: E402
 
 RESIDUAL = ['baggage-van', 'brake-van', 'first-class', 'locomotive', 'restaurant', 'second-class', 'tender']
 FOLDER = ROOT / 'assets' / 'adopted' / 'belmontetrain'
@@ -16,6 +20,14 @@ GENERATOR = ROOT / 'assets' / 'adopted' / 'belmontetrain' / 'generator' / 'sourc
 
 def loaded():
     return {name: records.load_asset(FOLDER / name / 'asset.toml') for name in RESIDUAL}
+
+
+@pytest.fixture(autouse=True)
+def unprepared():
+    """These pin the seven records before the move; after it, test_belmontetrain_materials.py's split test pins the result."""
+    current, _ = bm.state(ROOT)
+    if current != 'unprepared':
+        pytest.skip(f'the move ran ({current}): the seven adopted records no longer hold the residual packages')
 
 
 # After the LOD retirement (tools/migrate/belmontetrain_lods.py): the 14 standalone LOD1/LOD2 meshes are gone.
