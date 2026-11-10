@@ -141,3 +141,18 @@ deleted in that batch's own pass. For a batch set that shares a placement, use `
 Before applying a batch, the claim base must match the accepted integration base and cover every touched package
 and companion. A stale claim is repaired with completed work preserved; it is not a reason to repeat accepted imports.
 Retirements use the authorized journal path/scope set and refuse unrelated or stale ownership.
+
+## Harbour props (`props1`)
+
+`props1` is the first batch of the fused `Props` component: the 4 rowboats, 3 buoys and 6 potted palms of
+`procedural/props.py`, owned by their placement loops like the stalls and lots (`props-<key>`, for example
+`props-rowboat-w155`, `props-buoy-e190`, `props-potted-palm-w40`). Each loop body owns its whole object. Nothing is
+nobody's in these loops, and batch 1's radius cuts are left alone.
+
+| Tiles touched | Triangles taken | Tiles remade | Tiles emptied | Records |
+|---|---|---|---|---|
+| 12 | 2,100 | 7 hard (`Props_2_3`, `2_4`, `3_2`, `3_4`, `4_2`, `4_4`, `5_4`) | 5 (`Props_5_2` and the 2_4, 3_4, 4_4, 5_4 Soft tiles) | 26 |
+
+The emptied tiles are retired with the three stages above (`--batch props1`), and placements `props-2-4`, `3-4`, `4-4`,
+`5-2` and `5-4` are saved again. If an object save fails after it created patches but before the manifest was saved,
+the rerun refuses with "saved without <key>". Delete that run's untracked patch packages and save again.
