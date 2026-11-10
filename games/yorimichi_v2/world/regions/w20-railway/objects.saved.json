@@ -311,20 +311,6 @@
         "SM_TK_StopBoard#@1"
       ]
     },
-    "object/railway/track-fittings": {
-      "groups": [],
-      "id": "object/railway/track-fittings",
-      "model": "adopted/belmontetrack/track-small",
-      "models": [
-        "adopted/belmontetrack/track-small"
-      ],
-      "route": [
-        "SM_TK_BufferStop#",
-        "SM_TK_StopBoard#",
-        "SM_TK_Turnout#",
-        "SM_TK_Portal#"
-      ]
-    },
     "object/railway/tunnel-portal-0": {
       "groups": [],
       "id": "object/railway/tunnel-portal-0",
