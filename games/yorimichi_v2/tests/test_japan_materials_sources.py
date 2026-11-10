@@ -35,7 +35,7 @@ BLOCKED = [  # used leaves: a recipe recorded from the editor read (no donor bui
 ALL = SHARED + OTHER + TUSCAN + BLOCKED
 
 
-INSTANCES = ROOT / 'assets' / 'material' / 'japan' / 'materials'   # tools/migrate/japan_instances.py writes here
+INSTANCES = ROOT / 'assets' / 'material' / 'japan' / 'materials'   # tools/migrate/held_instances.py writes here
 
 
 def written():

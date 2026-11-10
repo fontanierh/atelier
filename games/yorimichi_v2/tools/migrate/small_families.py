@@ -474,10 +474,12 @@ def claim_records(donor: Path, game: Path) -> list:
         out += instance_records(game, donor, texture_owner)
     return out
 
-def instance_records(game: Path, donor: Path, texture_owner: dict, families=None) -> list:
+def instance_records(game: Path, donor: Path, texture_owner: dict, families=None, ids=None) -> list:
     """One material-instance record per adopted record whose instances agree with the read (small_instances.agreement).
     Its inputs are the owners of each parent and texture it reads; a texture moving in this write names its new record.
-    `families` defaults to INSTANCE_FAMILIES (the SMALLFAM claim); japan_instances.py passes its own."""
+    `families` defaults to INSTANCE_FAMILIES (the SMALLFAM claim); held_instances.py passes its own, with `ids` naming
+    the new record of an adopted record whose default id is taken, and then plans only the instances an adopted record
+    still holds (an earlier claim moved the others into generated records)."""
     owner_of, adopted_of = dict(texture_owner), {}
     for path in records.record_paths(game):
         asset = records.load_asset(path)
@@ -493,6 +495,8 @@ def instance_records(game: Path, donor: Path, texture_owner: dict, families=None
             if not verdict['agree']:
                 continue
             if package not in adopted_of:
+                if families is not None and owner_of.get(package, '').startswith('material/'):
+                    continue   # moved by an earlier claim
                 raise PlanError(f'{package}: no adopted record holds this instance')
             groups.setdefault(adopted_of[package], []).append(package)
         for adopted, packages in sorted(groups.items()):
@@ -506,7 +510,9 @@ def instance_records(game: Path, donor: Path, texture_owner: dict, families=None
                 if package not in owner_of:
                     raise PlanError(f'{package}: read by an instance but owned by no record')
                 inputs.add(owner_of[package])
-            rid = f"material/{adopted[len('adopted/'):]}-instances"
+            rid = (ids or {}).get(adopted) or f"material/{adopted[len('adopted/'):]}-instances"
+            if (game / 'assets' / rid / 'asset.toml').is_file():
+                raise PlanError(f'{rid}: a record with this id exists; name another (held_instances.IDS)')
             out.append(NewRecord(
                 id=rid, kind='material-instance', owner='shared/' + rid[len('material/'):], references=[],
                 sources=[], settings={}, outputs=list(packages), adopted=adopted,
@@ -523,7 +529,7 @@ def hippo_slot(name: str) -> str:
 
 # The families whose agreeing instances the claim plans. Hidamari is held: its adopted surface record is referenced by 173
 # citysurfaces prop records (another owner), and a claim that rewrites them would need that scope. Japan has its own
-# claim (japan_instances.py). (tests narrow this.)
+# claim (held_instances.py). (tests narrow this.)
 INSTANCE_FAMILIES = tuple(f for f in si.EXPECTED if f not in ('hidamari', 'japan'))
 
 

@@ -9,8 +9,8 @@ planned; a stated value the read does not show, or a differing one, holds the in
     records(...)              the material-instance records for the agreeing packages (plan; nothing is written here)
 
 Switches are stated only where a parent's switch differs from the read; none of these instances' reads shows one, so no
-row states a switch. The two Mega Park natural instances keep their two-sided base-property override, which recipe v2
-cannot state, so they are held and stay in their adopted record.
+row states a switch. A Mega Park natural instance states its two-sided base-property override, so its read must show it
+(a read without base overrides holds it).
 """
 from __future__ import annotations
 
@@ -76,6 +76,8 @@ def expected_megapark(donor: Path) -> dict:
         out[f'/Game/MegaPark/Materials/{name}'] = {
             'parent': f'/Game/MegaPark/Materials/{MEGA_PARENTS[int(p.get("alpha_mode", 0))]}',
             'textures': textures, 'scalars': scalars, 'vectors': {}, 'natural': natural, 'seam': bool(p.get('seam'))}
+        if natural:   # import_megapark.py:216-218: the two-sided override, compared with the read's base overrides
+            out[f'/Game/MegaPark/Materials/{name}']['base'] = {'two_sided': True}
     return out
 
 
@@ -101,7 +103,7 @@ def expected_belmonte(donor: Path) -> dict:
 
 def expected_treehouse(donor: Path) -> dict:
     """The tree house rows import_treehouse.py:254-260 writes: Tex, Gain (the texture's gain), Glow, and RoomCut 0 on the
-    trunk. The pane has no texture and its script is not compared here."""
+    trunk; and the pane (light_parent, :167-172)."""
     info = _load(donor / 'build/yorimichi/treehouse/textures/textures.json')
     parent = '/Game/Japan/Treehouse/Materials/M_TreeHouse'
     out = {}
@@ -114,6 +116,10 @@ def expected_treehouse(donor: Path) -> dict:
         'parent': parent, 'textures': {'Tex': '/Game/Japan/Treehouse/Textures/T_TH_bark'},
         'scalars': {'Gain': float(info['bark']['gain']), 'Glow': 0., 'RoomCut': 0.}, 'vectors': {},
         'natural': False, 'seam': False}
+    # import_treehouse.py:126 LIGHT and :167-172: the pane, parent M_TH_Light, Shape 1 and Intensity .06; no base override
+    out['/Game/Japan/Treehouse/Materials/MI_TH_pane'] = {
+        'parent': '/Game/Japan/Treehouse/Materials/M_TH_Light', 'textures': {},
+        'scalars': {'Shape': 1., 'Intensity': .06}, 'vectors': {}, 'base': {}, 'natural': False, 'seam': False}
     return out
 
 
@@ -122,7 +128,7 @@ def expected_hidamari(donor: Path) -> dict:
     return {'/Game/Japan/Hidamari/Materials/MI_HD_flat': {
         'parent': '/Game/Japan/Hidamari/Materials/M_HDCity', 'textures': {'Tex': '/Game/Japan/Hidamari/Textures/T_HD_plaster'},
         'scalars': {'Tile': 1., 'Gain': 1., 'Strength': HID_STRENGTH['flat'], 'Macro': HID_MACRO['flat']},
-        'vectors': {}, 'natural': False, 'seam': False}}
+        'vectors': {}, 'base': {}, 'natural': False, 'seam': False}}   # city_material.py:99-108 sets no base override
 
 
 FX_PARENTS = {'MI_FX_Glow': ('M_FX_Additive', 'Glow'), 'MI_FX_Spark': ('M_FX_Additive', 'Spark'),
@@ -254,7 +260,5 @@ def agreement(family: str, donor: Path) -> dict:
             if not (isinstance(got, dict) and set(got) == set(want['base']) and all(
                     got[k] == v if isinstance(v, (bool, str)) else _close(got[k], v, 1e-4) for k, v in want['base'].items())):
                 held.append(f'base overrides read {got}, not {want["base"]}')
-        if family == 'megapark' and want['natural']:
-            held.append('a two-sided base-property override (recipe v2 cannot state it)')
         out[package] = {'agree': not held, 'held': held}
     return out
