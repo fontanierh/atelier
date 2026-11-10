@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/harbor-palm-w300",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_HarborPalmW300.uasset": "b94e79eaba308740752262417e60f83ce0298f50d2930ccdc473b0adb3e66d9d"
+  },
+  "input_fingerprint": "d8d80504eb539c6f51ba25f3623a718ef4a7522d170e0bbc07120805d4d153f5",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_HarborPalmW300": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

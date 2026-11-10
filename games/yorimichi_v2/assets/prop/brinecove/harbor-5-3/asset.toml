@@ -1,4 +1,4 @@
-# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_Harbor_5_3: one Brine Cove mesh, what remains after batch 1 took its objects (3220 triangles).
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_Harbor_5_3: one Brine Cove mesh, what remains after batch 1 took its objects (2494 triangles).
 # The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
 # verified by tools/import/run.py, never edited by hand.
 schema = 1
@@ -14,7 +14,7 @@ sha256 = "f29d505c4f651a0fd3a0248d1ea3f201e589d447ceb9162f5855b7b398fa1310"
 
 [[sources]]
 path = "src/SM_BC_Harbor_5_3.carve.json"
-sha256 = "6a2e2263f9010b156d4a3b9c35979b1a1a1d4e4869b85362018622484f75f141"
+sha256 = "960c8338d5d4e29dd702a6161e7e7292970ed724c85d33693efc4d698a1e124c"
 
 [derive]
 kind = "carve"
@@ -27,8 +27,8 @@ importer = "static-mesh"
 version = 1
 
 [recipe.settings]
-slot_materials = ["/Game/Brinecove/Materials/MI_BC_autumn_olive", "/Game/Brinecove/Materials/MI_BC_clay", "/Game/Brinecove/Materials/MI_BC_cobble", "/Game/Brinecove/Materials/MI_BC_cobble_dark", "/Game/Brinecove/Materials/MI_BC_metal", "/Game/Brinecove/Materials/MI_BC_planks", "/Game/Brinecove/Materials/MI_BC_roof_terra", "/Game/Brinecove/Materials/MI_BC_stone", "/Game/Brinecove/Materials/MI_BC_stone_dark", "/Game/Brinecove/Materials/MI_BC_stone_light", "/Game/Brinecove/Materials/MI_BC_wood", "/Game/Brinecove/Materials/MI_BC_wood_dark", "/Game/Brinecove/Materials/MI_BC_wood_light"]
-triangles = 3220
+slot_materials = ["/Game/Brinecove/Materials/MI_BC_clay", "/Game/Brinecove/Materials/MI_BC_cobble", "/Game/Brinecove/Materials/MI_BC_cobble_dark", "/Game/Brinecove/Materials/MI_BC_metal", "/Game/Brinecove/Materials/MI_BC_planks", "/Game/Brinecove/Materials/MI_BC_roof_terra", "/Game/Brinecove/Materials/MI_BC_stone", "/Game/Brinecove/Materials/MI_BC_stone_dark", "/Game/Brinecove/Materials/MI_BC_stone_light", "/Game/Brinecove/Materials/MI_BC_wood", "/Game/Brinecove/Materials/MI_BC_wood_dark", "/Game/Brinecove/Materials/MI_BC_wood_light"]
+triangles = 2494
 collision = "complex"
 full_precision_uvs = true
 

@@ -1,0 +1,13 @@
+{
+  "asset": "object/brinecove/harbor-palm-w110",
+  "dependencies": {
+    "prop/brinecove/harbor-palm-w110": "02da5305b2d1de45166f61eea3db1514dc4a713167b60755e3110fa7e8607eb0",
+    "prop/brinecove/harbor-palm-w110-soft": "1ad080211b04d36e75f0b3f9edb1b2b20ebf5679ac994ca2ec8be299d34b055e"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/9/QH/0FTD9ZCF298DDQINKV811X.uasset": "860b86160072e8853ec0bf48672f2cd119004abd5e451c539eed008b529398b9"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

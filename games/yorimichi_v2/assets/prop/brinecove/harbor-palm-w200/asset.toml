@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_HarborPalmW200: the harbor palm w200, cut from the fused tile(s) Harbor_3_3 (242 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/brinecove/harbor-palm-w200"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/brinecove/harbor-palm-w200"
+references = ["adopted/brinecove/materials"]
+
+[[sources]]
+path = "src/SM_BC_HarborPalmW200.glb"
+sha256 = "42e10908ac02b44e519cb739abe3bf369d00477ca528e5f8e4052090ea81b9e3"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Brinecove/Materials/MI_BC_autumn_olive", "/Game/Brinecove/Materials/MI_BC_clay", "/Game/Brinecove/Materials/MI_BC_stone_light", "/Game/Brinecove/Materials/MI_BC_wood", "/Game/Brinecove/Materials/MI_BC_wood_dark"]
+triangles = 242
+collision = "complex"
+full_precision_uvs = true
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_HarborPalmW200"

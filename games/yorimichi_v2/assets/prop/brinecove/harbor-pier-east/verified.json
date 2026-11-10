@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/harbor-pier-east",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_HarborPierEast.uasset": "d9ca3f9c1293da39a5025dc42a657b12fdf4e515d017a69fa7ac270f8b49c98f"
+  },
+  "input_fingerprint": "52149da0dbf22f1e5eef595fcdfd513a1001dde4ea3b24a7477e4630e013241c",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_HarborPierEast": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

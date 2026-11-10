@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/harbor-pier-central",
+  "dependencies": {
+    "prop/brinecove/harbor-pier-central": "ec7efb08aa76ad958e22fc33a826316cb855430e8ad1589d9d187f1e1a4d374d"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/1/NW/6ERZ34OD116C6JQ6N0Y6S4.uasset": "26a8343d5f799f39d1ac1308446d12c710de828921ad98d2f1efa0b1c7d2ad4a"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}
