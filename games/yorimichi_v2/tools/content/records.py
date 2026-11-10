@@ -368,10 +368,11 @@ def load_asset(path: Path) -> Asset:
         # input_dependencies (material_settings), so it needs those instead of a source.
         if kind == 'material-instance':
             material_settings(recipe, path, inputs, [entry.get('package', '') for entry in data.get('outputs', [])])
-        elif kind == 'texture' and recipe is not None:
-            texture_settings(recipe, path)
-        elif not sources:
-            raise RecordError(f'{path}: generated content needs at least one source')
+        else:
+            if not sources:
+                raise RecordError(f'{path}: generated content needs at least one source')
+            if kind == 'texture':
+                texture_settings(recipe, path)   # a texture's settings are checked after its original is required
     elif recipe is not None:
         raise RecordError(f'{path}: editor-owned content has no [recipe]; its saved packages are its source')
     outputs = []

@@ -59,7 +59,7 @@ TREEHOUSE_TEXTURES = {   # T_TH_<slug> <- build/yorimichi/treehouse/textures/<fi
 }
 ALPHA_PARENTS = ('M_RetailOpaque', 'M_RetailMasked', 'M_RetailTranslucent')   # import_megapark.py:76
 
-MASTER_NOTE = ' Loaded by the read as materials, not instances (report_materials cannot read them), so their parameters are unread. Classified, not blocked: a generator-built master keeps its editor-authority record, and its saved package is the only byte-level original of an editor-scripted generator.'
+MASTER_NOTE = ' Loaded by the read as materials, not instances (report_materials cannot read them), so their parameters are unread. Open: a generator-built master keeps its editor-authority record until its generator, settings and inputs are recoverable; a parameter read alone does not close it.'
 # adopted record -> (family, origin, donor evidence, status, blocker or note)
 REGISTRY = {
     'adopted/hippodrome/loose_files': ('hippodrome', 'generated static mesh (GLB, region/glb)',
