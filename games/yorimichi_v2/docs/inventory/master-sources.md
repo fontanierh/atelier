@@ -194,6 +194,12 @@ pins and output selections. Equal local-node multisets alone cannot prove the sa
 this topology remain historical evidence; obtain a fresh read-only report when this stronger comparison is needed,
 without automatically reimporting or discarding completed packages.
 
+`MaterialInputAudit` in the existing editor-only `YorimichiImport` module reads each connection by its input index.
+This uses Unreal's public native input API: the Python properties for Custom inputs and DotProduct inputs are protected,
+and the older source-node lookup cannot distinguish two channels from the same node. The accessor changes no material.
+After taking this code at a stopped editor/caller boundary, run the normal guarded editor compile before using the
+new digest. A missing or failed native reader refuses acceptance; it does not fall back to the lossy lookup.
+
 `material-master` runs inside the V2 editor. Its phases:
 
 1. Plan (no editor): read the record, check each `[[sources]]` sha256, check every `reads` package is an output of an

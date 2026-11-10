@@ -424,7 +424,7 @@ def test_the_importer_clears_the_original_graph_and_saves_only_the_fresh_build()
     import. The importer deletes each expression, refuses unless the graph is empty, and refuses a save whose unwired
     expressions differ from the fresh build's."""
     text = (SCRIPTS / 'import_asset.py').read_text()
-    body = text[text.index('def _material_master'):]
+    body = text[text.index('def _material_master_with_builder('):]
     body = body[:body.index('\ndef ')]
     assert 'MEL.delete_material_expression(original, expression)' in body
     assert 'survive deletion; nothing saved' in body
