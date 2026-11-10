@@ -69,6 +69,11 @@ SCOPES = (
     dict(component='Props', module='props', loop='for cx, cy in ((-250, 94), (-170, 94), (120, 94), (270, 94), (-60, 84), (60, 84)):',
          key="'cargo-%s%d' % ('w' if cx < 0 else 'e', abs(cx))"),
     dict(component='Props', module='props', loop='for i in range(7):', key="'fish-basket-%d' % (i + 1)"),
+    # Street lighting: each quay lantern post and each upper-terrace lantern post is its loop body.
+    dict(component='Props', module='props', loop='for x in range(-360, 361, 44):',
+         key="'lantern-quay-%s%d' % ('w' if x < 0 else 'e', abs(x))"),
+    dict(component='Props', module='props', loop='for x in range(-300, 321, 40):',
+         key="'lantern-upper-%s%d' % ('w' if x < 0 else 'e', abs(x))"),
 )
 
 
@@ -291,6 +296,9 @@ BATCHES['props1'] = ('props-rowboat-w155', 'props-rowboat-e145', 'props-rowboat-
 # The working quay: six cargo clusters and the seven fish baskets by the market shed (nothing emptied).
 BATCHES['props2'] = ('props-cargo-w250', 'props-cargo-w170', 'props-cargo-e120', 'props-cargo-e270', 'props-cargo-w60',
                      'props-cargo-e60', *(f'props-fish-basket-{i}' for i in range(1, 8)))
+# The street lighting: the 16 quay lantern posts (every 44 m, none at the centre) and the 16 upper-terrace posts.
+BATCHES['props3'] = tuple(f'props-lantern-quay-{"w" if x < 0 else "e"}{abs(x)}' for x in range(-360, 361, 44) if abs(x) >= 16) + \
+    tuple(f'props-lantern-upper-{"w" if x < 0 else "e"}{abs(x)}' for x in range(-300, 321, 40))
 
 COMPONENT_OF = {'market-': 'Market', 'town-lower-': 'TownLower', 'town-upper-': 'TownUpper', 'props-': 'Props'}
 ALL_OBJECTS = frozenset(o for names in BATCHES.values() for o in names)
