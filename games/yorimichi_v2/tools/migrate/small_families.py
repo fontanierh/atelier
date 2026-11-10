@@ -127,12 +127,12 @@ REGISTRY = {
     'adopted/seethrough': ('seethrough', 'generator material parameter collection MPC_SeeThrough',
         'generator: unreal/Scripts/see_through.py:47 (MPC name), :246-253 (collection), :509-511 (world_materials, '
         'collection(create=True)); the caller shared_materials.py:294 in the unreal.materials step (foliage_build.py:102)',
-        'blocked',
+        'planned',
         'generator pinned as generator/seethrough/collection (see_through.py and shared_materials.py, sha256, editor-owned); '
-        'the donor MPC bytes match the V2 verified.json (b29cbd68...). No V2 importer takes a MaterialParameterCollection: '
-        'import_asset.py IMPORTERS has static-mesh, texture, material-instance and material-master only, and master_digest '
-        'reads materials. Missing: a parameter-collection importer (plan: vector names and defaults from the pinned builder, '
-        'write, read back and compare)'),
+        'the donor MPC bytes match the V2 verified.json (b29cbd68...). Done (SEETHRU): material/seethrough/collection '
+        '(kind parameter-collection, importer parameter-collection@1) writes it from the pinned see_through.py collection(), '
+        'appending only, and reads back its 11 vector parameters with every saved id kept; the three japan surface masters '
+        'read it from that record'),
     'adopted/skateruntime': ('skateruntime', 'generated RuntimeData data asset (31 MB)',
         'build.py:1804-1816 (unreal.skate_data; RuntimeData output :1813); skate_ride/import_runtime.py:11 (SkateDataLibrary.'
         'import_runtime); Skate Source/AtelierSkate/Private/SkateRuntimeData.cpp:451-465 (C++ writer); package assembled by '
@@ -267,7 +267,7 @@ def megapark_report(donor: Path | None) -> dict:
 
 
 # The adopted records a later write moved into generated records (SMALLFAM, PR #797; MASTERHD and MASTERS2, the material masters;
-# JAPANMI, held_instances.py; BCBIKE, the bike wheels); their rows report `migrated`.
+# JAPANMI, held_instances.py; BCBIKE, the bike wheels; SEETHRU, the see-through collection); their rows report `migrated`.
 MIGRATED = frozenset({
     'adopted/belmonte/shared-metal-glass', 'adopted/belmonte/shared-water', 'adopted/hippodrome/loose_files',
     'adopted/hippodrome/materials', 'adopted/hippodrome/meshes', 'adopted/skatepark/materials', 'adopted/skatepark/board', 'adopted/fx', 'adopted/racing',
@@ -276,7 +276,7 @@ MIGRATED = frozenset({
     'adopted/japan/treehouse/surface-rope', 'adopted/japan/treehouse/surface-trunk',
     'adopted/megapark/shared-materials-pavement', 'adopted/megapark/shared-materials-wood',
     'adopted/japan/hidamari/surface-flat', 'adopted/japan/treehouse/surface-pane', 'adopted/megapark/seam',
-    'adopted/japan/assets/bike'})
+    'adopted/japan/assets/bike', 'adopted/seethrough'})
 
 
 def _family_counts(out: dict, family: str) -> dict:

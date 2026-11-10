@@ -126,11 +126,11 @@ def real_tree_ready():
 @pytest.mark.skipif(not real_tree_ready(), reason='family package bytes are not hydrated')
 def test_real_tree_counts_and_bytes():
     result = sf.classify(sf.GAME)
-    assert result['packages'] == 88                     # the bike wheels moved to prop/bike (BCBIKE)
+    assert result['packages'] == 87                     # the bike wheels (BCBIKE) and MPC_SeeThrough (SEETHRU) moved
     assert result['problems'] == []
     expect = {'megapark': (4, 25), 'hippodrome': (3, 23), 'treehouse': (5, 8), 'skatepark': (2, 8), 'belmonte': (2, 7),
               'fx': (1, 7), 'plaza': (1, 4), 'bike': (1, 0), 'swordcamp': (1, 2), 'hidamari': (1, 1), 'broadcast': (1, 1),
-              'seethrough': (1, 1), 'skateruntime': (1, 1)}
+              'seethrough': (1, 0), 'skateruntime': (1, 1)}
     got = {f: (v['records'], v['packages']) for f, v in result['families'].items()}
     assert got == expect
 
@@ -394,7 +394,7 @@ def test_the_default_plan_runs_after_the_claim_and_reports_the_moved_records():
     moved = sorted(r['record'] for r in result['records'] if r['status'] == 'migrated')
     assert moved == sorted(sf.MIGRATED)
     assert all(not (ROOT / f'assets/{record}/asset.toml').is_file() for record in moved)
-    assert sum(f['migrated'] for f in result['families'].values()) == len(sf.MIGRATED) == 21
+    assert sum(f['migrated'] for f in result['families'].values()) == len(sf.MIGRATED) == 22
     assert sf.summary_lines(result)[0].split()[-1] == 'migrated'
 
 
@@ -425,18 +425,22 @@ def test_bike_wheels_are_migrated_on_the_pinned_generator():
     assert generator.sources[0].sha256 == '460f61c1cfb60fa810f1b32a2a61fd33617107c12e0c9bf45e1ec5ecdcf61084'
 
 
-def test_blocked_seethrough_and_skateruntime_name_their_generator_records():
-    """Both rows stay blocked (no V2 importer for a parameter collection or a data asset), their generator records pin
-    the donor sources, and the adopted records keep their outputs."""
+def test_seethrough_moved_and_skateruntime_stays_blocked_both_name_their_generator_records():
+    """The skate runtime row stays blocked (no V2 importer for its data asset) and its adopted record keeps its output; the
+    see-through collection moved to material/seethrough/collection (SEETHRU). Both generator records pin the donor sources."""
     for record, generator in (('adopted/seethrough', 'generator/seethrough/collection'),
                               ('adopted/skateruntime', 'generator/skate/runtime')):
         _, _, _, status, note = sf.REGISTRY[record]
-        assert status == 'blocked' and generator in note and record not in sf.MIGRATED
+        assert generator in note
         gen = records.load_asset(sf.GAME / f'assets/{generator}/asset.toml')
         assert gen.kind == 'generator' and gen.outputs == [] and gen.recipe is None and gen.authority == 'editor'
         assert all(sf.sha256_file(sf.GAME / 'assets' / generator / s.path) == s.sha256 for s in gen.sources)
-        adopted = records.load_asset(sf.GAME / f'assets/{record}/asset.toml')
-        assert adopted.outputs, record
+    assert sf.REGISTRY['adopted/skateruntime'][3] == 'blocked' and 'adopted/skateruntime' not in sf.MIGRATED
+    assert records.load_asset(sf.GAME / 'assets/adopted/skateruntime/asset.toml').outputs
+    assert sf.REGISTRY['adopted/seethrough'][3] == 'planned' and 'adopted/seethrough' in sf.MIGRATED
+    collection = records.load_asset(sf.GAME / 'assets/material/seethrough/collection/asset.toml')
+    assert collection.kind == 'parameter-collection' and collection.references == ['generator/seethrough/collection']
+    assert [o.package for o in collection.outputs] == ['/Game/SeeThrough/MPC_SeeThrough']
     seethrough = records.load_asset(sf.GAME / 'assets/generator/seethrough/collection/asset.toml')
     assert {s.path: s.sha256 for s in seethrough.sources} == {
         'src/see_through.py': '9d7da40163a6e4023d91e8fc2aaacdd2578bf07ef02f05b4e10dcc1c4c8fd105',
