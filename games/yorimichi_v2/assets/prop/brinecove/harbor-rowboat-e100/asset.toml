@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_HarborRowboatE100: the harbor rowboat e100, cut from the fused tile(s) Harbor_4_3 (96 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/brinecove/harbor-rowboat-e100"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/brinecove/harbor-rowboat-e100"
+references = ["adopted/brinecove/materials"]
+
+[[sources]]
+path = "src/SM_BC_HarborRowboatE100.glb"
+sha256 = "186cc4ca67c965d9c203c929a0184e44e91fd9f0592eedf83c92524483fbe2d9"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Brinecove/Materials/MI_BC_wood", "/Game/Brinecove/Materials/MI_BC_wood_dark", "/Game/Brinecove/Materials/MI_BC_wood_light"]
+triangles = 96
+collision = "complex"
+full_precision_uvs = true
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_HarborRowboatE100"

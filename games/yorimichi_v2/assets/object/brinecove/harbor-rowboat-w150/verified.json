@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/harbor-rowboat-w150",
+  "dependencies": {
+    "prop/brinecove/harbor-rowboat-w150": "85b72b00f584b814de7b632cbbb4d5a873dad7de4d13c0ae8c96159ea0e4e095"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/7/QI/AKEGO3Q9XSSF1BP5VEUG4F.uasset": "1ca272a9602d909a8efb868ad02cd3f635baa1a1080beadaaabf8c10fee12d3b"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

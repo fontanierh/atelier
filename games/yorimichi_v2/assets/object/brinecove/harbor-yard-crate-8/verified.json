@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/harbor-yard-crate-8",
+  "dependencies": {
+    "prop/brinecove/harbor-yard-crate-8": "1664b85f7ecb454c4732f1232feaec9a69efc1697703dc23e679620f12794740"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/A/2K/JWOC0CIEM131L0VOKU0NRY.uasset": "efcf115b29a17da9d9d3097336933420f84ced0d7ad52455de0f480993b50ab6"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

@@ -1,12 +1,12 @@
 {
   "asset": "object/brinecove/market-4-3",
   "dependencies": {
-    "prop/brinecove/market-4-3": "6222de324a622b0e762f148e28a8b830d9eeac0af2564c287faf1b4e1920ffb9",
+    "prop/brinecove/market-4-3": "70cba7d6a35f5725047c965a2e1c4f93456c957631e056573adae639be2d0a02",
     "prop/brinecove/market-4-3-soft": "156dde6eef47dbd559de4e2261abdf79db6f49be95eee4bd05a8caa338d03ab5"
   },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/__ExternalActors__/V2/Maps/Slice/B/WL/CTUX4JF4C13MYQIKN0200M.uasset": "528892b4aff82ce216d9f4c12f48904a8eb674f9cbc1432fb7177240c0daca3a"
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/B/WL/CTUX4JF4C13MYQIKN0200M.uasset": "46232bd1fe7f140f26a719ccbdfd75c8ba54f7dbc6e1701db516f33b833ff30e"
   },
   "kind": "editor-saved",
   "schema": 1

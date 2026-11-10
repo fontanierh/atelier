@@ -1,21 +1,21 @@
 {
   "asset": "object/brinecove/townlower-4-4",
   "dependencies": {
-    "prop/brinecove/town-lower-4-4-piece01": "a9c4d51c76c3da8091bc420c1460569fd639c6e172453618d1d05e527ee11b4a",
+    "prop/brinecove/town-lower-4-4-piece01": "d1b7f5591bda0167293ee7fae2dfcacf64cbeb44b5af2f3b2e2050fea4cffe84",
     "prop/brinecove/town-lower-4-4-piece02": "116e4a8bec8cbffaf1e23081de6b1c87eec700ac6e7d88a5b1afa9ef4752219f",
-    "prop/brinecove/town-lower-4-4-piece03": "f6222e981dedd877b2b157a913f6663459c7ce89c9d77505869f729bd831efea",
-    "prop/brinecove/town-lower-4-4-piece10": "33218b6ac3e3c79eddfb1f51de129b76763ec795bfbbadb50e73c1c92a9bfa11",
-    "prop/brinecove/town-lower-4-4-piece11": "09131b2a165e04a2c47eb8e1cd80748b3cbb963618469e66e2677dc7d7a8a2cc",
-    "prop/brinecove/town-lower-4-4-piece12": "04f0045bfb80d33c5b584bb91b467ccb64b62c8b0d949f8a6bfce2639fcb4c7b",
-    "prop/brinecove/town-lower-4-4-piece13": "6937e8afff258d4fcaec1229302f8b748ec30a7ab042dd3270b4f5d749769cbc",
-    "prop/brinecove/town-lower-4-4-piece2": "c7a576e9eab2b65598c5370d2bbf335cca4df4673b48df13dc33072c59cee3b4",
-    "prop/brinecove/town-lower-4-4-piece30": "a269bebd0e6ba4296541466dc9e67d0952a1913fa7536e837599a72754d43fb1",
-    "prop/brinecove/town-lower-4-4-piece31": "1b1adcc06d9e7b5f554d1bca59a0b74942c2a45615bf35304f02237459b158cc",
-    "prop/brinecove/town-lower-4-4-soft": "1614515e8478f859c0d9f8f0b755ddcfacf9a2761d351839f3ee80fc9ac79420"
+    "prop/brinecove/town-lower-4-4-piece03": "c73a1b8954bca7913e62fa02f20d7cb208e804030b37cfebcc39260043223e7a",
+    "prop/brinecove/town-lower-4-4-piece10": "a23a476e77d2934b35699633a63114d422f5fef1357545cc4ded3de06c292f3e",
+    "prop/brinecove/town-lower-4-4-piece11": "dde5269634a0e8a14667d401127e348e55479b4c29ded7d15511513f43ac375c",
+    "prop/brinecove/town-lower-4-4-piece12": "e95e069516af8d4924fdcc2b797d68d033f9178a4af00ec27b97bc0f7a2be728",
+    "prop/brinecove/town-lower-4-4-piece13": "4dc3e587721409708e096fe9a575c6be5eb0d350f9a18c0c4f23b6ebcac89839",
+    "prop/brinecove/town-lower-4-4-piece2": "64f7f44738d8d00a9d955aab5e1cb81a8c58e9fbfe33efd448b2369d0871a2c1",
+    "prop/brinecove/town-lower-4-4-piece30": "fda111391a438f37d9cb4a4682d35ab475b9fe56aa5c2004dad900b50b57b775",
+    "prop/brinecove/town-lower-4-4-piece31": "88eb2f924eb61540002e81bfeb4484d7b3359693b162006485d7d8b559492b48",
+    "prop/brinecove/town-lower-4-4-soft": "0de8580d8236cccdd1cdf95c9a29feb31e095e941a0b2a71fb978c3434f1edfa"
   },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/__ExternalActors__/V2/Maps/Slice/2/TS/S7QFE9815FMFL9XPHBO0Y2.uasset": "163fff7e6e8b83095a6bd269c9a199c627dd3ef66c78a52d4b6cd86dcb14e2bd"
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/2/TS/S7QFE9815FMFL9XPHBO0Y2.uasset": "ce4591a7c77a533883781cbace16b3a260f4775a5aa2edc5c80970b3c4f508c7"
   },
   "kind": "editor-saved",
   "schema": 1

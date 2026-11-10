@@ -1,0 +1,796 @@
+{
+  "about": "Expected result of tools/migrate/brinecove_split_apply.py (docs/inventory/brinecove-split.md): each part mesh, each tile remainder, and the donor tile each was cut from.",
+  "parts": {
+    "prop/brinecove/harbor-rowboat-e100": {
+      "materials": [
+        "BC_wood",
+        "BC_wood_dark",
+        "BC_wood_light"
+      ],
+      "max": [
+        103.6292,
+        1.8,
+        74.5256
+      ],
+      "mesh": "SM_BC_HarborRowboatE100",
+      "min": [
+        96.3706,
+        0.376,
+        65.4737
+      ],
+      "object": "harbor-rowboat-e100",
+      "package": "/Game/Brinecove/Meshes/SM_BC_HarborRowboatE100",
+      "sha256": "186cc4ca67c965d9c203c929a0184e44e91fd9f0592eedf83c92524483fbe2d9",
+      "soft": false,
+      "tiles": [
+        "Harbor_4_3"
+      ],
+      "triangles": 96
+    },
+    "prop/brinecove/harbor-rowboat-e180": {
+      "materials": [
+        "BC_wood",
+        "BC_wood_dark",
+        "BC_wood_light"
+      ],
+      "max": [
+        182.0597,
+        1.8,
+        164.897
+      ],
+      "mesh": "SM_BC_HarborRowboatE180",
+      "min": [
+        177.9403,
+        0.376,
+        155.1022
+      ],
+      "object": "harbor-rowboat-e180",
+      "package": "/Game/Brinecove/Meshes/SM_BC_HarborRowboatE180",
+      "sha256": "fb3c213213caeb14f5ea4db0afe6d6f768372d09ac3a0623ce113e56122b4903",
+      "soft": false,
+      "tiles": [
+        "Harbor_4_2",
+        "Harbor_4_3"
+      ],
+      "triangles": 96
+    },
+    "prop/brinecove/harbor-rowboat-e300": {
+      "materials": [
+        "BC_wood",
+        "BC_wood_dark",
+        "BC_wood_light"
+      ],
+      "max": [
+        302.7146,
+        1.8,
+        64.8847
+      ],
+      "mesh": "SM_BC_HarborRowboatE300",
+      "min": [
+        297.2853,
+        0.376,
+        55.1145
+      ],
+      "object": "harbor-rowboat-e300",
+      "package": "/Game/Brinecove/Meshes/SM_BC_HarborRowboatE300",
+      "sha256": "366106a904deb80e7eaf9cfa5b47b5b01b7251d7b245f1dba4597543154d9b3c",
+      "soft": false,
+      "tiles": [
+        "Harbor_5_3"
+      ],
+      "triangles": 96
+    },
+    "prop/brinecove/harbor-rowboat-e420": {
+      "materials": [
+        "BC_wood",
+        "BC_wood_dark",
+        "BC_wood_light"
+      ],
+      "max": [
+        422.3304,
+        1.8,
+        124.91
+      ],
+      "mesh": "SM_BC_HarborRowboatE420",
+      "min": [
+        417.6696,
+        0.376,
+        115.0891
+      ],
+      "object": "harbor-rowboat-e420",
+      "package": "/Game/Brinecove/Meshes/SM_BC_HarborRowboatE420",
+      "sha256": "10f53edfaedde76d708540dde73750d4a19caea519bc025fbe9d83f0060c4468",
+      "soft": false,
+      "tiles": [
+        "Harbor_5_3"
+      ],
+      "triangles": 96
+    },
+    "prop/brinecove/harbor-rowboat-w150": {
+      "materials": [
+        "BC_wood",
+        "BC_wood_dark",
+        "BC_wood_light"
+      ],
+      "max": [
+        -147.5385,
+        1.8,
+        94.9075
+      ],
+      "mesh": "SM_BC_HarborRowboatW150",
+      "min": [
+        -152.4615,
+        0.376,
+        85.0916
+      ],
+      "object": "harbor-rowboat-w150",
+      "package": "/Game/Brinecove/Meshes/SM_BC_HarborRowboatW150",
+      "sha256": "b29971b6c41f0cefd6d844a39c6c9204034fceadcde80b0aa21f4d5594989877",
+      "soft": false,
+      "tiles": [
+        "Harbor_3_3"
+      ],
+      "triangles": 96
+    },
+    "prop/brinecove/harbor-rowboat-w225": {
+      "materials": [
+        "BC_wood",
+        "BC_wood_dark",
+        "BC_wood_light"
+      ],
+      "max": [
+        -222.0454,
+        1.8,
+        44.838
+      ],
+      "mesh": "SM_BC_HarborRowboatW225",
+      "min": [
+        -227.9545,
+        0.376,
+        35.1612
+      ],
+      "object": "harbor-rowboat-w225",
+      "package": "/Game/Brinecove/Meshes/SM_BC_HarborRowboatW225",
+      "sha256": "bca38767dddce13a8bd99d3c84936bb5f4c6fd53adc196f3371433281a143400",
+      "soft": false,
+      "tiles": [
+        "Harbor_3_3"
+      ],
+      "triangles": 96
+    },
+    "prop/brinecove/harbor-rowboat-w30": {
+      "materials": [
+        "BC_wood",
+        "BC_wood_dark",
+        "BC_wood_light"
+      ],
+      "max": [
+        -27.9403,
+        1.8,
+        154.897
+      ],
+      "mesh": "SM_BC_HarborRowboatW30",
+      "min": [
+        -32.0597,
+        0.376,
+        145.1022
+      ],
+      "object": "harbor-rowboat-w30",
+      "package": "/Game/Brinecove/Meshes/SM_BC_HarborRowboatW30",
+      "sha256": "71636ffb7c3e64383a0a8734dbd6e44d0d7d3ec93346f2626663bc1adaa8940a",
+      "soft": false,
+      "tiles": [
+        "Harbor_3_3"
+      ],
+      "triangles": 96
+    },
+    "prop/brinecove/harbor-rowboat-w380": {
+      "materials": [
+        "BC_wood",
+        "BC_wood_dark",
+        "BC_wood_light"
+      ],
+      "max": [
+        -377.0454,
+        1.8,
+        44.838
+      ],
+      "mesh": "SM_BC_HarborRowboatW380",
+      "min": [
+        -382.9545,
+        0.376,
+        35.1612
+      ],
+      "object": "harbor-rowboat-w380",
+      "package": "/Game/Brinecove/Meshes/SM_BC_HarborRowboatW380",
+      "sha256": "4e0b1bb82f94027d99eee38c21069e6540bf5546b1b0953d2b34a89e367f1a09",
+      "soft": false,
+      "tiles": [
+        "Harbor_2_3"
+      ],
+      "triangles": 96
+    },
+    "prop/brinecove/harbor-yard-crate-1": {
+      "materials": [
+        "BC_wood_dark",
+        "BC_wood_light"
+      ],
+      "max": [
+        401.2421,
+        5.8568,
+        -111.1942
+      ],
+      "mesh": "SM_BC_HarborYardCrate1",
+      "min": [
+        399.6328,
+        4.7,
+        -112.8058
+      ],
+      "object": "harbor-yard-crate-1",
+      "package": "/Game/Brinecove/Meshes/SM_BC_HarborYardCrate1",
+      "sha256": "a4d51ecf882d7ffa107444cca11a65d62493b764863462882f6ab207c5b2447a",
+      "soft": false,
+      "tiles": [
+        "Harbor_5_4"
+      ],
+      "triangles": 36
+    },
+    "prop/brinecove/harbor-yard-crate-2": {
+      "materials": [
+        "BC_wood_dark",
+        "BC_wood_light"
+      ],
+      "max": [
+        401.1553,
+        5.727,
+        -116.1184
+      ],
+      "mesh": "SM_BC_HarborYardCrate2",
+      "min": [
+        399.7528,
+        4.7,
+        -117.4816
+      ],
+      "object": "harbor-yard-crate-2",
+      "package": "/Game/Brinecove/Meshes/SM_BC_HarborYardCrate2",
+      "sha256": "39e717d7753fa64a590cb6415ca6afcac21067c5b7103dacd4fe586645bde578",
+      "soft": false,
+      "tiles": [
+        "Harbor_5_4"
+      ],
+      "triangles": 36
+    },
+    "prop/brinecove/harbor-yard-crate-3": {
+      "materials": [
+        "BC_wood_dark",
+        "BC_wood_light"
+      ],
+      "max": [
+        401.2071,
+        5.5942,
+        -120.972
+      ],
+      "mesh": "SM_BC_HarborYardCrate3",
+      "min": [
+        399.967,
+        4.7,
+        -122.228
+      ],
+      "object": "harbor-yard-crate-3",
+      "package": "/Game/Brinecove/Meshes/SM_BC_HarborYardCrate3",
+      "sha256": "bb3ca6e8152fa559a5b679852291aec292fe976bea8aaa604f1596cdf80d28a7",
+      "soft": false,
+      "tiles": [
+        "Harbor_5_4"
+      ],
+      "triangles": 36
+    },
+    "prop/brinecove/harbor-yard-crate-4": {
+      "materials": [
+        "BC_wood_dark",
+        "BC_wood_light"
+      ],
+      "max": [
+        403.5877,
+        5.9656,
+        -125.5263
+      ],
+      "mesh": "SM_BC_HarborYardCrate4",
+      "min": [
+        401.8287,
+        4.7,
+        -127.2738
+      ],
+      "object": "harbor-yard-crate-4",
+      "package": "/Game/Brinecove/Meshes/SM_BC_HarborYardCrate4",
+      "sha256": "ea5a95476be0052578a9e3c463967b85e33c407664549ebad38de3dce5559204",
+      "soft": false,
+      "tiles": [
+        "Harbor_5_4"
+      ],
+      "triangles": 36
+    },
+    "prop/brinecove/harbor-yard-crate-5": {
+      "materials": [
+        "BC_wood_dark",
+        "BC_wood_light"
+      ],
+      "max": [
+        403.7039,
+        6.0675,
+        -130.2518
+      ],
+      "mesh": "SM_BC_HarborYardCrate5",
+      "min": [
+        401.8164,
+        4.7,
+        -132.1481
+      ],
+      "object": "harbor-yard-crate-5",
+      "package": "/Game/Brinecove/Meshes/SM_BC_HarborYardCrate5",
+      "sha256": "8e8560949720b9d4db270c18364869a1f5b36958b38c8d74419616d8454291d1",
+      "soft": false,
+      "tiles": [
+        "Harbor_5_4"
+      ],
+      "triangles": 36
+    },
+    "prop/brinecove/harbor-yard-crate-6": {
+      "materials": [
+        "BC_wood_dark",
+        "BC_wood_light"
+      ],
+      "max": [
+        403.1044,
+        5.5545,
+        -135.5659
+      ],
+      "mesh": "SM_BC_HarborYardCrate6",
+      "min": [
+        402.1568,
+        4.7,
+        -136.4341
+      ],
+      "object": "harbor-yard-crate-6",
+      "package": "/Game/Brinecove/Meshes/SM_BC_HarborYardCrate6",
+      "sha256": "c57d8e5cf7d0a1b28038d6ba53d899cecd5816b1e45f8d4f4987f9d1b9d17ab9",
+      "soft": false,
+      "tiles": [
+        "Harbor_5_4"
+      ],
+      "triangles": 36
+    },
+    "prop/brinecove/harbor-yard-crate-7": {
+      "materials": [
+        "BC_wood_dark",
+        "BC_wood_light"
+      ],
+      "max": [
+        401.1311,
+        5.9045,
+        -140.1402
+      ],
+      "mesh": "SM_BC_HarborYardCrate7",
+      "min": [
+        399.9232,
+        4.7,
+        -141.4599
+      ],
+      "object": "harbor-yard-crate-7",
+      "package": "/Game/Brinecove/Meshes/SM_BC_HarborYardCrate7",
+      "sha256": "9c6c47776092ea24661b7a6b895a7ffb675b9ed36b74c9d80a1ff4aca5b7358f",
+      "soft": false,
+      "tiles": [
+        "Harbor_5_4"
+      ],
+      "triangles": 36
+    },
+    "prop/brinecove/harbor-yard-crate-8": {
+      "materials": [
+        "BC_wood_dark",
+        "BC_wood_light"
+      ],
+      "max": [
+        400.9059,
+        6.0078,
+        -144.9891
+      ],
+      "mesh": "SM_BC_HarborYardCrate8",
+      "min": [
+        399.5538,
+        4.7,
+        -146.2109
+      ],
+      "object": "harbor-yard-crate-8",
+      "package": "/Game/Brinecove/Meshes/SM_BC_HarborYardCrate8",
+      "sha256": "73338f1f7bf70a4b7d3d75677c9a41661dadaab552754aee46df44c41ba478e3",
+      "soft": false,
+      "tiles": [
+        "Harbor_5_4"
+      ],
+      "triangles": 36
+    }
+  },
+  "pending": {
+    "resave": [],
+    "stale": []
+  },
+  "retired": false,
+  "schema": 1,
+  "selection": [
+    "harbor-rowboat-e100",
+    "harbor-rowboat-e180",
+    "harbor-rowboat-e300",
+    "harbor-rowboat-e420",
+    "harbor-rowboat-w150",
+    "harbor-rowboat-w225",
+    "harbor-rowboat-w30",
+    "harbor-rowboat-w380",
+    "harbor-yard-crate-1",
+    "harbor-yard-crate-2",
+    "harbor-yard-crate-3",
+    "harbor-yard-crate-4",
+    "harbor-yard-crate-5",
+    "harbor-yard-crate-6",
+    "harbor-yard-crate-7",
+    "harbor-yard-crate-8"
+  ],
+  "shares": {
+    "Harbor_2_3": {
+      "prop/brinecove/harbor-rowboat-w380": 96
+    },
+    "Harbor_3_3": {
+      "prop/brinecove/harbor-rowboat-w150": 96,
+      "prop/brinecove/harbor-rowboat-w225": 96,
+      "prop/brinecove/harbor-rowboat-w30": 96
+    },
+    "Harbor_4_2": {
+      "prop/brinecove/harbor-rowboat-e180": 86
+    },
+    "Harbor_4_3": {
+      "prop/brinecove/harbor-rowboat-e100": 96,
+      "prop/brinecove/harbor-rowboat-e180": 10
+    },
+    "Harbor_5_3": {
+      "prop/brinecove/harbor-rowboat-e300": 96,
+      "prop/brinecove/harbor-rowboat-e420": 96
+    },
+    "Harbor_5_4": {
+      "prop/brinecove/harbor-yard-crate-1": 36,
+      "prop/brinecove/harbor-yard-crate-2": 36,
+      "prop/brinecove/harbor-yard-crate-3": 36,
+      "prop/brinecove/harbor-yard-crate-4": 36,
+      "prop/brinecove/harbor-yard-crate-5": 36,
+      "prop/brinecove/harbor-yard-crate-6": 36,
+      "prop/brinecove/harbor-yard-crate-7": 36,
+      "prop/brinecove/harbor-yard-crate-8": 36
+    }
+  },
+  "tiles": {
+    "Harbor_2_3": {
+      "original": {
+        "material_package": {
+          "BC_autumn_olive": "/Game/Brinecove/Materials/MI_BC_autumn_olive",
+          "BC_clay": "/Game/Brinecove/Materials/MI_BC_clay",
+          "BC_cobble": "/Game/Brinecove/Materials/MI_BC_cobble",
+          "BC_cobble_dark": "/Game/Brinecove/Materials/MI_BC_cobble_dark",
+          "BC_metal": "/Game/Brinecove/Materials/MI_BC_metal",
+          "BC_rope": "/Game/Brinecove/Materials/MI_BC_rope",
+          "BC_stone": "/Game/Brinecove/Materials/MI_BC_stone",
+          "BC_stone_dark": "/Game/Brinecove/Materials/MI_BC_stone_dark",
+          "BC_stone_light": "/Game/Brinecove/Materials/MI_BC_stone_light",
+          "BC_wood": "/Game/Brinecove/Materials/MI_BC_wood",
+          "BC_wood_dark": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+          "BC_wood_light": "/Game/Brinecove/Materials/MI_BC_wood_light"
+        },
+        "owner": "shared/brinecove/harbor-2-3",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "collision": "complex",
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_autumn_olive",
+            "/Game/Brinecove/Materials/MI_BC_clay",
+            "/Game/Brinecove/Materials/MI_BC_cobble",
+            "/Game/Brinecove/Materials/MI_BC_cobble_dark",
+            "/Game/Brinecove/Materials/MI_BC_metal",
+            "/Game/Brinecove/Materials/MI_BC_rope",
+            "/Game/Brinecove/Materials/MI_BC_stone",
+            "/Game/Brinecove/Materials/MI_BC_stone_dark",
+            "/Game/Brinecove/Materials/MI_BC_stone_light",
+            "/Game/Brinecove/Materials/MI_BC_wood",
+            "/Game/Brinecove/Materials/MI_BC_wood_dark",
+            "/Game/Brinecove/Materials/MI_BC_wood_light"
+          ],
+          "triangles": 2846
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_Harbor_2_3",
+      "record": "prop/brinecove/harbor-2-3",
+      "remainder": {
+        "materials": [
+          "BC_cobble",
+          "BC_cobble_dark",
+          "BC_metal",
+          "BC_stone",
+          "BC_stone_dark",
+          "BC_stone_light",
+          "BC_wood_dark"
+        ],
+        "sha256": "dcfddedf9fe3370b30835adb0ef0f6007a2dd5afb937129e9de2289b13455981",
+        "triangles": 1856
+      },
+      "source_triangles": 1952
+    },
+    "Harbor_3_3": {
+      "original": {
+        "material_package": {
+          "BC_autumn_olive": "/Game/Brinecove/Materials/MI_BC_autumn_olive",
+          "BC_clay": "/Game/Brinecove/Materials/MI_BC_clay",
+          "BC_cobble": "/Game/Brinecove/Materials/MI_BC_cobble",
+          "BC_cobble_dark": "/Game/Brinecove/Materials/MI_BC_cobble_dark",
+          "BC_lantern": "/Game/Brinecove/Materials/MI_BC_lantern",
+          "BC_metal": "/Game/Brinecove/Materials/MI_BC_metal",
+          "BC_rope": "/Game/Brinecove/Materials/MI_BC_rope",
+          "BC_stone": "/Game/Brinecove/Materials/MI_BC_stone",
+          "BC_stone_dark": "/Game/Brinecove/Materials/MI_BC_stone_dark",
+          "BC_stone_light": "/Game/Brinecove/Materials/MI_BC_stone_light",
+          "BC_wood": "/Game/Brinecove/Materials/MI_BC_wood",
+          "BC_wood_dark": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+          "BC_wood_light": "/Game/Brinecove/Materials/MI_BC_wood_light"
+        },
+        "owner": "shared/brinecove/harbor-3-3",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "collision": "complex",
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_autumn_olive",
+            "/Game/Brinecove/Materials/MI_BC_clay",
+            "/Game/Brinecove/Materials/MI_BC_cobble",
+            "/Game/Brinecove/Materials/MI_BC_cobble_dark",
+            "/Game/Brinecove/Materials/MI_BC_lantern",
+            "/Game/Brinecove/Materials/MI_BC_metal",
+            "/Game/Brinecove/Materials/MI_BC_rope",
+            "/Game/Brinecove/Materials/MI_BC_stone",
+            "/Game/Brinecove/Materials/MI_BC_stone_dark",
+            "/Game/Brinecove/Materials/MI_BC_stone_light",
+            "/Game/Brinecove/Materials/MI_BC_wood",
+            "/Game/Brinecove/Materials/MI_BC_wood_dark",
+            "/Game/Brinecove/Materials/MI_BC_wood_light"
+          ],
+          "triangles": 8742
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_Harbor_3_3",
+      "record": "prop/brinecove/harbor-3-3",
+      "remainder": {
+        "materials": [
+          "BC_cobble",
+          "BC_cobble_dark",
+          "BC_metal",
+          "BC_stone",
+          "BC_stone_dark",
+          "BC_stone_light",
+          "BC_wood_dark"
+        ],
+        "sha256": "56e70c3f33fb9cfba545522908990c5a27592c530ba806e86659b73e93312c1c",
+        "triangles": 3466
+      },
+      "source_triangles": 3754
+    },
+    "Harbor_4_2": {
+      "original": {
+        "material_package": {
+          "BC_wood": "/Game/Brinecove/Materials/MI_BC_wood",
+          "BC_wood_dark": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+          "BC_wood_light": "/Game/Brinecove/Materials/MI_BC_wood_light"
+        },
+        "owner": "shared/brinecove/harbor-4-2",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "collision": "complex",
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_wood",
+            "/Game/Brinecove/Materials/MI_BC_wood_dark",
+            "/Game/Brinecove/Materials/MI_BC_wood_light"
+          ],
+          "triangles": 304
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_Harbor_4_2",
+      "record": "prop/brinecove/harbor-4-2",
+      "remainder": null,
+      "source_triangles": 86
+    },
+    "Harbor_4_3": {
+      "original": {
+        "material_package": {
+          "BC_autumn_olive": "/Game/Brinecove/Materials/MI_BC_autumn_olive",
+          "BC_clay": "/Game/Brinecove/Materials/MI_BC_clay",
+          "BC_cobble": "/Game/Brinecove/Materials/MI_BC_cobble",
+          "BC_cobble_dark": "/Game/Brinecove/Materials/MI_BC_cobble_dark",
+          "BC_lantern": "/Game/Brinecove/Materials/MI_BC_lantern",
+          "BC_metal": "/Game/Brinecove/Materials/MI_BC_metal",
+          "BC_rope": "/Game/Brinecove/Materials/MI_BC_rope",
+          "BC_stone": "/Game/Brinecove/Materials/MI_BC_stone",
+          "BC_stone_dark": "/Game/Brinecove/Materials/MI_BC_stone_dark",
+          "BC_stone_light": "/Game/Brinecove/Materials/MI_BC_stone_light",
+          "BC_wood": "/Game/Brinecove/Materials/MI_BC_wood",
+          "BC_wood_dark": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+          "BC_wood_light": "/Game/Brinecove/Materials/MI_BC_wood_light"
+        },
+        "owner": "shared/brinecove/harbor-4-3",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "collision": "complex",
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_autumn_olive",
+            "/Game/Brinecove/Materials/MI_BC_clay",
+            "/Game/Brinecove/Materials/MI_BC_cobble",
+            "/Game/Brinecove/Materials/MI_BC_cobble_dark",
+            "/Game/Brinecove/Materials/MI_BC_lantern",
+            "/Game/Brinecove/Materials/MI_BC_metal",
+            "/Game/Brinecove/Materials/MI_BC_rope",
+            "/Game/Brinecove/Materials/MI_BC_stone",
+            "/Game/Brinecove/Materials/MI_BC_stone_dark",
+            "/Game/Brinecove/Materials/MI_BC_stone_light",
+            "/Game/Brinecove/Materials/MI_BC_wood",
+            "/Game/Brinecove/Materials/MI_BC_wood_dark",
+            "/Game/Brinecove/Materials/MI_BC_wood_light"
+          ],
+          "triangles": 9290
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_Harbor_4_3",
+      "record": "prop/brinecove/harbor-4-3",
+      "remainder": {
+        "materials": [
+          "BC_cobble",
+          "BC_cobble_dark",
+          "BC_metal",
+          "BC_stone",
+          "BC_stone_dark",
+          "BC_stone_light",
+          "BC_wood_dark"
+        ],
+        "sha256": "b569451d823a396b47fb4d7a1275d49ffadaad7a4968dfc1a6b19c4a2bcd1167",
+        "triangles": 3430
+      },
+      "source_triangles": 3536
+    },
+    "Harbor_5_3": {
+      "original": {
+        "material_package": {
+          "BC_autumn_olive": "/Game/Brinecove/Materials/MI_BC_autumn_olive",
+          "BC_clay": "/Game/Brinecove/Materials/MI_BC_clay",
+          "BC_cobble": "/Game/Brinecove/Materials/MI_BC_cobble",
+          "BC_cobble_dark": "/Game/Brinecove/Materials/MI_BC_cobble_dark",
+          "BC_cream": "/Game/Brinecove/Materials/MI_BC_cream",
+          "BC_hull": "/Game/Brinecove/Materials/MI_BC_hull",
+          "BC_metal": "/Game/Brinecove/Materials/MI_BC_metal",
+          "BC_planks": "/Game/Brinecove/Materials/MI_BC_planks",
+          "BC_roof_terra": "/Game/Brinecove/Materials/MI_BC_roof_terra",
+          "BC_rope": "/Game/Brinecove/Materials/MI_BC_rope",
+          "BC_sail_stripe": "/Game/Brinecove/Materials/MI_BC_sail_stripe",
+          "BC_stone": "/Game/Brinecove/Materials/MI_BC_stone",
+          "BC_stone_dark": "/Game/Brinecove/Materials/MI_BC_stone_dark",
+          "BC_stone_light": "/Game/Brinecove/Materials/MI_BC_stone_light",
+          "BC_wood": "/Game/Brinecove/Materials/MI_BC_wood",
+          "BC_wood_dark": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+          "BC_wood_light": "/Game/Brinecove/Materials/MI_BC_wood_light"
+        },
+        "owner": "shared/brinecove/harbor-5-3",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "collision": "complex",
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_autumn_olive",
+            "/Game/Brinecove/Materials/MI_BC_clay",
+            "/Game/Brinecove/Materials/MI_BC_cobble",
+            "/Game/Brinecove/Materials/MI_BC_cobble_dark",
+            "/Game/Brinecove/Materials/MI_BC_cream",
+            "/Game/Brinecove/Materials/MI_BC_hull",
+            "/Game/Brinecove/Materials/MI_BC_metal",
+            "/Game/Brinecove/Materials/MI_BC_planks",
+            "/Game/Brinecove/Materials/MI_BC_roof_terra",
+            "/Game/Brinecove/Materials/MI_BC_rope",
+            "/Game/Brinecove/Materials/MI_BC_sail_stripe",
+            "/Game/Brinecove/Materials/MI_BC_stone",
+            "/Game/Brinecove/Materials/MI_BC_stone_dark",
+            "/Game/Brinecove/Materials/MI_BC_stone_light",
+            "/Game/Brinecove/Materials/MI_BC_wood",
+            "/Game/Brinecove/Materials/MI_BC_wood_dark",
+            "/Game/Brinecove/Materials/MI_BC_wood_light"
+          ],
+          "triangles": 12802
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_Harbor_5_3",
+      "record": "prop/brinecove/harbor-5-3",
+      "remainder": {
+        "materials": [
+          "BC_clay",
+          "BC_cobble",
+          "BC_cobble_dark",
+          "BC_metal",
+          "BC_planks",
+          "BC_roof_terra",
+          "BC_stone",
+          "BC_stone_dark",
+          "BC_stone_light",
+          "BC_wood",
+          "BC_wood_dark",
+          "BC_wood_light"
+        ],
+        "sha256": "512c7e285e11ebf06a7be07b1b9930d3e5623a421e7f28bee759e6b586bd4655",
+        "triangles": 2302
+      },
+      "source_triangles": 2494
+    },
+    "Harbor_5_4": {
+      "original": {
+        "material_package": {
+          "BC_cobble": "/Game/Brinecove/Materials/MI_BC_cobble",
+          "BC_metal": "/Game/Brinecove/Materials/MI_BC_metal",
+          "BC_planks": "/Game/Brinecove/Materials/MI_BC_planks",
+          "BC_roof_terra": "/Game/Brinecove/Materials/MI_BC_roof_terra",
+          "BC_rope": "/Game/Brinecove/Materials/MI_BC_rope",
+          "BC_stone": "/Game/Brinecove/Materials/MI_BC_stone",
+          "BC_wood": "/Game/Brinecove/Materials/MI_BC_wood",
+          "BC_wood_dark": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+          "BC_wood_light": "/Game/Brinecove/Materials/MI_BC_wood_light"
+        },
+        "owner": "shared/brinecove/harbor-5-4",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "collision": "complex",
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_cobble",
+            "/Game/Brinecove/Materials/MI_BC_metal",
+            "/Game/Brinecove/Materials/MI_BC_planks",
+            "/Game/Brinecove/Materials/MI_BC_roof_terra",
+            "/Game/Brinecove/Materials/MI_BC_rope",
+            "/Game/Brinecove/Materials/MI_BC_stone",
+            "/Game/Brinecove/Materials/MI_BC_wood",
+            "/Game/Brinecove/Materials/MI_BC_wood_dark",
+            "/Game/Brinecove/Materials/MI_BC_wood_light"
+          ],
+          "triangles": 1510
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_Harbor_5_4",
+      "record": "prop/brinecove/harbor-5-4",
+      "remainder": {
+        "materials": [
+          "BC_cobble",
+          "BC_planks",
+          "BC_roof_terra",
+          "BC_stone",
+          "BC_wood",
+          "BC_wood_dark",
+          "BC_wood_light"
+        ],
+        "sha256": "a92f69e07e424b7e17c54c80759a756027bc387d80325306f023d6fd3c7de803",
+        "triangles": 408
+      },
+      "source_triangles": 696
+    }
+  }
+}

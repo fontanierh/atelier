@@ -177,6 +177,41 @@ def test_a_tile_a_later_batch_emptied_and_retired_has_no_remainder_problem(tmp_p
     assert not market.recarved_later(tmp_path, 'props1', 'prop/brinecove/props-2-3: record package differs')
 
 
+def test_a_placement_saved_before_its_tile_lost_slots_must_be_saved_again(tmp_path, monkeypatch):
+    """market2 cut Market_3_4 from two material slots to one: its placement binds overrides by slot index, so its
+    receipt must depend on the record's current state; an unchanged slot list asks nothing."""
+    region = tmp_path / 'world' / 'regions' / market._apply().REGION
+    region.mkdir(parents=True)
+    record = 'prop/brinecove/market-3-4'
+    (region / 'split-market1.json').write_text(json.dumps(
+        {'tiles': {'Market_3_4': {'record': record, 'remainder': {'materials': ['BC_wood', 'BC_cloth']}}}}))
+    (region / 'objects.toml').write_text(textwrap.dedent('''
+        [[objects]]
+        id = "object/brinecove/market-3-4"
+        groups = ["SM_BC_Market_3_4"]
+    '''))
+    for path, data in ((record, {'state': 'now'}), ('object/brinecove/market-3-4', {'dependencies': {record: 'then'}})):
+        (tmp_path / 'assets' / path).mkdir(parents=True)
+        (tmp_path / 'assets' / path / 'verified.json').write_text(json.dumps(data))
+    records_ = market._apply().records
+    monkeypatch.setattr(records_, 'load_verified', lambda path: json.loads(path.read_text()))
+    monkeypatch.setattr(records_, 'state_fingerprint', lambda verified: verified['state'])
+    cut = {'tiles': {'Market_3_4': {'record': record, 'remainder': {'materials': ['BC_wood']}}}}
+    assert market.remainder_slot_problems(tmp_path, 'market2', cut) == [
+        'object/brinecove/market-3-4: saved before Market_3_4 lost material slots (2 to 1); save the placement again']
+    same = {'tiles': {'Market_3_4': {'record': record, 'remainder': {'materials': ['BC_wood', 'BC_cloth']}}}}
+    assert market.remainder_slot_problems(tmp_path, 'market2', same) == []
+    # a first cut compares with the donor tile's slots (its material packages, by name in slot order)
+    first = {'tiles': {'Market_3_4': {**cut['tiles']['Market_3_4'], 'original': {'material_package': {
+        'BC_cloth': '/Game/Brinecove/Materials/MI_BC_cloth', 'BC_wood': '/Game/Brinecove/Materials/MI_BC_wood'}}}}}
+    assert market.remainder_slot_problems(tmp_path, 'market1', first) == [
+        'object/brinecove/market-3-4: saved before Market_3_4 lost material slots (2 to 1); save the placement again']
+    receipt = tmp_path / 'assets' / 'object/brinecove/market-3-4' / 'verified.json'
+    receipt.write_text(json.dumps({'dependencies': {record: 'now'}}))
+    assert market.remainder_slot_problems(tmp_path, 'market2', cut) == []
+    assert market.remainder_slot_problems(tmp_path, 'market1', first) == []
+
+
 def test_the_mast_and_slip_split_counts_as_later_for_the_market_and_town_batches(tmp_path):
     """brinecove_mastslip.py re-cut market2's pieces after town9 and before props1, so market2's expected remainders of
     those pieces are stale by design, and a props batch does not see the mast split as later."""
@@ -491,7 +526,7 @@ def test_check_for_the_groups_stage_allows_the_tile_record_to_remain(monkeypatch
 
 def test_batch_names_all_lists_and_checks_names():
     names = market.batch_names('all')
-    assert names[:4] == ['market1', 'market2', 'market3', 'town1'] and names[-8:] == ['town9', 'props1', 'props2', 'props3', 'harbor1', 'props4', 'props5', 'props6'] and len(names) == 19
+    assert names[:4] == ['market1', 'market2', 'market3', 'town1'] and names[-9:] == ['town9', 'props1', 'props2', 'props3', 'harbor1', 'props4', 'props5', 'props6', 'harbor2'] and len(names) == 20
     assert market.batch_names('town2, market1,town2') == ['town2', 'market1']
     with pytest.raises(market.MarketError, match='unknown batch town99'):
         market.batch_names('town99')
@@ -713,6 +748,17 @@ def test_donor_props6_rope_coils_and_gulls_are_whole():
     assert set(counts) == set(market.BATCHES['props6'])
     assert {counts[n] for n in market.BATCHES['props6'] if '-rope-coil-' in n} == {144}
     assert {counts[n] for n in market.BATCHES['props6'] if '-gull-' in n} == {22}
+
+
+def test_the_harbor2_batch_names_each_yard_crate_and_rowboat_once():
+    """harbor2: the shipyard's 8 loose crates and the 8 small rowboats in open water, each its loop body in
+    procedural/harbor.py, named under the Harbor component."""
+    names = market.BATCHES['harbor2']
+    assert len(names) == len(set(names)) == 16
+    assert {n for n in names if '-yard-crate-' in n} == {f'harbor-yard-crate-{i}' for i in range(1, 9)}
+    assert 'harbor-rowboat-w380' in names and 'harbor-rowboat-e420' in names
+    assert not set(names) & {n for b in market.BATCHES if b != 'harbor2' for n in market.BATCHES[b]}
+    assert {market.COMPONENT_OF[p] for p in ('harbor-yard-crate-', 'harbor-rowboat-')} == {'Harbor'}
 
 
 def test_the_props5_batch_splits_each_coarse_cargo_object_into_its_pieces():

@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/harbor-rowboat-w380",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_HarborRowboatW380.uasset": "546cff3d342ebbf05b1cd5a2b02362115b9fd7db2a7a898fb92a3a00957108e9"
+  },
+  "input_fingerprint": "7a273d0bb462182b83d95da82d59600a010f9968d32006b6f135326b6bcb95d8",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_HarborRowboatW380": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}
