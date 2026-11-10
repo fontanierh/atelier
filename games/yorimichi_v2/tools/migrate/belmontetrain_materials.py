@@ -239,7 +239,10 @@ def texture_settings(roles: set[str]) -> tuple[bool, str] | None:
 
 
 def residual_outputs(game: Path, unit: str) -> list[str]:
-    asset = records.load_asset(game / RECORDS / unit / 'asset.toml')
+    path = game / RECORDS / unit / 'asset.toml'
+    if not path.is_file():
+        raise PlanError(f'{RECORDS}/{unit} is gone: the move is done (state), so the donor plan no longer applies')
+    asset = records.load_asset(path)
     return [o.package for o in asset.outputs]
 
 
@@ -605,6 +608,10 @@ def main(argv=None) -> int:
         print('belmontetrain_materials: no donor folder (pass --donor or set YV2_DONOR_BUILD)', file=sys.stderr)
         return 1
     try:
+        current, detail = state(GAME)
+        if current == 'done':
+            print(f'belmontetrain_materials: {detail}; nothing to claim (plan mode reads the records with records_plan)')
+            return 0
         plan_ = plan(GAME, donor)
         if args.claim:
             materialize(GAME, plan_, args.claim)
@@ -639,29 +646,37 @@ def _path(value):
     return value.split('.')[0] if value else None
 
 
+def planned_rows(plan: Plan) -> dict:
+    """package -> the row each material instance states. A planned instance computes its row from the GLB facts; a written
+    record (records_plan) carries the row it states."""
+    out = {}
+    for rec in plan.materials:
+        for inst in rec.instances:
+            out[inst['package']] = inst['row'] if 'row' in inst else instance_row(inst)
+    return out
+
+
 def evidence(plan: Plan, materials_read: dict, textures_read: dict) -> dict:
     """The compact evidence of the two reads (the report_materials.py and report_textures.py rows), per package, with
     only what the records assert: a material's parent, its stated texture, scalar and vector values, and each switch the
     row states or whose effective value differs from its parent; a texture's five settings."""
     materials = {}
-    for rec in plan.materials:
-        for inst in rec.instances:
-            row = instance_row(inst)
-            read = materials_read[row['package']]
-            names = set(read['switches']) | set(row['switches'])
-            switches = {}
-            for name in sorted(names):
-                got = read['switches'].get(name)
-                if got is None:
-                    switches[name] = {'effective': None, 'parent': None}
-                elif name in row['switches'] or got['effective'] != got['parent']:
-                    switches[name] = {'effective': got['effective'], 'parent': got['parent']}
-            materials[row['package']] = {
-                'parent': _path(read['parent']),
-                'textures': {k: _path(read['effective']['texture'].get(k)) for k in row['textures']},
-                'scalars': {k: read['effective']['scalar'].get(k) for k in row['scalars']},
-                'vectors': {k: read['effective']['vector'].get(k) for k in row['vectors']},
-                'switches': switches}
+    for package, row in planned_rows(plan).items():
+        read = materials_read[package]
+        names = set(read['switches']) | set(row['switches'])
+        switches = {}
+        for name in sorted(names):
+            got = read['switches'].get(name)
+            if got is None:
+                switches[name] = {'effective': None, 'parent': None}
+            elif name in row['switches'] or got['effective'] != got['parent']:
+                switches[name] = {'effective': got['effective'], 'parent': got['parent']}
+        materials[package] = {
+            'parent': _path(read['parent']),
+            'textures': {k: _path(read['effective']['texture'].get(k)) for k in row['textures']},
+            'scalars': {k: read['effective']['scalar'].get(k) for k in row['scalars']},
+            'vectors': {k: read['effective']['vector'].get(k) for k in row['vectors']},
+            'switches': switches}
     textures = {rec.package: {k: (_enum(v) if isinstance(v, str) else v)
                              for k, v in ((k, textures_read[rec.package][k]) for k in TEXTURE_KEYS)}
                 for rec in plan.textures}
@@ -673,35 +688,32 @@ def disagreements(plan: Plan, ev: dict) -> list:
     (its alpha too), a switch the row states that the read does not confirm, and a switch whose read value differs from
     its parent that the row does not state."""
     out = []
-    for rec in plan.materials:
-        for inst in rec.instances:
-            row = instance_row(inst)
-            package = row['package']
-            got = ev['materials'].get(package)
-            if got is None:
-                out.append(f'{package}: no evidence')
+    for package, row in planned_rows(plan).items():
+        got = ev['materials'].get(package)
+        if got is None:
+            out.append(f'{package}: no evidence')
+            continue
+        if got['parent'] != row['parent']:
+            out.append(f'{package}: parent {got["parent"]} is not {row["parent"]}')
+        for k, v in row['textures'].items():
+            if got['textures'].get(k) != v:
+                out.append(f'{package}: {k} {got["textures"].get(k)} is not {v}')
+        for k, v in row['scalars'].items():
+            if got['scalars'].get(k) is None or abs(got['scalars'][k] - v) > TOLERANCE:
+                out.append(f'{package}: {k} {got["scalars"].get(k)} is not {v}')
+        for k, v in row['vectors'].items():
+            value = got['vectors'].get(k)
+            if value is None or len(value) != len(v) or max(abs(a - b) for a, b in zip(value, v)) > TOLERANCE:
+                out.append(f'{package}: {k} {value} is not {v}')
+        for name, switch in got['switches'].items():
+            if switch['effective'] is None:
+                out.append(f'{package}: {name} is not read')
                 continue
-            if got['parent'] != row['parent']:
-                out.append(f'{package}: parent {got["parent"]} is not {row["parent"]}')
-            for k, v in row['textures'].items():
-                if got['textures'].get(k) != v:
-                    out.append(f'{package}: {k} {got["textures"].get(k)} is not {v}')
-            for k, v in row['scalars'].items():
-                if got['scalars'].get(k) is None or abs(got['scalars'][k] - v) > TOLERANCE:
-                    out.append(f'{package}: {k} {got["scalars"].get(k)} is not {v}')
-            for k, v in row['vectors'].items():
-                value = got['vectors'].get(k)
-                if value is None or len(value) != len(v) or max(abs(a - b) for a, b in zip(value, v)) > TOLERANCE:
-                    out.append(f'{package}: {k} {value} is not {v}')
-            for name, switch in got['switches'].items():
-                if switch['effective'] is None:
-                    out.append(f'{package}: {name} is not read')
-                    continue
-                if switch['effective'] != switch['parent'] and name not in row['switches']:
-                    out.append(f'{package}: {name} differs from its parent and the row does not state it')
-                want = row['switches'].get(name, switch['parent'])
-                if switch['effective'] != want:
-                    out.append(f'{package}: {name} reads {switch["effective"]} not {want}')
+            if switch['effective'] != switch['parent'] and name not in row['switches']:
+                out.append(f'{package}: {name} differs from its parent and the row does not state it')
+            want = row['switches'].get(name, switch['parent'])
+            if switch['effective'] != want:
+                out.append(f'{package}: {name} reads {switch["effective"]} not {want}')
     for rec in plan.textures:
         got = ev['textures'].get(rec.package)
         if got is None:
@@ -713,6 +725,70 @@ def disagreements(plan: Plan, ev: dict) -> list:
             if got[k] != want[k]:
                 out.append(f'{rec.package}: {k} {got[k]} is not {want[k]}')
     return out
+
+
+# --- the states: `unprepared` (the seven adopted records hold the packages) or `done` (the written records do) -------------
+
+LIST_FILES = {'textures': 'docs/inventory/belmontetrain-texture-packages.txt',
+              'materials': 'docs/inventory/belmontetrain-material-packages.txt'}
+WRITTEN_PREFIXES = ('texture/belmontetrain/', 'material/belmontetrain/')
+WRITTEN_COUNT = 159
+
+
+def expected_packages() -> dict:
+    """The packages the plan covers, from the committed lists: {'textures': [...], 'materials': [...]}."""
+    return {kind: (GAME / rel).read_text().split() for kind, rel in LIST_FILES.items()}
+
+
+def state(game: Path) -> tuple:
+    """(state, detail). `unprepared`: the seven adopted records list the 459 packages and no written record exists. `done`: the
+    159 written records list them and no adopted record does. Anything else is refused, never guessed."""
+    wanted = set(sum(expected_packages().values(), []))
+    adopted = set()
+    for unit in UNITS:
+        path = game / RECORDS / unit / 'asset.toml'
+        if path.is_file():
+            adopted |= {o.package for o in records.load_asset(path).outputs}
+    written, count = set(), 0
+    for path in records.record_paths(game):
+        asset = records.load_asset(path)
+        if asset.id.startswith(WRITTEN_PREFIXES):
+            count += 1
+            written |= {o.package for o in asset.outputs}
+    if adopted & wanted == wanted and not written & wanted:
+        return 'unprepared', f'{len(wanted)} packages in the seven adopted records; prepare with --claim'
+    if not adopted & wanted and written & wanted == wanted and count == WRITTEN_COUNT:
+        return 'done', f'{WRITTEN_COUNT} records list the packages; the seven adopted records list none'
+    raise PlanError(f'partly moved: {len(adopted & wanted)} adopted, {len(written & wanted)} written package(s); resolve by hand')
+
+
+def records_plan(game: Path) -> Plan:
+    """The plan as the written records state it (the done state): each texture's settings, and each material instance's row as
+    the record states it. The evidence is checked against this, with no donor."""
+    textures, materials = [], []
+    for path in records.record_paths(game):
+        asset = records.load_asset(path)
+        if not asset.id.startswith(WRITTEN_PREFIXES):
+            continue
+        unit = asset.owner.rsplit('/', 1)[-1]
+        if asset.kind == 'texture':
+            settings = asset.recipe['settings']
+            package = asset.outputs[0].package
+            textures.append(TextureRec(asset.id, unit, 0, package, package.rsplit('/', 1)[1], None,
+                                       asset.sources[0].sha256, bool(settings['srgb']), settings['compression'], [],
+                                       asset.owner))
+        elif asset.kind == 'material-instance':
+            instances = []
+            for row in asset.recipe['settings']['instances']:
+                stated = {'package': row['package'], 'parent': row['parent'], 'textures': row.get('textures', {}),
+                          'scalars': row.get('scalars', {}), 'vectors': row.get('vectors', {}),
+                          'switches': row.get('switches', {})}
+                instances.append({'package': row['package'], 'row': stated})
+            materials.append(MaterialRec(asset.id, unit, 0, asset.owner, '', instances, sorted(asset.input_dependencies),
+                                         [o.package for o in asset.outputs]))
+    return Plan(textures, materials, [], None, {})
+
+
 
 if __name__ == '__main__':
     raise SystemExit(main())
