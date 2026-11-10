@@ -39,7 +39,8 @@ import records  # noqa: E402
 import brinecove_split_apply as apply  # noqa: E402  (the journaled write every migrate step uses)
 
 PROVENANCE = '{donor} at the V2 source baseline (docs/DECISIONS.md D01, D02)'
-REFERENCES_LINE = re.compile(r'^references = (\[.*\])$', re.M)
+DEPENDENCY_KEYS = ('references', 'input_dependencies')
+LINE = {key: re.compile(rf'^{key} = (\[.*\])$', re.M) for key in DEPENDENCY_KEYS}
 FAMILY_KEYS = {'name', 'adopted', 'owner', 'license', 'builder', 'donor', 'donor_lines', 'fallback', 'masters'}
 MASTER_KEYS = {'id', 'package', 'builder', 'reads', 'inputs', 'arguments'}
 
@@ -64,10 +65,16 @@ def load_families(folder: Path = FAMILY_DIR) -> dict:
             if set(master) != MASTER_KEYS or master['builder'] not in family['donor_lines']:
                 raise PlanError(f'{path.name}: {master.get("id")}: a master has the keys {sorted(MASTER_KEYS)} and a '
                                 'builder with donor lines')
-        if family['fallback'] not in {m['id'] for m in family['masters']}:
-            raise PlanError(f'{path.name}: the fallback is one of the family masters')
+        if not set(fallback_ids(family)) <= {m['id'] for m in family['masters']} or not fallback_ids(family):
+            raise PlanError(f'{path.name}: the fallback is one or more of the family masters')
         out[family['name']] = family
     return out
+
+
+def fallback_ids(family: dict) -> list:
+    """The family's fallback as a list: one master id, or several when a referrer may use any of them."""
+    fallback = family['fallback']
+    return [fallback] if isinstance(fallback, str) else list(fallback)
 
 
 def builder_path(family: dict) -> Path:
@@ -94,31 +101,42 @@ def _packages_named(value) -> set:
 
 
 def reference_rewrites(game: Path, family: dict) -> dict:
-    """{rel: bytes} for every record that references the adopted record: the reference becomes the masters whose packages
-    the record's recipe names, or the family's fallback master when it names none. A references line this cannot rewrite
-    refuses."""
+    """{rel: bytes} for every record that names the adopted record in its references or input_dependencies. Each
+    mention becomes the masters whose packages the record's recipe names, or the family's fallback when it names none.
+    A record that is itself an input of a family master drops the mention instead, so no record depends on what it
+    feeds. A dependency line this cannot rewrite refuses."""
     adopted = family['adopted']
     by_package = {m['package']: m['id'] for m in family['masters']}
+    feeds = {dep for m in family['masters'] for dep in m['inputs']}
     out = {}
     for path in records.record_paths(game):
         rel = path.relative_to(game).as_posix()
         if rel == f'assets/{adopted}/asset.toml':
             continue
         asset = records.load_asset(path)
-        if adopted not in asset.references:
+        if not any(adopted in getattr(asset, key) for key in DEPENDENCY_KEYS):
             continue
-        text = path.read_text()
-        match = REFERENCES_LINE.search(text)
-        if match is None or json.loads(match.group(1)) != asset.references:
-            raise PlanError(f'{rel}: its references are not one rewritable line')
         named = _packages_named(asset.recipe or {})
-        masters = sorted({by_package[p] for p in named if p in by_package}) or [family['fallback']]
-        new = []
-        for ref in asset.references:
-            for item in (masters if ref == adopted else [ref]):
-                if item not in new:
-                    new.append(item)
-        out[rel] = (text[:match.start(1)] + json.dumps(new) + text[match.end(1):]).encode()
+        masters = [] if asset.id in feeds else (sorted({by_package[p] for p in named if p in by_package})
+                                                or fallback_ids(family))
+        text = path.read_text()
+        for key in DEPENDENCY_KEYS:
+            current = getattr(asset, key)
+            if adopted not in current:
+                continue
+            match = LINE[key].search(text)
+            if match is None or json.loads(match.group(1)) != current:
+                raise PlanError(f'{rel}: its {key} are not one rewritable line')
+            new = []
+            for ref in current:
+                for item in (masters if ref == adopted else [ref]):
+                    if item not in new:
+                        new.append(item)
+            if new:
+                text = text[:match.start(1)] + json.dumps(new) + text[match.end(1):]
+            else:   # an emptied list goes away with its line
+                text = text[:match.start()] + text[match.end() + 1:]
+        out[rel] = text.encode()
     return out
 
 

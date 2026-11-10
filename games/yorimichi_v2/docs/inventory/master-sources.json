@@ -42,7 +42,8 @@
    ],
    "helpers": [],
    "fit": "direct",
-   "reason": "Graph is fully built in-script; only an engine texture default."
+   "reason": "Graph is fully built in-script; only an engine texture default.",
+   "status": "imported (family hippodrome, MASTERHD)"
   },
   {
    "package": "/Game/Hippodrome/Materials/M_HD_Grass",
@@ -106,7 +107,8 @@
    "reason": "Colour map from a texture record; the rest is constants. The runpy helper is the donor texture import, not a graph helper.",
    "reads": [
     "/Game/Hippodrome/Textures/T_Grass"
-   ]
+   ],
+   "status": "imported (family hippodrome, MASTERHD)"
   },
   {
    "package": "/Game/Hippodrome/Materials/M_HD_Dirt",
@@ -170,7 +172,8 @@
    "reason": "Colour map from a texture record; the rest is constants. The runpy helper is the donor texture import, not a graph helper.",
    "reads": [
     "/Game/Hippodrome/Textures/T_Dirt"
-   ]
+   ],
+   "status": "imported (family hippodrome, MASTERHD)"
   },
   {
    "package": "/Game/Hippodrome/Materials/M_HD_Stone",
@@ -209,7 +212,8 @@
    "helpers": [],
    "fit": "direct",
    "reason": "Constant base colour; no texture input.",
-   "reads": []
+   "reads": [],
+   "status": "imported (family hippodrome, MASTERHD)"
   },
   {
    "package": "/Game/Hippodrome/Materials/M_HD_Rail",
@@ -248,7 +252,8 @@
    "helpers": [],
    "fit": "direct",
    "reason": "Constant base colour; no texture input.",
-   "reads": []
+   "reads": [],
+   "status": "imported (family hippodrome, MASTERHD)"
   },
   {
    "package": "/Game/SkatePark/Materials/M_Pier_basalt",
@@ -789,7 +794,7 @@
   },
   {
    "package": "/Game/SwordCamp/Materials/M_SwordCamp",
-   "record": "adopted/swordcamp/materials",
+   "record": "master/swordcamp/camp",
    "family": "swordcamp",
    "generator": {
     "path": "games/yorimichi/unreal/Scripts/import_swordcamp.py",
@@ -873,12 +878,11 @@
    "reads": [
     "/Game/SwordCamp/Textures/T_SwordCampAtlas"
    ],
-   "planned_record": "master/swordcamp/camp",
    "status": "planned (family swordcamp)"
   },
   {
    "package": "/Game/SwordCamp/Materials/M_RoninBody",
-   "record": "adopted/swordcamp/materials",
+   "record": "master/swordcamp/ronin-body",
    "family": "swordcamp",
    "generator": {
     "path": "games/yorimichi/unreal/Scripts/import_swordcamp.py",
@@ -928,12 +932,11 @@
    "reads": [
     "/Game/SwordCamp/Textures/T_SwordCampAtlas"
    ],
-   "planned_record": "master/swordcamp/ronin-body",
    "status": "planned (family swordcamp)"
   },
   {
    "package": "/Game/Racing/M_RacingTv",
-   "record": "adopted/racing",
+   "record": "master/racing/tv",
    "family": "racing",
    "generator": {
     "path": "games/yorimichi/unreal/Scripts/racing_tv_material.py",
@@ -983,12 +986,11 @@
    "fit": "direct",
    "reason": "No texture is built by the generator; the Picture parameter is a runtime render target, so the read-back checks the graph and defaults only. The EyeAdaptationInverse pin name depends on the engine version.",
    "reads": [],
-   "planned_record": "master/racing/tv",
    "status": "planned (family racing)"
   },
   {
    "package": "/Game/FX/M_FX_Additive",
-   "record": "adopted/fx",
+   "record": "master/fx/additive",
    "family": "fx",
    "generator": {
     "path": "games/yorimichi/unreal/Scripts/import_combat_fx.py",
@@ -1040,12 +1042,11 @@
    "reads": [
     "/Game/FX/Textures/T_FX_Glow"
    ],
-   "planned_record": "master/fx/additive",
    "status": "planned (family fx)"
   },
   {
    "package": "/Game/FX/M_FX_Dust",
-   "record": "adopted/fx",
+   "record": "master/fx/dust",
    "family": "fx",
    "generator": {
     "path": "games/yorimichi/unreal/Scripts/import_combat_fx.py",
@@ -1083,12 +1084,11 @@
    "reads": [
     "/Game/FX/Textures/T_FX_Dust"
    ],
-   "planned_record": "master/fx/dust",
    "status": "planned (family fx)"
   },
   {
    "package": "/Game/FX/M_FX_Trail",
-   "record": "adopted/fx",
+   "record": "master/fx/trail",
    "family": "fx",
    "generator": {
     "path": "games/yorimichi/unreal/Scripts/import_combat_fx.py",
@@ -1121,12 +1121,11 @@
    "reads": [
     "/Game/FX/Textures/T_FX_Trail"
    ],
-   "planned_record": "master/fx/trail",
    "status": "planned (family fx)"
   },
   {
    "package": "/Game/MegaPark/Materials/M_RetailOpaque",
-   "record": "adopted/megapark/base-materials",
+   "record": "master/megapark/opaque",
    "family": "megapark",
    "generator": {
     "path": "games/yorimichi/unreal/Scripts/import_megapark.py",
@@ -1189,12 +1188,11 @@
     "/Game/MegaPark/Textures/T_DefaultBlack",
     "/Game/MegaPark/Textures/T_DefaultNormal"
    ],
-   "planned_record": "master/megapark/opaque",
    "status": "planned (family megapark)"
   },
   {
    "package": "/Game/MegaPark/Materials/M_RetailMasked",
-   "record": "adopted/megapark/base-materials",
+   "record": "master/megapark/masked",
    "family": "megapark",
    "generator": {
     "path": "games/yorimichi/unreal/Scripts/import_megapark.py",
@@ -1257,12 +1255,11 @@
     "/Game/MegaPark/Textures/T_DefaultBlack",
     "/Game/MegaPark/Textures/T_DefaultNormal"
    ],
-   "planned_record": "master/megapark/masked",
    "status": "planned (family megapark)"
   },
   {
    "package": "/Game/MegaPark/Materials/M_RetailTranslucent",
-   "record": "adopted/megapark/base-materials",
+   "record": "master/megapark/translucent",
    "family": "megapark",
    "generator": {
     "path": "games/yorimichi/unreal/Scripts/import_megapark.py",
@@ -1325,12 +1322,11 @@
     "/Game/MegaPark/Textures/T_DefaultBlack",
     "/Game/MegaPark/Textures/T_DefaultNormal"
    ],
-   "planned_record": "master/megapark/translucent",
    "status": "planned (family megapark)"
   },
   {
    "package": "/Game/Japan/Hidamari/Materials/M_HDCity",
-   "record": "adopted/japan/hidamari/generator",
+   "record": "master/hidamari/city",
    "family": "hidamari",
    "generator": {
     "path": "games/yorimichi/unreal/Scripts/city_material.py",
@@ -1424,7 +1420,6 @@
    "reads": [
     "/Game/Japan/Hidamari/Textures/T_HD_plaster"
    ],
-   "planned_record": "master/hidamari/city",
    "status": "planned (family hidamari_city)"
   },
   {

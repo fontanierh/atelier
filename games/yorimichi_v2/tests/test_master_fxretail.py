@@ -7,6 +7,7 @@ donor is also committed in adopted/megapark/base-materials/source, which the meg
 commit skips only the donor comparisons; the pins and the planner checks always run.
 """
 import hashlib
+import tomllib
 import importlib.util
 import inspect
 import subprocess
@@ -191,13 +192,14 @@ def test_the_families_load_and_each_master_argument_binds_to_its_builder():
 def test_each_family_names_its_adopted_owner_its_builder_and_a_fallback_among_its_masters():
     expected = {'fx': ('adopted/fx', 'shared/fx', 'master/fx/additive', 'fx_masters.py'),
                 'racing': ('adopted/racing', 'shared/racing', 'master/racing/tv', 'racing_masters.py'),
-                'megapark': ('adopted/megapark/base-materials', 'shared/megapark/base-materials', 'master/megapark/opaque',
+                'megapark': ('adopted/megapark/base-materials', 'shared/megapark/base-materials',
+                             ['master/megapark/opaque', 'master/megapark/masked', 'master/megapark/translucent'],
                              'megapark_masters.py')}
     for family in (FX, RACING, MEGAPARK):
         adopted, owner, fallback, builder = expected[family['name']]
         assert family['adopted'] == adopted and family['owner'] == owner and family['fallback'] == fallback
         assert family['builder'] == builder
-        assert fallback in [m['id'] for m in family['masters']]
+        assert set(planner.fallback_ids(family)) <= {m['id'] for m in family['masters']}
         adopted_record = records.load_asset(ROOT / 'assets' / adopted / 'asset.toml')
         assert family['owner'] == adopted_record.owner and family['license'] == adopted_record.license
         assert sorted(o.package for o in adopted_record.outputs) == sorted(m['package'] for m in family['masters'])
@@ -240,7 +242,7 @@ def test_the_planned_records_load_as_material_masters_pinned_to_their_builder():
 
 def test_the_planner_is_unprepared_on_the_real_tree_and_plans_its_paths_without_writing():
     game = ROOT
-    expect = {'fx': 8, 'racing': 4, 'megapark': 50}   # adopted record (2 files) + per master: record and builder copy (+ rewrites)
+    expect = {'fx': 9, 'racing': 4, 'megapark': 53}   # adopted record (2 files) + per master: record and builder copy + rewrites
     for family in (FX, RACING, MEGAPARK):
         assert planner.state(game, family) == 'unprepared', family['name']
         assert len(planner.claim_paths(game, family)) == expect[family['name']], family['name']
@@ -316,33 +318,34 @@ def test_the_donor_is_pinned_and_the_committed_megapark_copy_is_the_same_bytes()
 
 # --- the reference rewrites, against the real records --------------------------------------------------------------------
 
-def test_the_planner_rewrites_the_references_of_the_fx_and_racing_families_to_nothing():
-    """No record's `references` names adopted/fx or adopted/racing, so the planner rewrites no reference for those two families."""
-    for family in (FX, RACING):
-        assert planner.reference_rewrites(ROOT, family) == {}
+def test_no_record_depends_on_the_racing_record_and_the_fx_instances_depend_on_the_parents_they_use():
+    """@cc [owner:fontanierh,label:correctness] master-records-dependency-rewrite
+    material/fx-instances names adopted/fx in input_dependencies; its instances parent to the additive and dust masters, so it
+    depends on those two after the claim."""
+    assert planner.reference_rewrites(ROOT, RACING) == {}
+    rewrites = planner.reference_rewrites(ROOT, FX)
+    assert list(rewrites) == ['assets/material/fx-instances/asset.toml']
+    data = tomllib.loads(rewrites['assets/material/fx-instances/asset.toml'].decode())
+    assert data['input_dependencies'] == [d for d in data['input_dependencies'] if d != 'adopted/fx']
+    assert {'master/fx/additive', 'master/fx/dust'} <= set(data['input_dependencies'])
 
 
-def test_the_megapark_references_all_rewrite_to_the_opaque_fallback_as_planned():
-    """Every adopted record that references base-materials has no recipe, so each maps to the fallback. The instance records that use
-    input_dependencies are not rewritten at all (see the next test)."""
+def test_the_megapark_mentions_rewrite_to_the_masters_each_record_uses():
+    """A cell names no master package, so it references all three retail parents; the instance records name M_RetailOpaque in
+    their recipe and depend on it; shared-textures-common feeds the masters and drops its mention."""
     rewrites = planner.reference_rewrites(ROOT, MEGAPARK)
-    assert len(rewrites) == 42
+    assert len(rewrites) == 45
+    every = ['master/megapark/opaque', 'master/megapark/masked', 'master/megapark/translucent']
+    counts = {'every': 0, 'opaque-dependency': 0, 'dropped': 0}
     for rel, data in rewrites.items():
-        assert b'references = ["master/megapark/opaque"]' in data, rel
-
-
-def test_the_planner_leaves_input_dependencies_on_the_adopted_records_unrewritten():
-    """Known gap, reported to the owner: planner.reference_rewrites rewrites only a `references` line. Four records name an adopted
-    record of this group in `input_dependencies` (material/fx-instances on adopted/fx; three material/megapark instance records on
-    adopted/megapark/base-materials), and those stay pointing at a record the claim deletes."""
-    deps = {}
-    for rel in ('material/fx-instances', 'material/megapark/seam-instances', 'material/megapark/shared-materials-wood-instances',
-                'material/megapark/shared-materials-pavement-instances'):
-        asset = records.load_asset(ROOT / 'assets' / rel / 'asset.toml')
-        deps[rel] = asset.input_dependencies
-    assert any('adopted/fx' in d for d in deps.values())
-    assert all(any(dep.startswith('adopted/megapark/base-materials') or dep == 'adopted/fx' for dep in d)
-               for rel, d in deps.items() if 'megapark' in rel or rel == 'material/fx-instances')
-    rewritten = set(planner.reference_rewrites(ROOT, FX)) | set(planner.reference_rewrites(ROOT, MEGAPARK))
-    assert not any(rel.endswith(('fx-instances/asset.toml', 'seam-instances/asset.toml', 'wood-instances/asset.toml',
-                                 'pavement-instances/asset.toml')) for rel in rewritten)
+        record = tomllib.loads(data.decode())
+        mentions = record.get('references', []) + record.get('input_dependencies', [])
+        assert MEGAPARK['adopted'] not in mentions, rel
+        if record.get('references', [])[-3:] == every or set(every) <= set(record.get('references', [])):
+            counts['every'] += 1
+        elif 'master/megapark/opaque' in record.get('input_dependencies', []):
+            counts['opaque-dependency'] += 1
+        else:
+            assert rel == 'assets/adopted/megapark/shared-textures-common/asset.toml', rel
+            counts['dropped'] += 1
+    assert counts == {'every': 41, 'opaque-dependency': 3, 'dropped': 1}

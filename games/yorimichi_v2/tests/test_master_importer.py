@@ -190,6 +190,25 @@ def test_a_missing_expression_refuses():
     assert any('expressions only in the saved original' in p for p in digest.accept(a, b))
 
 
+def test_a_different_opacity_cutoff_refuses():
+    """@cc [owner:fontanierh,label:correctness] master-digest-cutoff-compared
+    A masked master whose saved cutoff differs from the rebuild's would change cutout edges if overwritten."""
+    saved, rebuilt = sample(props=(('opacity_mask_clip_value', 0.333),)), sample(props=(('opacity_mask_clip_value', 0.5),))
+    assert digest.accept(saved, rebuilt) == ['opacity_mask_clip_value: saved 0.333, rebuilt 0.5']
+    assert digest.accept(rebuilt, sample(props=(('opacity_mask_clip_value', 0.5000001),))) == []
+
+
+def test_the_digest_records_every_property_a_builder_writes():
+    """@cc [owner:fontanierh,label:correctness] master-digest-covers-builders
+    Each set_editor_property name in a material-master builder is a digest setting or expression property, so no value
+    a builder writes can differ from the saved original unseen. input_name is a Custom node input, recorded through inputs."""
+    import re
+    written = set()
+    for path in (SCRIPTS / 'material_masters').glob('*.py'):
+        written |= set(re.findall(r"set_editor_property\('([a-z_0-9]+)'", path.read_text()))
+    assert written - set(digest.SETTINGS) - set(digest.EXPRESSION_PROPERTIES) - {'input_name'} == set()
+
+
 def test_an_unwired_expression_of_the_saved_original_is_not_rebuilt_and_still_accepted():
     """@cc [owner:fontanierh,label:correctness] master-digest-unwired-not-compared"""
     saved = sample()

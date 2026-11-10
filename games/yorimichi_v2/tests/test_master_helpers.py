@@ -241,17 +241,17 @@ def test_the_swordcamp_references_rewrite_to_the_camp_master():
         assert tomllib.loads(data.decode())['references'] == ['master/swordcamp/camp'], rel
 
 
-def test_the_hidamari_references_rewrite_to_the_city_master_and_the_plaster_loop_is_noted():
+def test_the_hidamari_references_rewrite_to_the_city_master_and_the_plaster_input_drops_its_mention():
     rewrites = planner.reference_rewrites(GAME, CITY)
     referencing = [p for p in records.record_paths(GAME)
                    if CITY['adopted'] in records.load_asset(p).references and
                    p.relative_to(GAME).as_posix() != f'assets/{CITY["adopted"]}/asset.toml']
     assert len(rewrites) == len(referencing) == 56
-    for rel, data in rewrites.items():
-        assert tomllib.loads(data.decode())['references'] == ['master/hidamari/city'], rel
-    # the plaster record is both an input of the master and, after the rewrite, a referencer of it: a two-record loop
     plaster = 'assets/adopted/japan/hidamari/surface-plaster/asset.toml'
-    assert plaster in rewrites
+    for rel, data in rewrites.items():
+        expected = [] if rel == plaster else ['master/hidamari/city']
+        assert tomllib.loads(data.decode()).get('references', []) == expected, rel
+    # the plaster record is an input of the master, so it drops the mention rather than reference what it feeds
     assert CITY['masters'][0]['inputs'] == ['adopted/japan/hidamari/surface-plaster']
 
 

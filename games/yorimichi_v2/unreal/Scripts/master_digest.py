@@ -24,11 +24,16 @@ try:
 except ImportError:   # outside the editor only the pure functions are usable
     U = None
 
-SETTINGS = ('blend_mode', 'shading_model', 'two_sided')
+# Every material-level property a builder writes, plus the domain: a cutoff or a usage flag that differs refuses.
+SETTINGS = ('blend_mode', 'shading_model', 'two_sided', 'material_domain', 'opacity_mask_clip_value',
+            'used_with_instanced_static_meshes', 'used_with_skeletal_mesh', 'used_with_static_lighting')
 PROPERTY_PINS = ('MP_BASE_COLOR', 'MP_NORMAL', 'MP_ROUGHNESS', 'MP_METALLIC', 'MP_SPECULAR', 'MP_EMISSIVE_COLOR',
-                 'MP_OPACITY', 'MP_OPACITY_MASK', 'MP_AMBIENT_OCCLUSION', 'MP_WORLD_POSITION_OFFSET')
+                 'MP_OPACITY', 'MP_OPACITY_MASK', 'MP_AMBIENT_OCCLUSION', 'MP_WORLD_POSITION_OFFSET', 'MP_REFRACTION',
+                 'MP_PIXEL_DEPTH_OFFSET', 'MP_SUBSURFACE_COLOR', 'MP_CUSTOM_DATA0', 'MP_CUSTOM_DATA1', 'MP_TANGENT',
+                 'MP_ANISOTROPY', 'MP_SHADING_MODEL')   # a pin this engine does not have is skipped on both sides alike
 EXPRESSION_PROPERTIES = ('parameter_name', 'default_value', 'r', 'constant', 'const_a', 'const_b', 'texture',
-                         'sampler_type', 'code', 'coordinate_index', 'output_type', 'data_index', 'const_default_value')
+                         'sampler_type', 'code', 'coordinate_index', 'output_type', 'data_index', 'const_default_value',
+                         'inputs')   # a Custom node's inputs, recorded by name
 LISTS = ('expressions', 'connections', 'property_connections')
 SETS = ('parameters',)
 
@@ -81,6 +86,10 @@ def accept(saved, rebuilt):
 
 
 def _value(value):
+    if isinstance(value, (list, tuple)):
+        return [_value(v) for v in value]
+    if hasattr(value, 'input_name'):   # a Custom node input: its name, never the struct's text (which carries an address)
+        return str(value.input_name)
     if hasattr(value, 'get_path_name'):
         return value.get_path_name().split('.')[0]
     if hasattr(value, 'r') and hasattr(value, 'a'):
@@ -105,7 +114,7 @@ def _digest(material):
     settings = {}
     for key in SETTINGS:
         value = material.get_editor_property(key)
-        settings[key] = value if isinstance(value, bool) else str(value)
+        settings[key] = value if isinstance(value, (bool, float)) else str(value)
     every = list(MEL.get_material_expressions(material) or [])
     text = {}
     for expression in every:
@@ -116,6 +125,8 @@ def _digest(material):
 
     pins = {}
     for pin in PROPERTY_PINS:
+        if not hasattr(U.MaterialProperty, pin):
+            continue
         node = MEL.get_material_property_input_node(material, getattr(U.MaterialProperty, pin))
         if node is not None:
             pins[pin] = node

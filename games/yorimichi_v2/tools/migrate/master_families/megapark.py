@@ -15,11 +15,11 @@ FAMILY = {
     'builder': 'megapark_masters.py',   # unreal/Scripts/material_masters/, copied into each record's src/
     'donor': 'games/yorimichi/unreal/Scripts/import_megapark.py',
     'donor_lines': {'retail_material': '68-163'},
-    # The fallback is the opaque retail parent. The 22 cell records each own material instances that parent to all three retail
-    # parents (their meshes are mostly opaque, 21 cells have masked meshes and 3 have translucent ones), and the seam and shared
-    # instance records name M_RetailOpaque. No single master is exact for a cell; the planner's one-master fallback is the gap the
-    # owner must decide (see the report). The default textures are not masters' outputs, so they come from shared-textures-common.
-    'fallback': 'master/megapark/opaque',
+    # The fallback is all three retail parents. The 22 cell records each own material instances that parent to all three
+    # (their meshes are mostly opaque; 21 cells have masked meshes and 3 translucent ones), so a cell that names no master
+    # package in its recipe references every one. The seam and shared instance records name M_RetailOpaque and map to it.
+    # shared-textures-common is an input of the masters, so its mention is dropped rather than rewritten.
+    'fallback': ['master/megapark/opaque', 'master/megapark/masked', 'master/megapark/translucent'],
     # `reads` are the four default textures every retail parent is built on (the donor's `defaults`), owned by shared-textures-common.
     # `arguments` carry the donor's alpha: 0 opaque, 1 masked, 2 translucent (blend mode, two-sided and the opacity pin all follow it).
     'masters': [

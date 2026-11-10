@@ -128,8 +128,10 @@ def test_racing_saves_live_under_the_project_saved_dir_not_the_content_tree():
     and no migration or content tool names the racing files."""
     racing = read_source('Racing/RacingService.cpp')
     assert 'FPaths::ProjectSavedDir() / TEXT("racing") / TEXT("world.json")' in racing
-    for path in (ROOT / 'tools').rglob('*.py'):
-        assert 'racing' not in path.read_text().lower(), path.relative_to(ROOT)
+    for path in (ROOT / 'tools').rglob('*.py'):   # the racing TV master (master_families/racing.py) is content, not a save
+        text = path.read_text().lower()
+        assert 'racing/world.json' not in text and "'racing', 'world.json'" not in text, path.relative_to(ROOT)
+        assert 'saved/racing' not in text and 'racingservice' not in text, path.relative_to(ROOT)
 
 
 def test_racing_and_tv_targets_are_still_spawned_by_the_world():
