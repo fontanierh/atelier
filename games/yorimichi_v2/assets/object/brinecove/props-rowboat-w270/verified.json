@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/props-rowboat-w270",
+  "dependencies": {
+    "prop/brinecove/props-rowboat-w270": "b34a4288028b61753c23be5e785d5094e738de017b9fe35abbfefcb5bafc9887"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/1/XV/APZC6Y0F2OT3TQRT07KG3B.uasset": "1428f142a372cec69280dc7131af9c2e44099359e13aafec2c0ac77a7e4230b3"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

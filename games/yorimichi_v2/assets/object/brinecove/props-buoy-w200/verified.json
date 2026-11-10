@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/props-buoy-w200",
+  "dependencies": {
+    "prop/brinecove/props-buoy-w200": "fabd6bc086a7df7c83fcfd9fd3946ff4023cf072bfc75a1c7f9fc3717cb05807"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/9/SZ/R38H2CTLDGOX0QMIH2NYPP.uasset": "40849bc7f655d0877e4d4ec028d650e9d0914843852ce005707a7457ccfefef3"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

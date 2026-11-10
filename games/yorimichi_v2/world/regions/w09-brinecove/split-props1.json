@@ -1,0 +1,978 @@
+{
+  "about": "Expected result of tools/migrate/brinecove_split_apply.py (docs/inventory/brinecove-split.md): each part mesh, each tile remainder, and the donor tile each was cut from.",
+  "parts": {
+    "prop/brinecove/props-buoy-e190": {
+      "materials": [
+        "BC_flag_red",
+        "BC_metal"
+      ],
+      "max": [
+        190.7,
+        1.6,
+        190.7
+      ],
+      "mesh": "SM_BC_PropsBuoyE190",
+      "min": [
+        189.3,
+        -0.25,
+        189.3
+      ],
+      "object": "props-buoy-e190",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsBuoyE190",
+      "sha256": "edfe08aa83a194d902a4de38dffb822cd4ceca470c079d285639d946ada33a20",
+      "soft": false,
+      "tiles": [
+        "Props_4_2"
+      ],
+      "triangles": 100
+    },
+    "prop/brinecove/props-buoy-w200": {
+      "materials": [
+        "BC_flag_red",
+        "BC_metal"
+      ],
+      "max": [
+        -199.3,
+        1.6,
+        160.7
+      ],
+      "mesh": "SM_BC_PropsBuoyW200",
+      "min": [
+        -200.7,
+        -0.25,
+        159.3
+      ],
+      "object": "props-buoy-w200",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsBuoyW200",
+      "sha256": "778cf2f6e9be124eede21f1dec18eb533fdeb4be430749508994d4c2559ec129",
+      "soft": false,
+      "tiles": [
+        "Props_3_2"
+      ],
+      "triangles": 100
+    },
+    "prop/brinecove/props-buoy-w90": {
+      "materials": [
+        "BC_flag_red",
+        "BC_metal"
+      ],
+      "max": [
+        -89.3,
+        1.6,
+        210.7
+      ],
+      "mesh": "SM_BC_PropsBuoyW90",
+      "min": [
+        -90.7,
+        -0.25,
+        209.3
+      ],
+      "object": "props-buoy-w90",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsBuoyW90",
+      "sha256": "5139eab1eda6a5bf5d1134cbf34d43427662add8b6f8c75cc4ac426a3662e227",
+      "soft": false,
+      "tiles": [
+        "Props_3_2"
+      ],
+      "triangles": 100
+    },
+    "prop/brinecove/props-potted-palm-e120": {
+      "materials": [
+        "BC_autumn_olive",
+        "BC_clay",
+        "BC_wood",
+        "BC_wood_dark"
+      ],
+      "max": [
+        121.0,
+        34.8346,
+        -299.0
+      ],
+      "mesh": "SM_BC_PropsPottedPalmE120",
+      "min": [
+        119.0,
+        30.3,
+        -301.0
+      ],
+      "object": "props-potted-palm-e120",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsPottedPalmE120",
+      "sha256": "c6bf49d2f1bf9c27a2047b531854c1afeaa6d23aff44823f3516513f6167296b",
+      "soft": false,
+      "tiles": [
+        "Props_4_4"
+      ],
+      "triangles": 206
+    },
+    "prop/brinecove/props-potted-palm-e120-soft": {
+      "materials": [
+        "BC_palm_frond"
+      ],
+      "max": [
+        122.5429,
+        36.0752,
+        -297.5567
+      ],
+      "mesh": "SM_BC_PropsPottedPalmE120_Soft",
+      "min": [
+        118.0599,
+        33.628,
+        -302.3635
+      ],
+      "object": "props-potted-palm-e120",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsPottedPalmE120_Soft",
+      "sha256": "74844b458b88ca412fc1cfe9fb943d91e4ae00a92f639b8efc3f6c75a0c7d771",
+      "soft": true,
+      "tiles": [
+        "Props_4_4_Soft"
+      ],
+      "triangles": 30
+    },
+    "prop/brinecove/props-potted-palm-e280": {
+      "materials": [
+        "BC_autumn_olive",
+        "BC_clay",
+        "BC_wood",
+        "BC_wood_dark"
+      ],
+      "max": [
+        281.0,
+        34.5309,
+        -299.0
+      ],
+      "mesh": "SM_BC_PropsPottedPalmE280",
+      "min": [
+        278.9666,
+        30.3,
+        -301.0
+      ],
+      "object": "props-potted-palm-e280",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsPottedPalmE280",
+      "sha256": "74715bb246fa9d9c9dfa5b520bc0c101c273e0cac146eea4951816e42a0f0036",
+      "soft": false,
+      "tiles": [
+        "Props_5_4"
+      ],
+      "triangles": 206
+    },
+    "prop/brinecove/props-potted-palm-e280-soft": {
+      "materials": [
+        "BC_palm_frond"
+      ],
+      "max": [
+        282.1246,
+        35.6993,
+        -297.1321
+      ],
+      "mesh": "SM_BC_PropsPottedPalmE280_Soft",
+      "min": [
+        277.0293,
+        33.3087,
+        -301.9649
+      ],
+      "object": "props-potted-palm-e280",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsPottedPalmE280_Soft",
+      "sha256": "db9c8c9a428cc2ca388d515bb9cb100ad78597bec1172e901b53c65a9f66378c",
+      "soft": true,
+      "tiles": [
+        "Props_5_4_Soft"
+      ],
+      "triangles": 30
+    },
+    "prop/brinecove/props-potted-palm-e45": {
+      "materials": [
+        "BC_autumn_olive",
+        "BC_clay",
+        "BC_wood",
+        "BC_wood_dark"
+      ],
+      "max": [
+        46.0,
+        9.9656,
+        -235.0
+      ],
+      "mesh": "SM_BC_PropsPottedPalmE45",
+      "min": [
+        44.0,
+        4.658,
+        -237.0
+      ],
+      "object": "props-potted-palm-e45",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsPottedPalmE45",
+      "sha256": "cdb4c106e62762ee0f4c76302548e3b5aa2ce04550e4bbff0c9746f0e2c02938",
+      "soft": false,
+      "tiles": [
+        "Props_4_4"
+      ],
+      "triangles": 206
+    },
+    "prop/brinecove/props-potted-palm-e45-soft": {
+      "materials": [
+        "BC_palm_frond"
+      ],
+      "max": [
+        47.7841,
+        11.2008,
+        -233.812
+      ],
+      "mesh": "SM_BC_PropsPottedPalmE45_Soft",
+      "min": [
+        42.4522,
+        8.7455,
+        -238.5526
+      ],
+      "object": "props-potted-palm-e45",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsPottedPalmE45_Soft",
+      "sha256": "f52068e20be543cf2b5b8b9d06d877d6f65648c7e6f84fac6c4ed51d0b987ff0",
+      "soft": true,
+      "tiles": [
+        "Props_4_4_Soft"
+      ],
+      "triangles": 30
+    },
+    "prop/brinecove/props-potted-palm-w170": {
+      "materials": [
+        "BC_autumn_olive",
+        "BC_clay",
+        "BC_wood",
+        "BC_wood_dark"
+      ],
+      "max": [
+        -169.0,
+        34.1613,
+        -299.0
+      ],
+      "mesh": "SM_BC_PropsPottedPalmW170",
+      "min": [
+        -171.0,
+        30.3,
+        -301.0
+      ],
+      "object": "props-potted-palm-w170",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsPottedPalmW170",
+      "sha256": "ed440ffcd1d6fe0ad206a04fcfb1f561e63323e1f61a649d0111fff94f5577ea",
+      "soft": false,
+      "tiles": [
+        "Props_3_4"
+      ],
+      "triangles": 206
+    },
+    "prop/brinecove/props-potted-palm-w170-soft": {
+      "materials": [
+        "BC_palm_frond"
+      ],
+      "max": [
+        -167.7517,
+        35.2952,
+        -298.0225
+      ],
+      "mesh": "SM_BC_PropsPottedPalmW170_Soft",
+      "min": [
+        -172.8059,
+        32.945,
+        -302.9273
+      ],
+      "object": "props-potted-palm-w170",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsPottedPalmW170_Soft",
+      "sha256": "981dd15a0df03c8c9cea9b0bfdbb232b4cdb45c220635dfe6a8be56d884321bb",
+      "soft": true,
+      "tiles": [
+        "Props_3_4_Soft"
+      ],
+      "triangles": 30
+    },
+    "prop/brinecove/props-potted-palm-w300": {
+      "materials": [
+        "BC_autumn_olive",
+        "BC_clay",
+        "BC_wood",
+        "BC_wood_dark"
+      ],
+      "max": [
+        -299.0,
+        35.4803,
+        -299.0
+      ],
+      "mesh": "SM_BC_PropsPottedPalmW300",
+      "min": [
+        -301.0,
+        30.3,
+        -301.0
+      ],
+      "object": "props-potted-palm-w300",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsPottedPalmW300",
+      "sha256": "3539250b76bbb66cc103090976b8df8358383a64ee01f9f03060c29077a4f97a",
+      "soft": false,
+      "tiles": [
+        "Props_2_4"
+      ],
+      "triangles": 206
+    },
+    "prop/brinecove/props-potted-palm-w300-soft": {
+      "materials": [
+        "BC_palm_frond"
+      ],
+      "max": [
+        -297.4298,
+        36.6989,
+        -297.6963
+      ],
+      "mesh": "SM_BC_PropsPottedPalmW300_Soft",
+      "min": [
+        -302.1301,
+        34.244,
+        -302.4728
+      ],
+      "object": "props-potted-palm-w300",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsPottedPalmW300_Soft",
+      "sha256": "af85a0e6491162ce74bdeccd03f120c19ac5b36d7b854cc1785ac51b5329d055",
+      "soft": true,
+      "tiles": [
+        "Props_2_4_Soft"
+      ],
+      "triangles": 30
+    },
+    "prop/brinecove/props-potted-palm-w40": {
+      "materials": [
+        "BC_autumn_olive",
+        "BC_clay",
+        "BC_wood",
+        "BC_wood_dark"
+      ],
+      "max": [
+        -39.0,
+        9.1877,
+        -235.0
+      ],
+      "mesh": "SM_BC_PropsPottedPalmW40",
+      "min": [
+        -41.0,
+        4.8305,
+        -237.0
+      ],
+      "object": "props-potted-palm-w40",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsPottedPalmW40",
+      "sha256": "2d3bf69489524801ab0b4a37eb80b7b386b15fc7bc915a79f4cd97d5e1389c7c",
+      "soft": false,
+      "tiles": [
+        "Props_3_4"
+      ],
+      "triangles": 206
+    },
+    "prop/brinecove/props-potted-palm-w40-soft": {
+      "materials": [
+        "BC_palm_frond"
+      ],
+      "max": [
+        -37.69,
+        10.4103,
+        -233.8295
+      ],
+      "mesh": "SM_BC_PropsPottedPalmW40_Soft",
+      "min": [
+        -42.1566,
+        7.9912,
+        -238.5047
+      ],
+      "object": "props-potted-palm-w40",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsPottedPalmW40_Soft",
+      "sha256": "998c96073e86bfa01d1eb0612de17ab24d996d79b949ee7e00027c50768b155e",
+      "soft": true,
+      "tiles": [
+        "Props_3_4_Soft"
+      ],
+      "triangles": 30
+    },
+    "prop/brinecove/props-rowboat-e145": {
+      "materials": [
+        "BC_wood",
+        "BC_wood_dark",
+        "BC_wood_light"
+      ],
+      "max": [
+        147.2192,
+        1.62,
+        232.4176
+      ],
+      "mesh": "SM_BC_PropsRowboatE145",
+      "min": [
+        142.7808,
+        0.336,
+        223.5815
+      ],
+      "object": "props-rowboat-e145",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsRowboatE145",
+      "sha256": "0dae41946e7d78ae6c1902acc3d2a6777c98f06c505b0c547bee231bca8b1b94",
+      "soft": false,
+      "tiles": [
+        "Props_4_2"
+      ],
+      "triangles": 96
+    },
+    "prop/brinecove/props-rowboat-e270": {
+      "materials": [
+        "BC_wood",
+        "BC_wood_dark",
+        "BC_wood_light"
+      ],
+      "max": [
+        274.3799,
+        1.62,
+        184.5564
+      ],
+      "mesh": "SM_BC_PropsRowboatE270",
+      "min": [
+        265.6209,
+        0.336,
+        179.4435
+      ],
+      "object": "props-rowboat-e270",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsRowboatE270",
+      "sha256": "0bd552fc592284889bc388be856783f2f21bf5af44815432c782e797edb5bb4d",
+      "soft": false,
+      "tiles": [
+        "Props_5_2"
+      ],
+      "triangles": 96
+    },
+    "prop/brinecove/props-rowboat-w155": {
+      "materials": [
+        "BC_wood",
+        "BC_wood_dark",
+        "BC_wood_light"
+      ],
+      "max": [
+        -152.1637,
+        1.8,
+        209.8643
+      ],
+      "mesh": "SM_BC_PropsRowboatW155",
+      "min": [
+        -157.8364,
+        0.376,
+        200.1349
+      ],
+      "object": "props-rowboat-w155",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsRowboatW155",
+      "sha256": "26e6a58653fc1d3c58f36eadfba3e26c6c602c19568540014cbf55ecf02a7328",
+      "soft": false,
+      "tiles": [
+        "Props_3_2"
+      ],
+      "triangles": 96
+    },
+    "prop/brinecove/props-rowboat-w270": {
+      "materials": [
+        "BC_wood",
+        "BC_wood_dark",
+        "BC_wood_light"
+      ],
+      "max": [
+        -266.167,
+        1.44,
+        147.5072
+      ],
+      "mesh": "SM_BC_PropsRowboatW270",
+      "min": [
+        -273.8338,
+        0.296,
+        142.4927
+      ],
+      "object": "props-rowboat-w270",
+      "package": "/Game/Brinecove/Meshes/SM_BC_PropsRowboatW270",
+      "sha256": "2b943ec7f8bfc3e99a69b4ed32cd2ed5cdbaa108b3f9866e8980b15fd7b309d4",
+      "soft": false,
+      "tiles": [
+        "Props_2_3"
+      ],
+      "triangles": 96
+    }
+  },
+  "pending": {
+    "resave": [],
+    "stale": []
+  },
+  "retired": false,
+  "schema": 1,
+  "selection": [
+    "props-buoy-e190",
+    "props-buoy-w200",
+    "props-buoy-w90",
+    "props-potted-palm-e120",
+    "props-potted-palm-e280",
+    "props-potted-palm-e45",
+    "props-potted-palm-w170",
+    "props-potted-palm-w300",
+    "props-potted-palm-w40",
+    "props-rowboat-e145",
+    "props-rowboat-e270",
+    "props-rowboat-w155",
+    "props-rowboat-w270"
+  ],
+  "shares": {
+    "Props_2_3": {
+      "prop/brinecove/props-rowboat-w270": 96
+    },
+    "Props_2_4": {
+      "prop/brinecove/props-potted-palm-w300": 206
+    },
+    "Props_2_4_Soft": {
+      "prop/brinecove/props-potted-palm-w300-soft": 30
+    },
+    "Props_3_2": {
+      "prop/brinecove/props-buoy-w200": 100,
+      "prop/brinecove/props-buoy-w90": 100,
+      "prop/brinecove/props-rowboat-w155": 96
+    },
+    "Props_3_4": {
+      "prop/brinecove/props-potted-palm-w170": 206,
+      "prop/brinecove/props-potted-palm-w40": 206
+    },
+    "Props_3_4_Soft": {
+      "prop/brinecove/props-potted-palm-w170-soft": 30,
+      "prop/brinecove/props-potted-palm-w40-soft": 30
+    },
+    "Props_4_2": {
+      "prop/brinecove/props-buoy-e190": 100,
+      "prop/brinecove/props-rowboat-e145": 96
+    },
+    "Props_4_4": {
+      "prop/brinecove/props-potted-palm-e120": 206,
+      "prop/brinecove/props-potted-palm-e45": 206
+    },
+    "Props_4_4_Soft": {
+      "prop/brinecove/props-potted-palm-e120-soft": 30,
+      "prop/brinecove/props-potted-palm-e45-soft": 30
+    },
+    "Props_5_2": {
+      "prop/brinecove/props-rowboat-e270": 96
+    },
+    "Props_5_4": {
+      "prop/brinecove/props-potted-palm-e280": 206
+    },
+    "Props_5_4_Soft": {
+      "prop/brinecove/props-potted-palm-e280-soft": 30
+    }
+  },
+  "tiles": {
+    "Props_2_3": {
+      "original": {
+        "material_package": {
+          "BC_metal": "/Game/Brinecove/Materials/MI_BC_metal",
+          "BC_rope": "/Game/Brinecove/Materials/MI_BC_rope",
+          "BC_sail": "/Game/Brinecove/Materials/MI_BC_sail",
+          "BC_stone": "/Game/Brinecove/Materials/MI_BC_stone",
+          "BC_stone_light": "/Game/Brinecove/Materials/MI_BC_stone_light",
+          "BC_wood": "/Game/Brinecove/Materials/MI_BC_wood",
+          "BC_wood_dark": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+          "BC_wood_light": "/Game/Brinecove/Materials/MI_BC_wood_light"
+        },
+        "owner": "shared/brinecove/props-2-3",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "collision": "complex",
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_metal",
+            "/Game/Brinecove/Materials/MI_BC_rope",
+            "/Game/Brinecove/Materials/MI_BC_sail",
+            "/Game/Brinecove/Materials/MI_BC_stone",
+            "/Game/Brinecove/Materials/MI_BC_stone_light",
+            "/Game/Brinecove/Materials/MI_BC_wood",
+            "/Game/Brinecove/Materials/MI_BC_wood_dark",
+            "/Game/Brinecove/Materials/MI_BC_wood_light"
+          ],
+          "triangles": 2170
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_Props_2_3",
+      "record": "prop/brinecove/props-2-3",
+      "remainder": {
+        "materials": [
+          "BC_sail"
+        ],
+        "sha256": "b5b7bffc72f9f8745c14a9789c56ca3231e51fd7b3018248885ea9aad904cb75",
+        "triangles": 22
+      },
+      "source_triangles": 118
+    },
+    "Props_2_4": {
+      "original": {
+        "material_package": {
+          "BC_autumn_olive": "/Game/Brinecove/Materials/MI_BC_autumn_olive",
+          "BC_clay": "/Game/Brinecove/Materials/MI_BC_clay",
+          "BC_lantern": "/Game/Brinecove/Materials/MI_BC_lantern",
+          "BC_metal": "/Game/Brinecove/Materials/MI_BC_metal",
+          "BC_wood": "/Game/Brinecove/Materials/MI_BC_wood",
+          "BC_wood_dark": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+          "BC_wood_light": "/Game/Brinecove/Materials/MI_BC_wood_light"
+        },
+        "owner": "shared/brinecove/props-2-4",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "collision": "complex",
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_autumn_olive",
+            "/Game/Brinecove/Materials/MI_BC_clay",
+            "/Game/Brinecove/Materials/MI_BC_lantern",
+            "/Game/Brinecove/Materials/MI_BC_metal",
+            "/Game/Brinecove/Materials/MI_BC_wood",
+            "/Game/Brinecove/Materials/MI_BC_wood_dark",
+            "/Game/Brinecove/Materials/MI_BC_wood_light"
+          ],
+          "triangles": 1010
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_Props_2_4",
+      "record": "prop/brinecove/props-2-4",
+      "remainder": {
+        "materials": [
+          "BC_lantern",
+          "BC_metal",
+          "BC_wood",
+          "BC_wood_dark",
+          "BC_wood_light"
+        ],
+        "sha256": "9a7cf6b1710710dc63910244da141339ccc3c58ecc4566da84d28d3b5ced5da3",
+        "triangles": 804
+      },
+      "source_triangles": 1010
+    },
+    "Props_2_4_Soft": {
+      "original": {
+        "material_package": {
+          "BC_palm_frond": "/Game/Brinecove/Materials/MI_BC_palm_frond"
+        },
+        "owner": "shared/brinecove/props-2-4-soft",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_palm_frond"
+          ],
+          "triangles": 30
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_Props_2_4_Soft",
+      "record": "prop/brinecove/props-2-4-soft",
+      "remainder": null,
+      "source_triangles": 30
+    },
+    "Props_3_2": {
+      "original": {
+        "material_package": {
+          "BC_flag_red": "/Game/Brinecove/Materials/MI_BC_flag_red",
+          "BC_metal": "/Game/Brinecove/Materials/MI_BC_metal",
+          "BC_sail": "/Game/Brinecove/Materials/MI_BC_sail",
+          "BC_wood": "/Game/Brinecove/Materials/MI_BC_wood",
+          "BC_wood_dark": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+          "BC_wood_light": "/Game/Brinecove/Materials/MI_BC_wood_light"
+        },
+        "owner": "shared/brinecove/props-3-2",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "collision": "complex",
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_flag_red",
+            "/Game/Brinecove/Materials/MI_BC_metal",
+            "/Game/Brinecove/Materials/MI_BC_sail",
+            "/Game/Brinecove/Materials/MI_BC_wood",
+            "/Game/Brinecove/Materials/MI_BC_wood_dark",
+            "/Game/Brinecove/Materials/MI_BC_wood_light"
+          ],
+          "triangles": 428
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_Props_3_2",
+      "record": "prop/brinecove/props-3-2",
+      "remainder": {
+        "materials": [
+          "BC_sail",
+          "BC_wood_dark",
+          "BC_wood_light"
+        ],
+        "sha256": "5e332bbf6ffa3d624f2d9eebfb713a9e4789cfb96f436e1fb9a19cc4bf1412e8",
+        "triangles": 132
+      },
+      "source_triangles": 428
+    },
+    "Props_3_4": {
+      "original": {
+        "material_package": {
+          "BC_autumn_olive": "/Game/Brinecove/Materials/MI_BC_autumn_olive",
+          "BC_clay": "/Game/Brinecove/Materials/MI_BC_clay",
+          "BC_lantern": "/Game/Brinecove/Materials/MI_BC_lantern",
+          "BC_metal": "/Game/Brinecove/Materials/MI_BC_metal",
+          "BC_wood": "/Game/Brinecove/Materials/MI_BC_wood",
+          "BC_wood_dark": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+          "BC_wood_light": "/Game/Brinecove/Materials/MI_BC_wood_light"
+        },
+        "owner": "shared/brinecove/props-3-4",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "collision": "complex",
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_autumn_olive",
+            "/Game/Brinecove/Materials/MI_BC_clay",
+            "/Game/Brinecove/Materials/MI_BC_lantern",
+            "/Game/Brinecove/Materials/MI_BC_metal",
+            "/Game/Brinecove/Materials/MI_BC_wood",
+            "/Game/Brinecove/Materials/MI_BC_wood_dark",
+            "/Game/Brinecove/Materials/MI_BC_wood_light"
+          ],
+          "triangles": 1188
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_Props_3_4",
+      "record": "prop/brinecove/props-3-4",
+      "remainder": {
+        "materials": [
+          "BC_lantern",
+          "BC_metal",
+          "BC_wood",
+          "BC_wood_dark",
+          "BC_wood_light"
+        ],
+        "sha256": "ed12a262241b10d6494c1eaa6927687aa3327eb598dbaac019e01e12b2326e98",
+        "triangles": 776
+      },
+      "source_triangles": 1188
+    },
+    "Props_3_4_Soft": {
+      "original": {
+        "material_package": {
+          "BC_palm_frond": "/Game/Brinecove/Materials/MI_BC_palm_frond"
+        },
+        "owner": "shared/brinecove/props-3-4-soft",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_palm_frond"
+          ],
+          "triangles": 60
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_Props_3_4_Soft",
+      "record": "prop/brinecove/props-3-4-soft",
+      "remainder": null,
+      "source_triangles": 60
+    },
+    "Props_4_2": {
+      "original": {
+        "material_package": {
+          "BC_flag_red": "/Game/Brinecove/Materials/MI_BC_flag_red",
+          "BC_metal": "/Game/Brinecove/Materials/MI_BC_metal",
+          "BC_sail": "/Game/Brinecove/Materials/MI_BC_sail",
+          "BC_wood": "/Game/Brinecove/Materials/MI_BC_wood",
+          "BC_wood_dark": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+          "BC_wood_light": "/Game/Brinecove/Materials/MI_BC_wood_light"
+        },
+        "owner": "shared/brinecove/props-4-2",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "collision": "complex",
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_flag_red",
+            "/Game/Brinecove/Materials/MI_BC_metal",
+            "/Game/Brinecove/Materials/MI_BC_sail",
+            "/Game/Brinecove/Materials/MI_BC_wood",
+            "/Game/Brinecove/Materials/MI_BC_wood_dark",
+            "/Game/Brinecove/Materials/MI_BC_wood_light"
+          ],
+          "triangles": 382
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_Props_4_2",
+      "record": "prop/brinecove/props-4-2",
+      "remainder": {
+        "materials": [
+          "BC_metal",
+          "BC_sail",
+          "BC_wood"
+        ],
+        "sha256": "15daec5275c3d9d2beb4cb29d003f777a13ab227d54decc314d0fd7ee9f18b9e",
+        "triangles": 186
+      },
+      "source_triangles": 382
+    },
+    "Props_4_4": {
+      "original": {
+        "material_package": {
+          "BC_autumn_olive": "/Game/Brinecove/Materials/MI_BC_autumn_olive",
+          "BC_clay": "/Game/Brinecove/Materials/MI_BC_clay",
+          "BC_lantern": "/Game/Brinecove/Materials/MI_BC_lantern",
+          "BC_metal": "/Game/Brinecove/Materials/MI_BC_metal",
+          "BC_wood": "/Game/Brinecove/Materials/MI_BC_wood",
+          "BC_wood_dark": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+          "BC_wood_light": "/Game/Brinecove/Materials/MI_BC_wood_light"
+        },
+        "owner": "shared/brinecove/props-4-4",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "collision": "complex",
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_autumn_olive",
+            "/Game/Brinecove/Materials/MI_BC_clay",
+            "/Game/Brinecove/Materials/MI_BC_lantern",
+            "/Game/Brinecove/Materials/MI_BC_metal",
+            "/Game/Brinecove/Materials/MI_BC_wood",
+            "/Game/Brinecove/Materials/MI_BC_wood_dark",
+            "/Game/Brinecove/Materials/MI_BC_wood_light"
+          ],
+          "triangles": 1480
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_Props_4_4",
+      "record": "prop/brinecove/props-4-4",
+      "remainder": {
+        "materials": [
+          "BC_lantern",
+          "BC_metal",
+          "BC_wood",
+          "BC_wood_dark",
+          "BC_wood_light"
+        ],
+        "sha256": "aa2a8fc929cd45ebf927d301c0ac05eb597a855f86b06f2f5a627289cffc824d",
+        "triangles": 1068
+      },
+      "source_triangles": 1480
+    },
+    "Props_4_4_Soft": {
+      "original": {
+        "material_package": {
+          "BC_palm_frond": "/Game/Brinecove/Materials/MI_BC_palm_frond"
+        },
+        "owner": "shared/brinecove/props-4-4-soft",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_palm_frond"
+          ],
+          "triangles": 60
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_Props_4_4_Soft",
+      "record": "prop/brinecove/props-4-4-soft",
+      "remainder": null,
+      "source_triangles": 60
+    },
+    "Props_5_2": {
+      "original": {
+        "material_package": {
+          "BC_wood": "/Game/Brinecove/Materials/MI_BC_wood",
+          "BC_wood_dark": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+          "BC_wood_light": "/Game/Brinecove/Materials/MI_BC_wood_light"
+        },
+        "owner": "shared/brinecove/props-5-2",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "collision": "complex",
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_wood",
+            "/Game/Brinecove/Materials/MI_BC_wood_dark",
+            "/Game/Brinecove/Materials/MI_BC_wood_light"
+          ],
+          "triangles": 96
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_Props_5_2",
+      "record": "prop/brinecove/props-5-2",
+      "remainder": null,
+      "source_triangles": 96
+    },
+    "Props_5_4": {
+      "original": {
+        "material_package": {
+          "BC_autumn_olive": "/Game/Brinecove/Materials/MI_BC_autumn_olive",
+          "BC_clay": "/Game/Brinecove/Materials/MI_BC_clay",
+          "BC_lantern": "/Game/Brinecove/Materials/MI_BC_lantern",
+          "BC_metal": "/Game/Brinecove/Materials/MI_BC_metal",
+          "BC_wood": "/Game/Brinecove/Materials/MI_BC_wood",
+          "BC_wood_dark": "/Game/Brinecove/Materials/MI_BC_wood_dark",
+          "BC_wood_light": "/Game/Brinecove/Materials/MI_BC_wood_light"
+        },
+        "owner": "shared/brinecove/props-5-4",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "collision": "complex",
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_autumn_olive",
+            "/Game/Brinecove/Materials/MI_BC_clay",
+            "/Game/Brinecove/Materials/MI_BC_lantern",
+            "/Game/Brinecove/Materials/MI_BC_metal",
+            "/Game/Brinecove/Materials/MI_BC_wood",
+            "/Game/Brinecove/Materials/MI_BC_wood_dark",
+            "/Game/Brinecove/Materials/MI_BC_wood_light"
+          ],
+          "triangles": 1010
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_Props_5_4",
+      "record": "prop/brinecove/props-5-4",
+      "remainder": {
+        "materials": [
+          "BC_lantern",
+          "BC_metal",
+          "BC_wood",
+          "BC_wood_dark",
+          "BC_wood_light"
+        ],
+        "sha256": "90af2d9aed1ccba3b0dc96655ede43806e1d07a105624f0e9d049634acedc899",
+        "triangles": 804
+      },
+      "source_triangles": 1010
+    },
+    "Props_5_4_Soft": {
+      "original": {
+        "material_package": {
+          "BC_palm_frond": "/Game/Brinecove/Materials/MI_BC_palm_frond"
+        },
+        "owner": "shared/brinecove/props-5-4-soft",
+        "references": [
+          "adopted/brinecove/materials"
+        ],
+        "settings": {
+          "full_precision_uvs": true,
+          "slot_materials": [
+            "/Game/Brinecove/Materials/MI_BC_palm_frond"
+          ],
+          "triangles": 30
+        }
+      },
+      "package": "/Game/Brinecove/Meshes/SM_BC_Props_5_4_Soft",
+      "record": "prop/brinecove/props-5-4-soft",
+      "remainder": null,
+      "source_triangles": 30
+    }
+  }
+}

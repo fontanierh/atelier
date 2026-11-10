@@ -1,0 +1,25 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_PropsPottedPalmE120_Soft: the props potted palm e120, cut from the fused tile(s) Props_4_4_Soft (30 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/brinecove/props-potted-palm-e120-soft"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/brinecove/props-potted-palm-e120-soft"
+references = ["adopted/brinecove/materials"]
+
+[[sources]]
+path = "src/SM_BC_PropsPottedPalmE120_Soft.glb"
+sha256 = "74844b458b88ca412fc1cfe9fb943d91e4ae00a92f639b8efc3f6c75a0c7d771"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Brinecove/Materials/MI_BC_palm_frond"]
+triangles = 30
+full_precision_uvs = true
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_PropsPottedPalmE120_Soft"
