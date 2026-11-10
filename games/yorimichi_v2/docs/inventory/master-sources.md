@@ -1,7 +1,10 @@
 # Generator-built master materials: recovery design
 
-Status: proposal and inventory. Nothing is imported, claimed or pushed. The machine-readable inventory is
-[master-sources.json](master-sources.json); the held list is [small-families-masters.txt](small-families-masters.txt).
+Current checkpoint: [PR #803](https://github.com/fontanierh/atelier/pull/803) contains 36 imported masters, including
+the 13-master Japan base batch. These are branch results, not yet a merged or packaged checkpoint. The importer and
+native read-back now exist; the original preparation proposal in sections 5–8 is historical, not an outstanding
+approval request. The machine-readable donor inventory is [master-sources.json](master-sources.json); the original
+held list is [small-families-masters.txt](small-families-masters.txt).
 Donor paths are relative to the donor root `games/yorimichi/`. Pins are sha256 of the committed blob at the V2 source
 baseline `7eec0f98dd` (docs/DECISIONS.md D01), not of the donor working tree, which is dirty.
 
@@ -178,7 +181,18 @@ Per family:
 The recipe's `reads` and `input_dependencies` are the texture records already in V2, so nothing new is imported to
 make a master recoverable.
 
-## 5. The importer and the read-back
+## 5. Historical importer proposal
+
+The steps and limitations below describe the pre-implementation proposal. The current route is
+`tools/import/run.py` with `unreal/Scripts/import_asset.py`: both cold and warm imports check every pinned source
+before preparing a write, then use the existing claim, journal and save guard. `/Game` reads need an input owner;
+`/Engine` reads are supplied by the engine. A transient rebuild is compared against the saved original before a
+save, then read back. Every old expression is removed before the in-place rebuild to prevent accumulating leftovers.
+
+The current digest compares material settings, parameter definitions and rooted wiring, including ordered input
+pins and output selections. Equal local-node multisets alone cannot prove the same graph. Historical reports without
+this topology remain historical evidence; obtain a fresh read-only report when this stronger comparison is needed,
+without automatically reimporting or discarding completed packages.
 
 `material-master` runs inside the V2 editor. Its phases:
 
@@ -199,7 +213,7 @@ wiring. Two graphs with equal counts and textures can differ in connections. `re
 with a wiring digest (each expression's class, its properties and its input links, sorted) and run it on all 23 masters.
 That extension is a separate change, not part of this preparation.
 
-## 6. Changes this design needs (not written here)
+## 6. Historical implementation checklist (implemented in PR #803)
 
 `unreal/Scripts/import_asset.py` is not changed in this preparation. The change it needs, for review:
 
@@ -212,7 +226,10 @@ That extension is a separate change, not part of this preparation.
 
 `tools/import/run.py` and `build_batches.py` are not touched by this preparation.
 
-## 7. Owner decisions
+## 7. Historical owner decisions (covered by standing migration authorization)
+
+The migration proceeds with generated authority and pinned sources, declared engine reads, and recipe arguments for
+variants. These original recommendations are retained as design history, not a request for another approval.
 
 1. **Keep or convert the two constant-only masters.** `M_RacingTv` and `M_BoardDissolve` have no texture input and few
    parameters. Converting them to editor-owned would let the owner edit them directly, and nothing would be lost from the
@@ -230,7 +247,7 @@ That extension is a separate change, not part of this preparation.
 5. **Painted pier metallic.** The `painted` master uses the steel maps with metallic 0. Recommendation: state it as an
    argument (`metallic = 0.0`), not as a second builder.
 
-## 8. What was not done
+## 8. What the original preparation did not do
 
 - No donor file was copied into V2 `src/` (the copies are the recovery step, not the inventory).
 - The code changes are the validator (`tools/content/records.py`), the published kind enum
@@ -335,7 +352,8 @@ ground_grain.py `c802eea4`, painterly_kernel.py `70f9be7d`, coast_rock_look.py `
 - `tests/test_master_japanbase.py` traces each builder against the Recorder and asserts its property pins, codes, settings
   and texture reads, and that nothing is saved or imported. It also checks that the planner loads the family and that each
   read is an output of an input record on disk.
-- Not checked: the wiring digest against the saved original. That needs the editor (report_masters.py, native).
+- The 13-master native batch was imported under MASTERS2 and accepted by the then-current digest. Its saved results
+  remain evidence for that revision; the stronger rooted comparison described above is not retroactively claimed.
 
 ### 10.2 What stays in `adopted/japan/materials/base-materials`, and why
 
@@ -345,10 +363,12 @@ ground_grain.py `c802eea4`, painterly_kernel.py `70f9be7d`, coast_rock_look.py `
   not pinned). Their helpers are not yet copied into a builder.
 - `M_Sky` is direct, but it shares `master()` with `M_Painted`, `M_Foliage` and `M_Grass`. It waits until `master()` is split.
 
-The planner refuses while these 14 are in the record: `state` reports `adopted/japan/materials/base-materials also owns
-['/Game/Japan/Materials/MPC_Wind', ...]` with all 14 names. Nothing is claimed.
+The implemented `keeps` route retains these 14 packages and their existing source pins while the 13 moved masters
+become separate generated records. References to retained packages stay with the adopted record.
 
-### 10.3 Decisions for the owner
+### 10.3 Original design questions (resolved by `keeps`)
+
+These questions motivated the implemented route; they are not migration blockers or new approval requests.
 
 1. **A keeps mechanism is required before any claim.** A dry run of `reference_rewrites` rewrites 939 referencing records.
    809 of them name a kept master, most of them `M_NorthMountains` (675 by first match) and `M_Village` (126), then `M_NorthGate`

@@ -54,8 +54,14 @@ Saved, prepared and packaged totals are kept separate:
 
     The donor meshes carried one convex hull, which the complex-as-simple recipe drops. That trace flag never
     uses a hull, so collision is unchanged.
-- **Still open:** the 19 generator masters, the Hidamari instance, the Mega Park seams that are still held and MI_TH_pane
-  stay open; see [exceptions](inventory/exceptions.md).
+- **Imported on a branch, not yet merged or packaged:** [PR #803](https://github.com/fontanierh/atelier/pull/803)
+  contains 36 generated material masters with pinned builders: Hippodrome, skating, FX, racing, Sword Camp, Mega Park,
+  Hidamari city and 13 Japan base masters. The native batches were accepted by the digest at that revision; final
+  review strengthens source-pin and graph checks. Their historical reports do not establish the newer rooted comparison.
+  Fourteen Japan base packages remain with the adopted record (13 other masters and `MPC_Wind`); follow-up families
+  move these in separate claimed batches. Source-only generator records retain all 30 Hidamari and 43 Mega Park pins.
+- **Still open:** the remaining master inputs and kept packages, the Hidamari instance, held Mega Park seams and MI_TH_pane;
+  see [exceptions](inventory/exceptions.md) and the current [master recovery status](inventory/master-sources.md).
 
 Remaining construction work:
 - Close the other useful-object/source gaps in [exceptions](inventory/exceptions.md) and

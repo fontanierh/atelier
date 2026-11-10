@@ -303,8 +303,9 @@ ENGINE_PACKAGE = re.compile(r'^/Engine(/[A-Za-z0-9_.-]+)+$')
 def material_master_settings(recipe: dict, where: Path, authority: str, sources: list, outputs: list[str]) -> dict:
     """@cc [owner:fontanierh,label:correctness] material-master-generator-pinned
     Validate a material-master [recipe]: `importer = "material-master"`, version 1, and [recipe.settings] with `builder`
-    (the lower-case name of the generator function that builds the graph), `reads` (optional: the /Game packages the graph
-    samples, each an output of an input dependency; see material_master_input_problems) and `arguments` (optional: one plain
+    (the lower-case name of the generator function that builds the graph), `reads` (optional: packages the graph samples;
+    each /Game package is an output of an input dependency, while /Engine packages are supplied by the engine and need
+    no game owner; see material_master_input_problems) and `arguments` (optional: one plain
     scalar or string per builder argument; lists and tables are refused). A master is generator-built, so its authority is
     generated and its generator is one or more pinned .py [[sources]]: the recipe names a builder, it does not restate the
     graph. Each output is a /Game package named M_<name>."""
@@ -340,7 +341,7 @@ def material_master_settings(recipe: dict, where: Path, authority: str, sources:
 
 
 def material_master_reads(asset: 'Asset') -> list[str]:
-    """The /Game packages a material master's graph samples, in the order its record states them."""
+    """The /Game and /Engine packages a material master's graph samples, in the order its record states them."""
     return list((asset.recipe or {}).get('settings', {}).get('reads', []))
 
 
