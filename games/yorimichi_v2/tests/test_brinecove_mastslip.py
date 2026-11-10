@@ -11,6 +11,7 @@ sys.path.insert(0, str(ROOT / 'tools' / 'migrate'))
 import brinecove_mastslip as mast  # noqa: E402
 import brinecove_market as market  # noqa: E402
 import brinecove_split as split  # noqa: E402
+import brinecove_split_apply as split_apply  # noqa: E402
 
 SRC = ROOT.parent / 'yorimichi'
 _CACHE: dict = {}
@@ -100,6 +101,9 @@ def test_claim_set_names_both_records_tiles_scopes_and_the_lock():
                  'games/yorimichi_v2/world/regions/w09-brinecove/objects.toml',
                  'games/yorimichi_v2/runtime-data.lock.json'):
         assert want in paths, want
+    assert 'games/yorimichi_v2/assets/prop/brinecove/shipyard-yard/src/SM_BC_ShipyardYard.glb' in paths
+    assert 'games/yorimichi_v2/unreal/Content/Data/brinecove/runtime.json' in paths
+    assert 'games/yorimichi_v2/assets/prop/brinecove/signal-mast/verified.json' in paths
     assert info['residual_tiles'] == ['Harbor_5_3', 'Harbor_5_4', 'Market_3_4', 'Market_4_4']
     assert info['locks'] == ['games/yorimichi_v2/runtime-data.lock.json']
     assert 'region/w09-brinecove' in info['scopes'] and 'region/w00-island' in info['scopes']
@@ -186,3 +190,60 @@ def test_plan_refuses_a_donor_triangle_no_generator_face_makes(tmp_path):
     split.write_subset(stray, range(1), glb / 'SM_BC_Harbor_5_3.glb')
     with pytest.raises(market.MarketError, match='no generated face'):
         mast.plan(tmp_path, SRC, tmp_path)
+
+
+def _fixture_glb(path, tris):
+    """A GLB of `tris` [(material, (p, p, p))] written with the split tools' own writer (positions in the GLB frame)."""
+    materials = []
+    prims = {}
+    for mat, corners in tris:
+        if mat not in materials:
+            materials.append(mat)
+        prim = prims.setdefault(mat, {'material': materials.index(mat), 'positions': [], 'indices': []})
+        for p in corners:
+            prim['indices'].append(len(prim['positions']))
+            prim['positions'].append(p)
+    model = {'materials': materials, 'prims': list(prims.values()), 'material_docs': [{'name': m} for m in materials]}
+    split.write_subset(model, range(len(tris)), path)
+    return path
+
+
+def test_recut_removes_exactly_the_given_triangles_and_keeps_the_rest_identical(tmp_path):
+    tris = [('BC_wood', ((0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0))),
+            ('BC_metal', ((2.0, 0.0, 0.0), (3.0, 0.0, 0.0), (2.0, 1.0, 0.0))),
+            ('BC_wood', ((4.0, 0.0, 0.0), (5.0, 0.0, 0.0), (4.0, 1.0, 0.0))),
+            ('BC_rope', ((6.0, 0.0, 0.0), (7.0, 0.0, 0.0), (6.0, 1.0, 0.0)))]
+    src = _fixture_glb(tmp_path / 'SM_BC_ShipyardYard.glb', tris)
+    model = split.read_glb(src)
+    # ordinals are triangles(model) order: the GLB lists its primitives in turn, so it is wood, wood, metal, rope
+    order = [t for t in split.triangles(model)]
+    data, used = split_apply.recut_part(model, [1, 3], 'SM_BC_ShipyardYard')
+    out = tmp_path / 'after.glb'
+    out.write_bytes(data)
+    after = [(m, tuple(c)) for m, c in split.triangles(split.read_glb(out))]
+    assert len(after) == 2
+    assert after == [(order[0][0], order[0][1]), (order[2][0], order[2][1])]   # kept, in order, values identical
+    assert [m for m, _ in order] == ['BC_wood', 'BC_wood', 'BC_metal', 'BC_rope']
+    assert sorted(used) == ['BC_metal', 'BC_wood']                             # the wood and rope triangles removed were the ones at 1 and 3
+    with pytest.raises(split_apply.SplitError, match='outside the part'):
+        split_apply.recut_part(model, [9], 'SM_BC_ShipyardYard')
+
+
+def test_yard_holds_slip_names_each_slip_triangle_left_in_the_yard():
+    a = ('BC_wood', ((0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0)))
+    b = ('BC_wood', ((5.0, 0.0, 0.0), (6.0, 0.0, 0.0), (5.0, 1.0, 0.0)))
+    slip = {mast.yard_key(a[1])}
+    assert mast.yard_holds_slip([b, a, b], slip) == [1]
+    assert mast.yard_holds_slip([b], slip) == []
+
+
+def test_yard_text_edits_update_the_hash_count_and_the_description_only():
+    asset = ('[[sources]]\npath = "src/SM_BC_ShipyardYard.glb"\nsha256 = "' + '0' * 64 + '"\n\n[recipe.settings]\n'
+             'triangles = 9558\ncollision = "complex"\n')
+    objects = ('[[objects]]\nid = "object/brinecove/quay-anchor"\nabout = "the quay anchor (2052 triangles)"\n\n'
+               '[[objects]]\nid = "object/brinecove/shipyard-yard"\ngroup = "SM_BC_ShipyardYard"\n'
+               'about = "the shipyard yard, cut from its fused tile (9558 triangles)"\n')
+    new_asset, new_objects = mast.yard_text_edits(asset, objects, 'a' * 64, 9352)
+    assert 'sha256 = "' + 'a' * 64 + '"' in new_asset and 'triangles = 9352' in new_asset
+    assert 'the shipyard yard, cut from its fused tile (9352 triangles)' in new_objects
+    assert '(2052 triangles)' in new_objects                      # another object's text is untouched

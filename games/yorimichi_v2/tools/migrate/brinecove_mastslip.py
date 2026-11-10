@@ -33,6 +33,7 @@ from __future__ import annotations
 
 import argparse
 import ast
+import hashlib
 import json
 import re
 import sys
@@ -272,7 +273,15 @@ def claim_set(donor: Path | None, summaries: dict, result: dict | None = None) -
     # batch 1's shipyard-yard part gives up the slipway's wood: its record and its expectation change too
     paths.add(f'{GAME_REL}/assets/prop/brinecove/shipyard-yard/')
     scopes.add(('asset/prop/brinecove/shipyard-yard', 'shared/brinecove/shipyard-yard'))
+    # the yard's re-cut and batch 1's expectation (apply writes both), the new records' verified stamps, the runtime
+    # file the groups go into, and the region objects that get the two new parts
+    paths.add(f'{GAME_REL}/assets/{YARD_RECORD}/asset.toml')
+    paths.add(f'{GAME_REL}/assets/{YARD_RECORD}/src/{YARD_SRC}')
     paths.add(f'{GAME_REL}/world/regions/{REGION}/split-batch1.json')
+    paths.add(f'{GAME_REL}/unreal/Content/{RUNTIME}')
+    for name in OBJECTS:
+        paths.add(f'{GAME_REL}/assets/{record_id(name)}/verified.json')
+        paths.add(f'{GAME_REL}/assets/{record_id(name)}/src/{part_mesh(name)}.glb')
     paths.add(f'{GAME_REL}/world/regions/{REGION}/{EXPECTED_NAME}')
     paths.add(f'{GAME_REL}/world/regions/{REGION}/objects.toml')
     paths.add(f'{GAME_REL}/{RUNTIME_LOCK}')
@@ -304,13 +313,9 @@ def yard_ordinals(glb: Path) -> dict:
     return {stem: set(owned.get(YARD, [])) for stem, owned in radial['owned'].items()}
 
 
-def plan(donor: Path, src: Path, game: Path = HERE.parents[1]) -> dict:
-    """Match every donor GLB triangle of the Market and Harbor tiles to the generated faces, then account each object
-    against the tile's existing carve (the remainder left by earlier batches). Per object: triangles per GLB file as
-    half-open ordinal ranges, bounds, the triangles still in the remainder and those taken from shipyard-yard. Per
-    trimmed file: kept before and after. The yard's count before and after. Raises unless every triangle is matched
-    by exactly one face, every mast triangle is still in its tile's remainder, and every slip triangle is either in the
-    remainder or in batch 1's shipyard-yard part. Writes nothing."""
+def donor_owned(donor: Path, src: Path) -> dict:
+    """{stem: {'model', 'tris', 'owners'}} for every donor GLB of the Market and Harbor tiles: the GLB model, its
+    triangles, and each triangle's owner (an object name or None). Raises unless every triangle is matched exactly once."""
     glb = donor / 'brinecove' / 'glb'
     combined = {'verts': [], 'faces': [], 'mats': [], 'owner': []}
     for name in OBJECTS:
@@ -321,15 +326,27 @@ def plan(donor: Path, src: Path, game: Path = HERE.parents[1]) -> dict:
         combined['mats'] += built['mats']
         combined['owner'] += built['owner']
     index = market.face_index(combined)
-    yards = yard_ordinals(glb)
+    out = {}
+    for stem in donor_stems(donor):
+        model = split.read_glb(glb / f'SM_BC_{stem}.glb')
+        tris = list(split.triangles(model))
+        out[stem] = {'model': model, 'tris': tris, 'owners': market.owners_of(tris, index)}
+    return out
+
+
+def plan(donor: Path, src: Path, game: Path = HERE.parents[1]) -> dict:
+    """Per object: triangles per donor GLB file (half-open ordinal ranges), bounds, the triangles still in the remainder and
+    those taken from shipyard-yard; per trimmed file: kept before and after; the yard's count before and after. Raises
+    unless every mast triangle is still in its tile's remainder and every slip triangle is in the remainder or the yard.
+    Writes nothing."""
+    files = donor_owned(donor, src)
+    yards = yard_ordinals(donor / 'brinecove' / 'glb')
     out = {'objects': {name: {'triangles': 0, 'from_residual': 0, 'from_shipyard_yard': 0, 'files': {}, 'min': None,
                               'max': None} for name in OBJECTS},
            'trimmed': {}, 'shipyard_yard': {'before': YARD_TRIANGLES, 'removed': 0, 'after': YARD_TRIANGLES,
                                              'files': {}}}
-    for stem in donor_stems(donor):
-        model = split.read_glb(glb / f'SM_BC_{stem}.glb')
-        tris = list(split.triangles(model))
-        owners = market.owners_of(tris, index)
+    for stem, f in files.items():
+        tris, owners = f['tris'], f['owners']
         kept = carved_kept(game, stem)
         if kept is None:
             kept = set(range(len(tris)))
@@ -367,9 +384,251 @@ def plan(donor: Path, src: Path, game: Path = HERE.parents[1]) -> dict:
     return out
 
 
+# --- the batch: two whole parts, their carves, and the yard re-cut (docs/inventory/brinecove-split.md) -----------------
+
+BATCH = 'mastslip'
+YARD_RECORD = 'prop/brinecove/shipyard-yard'
+YARD_SRC = 'SM_BC_ShipyardYard.glb'
+YARD_AFTER = 9352          # 8,926 - 192 + 632 - 14 (the yard's Harbor_5_3 and Harbor_5_4 shares, batch 1)
+BATCH1 = 'split-batch1.json'
+
+
+def yard_key(corners) -> tuple:
+    return tuple(sorted(split._key(p) for p in corners))
+
+
+def yard_holds_slip(yard_tris: list, slip_keys: set) -> list[int]:
+    """@cc [owner:fontanierh,label:correctness] brinecove-yard-holds-no-slip
+    The yard part's ordinals that are still a slipway triangle. The re-cut is complete only when this is empty: the
+    slip is whole in its own record, so any slip triangle left in shipyard-yard would be drawn twice."""
+    return [n for n, (_, corners) in enumerate(yard_tris) if yard_key(corners) in slip_keys]
+
+
+def yard_recut(game: Path, donor: Path, src: Path, files: dict, expected_removed: dict) -> dict:
+    """The yard's new source GLB, its record, and the batch-1 expectation, with the slipway triangles removed.
+    `expected_removed` maps each donor stem to the donor ordinals of slip ∩ yard. Their yard ordinals are found by
+    welded corner positions (every donor triangle matches exactly one yard triangle, or the re-cut refuses)."""
+    apply_ = market.set_batch(BATCH)
+    yard_path = game / 'assets' / YARD_RECORD / 'src' / YARD_SRC
+    yard_model = split.read_glb(yard_path)
+    yard_tris = list(split.triangles(yard_model))
+    index: dict = defaultdict(list)
+    for n, (_, corners) in enumerate(yard_tris):
+        index[yard_key(corners)].append(n)
+    removed_yard = []
+    for stem, donor_ords in expected_removed.items():
+        for i in donor_ords:
+            hits = index.get(yard_key(files[stem]['tris'][i][1]), [])
+            if len(hits) != 1:
+                raise MastSlipError(f'{stem} triangle {i}: {len(hits)} matching yard triangles, expected exactly one')
+            removed_yard.append(hits[0])
+    if len(set(removed_yard)) != len(removed_yard):
+        raise MastSlipError('two slip triangles match the same yard triangle')
+    if not removed_yard:
+        raise MastSlipError('no slip triangle is in shipyard-yard: nothing to re-cut')
+    data, used = apply_.recut_part(yard_model, removed_yard, 'SM_BC_ShipyardYard')
+    kept_tris = [t for n, t in enumerate(yard_tris) if n not in set(removed_yard)]
+    if len(kept_tris) != YARD_AFTER:
+        raise MastSlipError(f'the yard keeps {len(kept_tris)} triangles, expected {YARD_AFTER}')
+    lo, hi = split.bounds(yard_tris, [n for n in range(len(yard_tris)) if n not in set(removed_yard)])
+    return {'bytes': data, 'used': used, 'removed_yard': sorted(removed_yard),
+            'sha256': hashlib.sha256(data).hexdigest(), 'min': [round(v, 4) for v in lo],
+            'max': [round(v, 4) for v in hi]}
+
+
+def yard_text_edits(asset_text: str, objects_text: str | None, sha: str, triangles: int) -> tuple[str, str | None]:
+    """The yard record's source hash and triangle count, and the objects.toml description of the yard, updated in place."""
+    asset_text = re.sub(r'(?m)^(\[\[sources\]\]\npath = "src/SM_BC_ShipyardYard\.glb"\nsha256 = ")[0-9a-f]{64}(")',
+                        lambda m: m.group(1) + sha + m.group(2), asset_text)
+    asset_text = re.sub(r'(?m)^triangles = \d+$', f'triangles = {triangles}', asset_text)
+    asset_text = re.sub(r'\(9558 triangles\)', f'({triangles} triangles)', asset_text)
+    if objects_text is not None:
+        objects_text = re.sub(r'(?m)(id = "object/brinecove/shipyard-yard"\n(?:.*\n)*?about = "[^"]*?)\(9558 triangles\)',
+                              lambda m: m.group(1) + f'({triangles} triangles)', objects_text, count=1)
+    return asset_text, objects_text
+
+
+def build_plan(game: Path, donor: Path, src: Path, stage: Path) -> tuple[dict, dict]:
+    """The plan in apply's shape (tiles, parts, remainders), built from the donor GLBs and each tile's existing carve.
+    Returns (plan, files). A part takes every triangle of its object in the tile, including the triangles that
+    shipyard-yard holds (the whole slip); a remainder keeps the carve's kept triangles minus the objects."""
+    apply_ = market.set_batch(BATCH)
+    records = apply_.records
+    region = game / 'world' / 'regions' / apply_.REGION
+    files = donor_owned(donor, src)
+    owned, prior, models, tris = {}, {}, {}, {}
+    for stem, f in files.items():
+        mine = {n: [i for i, o in enumerate(f['owners']) if o == n] for n in OBJECTS}
+        taken = {i for v in mine.values() for i in v}
+        if not taken:
+            continue
+        kept = carved_kept(game, stem)
+        n = len(f['tris'])
+        if kept is None:
+            kept = set(range(n))
+        rest = [i for i in sorted(kept) if i not in taken]
+        prior[stem] = sum(1 for i in range(n) if i not in kept and i not in taken)
+        if len(rest) + len(taken) + prior[stem] != n:
+            raise MastSlipError(f'{stem}: the remainder, the objects and the earlier batches do not partition the tile')
+        owned[stem] = {**mine, '': rest}
+        models[stem], tris[stem] = f['model'], f['tris']
+    saved: dict = {}
+    for path in [region / BATCH1] + market.prior_files(region, f'split-{BATCH}.json'):
+        if path.is_file():
+            for stem, tile in json.loads(path.read_text()).get('tiles', {}).items():
+                saved.setdefault(stem, tile)
+    tiles = {}
+    for stem in owned:
+        model = models[stem]
+        asset_path = game / 'assets' / apply_.tile_record(stem) / 'asset.toml'
+        asset = records.load_asset(asset_path) if asset_path.is_file() else None
+        donor_sha = records.sha256_file(donor / 'brinecove' / 'glb' / f'SM_BC_{stem}.glb')
+        if asset is None or not asset.sources or asset.sources[0].sha256 != donor_sha:
+            raise MastSlipError(f'{stem}: its record does not pin the donor GLB')
+        if stem in saved:
+            tiles[stem] = {**saved[stem]['original'], 'record': saved[stem]['record'], 'package': saved[stem]['package'],
+                           'source': {'name': Path(asset.sources[0].path).name, 'sha256': donor_sha}}
+        else:
+            settings = dict(asset.recipe['settings'])
+            tiles[stem] = {'record': asset.id, 'owner': asset.owner, 'references': list(asset.references),
+                           'package': asset.outputs[0].package, 'settings': settings,
+                           'material_package': apply_.material_packages(model['materials'], settings['slot_materials']),
+                           'source': {'name': Path(asset.sources[0].path).name, 'sha256': donor_sha}}
+        tiles[stem]['triangles'] = len(tris[stem]) - prior[stem]
+    parts = {}
+    for obj in OBJECTS:
+        stems = [s for s in owned if owned[s][obj]]
+        if not stems:
+            continue
+        merged = split.merge_models([(models[s], owned[s][obj]) for s in stems])
+        members = list(range(sum(1 for _ in split.triangles(merged))))
+        mesh = market.part_mesh(obj, False)
+        path = stage / 'parts' / f'{mesh}.glb'
+        path.parent.mkdir(parents=True, exist_ok=True)
+        used = split.write_subset(merged, members, path)
+        lo, hi = split.bounds(list(split.triangles(merged)), members)
+        parts[(obj, False)] = {
+            'object': obj, 'soft': False, 'record': apply_.record_id(obj, False), 'mesh': mesh,
+            'package': apply_.MESHES + mesh, 'file': path, 'sha256': apply_.sha_of(path), 'triangles': len(members),
+            'materials': used, 'share': {s: len(owned[s][obj]) for s in stems},
+            'slots': [apply_.slot_of(tiles, stems, m) for m in used], 'min': [round(v, 4) for v in lo],
+            'max': [round(v, 4) for v in hi], 'tiles': stems, 'tile': tiles[stems[0]]}
+    remainders = {}
+    for stem in owned:
+        rest = owned[stem]['']
+        path = stage / 'rest' / f'SM_BC_{stem}.glb'
+        path.parent.mkdir(parents=True, exist_ok=True)
+        used = split.write_subset(models[stem], rest, path)
+        remainders[stem] = {'file': path, 'sha256': apply_.sha_of(path), 'triangles': len(rest), 'materials': used,
+                            'slots': [apply_.slot_of(tiles, [stem], m) for m in used], 'kept': sorted(rest),
+                            'total': len(tris[stem])}
+    market.check_packages(game, parts)
+    plan = {'tiles': tiles, 'parts': parts, 'remainders': remainders, 'stage': stage, 'prior': prior,
+            'selection': list(OBJECTS), 'stale': [], 'resave': []}
+    return plan, files
+
+
+def apply(game: Path, donor: Path, src: Path, stage: Path, claim: str) -> dict:
+    """Write the batch under the claim: the two records and their sources, each tile's carve (kept minus the objects),
+    the region objects, the runtime file and lock (apply's compute), and the yard re-cut and batch-1 expectation.
+    Journaled in one step: a failure restores every file. Authorizes the complete touched set first."""
+    apply_ = market.set_batch(BATCH)
+    plan, files = build_plan(game, donor, src, stage)
+    expect_before = json.loads((game / apply_.EXPECTED).read_text()) if (game / apply_.EXPECTED).is_file() else {}
+    if expect_before.get('parts'):
+        raise MastSlipError('this batch is already applied; run check, do not apply it again')
+    recovered = apply_.Journal(game).recover(claim)
+    ops = apply_.compute(game, plan)
+    writes = dict(ops['writes'])
+    expected_removed = {}
+    yards = yard_ordinals(donor / 'brinecove' / 'glb')
+    for stem, f in files.items():
+        slip = {i for i, o in enumerate(f['owners']) if o == 'shipyard-slip'}
+        both = sorted(slip & yards.get(stem, set()))
+        if both:
+            expected_removed[stem] = both
+    recut = yard_recut(game, donor, src, files, expected_removed)
+    yard_record = game / 'assets' / YARD_RECORD
+    asset_text = (yard_record / 'asset.toml').read_text()
+    objects_rel = f'world/regions/{apply_.REGION}/objects.toml'
+    objects_text = writes.get(objects_rel)
+    if objects_text is None:
+        objects_text = (game / objects_rel).read_text()
+    asset_new, objects_new = yard_text_edits(asset_text, objects_text, recut['sha256'], YARD_AFTER)
+    batch1_path = game / 'world' / 'regions' / apply_.REGION / BATCH1
+    batch1 = json.loads(batch1_path.read_text())
+    part = batch1['parts'][YARD_RECORD]
+    part.update(sha256=recut['sha256'], triangles=YARD_AFTER, min=recut['min'], max=recut['max'],
+                materials=sorted(set(recut['used'])))
+    for stem, share in list(batch1['shares'].items()):
+        if YARD_RECORD in share and stem in expected_removed:
+            share[YARD_RECORD] = share[YARD_RECORD] - len(expected_removed[stem])
+    expect = json.loads(writes[apply_.EXPECTED].decode()) if apply_.EXPECTED in writes else json.loads(
+        (game / apply_.EXPECTED).read_text())
+    expect['yard'] = {'record': YARD_RECORD, 'before': YARD_TRIANGLES, 'after': YARD_AFTER,
+                      'sha256': recut['sha256'], 'removed_donor': {s: ranges(v) for s, v in expected_removed.items()},
+                      'removed_yard': ranges(recut['removed_yard'])}
+    writes[apply_.EXPECTED] = (json.dumps(expect, indent=2, sort_keys=True) + '\n').encode()
+    writes[f'assets/{YARD_RECORD}/src/{YARD_SRC}'] = recut['bytes']
+    writes[f'assets/{YARD_RECORD}/asset.toml'] = asset_new.encode()
+    writes[objects_rel] = objects_new.encode()
+    writes[f'world/regions/{apply_.REGION}/{BATCH1}'] = (json.dumps(batch1, indent=2, sort_keys=True) + '\n').encode()
+    all_ops = {'writes': writes, 'deletes': ops['deletes']}
+    info = apply_.touched(game, plan, False, all_ops)
+    extra = {f'{GAME_REL}/assets/{YARD_RECORD}/src/{YARD_SRC}', f'{GAME_REL}/assets/{YARD_RECORD}/asset.toml',
+             f'{GAME_REL}/world/regions/{apply_.REGION}/{BATCH1}', f'{GAME_REL}/{objects_rel}'}
+    paths = sorted(set(info['paths']) | extra)
+    scopes = set(info['scopes']) | {(f'asset/{YARD_RECORD}', f'shared/brinecove/{YARD_RECORD.rsplit("/", 1)[1]}'),
+                                    f'region/{apply_.REGION}'}
+    apply_.authority.authorize(paths, claim, 'Brine Cove mast and slip apply', scopes=scopes)
+    return apply_.execute(game, all_ops, scopes=scopes)
+
+
+def check(game: Path, donor: Path, src: Path) -> list[str]:
+    """Problems with the applied batch, proved from the committed files and the donor: the yard holds no slip triangle,
+    its recorded re-cut is exactly slip ∩ yard, the expectation's parts and the yard's hash match their files."""
+    apply_ = market.set_batch(BATCH)
+    problems: list[str] = []
+    expect_path = game / apply_.EXPECTED
+    if not expect_path.is_file():
+        return [f'{apply_.EXPECTED} is missing: apply has not run']
+    expect = json.loads(expect_path.read_text())
+    batch1 = json.loads((game / 'world' / 'regions' / apply_.REGION / BATCH1).read_text())
+    yard_path = game / 'assets' / YARD_RECORD / 'src' / YARD_SRC
+    yard_model = split.read_glb(yard_path)
+    yard_tris = list(split.triangles(yard_model))
+    if len(yard_tris) != YARD_AFTER:
+        problems.append(f'the yard has {len(yard_tris)} triangles, expected {YARD_AFTER}')
+    sha = hashlib.sha256(yard_path.read_bytes()).hexdigest()
+    if batch1['parts'][YARD_RECORD]['sha256'] != sha:
+        problems.append('batch 1 pins a different yard hash than the yard file')
+    files = donor_owned(donor, src)
+    yards = yard_ordinals(donor / 'brinecove' / 'glb')
+    slip_keys = set()
+    recorded = expect.get('yard', {}).get('removed_donor', {})
+    for stem, f in files.items():
+        slip = {i for i, o in enumerate(f['owners']) if o == 'shipyard-slip'}
+        slip_keys |= {yard_key(f['tris'][i][1]) for i in slip}
+        want = sorted(slip & yards.get(stem, set()))
+        have = [i for a, b in recorded.get(stem, []) for i in range(a, b)]
+        if want != sorted(have):
+            problems.append(f'{stem}: the re-cut records {len(have)} removed triangles, slip ∩ yard is {len(want)}')
+    holds = yard_holds_slip(yard_tris, slip_keys)
+    if holds:
+        problems.append(f'the yard still holds {len(holds)} slip triangle(s)')
+    for record, part in expect.get('parts', {}).items():
+        path = game / 'assets' / record / 'src' / f'{part["mesh"]}.glb'
+        if not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest() != part['sha256']:
+            problems.append(f'{record}: its source GLB is missing or differs from the expectation')
+    return problems
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split('\n\n')[0])
-    parser.add_argument('command', choices=('paths', 'plan'))
+    parser.add_argument('command', choices=('paths', 'plan', 'apply', 'check'))
+    parser.add_argument('--stage', type=Path, default=HERE.parents[3] / 'build' / 'yorimichi_v2' / 'brinecove-mastslip',
+                        help='apply: the staging folder for the new GLBs (outside the repository by default)')
+    parser.add_argument('--claim', help='apply: the active claim (task ID) that must cover the touched set')
     parser.add_argument('--donor', type=Path, help='the donor build/yorimichi folder (paths: GLB names; plan: GLB triangles)')
     parser.add_argument('--donor-src', type=Path, help='the donor games/yorimichi folder (default: next to --donor)')
     parser.add_argument('--json', action='store_true')
@@ -378,10 +637,22 @@ def main(argv=None) -> int:
     try:
         donor = args.donor.resolve() if args.donor else None
         src = market.donor_source(donor, args.donor_src) if donor else None
-        if args.command == 'plan':
+        if args.command in ('plan', 'apply', 'check'):
             if donor is None or src is None:
-                parser.error('plan needs --donor (the donor GLB triangles)')
+                parser.error(f'{args.command} needs --donor (the donor GLB triangles)')
+        if args.command == 'plan':
             print(json.dumps(plan(donor, src, args.game.resolve()), indent=2, default=list))
+            return 0
+        if args.command == 'check':
+            problems = check(args.game.resolve(), donor, src)
+            print('\n'.join(problems))
+            print(f'{"FAIL" if problems else "OK"}: {len(problems)} problem(s)')
+            return 1 if problems else 0
+        if args.command == 'apply':
+            if not args.claim:
+                parser.error('apply needs --claim TASK (the claim that covers the touched set)')
+            done = apply(args.game.resolve(), donor, src, args.stage.resolve(), args.claim)
+            print(f'apply: wrote {len(done["written"])}, deleted {len(done["deleted"])}')
             return 0
         if src is None:
             # paths without a donor reads only the generator (for the object list and tile names)
