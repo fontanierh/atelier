@@ -1,10 +1,13 @@
 # Generator-built master materials: recovery design
 
-Current checkpoint: [PR #803](https://github.com/fontanierh/atelier/pull/803) contains 36 imported masters, including
-the 13-master Japan base batch. These are branch results, not yet a merged or packaged checkpoint. The importer and
-native read-back now exist; the original preparation proposal in sections 5–8 is historical, not an outstanding
-approval request. The machine-readable donor inventory is [master-sources.json](master-sources.json); the original
-held list is [small-families-masters.txt](small-families-masters.txt).
+**Historical recovery design, prepared in #799/#801.** [INVENTORY](../INVENTORY.md) owns current progress.
+The following 27-master design and its “not done” statements describe that preparation checkpoint, not the
+current import backlog. #803 includes 36 saved material-master records with this change; #804 adds 13 Japan masters
+(49 total) and remains pending integration. Neither PR was merged at historical main checkpoint `028bc6243b`;
+neither is in package `0adbb5ab212e`.
+The machine-readable [master-sources.json](master-sources.json) and
+[small-families-masters.txt](small-families-masters.txt) retain their original scope and donor evidence;
+they are not current owner lists or instructions to re-import accepted masters.
 Donor paths are relative to the donor root `games/yorimichi/`. Pins are sha256 of the committed blob at the V2 source
 baseline `7eec0f98dd` (docs/DECISIONS.md D01), not of the donor working tree, which is dirty.
 
@@ -184,17 +187,17 @@ make a master recoverable.
 ## 5. Historical importer proposal
 
 The steps and limitations below describe the pre-implementation proposal. The current route is
-`tools/import/run.py` with `unreal/Scripts/import_asset.py`: both cold and warm imports check every pinned source
-before preparing a write, then use the existing claim, journal and save guard. `/Game` reads need an input owner;
-`/Engine` reads are supplied by the engine. A transient rebuild is compared against the saved original before a
+`tools/import/run.py` with `unreal/Scripts/import_asset.py`: both cold authorization and the editor load boundary
+match the prepared plan to its canonical recipe, ordered source paths and outputs, then check every pinned source.
+The loader executes those verified byte snapshots; the existing claim, journal and save guard remain in force.
+`/Game` reads need an input owner; `/Engine` reads are supplied by the engine. A transient rebuild is compared against the saved original before a
 save, then read back. Every old expression is removed before the in-place rebuild to prevent accumulating leftovers.
 
 The current digest compares material settings, parameter definitions and rooted wiring, including ordered input
-pins, output selections, TextureCoordinate U/V tiling and TransformPosition source/destination spaces. Earlier reports
-omit the tiling and transform fields and do not prove those settings equal; use fresh read-only reports when making
-that comparison. Equal local-node multisets alone
-cannot prove the same graph. Historical reports without
-this topology remain historical evidence; obtain a fresh read-only report when this stronger comparison is needed,
+pins, output selections, TextureCoordinate U/V tiling, TransformPosition source/destination spaces and Time-node
+pause/period settings. Earlier reports omit these later fields and do not prove those settings equal; use fresh
+read-only reports when making that comparison. Equal local-node multisets alone cannot prove the same graph.
+Historical reports without this topology remain historical evidence; obtain a fresh read-only report when this stronger comparison is needed,
 without automatically reimporting or discarding completed packages.
 
 `MaterialInputAudit` in the existing editor-only `YorimichiImport` module reads each connection by its input index.

@@ -9,6 +9,8 @@ The source baseline `7eec0f98dd` is documented separately in [features](inventor
 
 - **Ported** means the implementation and its committed inputs are present in V2. It does not certify every
   gameplay interaction, appearance or source-recovery requirement.
+- **Prepared** means sources/recipes or plans exist; it does not establish an accepted import.
+- **Merged** means the change is on main. Saved working-branch content is not merged or packaged by implication.
 - **Saved** means committed placements/packages have owner records and receipts. A record for a fused tile
   is not proof that every useful object inside it is independently editable.
 - **Packaged** names the revision that was cooked. Unmerged follow-ups are not included in that package.
@@ -20,7 +22,7 @@ The source baseline `7eec0f98dd` is documented separately in [features](inventor
 
 | Scope | Package `0adbb5ab212e` at `7719234597` | Evidence and limits |
 | --- | --- | --- |
-| Whole island | W00–W20 have committed coverage (29 world region scopes); W14 keeps its disabled baseline. The region records contain 2,450 saved object definitions. | [Regions](../world/regions/), `actors.verified.json`, `objects.saved.json`; these counts are not the number of independently split source models. |
+| Whole island | W00–W20 have committed coverage (29 world region scopes); W14 keeps its disabled baseline. The region receipts contain 2,750 saved object definitions. | [Regions](../world/regions/), `actors.verified.json`, `objects.saved.json`; these counts are not the number of independently split source models. |
 | Recovered models | Merged:<br>- 1,048 city records;<br>- 67 train mesh records, plus 159 train texture and material records (459 packages);<br>- ten families with 141 meshes and 29 textures;<br>- 100 Japan props;<br>- 72 Brine Cove plants and city tree residuals;<br>- the two Japan leaf instances.<br>The first small-families batch (21 records, 48 packages) is merged (#797). | [PR #784](https://github.com/fontanierh/atelier/pull/784), [PR #786](https://github.com/fontanierh/atelier/pull/786), [PR #792](https://github.com/fontanierh/atelier/pull/792), [PR #794](https://github.com/fontanierh/atelier/pull/794), [PR #796](https://github.com/fontanierh/atelier/pull/796); the read-back results are below. Source completeness and remaining fused objects are tracked below. |
 | Restricted and Adventure originals | 6,768 restricted package entries and 124 Adventure/animation entries have source routes; the manifest records 6,086 original pins. | [restricted.originals.json](../restricted.originals.json), [PR #785](https://github.com/fontanierh/atelier/pull/785). Private bytes stay on the pinned restricted route. This is not closure of every open source family. |
 | Brine Cove individual objects | All 21 market stalls, all 265 town objects, the two harbour Soft fragments, eleven small props and three ship objects have saved placements in main ([PR #787](https://github.com/fontanierh/atelier/pull/787)). The signal mast and the shipyard slip are saved, merged and packaged ([PR #798](https://github.com/fontanierh/atelier/pull/798), [PR #800](https://github.com/fontanierh/atelier/pull/800)). Other scenery still includes fused models/patches. | [Brine Cove scope](inventory/brinecove-objects.md), [split work](inventory/brinecove-split.md), [remaining exceptions](inventory/exceptions.md). |
@@ -54,27 +56,37 @@ Saved, prepared and packaged totals are kept separate:
 
     The donor meshes carried one convex hull, which the complex-as-simple recipe drops. That trace flag never
     uses a hull, so collision is unchanged.
-- **Imported on a branch, not yet merged or packaged:** [PR #803](https://github.com/fontanierh/atelier/pull/803)
+- **Included with [PR #803](https://github.com/fontanierh/atelier/pull/803), not in the current package:** this change
   contains 36 generated material masters with pinned builders: Hippodrome, skating, FX, racing, Sword Camp, Mega Park,
-  Hidamari city and 13 Japan base masters. The native batches were accepted by the digest at that revision; final
-  review strengthens source-pin and graph checks. Their historical reports do not establish the newer rooted comparison.
+  Hidamari city and 13 Japan base masters. Their native receipts cover the comparisons recorded at each revision.
   Sword Camp's two masters and Hidamari city now pin the shared haze helper; their claimed refresh at `6c807a71f9`
-  passed the newer native comparison and saved read-back ([evidence](inventory/shared-haze-sources.md)).
-  Fourteen Japan base packages remain with the adopted record (13 other masters and `MPC_Wind`); follow-up families
-  move these in separate claimed batches. Source-only generator records retain all 30 Hidamari and 43 Mega Park pins.
-- **Still open:** the remaining master inputs and kept packages, the Hidamari instance, held Mega Park seams and MI_TH_pane;
-  see [exceptions](inventory/exceptions.md) and the current [master recovery status](inventory/master-sources.md).
+  passed the rooted native comparison and saved read-back ([evidence](inventory/shared-haze-sources.md)). Those reports
+  predate the later tiling, transform and Time fields and do not prove those settings equal. Source-only generator
+  records retain all 30 Hidamari and 43 Mega Park pins.
+- **Saved follow-up, pending integration:** [PR #804](https://github.com/fontanierh/atelier/pull/804) adds 13 Japan
+  masters (49 total with #803); its base-materials adopted record retains only `MPC_Wind`. At the historical main
+  audit `028bc6243b`, neither #803 nor #804 was merged. These batches supersede the old “19 masters still to start”
+  list. Their imported receipts do not upgrade package `0adbb5ab212e` or constitute final visual acceptance.
+- **Remaining source/detail work:** the Hippodrome mesh residuals (14 packages on main: four Color textures
+  and ten instances), the two Mega Park seam instances with two-sided base-property overrides, the standalone
+  Mega Park map's reference check, `MI_TH_pane`, the Hidamari `MI_HD_flat` instance and the 41 Japan
+  material instances. Parent-master recovery alone does not close their instance records. Hippodrome recovery
+  is saved in #804 commit `74a1002c86`: four texture and four instance records were imported, the four
+  dependent props re-imported, and six unused course instances retired after a reference check. The native
+  before/after reads agree; this is pending integration, not main/package content. The other material/settings classification
+  rows and their branch dispositions are in [exceptions](inventory/exceptions.md#current-source-classification).
 
 Remaining construction work:
 - Close the other useful-object/source gaps in [exceptions](inventory/exceptions.md) and
   [sources](inventory/sources.md); an imported package with an unknown original stays unfinished.
-- Merged preparation, not source closure: [PR #799](https://github.com/fontanierh/atelier/pull/799) prepares the
-  material-master records and a recovery inventory for the held generator masters, and
-  [PR #801](https://github.com/fontanierh/atelier/pull/801) adds the four plaza masters and the input recovery list.
-  Neither closes source completeness; the masters close as each family is imported through the material-master route.
-- Integrate the accepted follow-ups and produce the next useful package checkpoint. Keep the existing package
-  available while this proceeds. Forecast (Paris time, unconfirmed): the held source set by about 14:00 on
-  2026-11-10, and the remaining useful-object splitting by about 20:00. Final owner-led playtesting follows construction.
+- Review and integrate the saved master follow-ups above. The earlier #799/#801 preparation and
+  [master recovery design](inventory/master-sources.md) explain their provenance; they are not a second backlog.
+- Produce the next package checkpoint from accepted merged work and retain the existing package. The packaging
+  guard fix merged in [PR #805](https://github.com/fontanierh/atelier/pull/805) is separate from a successful native rerun;
+  no replacement package is claimed here. The six remaining manual acceptance checks and final owner-led
+  gameplay/multiplayer playtesting remain unrecorded. The last forecast was **14:00 Paris on 2026-11-10 for
+  the held source set and 20:00 for useful-object splitting** (historical, unconfirmed). This documentation
+  audit has not re-estimated it; package-guard and review work add uncertainty.
 
 ## Runtime and ownership facts
 
