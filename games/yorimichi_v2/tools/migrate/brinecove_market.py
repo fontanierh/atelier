@@ -1507,7 +1507,7 @@ def remainder_slot_problems(game: Path, batch: str, exp: dict) -> list[str]:
     then lists the remainder's slots. A saved placement binds its materials by slot index from the group it was saved
     with, so each placement holding such a tile must have been saved from the tile's current state (its receipt depends
     on the record's current verified state); otherwise its overrides put old materials on the new slots. The slots
-    before are the latest earlier split's remainder of that tile, or the donor tile's. A tile a later batch retired has
+    before are the latest earlier split's remainder of that tile, or the donor tile's (`original.material_package`). A tile a later batch retired has
     no record to check."""
     records_ = _apply().records
     region = game / 'world' / 'regions' / _apply().REGION
@@ -1532,7 +1532,8 @@ def remainder_slot_problems(game: Path, batch: str, exp: dict) -> list[str]:
     for s, tile in sorted(exp['tiles'].items()):
         if not tile.get('remainder'):
             continue
-        before = earlier.get(s, (tile.get('original') or {}).get('materials'))
+        donor = (tile.get('original') or {}).get('material_package')    # the donor tile's slots, by name in slot order
+        before = earlier.get(s, list(donor) if donor else None)
         if before is None or tile['remainder'].get('materials') == before:
             continue
         verified = game / 'assets' / tile['record'] / 'verified.json'

@@ -201,9 +201,15 @@ def test_a_placement_saved_before_its_tile_lost_slots_must_be_saved_again(tmp_pa
         'object/brinecove/market-3-4: saved before Market_3_4 lost material slots (2 to 1); save the placement again']
     same = {'tiles': {'Market_3_4': {'record': record, 'remainder': {'materials': ['BC_wood', 'BC_cloth']}}}}
     assert market.remainder_slot_problems(tmp_path, 'market2', same) == []
+    # a first cut compares with the donor tile's slots (its material packages, by name in slot order)
+    first = {'tiles': {'Market_3_4': {**cut['tiles']['Market_3_4'], 'original': {'material_package': {
+        'BC_cloth': '/Game/Brinecove/Materials/MI_BC_cloth', 'BC_wood': '/Game/Brinecove/Materials/MI_BC_wood'}}}}}
+    assert market.remainder_slot_problems(tmp_path, 'market1', first) == [
+        'object/brinecove/market-3-4: saved before Market_3_4 lost material slots (2 to 1); save the placement again']
     receipt = tmp_path / 'assets' / 'object/brinecove/market-3-4' / 'verified.json'
     receipt.write_text(json.dumps({'dependencies': {record: 'now'}}))
     assert market.remainder_slot_problems(tmp_path, 'market2', cut) == []
+    assert market.remainder_slot_problems(tmp_path, 'market1', first) == []
 
 
 def test_the_mast_and_slip_split_counts_as_later_for_the_market_and_town_batches(tmp_path):

@@ -320,8 +320,10 @@ The emptied tile is retired with the three stages above (`--batch harbor2`); its
 A cut can also drop a material slot from a tile that keeps a remainder, and the runtime group then lists only the
 remainder's slots. A placement binds its overrides by slot index from the group it was saved with, so `check` requires
 each placement holding such a tile to depend on the record's current state (`brinecove-remainder-slots-resaved`).
-Seven placements were saved before an earlier cut changed their tile's slots (`market-3-4`, `market-4-4`,
-`townlower-4-4`, `harbor-2-3`, `harbor-3-3`, `harbor-4-3`, `harbor-5-3`); `harbor2` saves them again.
+The slots before a cut are the latest earlier split's remainder, or for a first cut the donor tile's
+(`original.material_package`). Eleven placements were saved before a cut changed their tile's slots (`market-3-3`,
+`market-3-4`, `market-4-3`, `market-4-4`, `townlower-4-4`, `townupper-3-4`, `townupper-4-4`, `harbor-2-3`,
+`harbor-3-3`, `harbor-4-3`, `harbor-5-3`); `harbor2` saves them again.
 The rest of the harbour (quay wall, paving, water steps) belongs to no object. Further batches are on demand; see
 the backlog in [INVENTORY](../INVENTORY.md).
 
