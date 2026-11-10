@@ -16,6 +16,16 @@ import brinecove_split as split  # noqa: E402
 import brinecove_split_apply as split_apply  # noqa: E402
 
 SRC = ROOT.parent / 'yorimichi'
+
+
+@pytest.fixture(autouse=True)
+def _restore_split_expectation():
+    """set_batch points the shared apply module at this batch's expectation file; put it back after every test, so the
+    other split tests (which read the module's default) are not changed by test order."""
+    import brinecove_split_apply as apply_mod
+    saved = apply_mod.EXPECTED
+    yield
+    apply_mod.EXPECTED = saved
 _CACHE: dict = {}
 
 
@@ -341,3 +351,51 @@ def test_yard_carve_touches_exactly_the_listed_paths():
         'games/yorimichi_v2/world/regions/w09-brinecove/split-mastslip.json'])
     assert any(s.startswith('asset/prop/brinecove/shipyard-yard') for s in exact['scopes'])
     assert 'region/w09-brinecove' in exact['scopes']
+
+
+def test_fresh_apply_finds_the_original_yard_inside_the_record_folder(tmp_path):
+    """Regression: YARD_ORIGINAL already names src/, so the original is yard_dir/YARD_ORIGINAL, not yard_dir/src/..."""
+    yard_dir = tmp_path / 'assets' / 'prop' / 'brinecove' / 'shipyard-yard'
+    (yard_dir / 'src').mkdir(parents=True)
+    (yard_dir / 'src' / 'SM_BC_ShipyardYard.glb').write_bytes(b'original yard')
+    path = mast.yard_original_path(yard_dir)
+    assert path == yard_dir / 'src' / 'SM_BC_ShipyardYard.glb'
+    assert path.read_bytes() == b'original yard'
+    assert not (yard_dir / 'src' / 'src').exists()
+
+
+def test_apply_recovers_an_interrupted_journal_before_it_plans(tmp_path, monkeypatch):
+    """Regression: an interrupted run is restored (and authorized) before apply reads the tree or refuses anything."""
+    game = tmp_path / 'game'
+    victim = game / 'world' / 'regions' / 'w09-brinecove' / 'objects.toml'
+    victim.parent.mkdir(parents=True)
+    victim.write_bytes(b'before the crash')
+    apply_ = mast.market.set_batch(mast.BATCH)
+    apply_.Journal(game).begin([victim.relative_to(game).as_posix()], scopes={'region/w09-brinecove'})
+    victim.write_bytes(b'half written')                       # the crash left this behind
+    monkeypatch.setattr(apply_.authority, 'authorize', lambda *a, **k: None)
+    seen = {}
+
+    def build_plan(game_, donor, src, stage):
+        seen['bytes'] = victim.read_bytes()
+        raise RuntimeError('planning reached')
+    monkeypatch.setattr(mast, 'build_plan', build_plan)
+    with pytest.raises(RuntimeError, match='planning reached'):
+        mast.apply(game, tmp_path, SRC, tmp_path / 'stage', 'MASTSLIP')
+    assert seen['bytes'] == b'before the crash'
+    assert not (game / 'unreal' / 'Saved' / 'BrinecoveSplitJournal').exists()
+
+
+def test_build_plan_refuses_a_mast_triangle_an_earlier_batch_already_took(tmp_path):
+    """Regression: the executable path refuses an already-taken triangle as plan() does, instead of hiding it."""
+    glb = tmp_path / 'brinecove' / 'glb'
+    glb.mkdir(parents=True)
+    mast_b = built('signal-mast')
+    faces = [i for i, o in enumerate(mast_b['owner']) if o == 'signal-mast' and mast.tile_of(mast_b, mast_b['faces'][i]) == (3, 4)]
+    _write_tile(glb / 'SM_BC_Market_3_4.glb', mast_b, faces)
+    game = tmp_path / 'game'
+    src = game / 'assets' / 'prop' / 'brinecove' / 'market-3-4' / 'src'
+    src.mkdir(parents=True)
+    (src / 'SM_BC_Market_3_4.carve.json').write_text('{"kept": [[1000000, 1000001]]}')   # no mast triangle is kept
+    with pytest.raises(mast.MastSlipError, match='an earlier batch'):
+        mast.build_plan(game, tmp_path, SRC, tmp_path / 'stage')
