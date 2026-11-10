@@ -864,7 +864,9 @@
    "reason": "Haze comes from atmosphere.py, which imports sea_look.py; a V2 port needs the haze constants and the two formatters (not the whole sea_look module).",
    "reads": [
     "/Game/SwordCamp/Textures/T_SwordCampAtlas"
-   ]
+   ],
+   "planned_record": "master/swordcamp/camp",
+   "status": "planned (family swordcamp)"
   },
   {
    "package": "/Game/SwordCamp/Materials/M_RoninBody",
@@ -917,7 +919,9 @@
    "reason": "Skeletal-mesh material with a recolour custom node; no donor helper.",
    "reads": [
     "/Game/SwordCamp/Textures/T_SwordCampAtlas"
-   ]
+   ],
+   "planned_record": "master/swordcamp/ronin-body",
+   "status": "planned (family swordcamp)"
   },
   {
    "package": "/Game/Racing/M_RacingTv",
@@ -1397,7 +1401,9 @@
    "reason": "Same haze helper as M_SwordCamp. The glow and detail graph is self-contained. M_HDCity keeps its own generator record (adopted/japan/hidamari/generator).",
    "reads": [
     "/Game/Japan/Hidamari/Textures/T_HD_plaster"
-   ]
+   ],
+   "planned_record": "master/hidamari/city",
+   "status": "planned (family hidamari_city)"
   },
   {
    "package": "/Game/Japan/Materials/M_Arcade",
@@ -1458,7 +1464,8 @@
    "reason": "Graph is built in one function; its only texture is the timber owner, and the glow, tint and constants are literal code. The texture import (lines 7-21) becomes the texture record, not the builder.",
    "reads": [
     "/Game/Japan/Textures/T_Arcade_timber"
-   ]
+   ],
+   "status": "blocked (family plaza not built): adopted/japan/materials/base-materials also owns 23 packages beyond these four"
   },
   {
    "package": "/Game/Japan/Materials/M_ArcadePaving",
@@ -1523,7 +1530,8 @@
    "reason": "Same function as M_Arcade with paving=True: the colour code is replaced (line 45) and the glow and constants are shared. The only texture is the paving owner.",
    "reads": [
     "/Game/Japan/Textures/T_Arcade_paving"
-   ]
+   ],
+   "status": "blocked (family plaza not built): adopted/japan/materials/base-materials also owns 23 packages beyond these four"
   },
   {
    "package": "/Game/Japan/Materials/M_Harbor",
@@ -1601,7 +1609,8 @@
    "reads": [
     "/Game/Japan/Textures/T_Harbor_paving",
     "/Game/Japan/Textures/T_Harbor_timber"
-   ]
+   ],
+   "status": "blocked (family plaza not built): adopted/japan/materials/base-materials also owns 23 packages beyond these four"
   },
   {
    "package": "/Game/Japan/Materials/M_HarborWater",
@@ -1691,7 +1700,8 @@
    ],
    "fit": "needs helper",
    "reason": "The water branch reads sea_look (the open-sea waves, look and haze) and coast_water.HARBOR_RECT. Both are pure code with no Unreal calls, and their bytes are already pinned in V2 (adopted/japan/materials/base-materials and adopted/brinecove/materials); the port is wiring them into the master record.",
-   "reads": []
+   "reads": [],
+   "status": "blocked (family plaza not built): adopted/japan/materials/base-materials also owns 23 packages beyond these four"
   }
  ],
  "helper_files": [

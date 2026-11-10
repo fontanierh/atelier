@@ -1,0 +1,23 @@
+"""The Hidamari city parent, M_HDCity, owned by adopted/japan/hidamari/generator (docs/inventory/master-sources.md, section 2
+and section 9). Planned, not imported. Its one texture, T_HD_plaster, stays with adopted/japan/hidamari/surface-plaster."""
+PLASTER = '/Game/Japan/Hidamari/Textures/T_HD_plaster'
+
+FAMILY = {
+    'name': 'hidamari_city',
+    'adopted': 'adopted/japan/hidamari/generator',
+    'owner': 'shared/japan/hidamari/generator',
+    'license': 'owner-published (docs/DECISIONS.md D05 group 1)',
+    'builder': 'hidamari_city_masters.py',   # unreal/Scripts/material_masters/, copied into the record's src/
+    'donor': 'games/yorimichi/unreal/Scripts/city_material.py',   # blob sha256 0d7cf543...
+    'donor_lines': {'city_parent': '42-95'},
+    # The 56 records that reference adopted/japan/hidamari/generator are all editor-owned adopted records with no recipe
+    # (surfaces, props and trees, whose instances parent to M_HDCity). None names a master package, so every one takes the
+    # fallback, which is the only master.
+    'fallback': 'master/hidamari/city',
+    # `arguments` are the builder's keyword arguments; `reads` the packages the builder receives.
+    'masters': [
+        {'id': 'master/hidamari/city', 'package': '/Game/Japan/Hidamari/Materials/M_HDCity',
+         'builder': 'city_parent', 'reads': [PLASTER], 'inputs': ['adopted/japan/hidamari/surface-plaster'],
+         'arguments': {'texture': PLASTER}},
+    ],
+}

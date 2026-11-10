@@ -44,8 +44,8 @@ Unreal change); **not recoverable** = none of the 23 is. Every texture input bel
 | `/Game/SkatePark/Materials/M_Pier_steel` | `adopted/skatepark/materials` | `unreal/Scripts/import_skatepark.py`:132-174 | T_Pier_steel_albedo, _normal, _roughness (texture/skatepark/pier-steel-*) | direct |
 | `/Game/SkatePark/Materials/M_Pier_wood` | `adopted/skatepark/materials` | `unreal/Scripts/import_skatepark.py`:132-174 | T_Pier_wood_albedo, _normal, _roughness (texture/skatepark/pier-wood-*) | direct |
 | `/Game/SkatePark/Board/M_BoardDissolve` | `adopted/skatepark/board` | `unreal/Scripts/board_dissolve_material.py`:1-95 (module body) | none (constants and Dissolve scalar) | direct |
-| `/Game/SwordCamp/Materials/M_SwordCamp` | `adopted/swordcamp/materials` | `unreal/Scripts/import_swordcamp.py`:46-113 (build_material) | T_SwordCampAtlas (texture/swordcamp/atlas); helper atmosphere.py | needs helper |
-| `/Game/SwordCamp/Materials/M_RoninBody` | `adopted/swordcamp/materials` | `unreal/Scripts/import_swordcamp.py`:116-171 (build_ronin_body_material) | T_SwordCampAtlas (texture/swordcamp/atlas) | direct |
+| `/Game/SwordCamp/Materials/M_SwordCamp` | `adopted/swordcamp/materials`; planned (family swordcamp): `master/swordcamp/camp` | `unreal/Scripts/import_swordcamp.py`:46-113 (build_material) | T_SwordCampAtlas (texture/swordcamp/atlas); helper atmosphere.py | needs helper |
+| `/Game/SwordCamp/Materials/M_RoninBody` | `adopted/swordcamp/materials`; planned (family swordcamp): `master/swordcamp/ronin-body` | `unreal/Scripts/import_swordcamp.py`:116-171 (build_ronin_body_material) | T_SwordCampAtlas (texture/swordcamp/atlas) | direct |
 | `/Game/Racing/M_RacingTv` | `adopted/racing` | `unreal/Scripts/racing_tv_material.py`:1-57 (module body) | Black (engine); Picture is a runtime render target | direct |
 | `/Game/FX/M_FX_Additive` | `adopted/fx` | `unreal/Scripts/import_combat_fx.py`:52-70 (sprite_material) | T_FX_Glow (texture/fx/glow) | direct |
 | `/Game/FX/M_FX_Dust` | `adopted/fx` | `unreal/Scripts/import_combat_fx.py`:52-70 (sprite_material) | T_FX_Dust (texture/fx/dust) | direct |
@@ -53,7 +53,7 @@ Unreal change); **not recoverable** = none of the 23 is. Every texture input bel
 | `/Game/MegaPark/Materials/M_RetailOpaque` | `adopted/megapark/base-materials` | `unreal/Scripts/import_megapark.py`:68-163 (material, alpha 0) | T_DefaultWhite, T_DefaultLinear, T_DefaultBlack, T_DefaultNormal (adopted/megapark/shared-textures-common) | direct |
 | `/Game/MegaPark/Materials/M_RetailMasked` | `adopted/megapark/base-materials` | `unreal/Scripts/import_megapark.py`:68-163 (material, alpha 1) | as above | direct |
 | `/Game/MegaPark/Materials/M_RetailTranslucent` | `adopted/megapark/base-materials` | `unreal/Scripts/import_megapark.py`:68-163 (material, alpha 2) | as above | direct |
-| `/Game/Japan/Hidamari/Materials/M_HDCity` | `adopted/japan/hidamari/generator` | `unreal/Scripts/city_material.py`:42-95 (parent) | T_HD_plaster (adopted/japan/hidamari/surface-plaster); helper atmosphere.py | needs helper |
+| `/Game/Japan/Hidamari/Materials/M_HDCity` | `adopted/japan/hidamari/generator`; planned (family hidamari_city): `master/hidamari/city` | `unreal/Scripts/city_material.py`:42-95 (parent) | T_HD_plaster (adopted/japan/hidamari/surface-plaster); helper atmosphere.py | needs helper |
 | `/Game/Japan/Materials/M_Arcade` | `adopted/japan/materials/base-materials` | `unreal/Scripts/arcade_material.py`:24-63 (material, paving=False) | T_Arcade_timber (texture/japan/arcade-timber); roughness .87, specular .12 | direct |
 | `/Game/Japan/Materials/M_ArcadePaving` | `adopted/japan/materials/base-materials` | `unreal/Scripts/arcade_material.py`:24-63 (material, paving=True; colour override 44-45) | T_Arcade_paving (texture/japan/arcade-paving); roughness .87, specular .12 | direct |
 | `/Game/Japan/Materials/M_Harbor` | `adopted/japan/materials/base-materials` | `unreal/Scripts/harbor_material.py`:39-176 (material, water=False; branch 143-173) | T_Harbor_paving (texture/japan/harbor-paving), T_Harbor_timber (texture/japan/harbor-timber); roughness .83/.19, specular .35, fill .025 | direct |
@@ -62,6 +62,8 @@ Unreal change); **not recoverable** = none of the 23 is. Every texture input bel
 Counts: **24 direct, 3 needs helper, 0 not recoverable.**
 
 ### 2a. The four plaza masters
+
+Family status: **not planned**. `adopted/japan/materials/base-materials` owns 27 packages, not only these four. The planner refuses an adopted record that owns more than its family's masters, so no `plaza` family is written. The other 23 are `MPC_Wind`, `M_Bike`, `M_CloudShadow`, `M_CoastRock`, `M_Foliage`, `M_ForestGround`, `M_ForestImpostor`, `M_ForestLakeWater`, `M_Grass`, `M_NorthGate`, `M_NorthMountains`, `M_Painted`, `M_Painterly`, `M_PlazaPaving`, `M_PlazaWater`, `M_PondWater`, `M_SailboatCloth`, `M_SailboatWake`, `M_Sea`, `M_Sky`, `M_Village`, `M_VillageResident`, `M_ZeppelinFabric`. The record must be split by hand first.
 
 Pins: `arcade_material.py` sha256 `21ca3cbc06b18defbc95f7d5ae9a4c580027126bdcd90214d09d0eed016d10ab` (63 lines);
 `harbor_material.py` sha256 `7681f25484a4d5589b0fbc366203391039a6747ccc07ca8ec90dcc801acc59ad` (176 lines);
