@@ -49,6 +49,10 @@ class CapacityBroker:
     same-user censuses under the administrative policy. Only a separate unwitnessed-compile action
     MAY abandon a compile missing its root exit, with explicit acknowledgement and exact original
     monitor/report fences. It MUST preserve the missing exit and record its absence in the witness.
+    Explicit failed-job recovery MAY release an exclusive job with a positive root exit and bound
+    monitor-error receipt proving completed empty cleanup, using strict fresh censuses and absent
+    receipt-only identities too. Compatibility MUST be revalidated after its census. Preparing its
+    exact administrative fences MUST NOT release capacity or certify outputs.
     These actions MUST NOT certify outputs or run
     through ordinary close/reconcile. Exact exit evidence covers the retained roster only. Bridge and performance-exclusive grants,
     or exited shared editor jobs with exact controller binding and no unresolved late reporters,
@@ -983,7 +987,8 @@ class CapacityBroker:
                 refreshed = self._refresh(state, now)
                 wire.fields(message, ('namespace', 'action'), ('request', 'id', 'nonce', 'epoch', 'boot_id', 'child',
                             'process_guard', 'tree_guard', 'limit_bytes', 'descendants', 'witness', 'resources', 'locks',
-                            'activation_id', 'candidates', 'preserved_terminal', 'interrupted_compile', 'completed_job', 'unwitnessed_compile'))
+                            'activation_id', 'candidates', 'preserved_terminal', 'interrupted_compile', 'completed_job',
+                            'unwitnessed_compile', 'failed_job', 'administrator', 'operator_reference'))
                 if message['namespace'] != wire.NAMESPACE:
                     raise wire.CapacityError('Production broker namespace required')
                 action = message['action']
@@ -993,22 +998,38 @@ class CapacityBroker:
                     raise wire.CapacityError('Completed job evidence requires explicit administrative action')
                 if 'unwitnessed_compile' in message and action != 'abandon-unwitnessed':
                     raise wire.CapacityError('Missing root-exit evidence requires explicit administrative action')
+                if 'failed_job' in message and action != 'abandon-failed':
+                    raise wire.CapacityError('Monitor failure evidence requires explicit administrative action')
+                if any(k in message for k in ('administrator', 'operator_reference')) and action != 'failed-recovery-evidence':
+                    raise wire.CapacityError('Recovery preparation fields require explicit preparation')
                 if 'preserved_terminal' in message and action != 'reconcile':
                     raise wire.CapacityError('Preserved terminal evidence is allowed only for reconciliation')
-                if self.mode in ('capacity', 'sealed-maintenance') and action not in ('status', 'reconcile', 'close', 'abandon-interrupted', 'abandon-completed', 'abandon-unwitnessed'):
+                if self.mode in ('capacity', 'sealed-maintenance') and action not in ('status', 'reconcile', 'close', 'abandon-interrupted', 'abandon-completed', 'abandon-unwitnessed', 'abandon-failed', 'failed-recovery-evidence'):
                     if not self.compatible or message.get('activation_id') != self.activation_id:
                         if action == 'start':
                             self._start_refusal('compatibility-fence')
                         raise wire.CapacityError('Full-capacity compatibility proof is unavailable or mismatched')
-                if action in ('abandon-interrupted', 'abandon-completed', 'abandon-unwitnessed'):
+                if action == 'failed-recovery-evidence':
+                    from atelier.harness import capacity_abandon
+                    if self.mode != 'capacity' or not self.compatible:
+                        raise wire.CapacityError('Recovery preparation requires healthy full-capacity compatibility')
+                    record = state['records'].get(wire.text(message.get('id')))
+                    if record is None:
+                        raise wire.CapacityError('Failed-job request does not exist')
+                    result = {'evidence': capacity_abandon.failed_evidence(record, boot=self.boot,
+                        epoch=state['epoch'], administrator=message.get('administrator'),
+                        operator_reference=message.get('operator_reference'))}
+                elif action in ('abandon-interrupted', 'abandon-completed', 'abandon-unwitnessed', 'abandon-failed'):
                     completed = action == 'abandon-completed'
                     unwitnessed = action == 'abandon-unwitnessed'
+                    failed = action == 'abandon-failed'
                     from atelier.harness import capacity_abandon
-                    evidence = wire.fields(message.get('unwitnessed_compile' if unwitnessed else
+                    evidence = wire.fields(message.get('failed_job' if failed else 'unwitnessed_compile' if unwitnessed else
                                     'completed_job' if completed else 'interrupted_compile', {}),
                         ('id', 'nonce', 'epoch', 'boot_id', 'operator_reference', 'administrator', 'services')
-                        + (('guards', 'report_sha256') if completed or unwitnessed else ())
-                        + (('acknowledge_missing_root_exit',) if unwitnessed else ()))
+                        + (('guards', 'report_sha256') if completed or unwitnessed or failed else ())
+                        + (('acknowledge_missing_root_exit',) if unwitnessed else ())
+                        + (('acknowledge_monitor_failure',) if failed else ()))
                     print(json.dumps({'event': 'capacity administrative abandon attempt',
                                       'epoch': state['epoch'], 'peer_pid': principal[0]}), file=sys.stderr, flush=True)
                     if self.mode != 'capacity' or not self.compatible:
@@ -1019,7 +1040,10 @@ class CapacityBroker:
                     if any(other is not record and other['state'] in HELD for other in state['records'].values()):
                         raise wire.CapacityError('Another charged job prevents interrupted compile recovery')
                     witness = capacity_abandon.recover(record, evidence, principal=principal, boot=self.boot,
-                                                       epoch=state['epoch'], completed=completed, unwitnessed=unwitnessed)
+                                                       epoch=state['epoch'], completed=completed, unwitnessed=unwitnessed,
+                                                       failed=failed)
+                    if failed:
+                        self._validate_compatibility(state)
                     record.update(state='released', release_witness=witness)
                     result = {'released': True, 'state': 'released', 'witness': witness}
                 elif action in ('status', 'reconcile'):

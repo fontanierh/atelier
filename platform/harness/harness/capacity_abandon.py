@@ -166,7 +166,8 @@ def validate_snapshot(rows, record, services, *, completed=False, unwitnessed=Fa
             raise wire.CapacityError(f'Unclassified process {row["pid"]} born after the workload prevents administrative release')
 
 
-def recover(record, evidence, *, principal, boot, epoch, scan=None, missing=None, service=None, completed=False, unwitnessed=False):
+def recover(record, evidence, *, principal, boot, epoch, scan=None, missing=None, service=None,
+            completed=False, unwitnessed=False, failed=False):
     """@cc [owner:fontanierh,label:safety] administrative-interrupted-compile-release
     The default action MAY abandon only an uncertain exclusive compile. The separate completed-job
     action MAY abandon a nonexclusive job only with its exact bound normal empty terminal receipt,
@@ -174,9 +175,13 @@ def recover(record, evidence, *, principal, boot, epoch, scan=None, missing=None
     separate unwitnessed-compile action MAY release without that exit, requiring explicit missing-exit
     acknowledgement and exact monitor/report fences for an uncertain exclusive compile. It MUST
     preserve the missing exit, reject combined completed/unwitnessed modes, and record that no root
-    exit was observed. All actions MUST require absent root/controller/guards/retained identities and fresh
-    complete same-user censuses. Unknown or live workload identities MUST refuse. A recent
-    orphan MUST refuse unless it is an exact independently reviewed live launchd service or
+    exit was observed. All actions MUST require absent root/controller/guards/retained identities and
+    fresh complete same-user censuses. Unknown or live workload identities MUST refuse.
+    The separate failed-job action MAY release an uncertain exclusive job with positive root exit
+    and an exactly bound monitor_error receipt proving empty completed cleanup. It MUST also check
+    every identity in that receipt, preserve its failure and use the strict census. Original report
+    bytes MUST be hashed and validated together; failed-job service bindings MUST be rechecked afterward.
+    A recent orphan MUST refuse unless it is an exact independently reviewed live launchd service or
     specialized OS worker. Completed-job recovery MAY additionally exclude the exact
     iCloudHelper XPC executable with PPID 1, root ownership, no group/other write permission,
     SIP protection and verified Apple signature, recording that exclusion. Its census MAY
@@ -188,13 +193,15 @@ def recover(record, evidence, *, principal, boot, epoch, scan=None, missing=None
     Normal close/reconcile MUST NOT use this policy. The witness
     MUST retain the original evidence hashes and operation binding, and MUST NOT certify outputs.
     """
-    if completed and unwitnessed:
+    if sum((completed, unwitnessed, failed)) > 1:
         raise wire.CapacityError('Administrative recovery modes cannot be combined')
     scan = scan or ((lambda: census(before_root=record['child'][1])) if completed else census)
     missing, service = missing or absent, service or service_pin
     required = ('id', 'nonce', 'epoch', 'boot_id', 'operator_reference', 'administrator', 'services')
-    wire.fields(evidence, required + (('guards', 'report_sha256') if completed or unwitnessed else ())
-                + (('acknowledge_missing_root_exit',) if unwitnessed else ()))
+    fenced = completed or unwitnessed or failed
+    wire.fields(evidence, required + (('guards', 'report_sha256') if fenced else ())
+                + (('acknowledge_missing_root_exit',) if unwitnessed else ())
+                + (('acknowledge_monitor_failure',) if failed else ()))
     request = record['request']
     if (evidence['id'] != request['id'] or evidence['nonce'] != record.get('nonce')
             or evidence['epoch'] != epoch or evidence['boot_id'] != boot):
@@ -203,7 +210,8 @@ def recover(record, evidence, *, principal, boot, epoch, scan=None, missing=None
     reference = wire.text(evidence['operator_reference'], maximum=512)
     if administrator == request.get('owner') or tuple(principal) == tuple(record['principal']):
         raise wire.CapacityError('Administrative recovery owner cannot administratively release itself')
-    eligible = (request.get('phase') == 'job' and request.get('performance') is False if completed
+    eligible = (request.get('phase') == 'job' and request.get('performance') is True if failed else
+                request.get('phase') == 'job' and request.get('performance') is False if completed
                 else request.get('phase') == 'compile' and request.get('performance') is True)
     root = wire.identity(record.get('child'))
     root_exited = list(root) in record.get('exited', [])
@@ -212,7 +220,9 @@ def recover(record, evidence, *, principal, boot, epoch, scan=None, missing=None
         raise wire.CapacityError('Administrative recovery requires an eligible uncertain job with root exit')
     if unwitnessed and (root_exited or evidence['acknowledge_missing_root_exit'] is not True):
         raise wire.CapacityError('Unwitnessed compile requires explicit acknowledgement of its missing root exit')
-    if (completed or unwitnessed) and evidence['guards'] != record['guards']:
+    if failed and evidence['acknowledge_monitor_failure'] is not True:
+        raise wire.CapacityError('Failed job requires explicit acknowledgement of its monitor failure')
+    if fenced and evidence['guards'] != record['guards']:
         raise wire.CapacityError('Administrative recovery monitor binding changed')
     pins = set(map(tuple, record['roster'])) | {tuple(record['principal']), root}
     pins.update((g['pid'], g['start']) for g in record['guards'].values())
@@ -222,15 +232,22 @@ def recover(record, evidence, *, principal, boot, epoch, scan=None, missing=None
     if type(items) is not list or len(items) > 8:
         raise wire.CapacityError('Invalid workload service exemptions')
     services = {service(item) for item in items}
-    reports = {}
+    reports, originals = {}, {}
     for kind, guard in record['guards'].items():
         raw = wire.private_file(guard['report'], limit=wire.MAX_FRAME, private=False)
+        originals[kind] = raw
         reports[kind] = hashlib.sha256(raw).hexdigest()
-    if (completed or unwitnessed) and evidence['report_sha256'] != reports:
+    if fenced and evidence['report_sha256'] != reports:
         raise wire.CapacityError('Administrative recovery report binding changed')
     if completed:
-        terminal = wire.decode(wire.private_file(record['guards']['tree_guard']['report'], limit=wire.MAX_FRAME, private=False))
+        terminal = wire.decode(originals['tree_guard'])
         validate_completed_terminal(record, terminal)
+    if failed:
+        pins.update(failed_receipt_pins(record, wire.decode(originals['tree_guard'])))
+        if any(not missing(pin) for pin in pins):
+            raise wire.CapacityError('Failed job still has a live receipt process')
+        if pins & services:
+            raise wire.CapacityError('Workload identities cannot be recovery service exemptions')
     observations = []
     for _ in range(2):
         rows = scan()
@@ -243,10 +260,11 @@ def recover(record, evidence, *, principal, boot, epoch, scan=None, missing=None
         raw = wire.private_file(guard['report'], limit=wire.MAX_FRAME, private=False)
         if hashlib.sha256(raw).hexdigest() != reports[kind]:
             raise wire.CapacityError('Original workload reports changed during recovery')
-    if unwitnessed and {service(item) for item in items} != services:
+    if (unwitnessed or failed) and {service(item) for item in items} != services:
         raise wire.CapacityError('Recovery service identities changed during recovery')
     digest = hashlib.sha256(json.dumps(observations, sort_keys=True).encode()).hexdigest()
-    return dict(kind=('administrative-unwitnessed-compile' if unwitnessed else
+    return dict(kind=('administrative-failed-job' if failed else
+                      'administrative-unwitnessed-compile' if unwitnessed else
                       'administrative-completed-job' if completed else 'administrative-interruption'),
         root_exit_observed=root_exited, coverage='current-observed-quiescence',
         operator_reference=reference, administrator=administrator, administrative_principal=list(principal),
@@ -260,6 +278,62 @@ def recover(record, evidence, *, principal, boot, epoch, scan=None, missing=None
                                    if row.get('verified_completed_system_service') is True],
         unwitnessed_system_service_exemptions=[row for snapshot in observations for row in snapshot.values()
                                    if row.get('verified_unwitnessed_system_service') is True])
+
+
+def failed_receipt_pins(record, receipt):
+    """@cc [owner:fontanierh,label:safety] administrative-failed-job-terminal
+    Only an original monitor_error receipt bound to the root/controller/ceiling/invocation with
+    explicit empty completed cleanup MAY support failed-job recovery. Its bounded unique sample
+    MUST have an exact nonnegative footprint sum. Every sampled identity MUST be checked absent,
+    including identities absent from the broker roster. Any nonempty reporter/service evidence MUST refuse.
+    """
+    import math
+    observed, ready = receipt.get('time'), record.get('first_ready')
+    if (wire.identity((receipt.get('owner'), receipt.get('owner_started'))) != tuple(record['child'])
+            or receipt.get('controller') != record['principal']
+            or receipt.get('state') != 'cleanup_incomplete' or receipt.get('termination_reason') != 'monitor_error'
+            or receipt.get('cleanup_complete') is not True or receipt.get('cleanup_processes') != []
+            or type(receipt.get('cleanup_footprint_bytes')) is not int or receipt['cleanup_footprint_bytes'] != 0
+            or type(receipt.get('limit_bytes')) is not int or receipt['limit_bytes'] != record.get('limit_bytes')
+            or type(receipt.get('peak_bytes')) is not int or not 0 <= receipt['peak_bytes'] <= receipt['limit_bytes']
+            or type(observed) not in (int, float) or not math.isfinite(observed)
+            or type(ready) not in (int, float) or not math.isfinite(ready)
+            or not 0 < ready <= observed <= time.time()
+            or receipt.get('late_reporters') or receipt.get('unsupported_services') or receipt.get('owned_services')):
+        raise wire.CapacityError('Failed job requires its bound monitor-error receipt and empty completed cleanup')
+    if 'monitor' in receipt:
+        monitor = record['guards']['tree_guard']
+        if wire.identity(receipt['monitor']) != (monitor['pid'], monitor['start']):
+            raise wire.CapacityError('Failed job receipt monitor binding changed')
+    samples = receipt.get('processes')
+    if type(samples) is not list or len(samples) > wire.MAX_RETAINED:
+        raise wire.CapacityError('Invalid failed-job process sample')
+    pins, total = set(), 0
+    for sample in samples:
+        if type(sample) is not dict:
+            raise wire.CapacityError('Invalid failed-job process sample')
+        pin = wire.identity((sample.get('pid'), sample.get('started')))
+        if pin in pins:
+            raise wire.CapacityError('Duplicate failed-job process identity')
+        pins.add(pin)
+        total += wire.integer(sample.get('footprint_bytes'))
+    if type(receipt.get('footprint_bytes')) is not int or receipt['footprint_bytes'] != total or total > receipt['peak_bytes']:
+        raise wire.CapacityError('Failed-job footprint does not match its original sample')
+    return pins
+
+
+def failed_evidence(record, *, boot, epoch, administrator, operator_reference):
+    """Prepare exact current fences for one explicit recovery; this grants and releases nothing."""
+    if (record['state'] != 'uncertain' or record['request'].get('phase') != 'job'
+            or record['request'].get('performance') is not True or record['child'] not in record['exited']):
+        raise wire.CapacityError('Failed-job recovery requires an uncertain exclusive job with root exit')
+    originals = {kind: wire.private_file(g['report'], limit=wire.MAX_FRAME, private=False)
+                 for kind, g in record['guards'].items()}
+    failed_receipt_pins(record, wire.decode(originals['tree_guard']))
+    return dict(id=record['request']['id'], nonce=record['nonce'], epoch=epoch, boot_id=boot,
+                administrator=wire.text(administrator), operator_reference=wire.text(operator_reference, maximum=512),
+                services=[], guards=record['guards'], acknowledge_monitor_failure=True,
+                report_sha256={kind: hashlib.sha256(raw).hexdigest() for kind, raw in originals.items()})
 
 
 def validate_completed_terminal(record, receipt):

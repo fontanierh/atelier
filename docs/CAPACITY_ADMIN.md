@@ -152,6 +152,53 @@ bound report-path hash and monitor identity. This is an explicit preservation at
 same-user administrative socket, not cryptographic proof of the archive's origin. It never invents historical
 per-process exits, replaces the current report, or certifies build outputs. Missing or invalid archives refuse.
 
+### Failed editor with completed cleanup
+
+An exclusive editor can stop after a process-sampling error even though its owned-process cleanup
+then finishes. Ordinary reconciliation keeps that failure charged when historical exit evidence
+is incomplete. **Do not reboot the machine or delete capacity state to recover it.** After the
+owner authorizes recovery, an independent administrator can use:
+
+```sh
+uv run atelier capacity abandon-failed ABSOLUTE_SOCKET \
+  --request-id REQUEST_ID --administrator REVIEWER \
+  --operator-reference 'operator instruction identifying this recovery'
+```
+
+Stop the failed job's enclosing caller first, keeping completed imports, caches and the original
+guard reports. The command reads the exact current epoch, lease, monitor identities and report
+hashes, then submits that fenced evidence. It does not need hand-written JSON or a machine restart.
+A concurrent change refuses recovery; inspect it before retrying. Use `capacity status` afterward
+to verify the release, then resume only the unfinished imports through their normal recovery route.
+
+This action accepts only an uncertain **exclusive job** with a positive root exit and its original
+`cleanup_incomplete` / `monitor_error` receipt. The receipt must bind the root, controller, ceiling
+and invocation, and explicitly report complete cleanup with an empty, zero-byte cleanup sample.
+Every retained identity, controller, guard and identity in the original failure sample must be
+strictly absent. Two fresh complete same-user process censuses must rule out remaining native work
+and unexplained recent orphans. Report hashes, service bindings and full compatibility are checked
+again before release. Another charged job, unknown process lookup or any nonempty service/reporter
+evidence refuses. This action does not inherit the completed-job policy's unknown executable-path
+exceptions. Exact independently reviewed service exceptions can still be supplied through
+`--administrative-evidence FILE`, using the existing private evidence format plus
+`acknowledge_monitor_failure: true` and the original `guards` and `report_sha256` bindings.
+
+The durable `administrative-failed-job` witness preserves missing historical exits, ancestry
+uncertainty and the original failure reports. **It releases resources only.** It never certifies
+imports, grants a successful terminal result, changes automatic cleanup or removes memory guards.
+Guard failure reports now retain numeric `error_pid` and `error_errno` when available, so a later
+prevention fix can identify the denied process instead of guessing at retry delays.
+
+If the installed broker predates this command, use an explicitly owner-authorized, independently
+reviewed service update. First stop pending callers and verify all native, controller, guard and
+receipt identities absent. Preserve the database, original reports, policy/configuration hashes
+and OS boot identity. Stop only the single supervised capacity service and install its reviewed
+clean checkout against the **same** policy, socket and database. This narrow maintenance boundary
+may retain the uncertain failed-job charge; it must not erase it to make the deployment look drained.
+After service startup, verify unchanged OS boot, a new service epoch, healthy compatibility and
+unchanged retained history. Only then use the command above with the new epoch. Do not hot-edit
+loaded broker code, run a second broker, alter protected compatibility files or delete reservations.
+
 ### Interrupted compiler with lost monitors
 
 If an external session timeout kills the controller and both monitors, no terminal cleanup report may

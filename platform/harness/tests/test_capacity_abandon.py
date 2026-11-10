@@ -153,6 +153,126 @@ def completed_case(case):
     return case
 
 
+@pytest.fixture
+def failed_case(completed_case):
+    record, evidence, _ = completed_case
+    record['request']['performance'] = True
+    path = Path(record['guards']['tree_guard']['report'])
+    receipt = json.loads(path.read_text())
+    receipt.update(state='cleanup_incomplete', termination_reason='monitor_error',
+                   cleanup_processes=[], cleanup_footprint_bytes=0,
+                   processes=[dict(pid=99, started=120, footprint_bytes=200)], footprint_bytes=200)
+    path.write_text(json.dumps(receipt))
+    evidence['report_sha256']['tree_guard'] = hashlib.sha256(path.read_bytes()).hexdigest()
+    evidence['acknowledge_monitor_failure'] = True
+    return completed_case
+
+
+def test_failed_job_preserves_failure_history_and_receipt_only_identities(failed_case):
+    record, _, _ = failed_case
+    before = copy.deepcopy(record)
+    witness = recover(failed_case, failed=True)
+    assert witness['kind'] == 'administrative-failed-job'
+    assert witness['output_certified'] is False and witness['root_exit_observed'] is True
+    assert witness['missing_historical_exits'] == 1 and witness['ancestry_unknown'] is True
+    assert witness['checked_identities'] == 6  # includes receipt-only (99,120)
+    assert record == before
+    assert json.loads(Path(record['guards']['tree_guard']['report']).read_text())['state'] == 'cleanup_incomplete'
+    prepared = abandon.failed_evidence(record, boot='boot', epoch=18,
+        administrator='maintenance', operator_reference='operator board instruction 123')
+    assert prepared == failed_case[1]
+
+
+def test_failed_job_live_receipt_only_helper_refuses(failed_case):
+    record, evidence, rows = failed_case
+    with pytest.raises(wire.CapacityError, match='live receipt process'):
+        abandon.recover(record, evidence, principal=(31,300), boot='boot', epoch=18,
+            scan=lambda:rows, missing=lambda pin:pin != (99,120), failed=True)
+
+
+@pytest.mark.parametrize('key,value', [('owner',11), ('owner_started',101), ('controller',[11,91]),
+    ('state','child_exited'), ('termination_reason','test_duration'), ('cleanup_complete',False),
+    ('cleanup_processes',[{}]), ('cleanup_footprint_bytes',1), ('cleanup_footprint_bytes',False),
+    ('limit_bytes',2048), ('time',0), ('footprint_bytes',199), ('processes',[{},{}]),
+    ('late_reporters',{'unknown':True}), ('owned_services',[{}]), ('unsupported_services',[{}]),
+    ('monitor',[21,999])])
+def test_failed_job_refuses_incomplete_or_mismatched_evidence(failed_case,key,value):
+    record, evidence, _ = failed_case
+    path = Path(record['guards']['tree_guard']['report'])
+    receipt = json.loads(path.read_text()); receipt[key] = value
+    path.write_text(json.dumps(receipt))
+    evidence['report_sha256']['tree_guard'] = hashlib.sha256(path.read_bytes()).hexdigest()
+    with pytest.raises(wire.CapacityError): recover(failed_case,failed=True)
+
+
+@pytest.mark.parametrize('change', ['running','shared','compile','game','no-root-exit','no-ack','mixed','stale-report','stale-epoch'])
+def test_failed_job_scope_acknowledgement_and_fences(failed_case,change):
+    record,evidence,_ = failed_case
+    options = dict(failed=True)
+    if change=='running':record['state']='running'
+    if change=='shared':record['request']['performance']=False
+    if change in ('compile','game'):record['request']['phase']=change
+    if change=='no-root-exit':record['exited']=[]
+    if change=='no-ack':evidence['acknowledge_monitor_failure']=False
+    if change=='mixed':options['completed']=True
+    if change=='stale-report':evidence['report_sha256']['tree_guard']='different'
+    if change=='stale-epoch':evidence['epoch']=19
+    with pytest.raises(wire.CapacityError):recover(failed_case,**options)
+
+
+@pytest.mark.parametrize('change', ['new-orphan','report','live-helper','service'])
+def test_failed_job_rechecks_second_census_and_all_bindings(failed_case,change):
+    record,evidence,rows = failed_case
+    calls = 0
+    def scan():
+        nonlocal calls
+        calls+=1
+        if calls==2:
+            if change=='new-orphan':rows[45]=dict(pid=45,started=150,parent=1,executable='/usr/bin/python')
+            if change=='report':Path(record['guards']['tree_guard']['report']).write_text('{}')
+        return copy.deepcopy(rows)
+    def missing(pin):return not (change=='live-helper' and calls==2 and pin==(99,120))
+    evidence['services']=[dict(pid=45,started=150,label='viewer',plist_sha256='reviewed')]
+    def service(item):return (45,151 if change=='service' and calls==2 else 150)
+    if change=='new-orphan':evidence['services']=[]
+    with pytest.raises(wire.CapacityError):
+        abandon.recover(record,evidence,principal=(31,300),boot='boot',epoch=18,
+                        scan=scan,missing=missing,service=service,failed=True)
+
+
+def test_failed_job_never_exempts_receipt_process_as_service(failed_case):
+    failed_case[1]['services']=[dict(pid=99,started=120,label='viewer',plist_sha256='reviewed')]
+    with pytest.raises(wire.CapacityError,match='cannot be recovery service'):
+        recover(failed_case,failed=True,service=lambda item:(99,120))
+
+
+def test_failed_job_cli_prepares_then_submits_exact_fences(monkeypatch,capsys):
+    from atelier import cli
+    from atelier.harness import capacity_client
+    calls=[]
+    evidence={'id':'job','nonce':'one-use'}
+    def prepare(path,request_id,**kwargs):
+        calls.append(('prepare',path,request_id,kwargs));return evidence
+    def release(path,received):
+        assert received is evidence
+        calls.append(('release',path));return {'released':True,'output_certified':False}
+    monkeypatch.setattr(capacity_client,'failed_recovery_evidence',prepare)
+    monkeypatch.setattr(capacity_client,'abandon_failed',release)
+    assert cli.main(['capacity','abandon-failed','/socket','--request-id','job',
+        '--administrator','reviewer','--operator-reference','owner instruction'])==0
+    assert calls==[('prepare','/socket','job',dict(administrator='reviewer',operator_reference='owner instruction')),
+                   ('release','/socket')]
+    assert '"output_certified": false' in capsys.readouterr().out
+
+
+def test_failed_job_cli_refuses_missing_scope_without_contacting_broker(monkeypatch):
+    from atelier import cli
+    from atelier.harness import capacity_client
+    monkeypatch.setattr(capacity_client,'failed_recovery_evidence',lambda *args,**kwargs:pytest.fail('unexpected RPC'))
+    with pytest.raises(SystemExit,match='requires --request-id'):
+        cli.main(['capacity','abandon-failed','/socket','--request-id','job'])
+
+
 def test_completed_job_is_explicit_and_keeps_missing_history(completed_case):
     with pytest.raises(wire.CapacityError):recover(completed_case)
     witness = recover(completed_case, completed=True)
