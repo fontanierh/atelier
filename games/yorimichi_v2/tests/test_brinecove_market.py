@@ -458,7 +458,7 @@ def test_check_for_the_groups_stage_allows_the_tile_record_to_remain(monkeypatch
 
 def test_batch_names_all_lists_and_checks_names():
     names = market.batch_names('all')
-    assert names[:4] == ['market1', 'market2', 'market3', 'town1'] and names[-2:] == ['town9', 'props1'] and len(names) == 13
+    assert names[:4] == ['market1', 'market2', 'market3', 'town1'] and names[-3:] == ['town9', 'props1', 'props2'] and len(names) == 14
     assert market.batch_names('town2, market1,town2') == ['town2', 'market1']
     with pytest.raises(market.MarketError, match='unknown batch town99'):
         market.batch_names('town99')
@@ -491,3 +491,30 @@ def test_donor_props1_parts_are_whole_and_leave_the_batch1_cuts_alone():
                 counts[name] = counts.get(name, 0) + len(members)
     assert counts['props-rowboat-w155'] == 96 and counts['props-buoy-w90'] == 100
     assert counts['props-potted-palm-w300'] == 206 + 30
+
+
+def test_the_props2_batch_names_each_quay_cluster_and_basket_once():
+    """The props2 objects are the cargo-cluster and fish-basket loop bodies; the net racks stay batch 1 objects."""
+    names = market.BATCHES['props2']
+    assert len(names) == len(set(names)) == 13 and not set(names) & set(market.BATCHES['props1'])
+    assert sum(n.startswith('props-cargo-') for n in names) == 6
+    assert [n for n in names if n.startswith('props-fish-basket-')] == [f'props-fish-basket-{i}' for i in range(1, 8)]
+    assert not any('net-rack' in n for n in names)
+
+
+@pytest.mark.skipif(not DONOR or not Path(DONOR).is_dir(), reason='needs the donor export (YV2_DONOR_BUILD)')
+def test_donor_props2_parts_are_whole_and_leave_the_batch1_cuts_alone():
+    """Every props2 object is matched whole in one hard tile and the tiles still partition with batch 1's cuts taken."""
+    donor = Path(DONOR)
+    src = market.donor_source(donor)
+    prior = {'cannon-west', 'cannon-east', 'quay-anchor', 'net-rack-west', 'net-rack-east'}
+    done = market.compute(donor / 'brinecove' / 'glb', src, list(market.BATCHES['props2']), prior)
+    assert done['problems'] == []
+    counts = {}
+    for owned in done['owned'].values():
+        for name, members in owned.items():
+            if name:
+                counts[name] = counts.get(name, 0) + len(members)
+    assert {counts[n] for n in market.BATCHES['props2'] if 'cargo' in n} == {472}
+    assert {counts[n] for n in market.BATCHES['props2'] if 'fish-basket' in n} == {52}
+    assert not any(market.split.is_soft(stem) for stem, owned in done['owned'].items() if any(owned.values()))

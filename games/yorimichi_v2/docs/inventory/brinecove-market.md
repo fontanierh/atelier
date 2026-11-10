@@ -173,3 +173,17 @@ The five emptied tiles were retired with the three stages above (`--batch props1
 `4-4` and `5-4` were saved again; `props-5-2` contained only an emptied tile, so its placement was retired too.
 If an object save fails after it created patches but before the manifest was saved,
 the rerun refuses with "saved without <key>". Delete that run's untracked patch packages and save again.
+
+## Working-quay props (`props2`)
+
+`props2` takes the 6 cargo clusters (two crates, two barrels and a rope coil each, `props-cargo-<side><|x|>`) and the 7
+fish baskets by the market shed (`props-fish-basket-1` to `7`) from `procedural/props.py`. The two net racks are batch 1
+objects (`net-rack-west`, `net-rack-east`) and have no scope here; `plan` refuses a batch that would take their triangles.
+The quay cannons and anchor are batch 1 objects too.
+
+| Tiles touched | Triangles taken | Tiles remade | Tiles emptied | Records |
+|---|---|---|---|---|
+| 3 | 3,196 (472 per cluster, 52 per basket) | `Props_3_3`, `4_3`, `5_3` (all hard) | none | 16 |
+
+Nothing is emptied, so there is no retire. What remains in the Props tiles is street and pier furniture (lantern posts,
+loose barrels and crates, rope coils) and the gulls.

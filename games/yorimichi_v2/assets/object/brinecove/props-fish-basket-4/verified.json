@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/props-fish-basket-4",
+  "dependencies": {
+    "prop/brinecove/props-fish-basket-4": "2e063489c2f762203f6806b25214ff532bc97365e5758f1f3c60da9c6351cd2f"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/0/JR/A110TPJ9YJUFL2I0JJDHW3.uasset": "61337705823e3b91a9ce5338ef9039b3e0ba5775d00bddfcfbe7314da63a3e0b"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}

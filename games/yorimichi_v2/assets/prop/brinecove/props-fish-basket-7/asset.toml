@@ -1,0 +1,26 @@
+# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_PropsFishBasket7: the props fish basket 7, cut from the fused tile(s) Props_5_3 (52 triangles).
+# The donor file is committed in src/ and pinned by sha256; the record is imported by the V2 editor and
+# verified by tools/import/run.py, never edited by hand.
+schema = 1
+id = "prop/brinecove/props-fish-basket-7"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/brinecove/props-fish-basket-7"
+references = ["adopted/brinecove/materials"]
+
+[[sources]]
+path = "src/SM_BC_PropsFishBasket7.glb"
+sha256 = "c131c51d18da88ca0717152000191c11099699f066a45270497ca3861dce25c8"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/Brinecove/Materials/MI_BC_sail", "/Game/Brinecove/Materials/MI_BC_wood_light"]
+triangles = 52
+collision = "complex"
+full_precision_uvs = true
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_PropsFishBasket7"

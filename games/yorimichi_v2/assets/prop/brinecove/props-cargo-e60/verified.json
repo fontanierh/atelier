@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/props-cargo-e60",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_PropsCargoE60.uasset": "63eaa4fcc56fb3a70051178eaeb8d1815da6f4b02aa4eba3c0a8c61168ba96e5"
+  },
+  "input_fingerprint": "ff61ef980a0c3589accd2b4e44510ddb1bc69e37b10c0e2ba90a9f498759788e",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_PropsCargoE60": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

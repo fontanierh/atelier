@@ -3327,6 +3327,136 @@
         "prop/brinecove/props-buoy-w90"
       ]
     },
+    "object/brinecove/props-cargo-e120": {
+      "groups": [
+        "SM_BC_PropsCargoE120"
+      ],
+      "id": "object/brinecove/props-cargo-e120",
+      "model": "prop/brinecove/props-cargo-e120",
+      "models": [
+        "prop/brinecove/props-cargo-e120"
+      ]
+    },
+    "object/brinecove/props-cargo-e270": {
+      "groups": [
+        "SM_BC_PropsCargoE270"
+      ],
+      "id": "object/brinecove/props-cargo-e270",
+      "model": "prop/brinecove/props-cargo-e270",
+      "models": [
+        "prop/brinecove/props-cargo-e270"
+      ]
+    },
+    "object/brinecove/props-cargo-e60": {
+      "groups": [
+        "SM_BC_PropsCargoE60"
+      ],
+      "id": "object/brinecove/props-cargo-e60",
+      "model": "prop/brinecove/props-cargo-e60",
+      "models": [
+        "prop/brinecove/props-cargo-e60"
+      ]
+    },
+    "object/brinecove/props-cargo-w170": {
+      "groups": [
+        "SM_BC_PropsCargoW170"
+      ],
+      "id": "object/brinecove/props-cargo-w170",
+      "model": "prop/brinecove/props-cargo-w170",
+      "models": [
+        "prop/brinecove/props-cargo-w170"
+      ]
+    },
+    "object/brinecove/props-cargo-w250": {
+      "groups": [
+        "SM_BC_PropsCargoW250"
+      ],
+      "id": "object/brinecove/props-cargo-w250",
+      "model": "prop/brinecove/props-cargo-w250",
+      "models": [
+        "prop/brinecove/props-cargo-w250"
+      ]
+    },
+    "object/brinecove/props-cargo-w60": {
+      "groups": [
+        "SM_BC_PropsCargoW60"
+      ],
+      "id": "object/brinecove/props-cargo-w60",
+      "model": "prop/brinecove/props-cargo-w60",
+      "models": [
+        "prop/brinecove/props-cargo-w60"
+      ]
+    },
+    "object/brinecove/props-fish-basket-1": {
+      "groups": [
+        "SM_BC_PropsFishBasket1"
+      ],
+      "id": "object/brinecove/props-fish-basket-1",
+      "model": "prop/brinecove/props-fish-basket-1",
+      "models": [
+        "prop/brinecove/props-fish-basket-1"
+      ]
+    },
+    "object/brinecove/props-fish-basket-2": {
+      "groups": [
+        "SM_BC_PropsFishBasket2"
+      ],
+      "id": "object/brinecove/props-fish-basket-2",
+      "model": "prop/brinecove/props-fish-basket-2",
+      "models": [
+        "prop/brinecove/props-fish-basket-2"
+      ]
+    },
+    "object/brinecove/props-fish-basket-3": {
+      "groups": [
+        "SM_BC_PropsFishBasket3"
+      ],
+      "id": "object/brinecove/props-fish-basket-3",
+      "model": "prop/brinecove/props-fish-basket-3",
+      "models": [
+        "prop/brinecove/props-fish-basket-3"
+      ]
+    },
+    "object/brinecove/props-fish-basket-4": {
+      "groups": [
+        "SM_BC_PropsFishBasket4"
+      ],
+      "id": "object/brinecove/props-fish-basket-4",
+      "model": "prop/brinecove/props-fish-basket-4",
+      "models": [
+        "prop/brinecove/props-fish-basket-4"
+      ]
+    },
+    "object/brinecove/props-fish-basket-5": {
+      "groups": [
+        "SM_BC_PropsFishBasket5"
+      ],
+      "id": "object/brinecove/props-fish-basket-5",
+      "model": "prop/brinecove/props-fish-basket-5",
+      "models": [
+        "prop/brinecove/props-fish-basket-5"
+      ]
+    },
+    "object/brinecove/props-fish-basket-6": {
+      "groups": [
+        "SM_BC_PropsFishBasket6"
+      ],
+      "id": "object/brinecove/props-fish-basket-6",
+      "model": "prop/brinecove/props-fish-basket-6",
+      "models": [
+        "prop/brinecove/props-fish-basket-6"
+      ]
+    },
+    "object/brinecove/props-fish-basket-7": {
+      "groups": [
+        "SM_BC_PropsFishBasket7"
+      ],
+      "id": "object/brinecove/props-fish-basket-7",
+      "model": "prop/brinecove/props-fish-basket-7",
+      "models": [
+        "prop/brinecove/props-fish-basket-7"
+      ]
+    },
     "object/brinecove/props-potted-palm-e120": {
       "groups": [
         "SM_BC_PropsPottedPalmE120",

@@ -25,7 +25,7 @@ The source baseline `7eec0f98dd` is documented separately in [features](inventor
 | Whole island | W00–W20 have committed coverage (29 world region scopes); W14 keeps its disabled baseline. The region receipts contain 2,750 saved object definitions. | [Regions](../world/regions/), `actors.verified.json`, `objects.saved.json`; these counts are not the number of independently split source models. |
 | Recovered models | Merged:<br>- 1,048 city records;<br>- 67 train mesh records, plus 159 train texture and material records (459 packages);<br>- ten families with 141 meshes and 29 textures;<br>- 100 Japan props;<br>- 72 Brine Cove plants and city tree residuals;<br>- the two Japan leaf instances.<br>The first small-families batch (21 records, 48 packages) is merged (#797). | [PR #784](https://github.com/fontanierh/atelier/pull/784), [PR #786](https://github.com/fontanierh/atelier/pull/786), [PR #792](https://github.com/fontanierh/atelier/pull/792), [PR #794](https://github.com/fontanierh/atelier/pull/794), [PR #796](https://github.com/fontanierh/atelier/pull/796); the read-back results are below. Source completeness and remaining fused objects are tracked below. |
 | Restricted and Adventure originals | 6,768 restricted package entries and 124 Adventure/animation entries have source routes; the manifest records 6,086 original pins. | [restricted.originals.json](../restricted.originals.json), [PR #785](https://github.com/fontanierh/atelier/pull/785). Private bytes stay on the pinned restricted route. This is not closure of every open source family. |
-| Brine Cove individual objects | All 21 market stalls, all 265 town objects, the two harbour Soft fragments, eleven small props and three ship objects have saved placements in main ([PR #787](https://github.com/fontanierh/atelier/pull/787)). The signal mast and the shipyard slip are saved, merged and packaged ([PR #798](https://github.com/fontanierh/atelier/pull/798), [PR #800](https://github.com/fontanierh/atelier/pull/800)). The 13 harbour rowboats, buoys and potted palms (`props1`) are saved on their branch. Other scenery still includes fused models/patches. | [Brine Cove scope](inventory/brinecove-objects.md), [split work](inventory/brinecove-split.md), [remaining exceptions](inventory/exceptions.md). |
+| Brine Cove individual objects | All 21 market stalls, all 265 town objects, the two harbour Soft fragments, eleven small props and three ship objects have saved placements in main ([PR #787](https://github.com/fontanierh/atelier/pull/787)). The signal mast and the shipyard slip are saved, merged and packaged ([PR #798](https://github.com/fontanierh/atelier/pull/798), [PR #800](https://github.com/fontanierh/atelier/pull/800)). The 13 harbour rowboats, buoys and potted palms (`props1`) are merged ([PR #813](https://github.com/fontanierh/atelier/pull/813)); the 6 quay cargo clusters and 7 fish baskets (`props2`) are saved on their branch. Other scenery still includes fused models/patches. | [Brine Cove scope](inventory/brinecove-objects.md), [split work](inventory/brinecove-split.md), [remaining exceptions](inventory/exceptions.md). |
 | Transport objects | The 10 gondola pylons and 12 railway fittings are saved as their own objects; their fused groups and the train LOD records are retired. | [PR #790](https://github.com/fontanierh/atelier/pull/790), [exceptions](inventory/exceptions.md). |
 | Desktop package | Main `da0a41f891`, fingerprint `c89f535441be`: guarded package in 255.7 s; automated acceptance 8/8; host/leave 9/9; first launch (Slice in 15.9 s, peak 7.8 GiB, no error lines) and shutdown recorded passing. | [Package guide](PACKAGE.md#current-main-checkpoint-2026-11-10). Log-only launch evidence; human input, travel, gameplay, sound and persistence remain unrecorded. Host/leave covers one process, not a second machine joining. |
 | Earlier integration package (#803, #804) | Built 2026-11-10 13:03 Paris from branch `7f43b4ccf3`, fingerprint `88d415e733ec`; automated checks, first launch and shutdown passed. | [Historical package evidence](PACKAGE.md#integration-package-for-803-and-804-2026-11-10). It predates #808/#809 and cannot host; later success does not upgrade this older app. |
@@ -70,12 +70,14 @@ Saved, prepared and packaged totals are kept separate:
 - **Hippodrome residuals closed in #804:** four texture and four instance records were imported, the four dependent
   props re-imported, and six unused course instances retired after a reference check. Native before/after reads
   agree. The old adopted owner is retired; this batch is merged and included in `c89f535441be`.
-- **Saved on the branch, not yet packaged:** claim `JAPANMI` (branch `jim5/yv2-japan-instances`) closes the 45
+- **Merged, not yet packaged:** claim `JAPANMI` ([PR #812](https://github.com/fontanierh/atelier/pull/812)) closes the 45
   material instances: the 41 Japan instances, `MI_HD_flat`, `MI_TH_pane` and the two two-sided Mega Park seams become
   10 generated `material-instance` records (`tools/migrate/held_instances.py`), replacing their adopted owners. Each
   row agrees with a native editor read that now includes the base-property overrides (LOD blending, masking, two-sided),
   and each import read back equal to the read before it. See
-  [exceptions](inventory/exceptions.md#current-source-classification).
+  [exceptions](inventory/exceptions.md#current-source-classification). Brine Cove `props1` (13 harbour objects, claim
+  `BCPROPS1`, [PR #813](https://github.com/fontanierh/atelier/pull/813)) is merged too. Package `c89f535441be` predates
+  both.
 - **Remaining source/detail work:** the standalone Mega Park map's reference check, the bike wheels (`Bike.blend`, their
   generator, is not recorded) and the `MPC_SeeThrough` and `RuntimeData` routes: 4 records / 5 packages in
   [exceptions](inventory/exceptions.md#current-source-classification).
@@ -88,12 +90,16 @@ Remaining construction work:
 - Retain the current package while the next source batch proceeds. The guard fixes (#805/#807), multiplayer
   manifest (#809) and host/leave check (#810) are merged. The six manual acceptance checks and final owner-led
   gameplay/two-machine playtesting remain open.
-- **Forecast updated 2026-11-10 15:00, Paris:** the 45 material instances (41 Japan, `MI_HD_flat`, `MI_TH_pane`, two
-  Mega Park seams) are imported on the branch, ahead of the 17:30 estimate; they still need review, merge and a
-  package. The remaining source gaps are the 4 records / 5 packages in
-  [exceptions](inventory/exceptions.md#current-source-classification); they are unsized, so no complete-source date is
-  confirmed. Useful-object splitting stays at **23:00**, low confidence: residual fused scenery and patches are still
-  unsized.
+- **Forecast updated 2026-11-10 16:00, Paris:**
+  - The 45-instance batch is done: it was merged in #812, ahead of its 17:30 target.
+  - Whole-source work is the 4 records / 5 packages in
+    [exceptions](inventory/exceptions.md#current-source-classification). That classification is not source closure.
+    Forecast **19:30**, low confidence, for these steps in order:
+    - the Mega Park standalone map's reference check (a native read);
+    - `MPC_SeeThrough` and `RuntimeData` routes;
+    - the bike wheels. Their `Bike.blend` generator is unrecorded, so this step carries the most risk.
+  - Useful-object splitting stays at **23:00**, low confidence. Brine Cove `props2` (quay cargo and fish baskets) is in
+    progress; the remaining residual fused scenery and patches are unsized.
 
 ## Runtime and ownership facts
 
