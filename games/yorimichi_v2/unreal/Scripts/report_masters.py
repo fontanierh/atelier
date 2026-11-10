@@ -116,7 +116,7 @@ def describe(expressions):
 def read_expressions(material):
     """(class name, {property: value}) for every expression of the master's graph."""
     out = []
-    for expression in material.get_editor_property('expressions') or []:
+    for expression in U.MaterialEditingLibrary.get_material_expressions(material) or []:
         props = {}
         for prop in ('parameter_name', 'default_value', 'texture'):
             try:

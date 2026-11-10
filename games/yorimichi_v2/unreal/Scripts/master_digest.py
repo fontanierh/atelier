@@ -92,7 +92,7 @@ def _digest(material):
     for key in SETTINGS:
         value = material.get_editor_property(key)
         settings[key] = value if isinstance(value, bool) else str(value)
-    expressions = list(material.get_editor_property('expressions') or [])
+    expressions = list(MEL.get_material_expressions(material) or [])
     text = {}
     for expression in expressions:
         text[expression.get_path_name()] = _expression_text(expression)
@@ -102,13 +102,14 @@ def _digest(material):
 
     connections = []
     for expression in expressions:
-        for index, wired in enumerate(MEL.get_inputs_for_material_expression(expression)):
-            source = wired.expression
+        # One entry per input pin, unwired pins as None; the names list walks the same pins in the same order.
+        sources = list(MEL.get_inputs_for_material_expression(material, expression) or [])
+        names = [str(name) for name in (MEL.get_material_expression_input_names(expression) or [])]
+        for index, source in enumerate(sources):
             if source is None:
                 continue
-            outputs = MEL.get_outputs_for_material_expression(source)
-            out = str(outputs[wired.output_index].output_name) if wired.output_index < len(outputs) else ''
-            pin = str(wired.input_name) or f'#{index}'
+            out = str(MEL.get_input_node_output_name_for_material_expression(expression, source) or '')
+            pin = (names[index] if index < len(names) else '') or f'#{index}'
             connections.append(f'{named(source)}.{out} -> {named(expression)}.{pin}')
     property_connections = []
     for pin in PROPERTY_PINS:
