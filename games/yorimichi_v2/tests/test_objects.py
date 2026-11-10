@@ -241,6 +241,80 @@ def test_a_batch_of_objects_takes_one_claims_check_for_its_records_and_one_for_i
     assert objects.record_objects(game, entries, None, echo=lambda *_: None) == made and calls == []   # unchanged
 
 
+def test_claim_paths_find_retry_records_after_a_crashed_first_save(game, monkeypatch):
+    """Finalization can crash after saving; the guarded retry identifies kept actors, then missing exact claims
+    stop validation after asset.toml. Claim discovery must expose those packages without accepting either run."""
+    from types import SimpleNamespace
+
+    log = game / 'out/editor.log'
+    monkeypatch.setattr(objects, 'LOG', log)
+
+    def crash(*args, **kwargs):
+        text = editor(game)(game / 'out/objects-plan.json')
+        log.write_text(text)
+        return SimpleNamespace(returncode=138)
+
+    monkeypatch.setattr(objects, 'subprocess', SimpleNamespace(run=crash))
+    with pytest.raises(objects.ObjectError, match='editor step failed'):
+        objects.migrate(game, ['region/w09-cove'], 'region/w00-island', None, editor=objects.native_run,
+                        out=game / 'out')
+    record = game / 'assets/object/cove/wreck/asset.toml'
+    assert not record.exists()
+    # Saved bytes, a stale plan and a DONE log alone confer no object ownership.
+    assert objects.claim_paths(game, ['region/w09-cove'])['lock'] == []
+
+    monkeypatch.setattr(objects.authority, 'creation_claim', lambda *a: None)
+    held = set()
+
+    def authorize(paths, *args, **kwargs):
+        if any('/unreal/Content/' in p and p not in held for p in paths):
+            raise objects.authority.Unauthorized('missing exact package claims')
+
+    monkeypatch.setattr(objects.authority, 'authorize', authorize)
+    with pytest.raises(objects.save_validate.ValidationError, match='missing exact package claims'):
+        objects.migrate(game, ['region/w09-cove'], 'region/w00-island', 'task', editor=editor(game, created=False),
+                        out=game / 'out')
+    assert record.exists() and not record.with_name('verified.json').exists()
+    wreck = records.package_files(game, WRECK)[0]
+    for ext in records.COMPANION_EXTENSIONS:
+        write(wreck.with_suffix(ext), b'companion')
+    write(game / f'{ACTORS}/2/AA/UNOWNED.uasset', b'unrelated actor')
+    expected = sorted(f'games/yorimichi_v2/{p.relative_to(game).as_posix()}'
+                      for p in [wreck, *(wreck.with_suffix(ext) for ext in records.COMPANION_EXTENSIONS)])
+    paths = objects.claim_paths(game, ['region/w09-cove'], only=['object/cove/wreck'])
+    assert paths['lock'] == expected
+    assert objects.claim_paths(game, ['region/w09-cove'], only=[])['lock'] == []
+    assert not record.with_name('verified.json').exists()   # listing is read-only, not acceptance
+    held.update(paths['lock'])
+    held.add(f'games/yorimichi_v2/{MANIFEST}')
+    objects.migrate(game, ['region/w09-cove'], 'region/w00-island', 'task', editor=editor(game, created=False),
+                    out=game / 'out')
+    assert len(records.load_verified(record.with_name('verified.json'))['files']) == len(expected)
+
+
+@pytest.mark.parametrize(('before', 'after'), [
+    ('id = "object/cove/wreck"', 'id = "object/cove/other"'),
+    ('owner = "region/w09-cove"', 'owner = "region/w00-island"'),
+    ('kind = "placement"', 'kind = "adopted"'),
+    ('adopted/cove/wreck', 'adopted/cove/other'),
+])
+def test_claim_paths_refuse_mismatched_object_records(game, before, after):
+    region_record = next(r for r in records.discover(game)[1] if r.id == 'region/w09-cove')
+    item = objects.load_objects(region_record)['objects'][0]
+    write(game / 'assets/object/cove/wreck/asset.toml',
+          objects.record_text(item, region_record.id, WRECK).replace(before, after).encode())
+    with pytest.raises(objects.ObjectError, match='does not match'):
+        objects.claim_paths(game, [region_record.id])
+
+
+def test_claim_paths_refuse_stale_saved_definitions(game):
+    objects.migrate(game, ['region/w09-cove'], 'region/w00-island', None, editor=editor(game), out=game / 'out')
+    path = game / 'world/regions/w09-cove/objects.toml'
+    path.write_text(path.read_text().replace('SM_BC_Ships_2_2', 'SM_BC_Other'))
+    with pytest.raises(objects.ObjectError, match='changed since it was saved'):
+        objects.claim_paths(game, ['region/w09-cove'])
+
+
 def test_a_building_cut_into_cells_takes_all_its_cell_patches(game):
     """`patch` as a list: the cell patches each holding a piece of one building alone become that one object, with an
     output per cell; the region lets them all go, and the same V2Id cannot be listed by two objects."""

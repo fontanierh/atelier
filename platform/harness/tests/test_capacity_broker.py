@@ -813,9 +813,9 @@ def test_missing_gate_is_a_plain_refusal_with_its_own_reason(broker, capsys):
         admission.close(child=child, child_start=admission.child[1])
 
 
-@pytest.mark.parametrize('mode', ['interrupted', 'completed', 'unwitnessed'])
+@pytest.mark.parametrize('mode', ['interrupted', 'completed', 'unwitnessed', 'failed'])
 def test_administrative_interruption_is_atomic_fenced_and_not_normal_reconcile(broker, monkeypatch, tmp_path, mode):
-    completed, unwitnessed = mode == 'completed', mode == 'unwitnessed'
+    completed, unwitnessed, failed = mode == 'completed', mode == 'unwitnessed', mode == 'failed'
     from atelier.harness import capacity_abandon as abandon
     guards = {}
     for kind in ('process_guard', 'tree_guard'):
@@ -827,43 +827,55 @@ def test_administrative_interruption_is_atomic_fenced_and_not_normal_reconcile(b
                   sequence=1, first_ready=time.time()-10, bypasses=0, nonce='one-use', state='uncertain',
                   child=[70,700], principal=[71,710], guards=guards, roster=[[70,700],[72,720]],
                   exited=[[70,700]], ancestry_unknown=True, epoch=1, limit_bytes=128*1024**2, heartbeat=time.monotonic()-60)
-    if completed:
+    if completed or failed:
         broker.mode='capacity'
         monkeypatch.setattr(broker,'_compatibility_proof',lambda:{'activation_id':broker.activation_id})
-        record['request'].update(phase='job',performance=False)
+        record['request'].update(phase='job',performance=failed)
         Path(guards['tree_guard']['report']).write_text(json.dumps(dict(owner=70,owner_started=700,
             controller=[71,710],state='child_exited',cleanup_complete=True,processes=[],footprint_bytes=0,
             peak_bytes=100,limit_bytes=record['limit_bytes'],time=time.time())))
+        if failed:
+            path=Path(guards['tree_guard']['report']);receipt=json.loads(path.read_text())
+            receipt.update(state='cleanup_incomplete',termination_reason='monitor_error',
+                           cleanup_processes=[],cleanup_footprint_bytes=0)
+            path.write_text(json.dumps(receipt))
     with broker._lock:
         state=broker._load();state['records']['stopped-compile']=record;broker._save(state)
     assert client.reconcile(broker.socket_path)['charged_count']==1
     evidence=dict(id='stopped-compile',nonce='one-use',epoch=1,boot_id=broker.boot,
                   administrator='maintenance',operator_reference='operator instruction 123',services=[])
-    action=(client.abandon_unwitnessed if unwitnessed else
+    action=(client.abandon_failed if failed else client.abandon_unwitnessed if unwitnessed else
             client.abandon_completed if completed else client.abandon_interrupted)
     if unwitnessed:
         with broker._lock:
             state=broker._load();state['records']['stopped-compile']['exited']=[];broker._save(state)
         evidence['acknowledge_missing_root_exit']=True
-    if completed or unwitnessed:
+    if failed:evidence['acknowledge_monitor_failure']=True
+    if completed or unwitnessed or failed:
         import hashlib
         evidence.update(guards=guards,report_sha256={k:hashlib.sha256(Path(g['report']).read_bytes()).hexdigest()
                                                    for k,g in guards.items()})
     # Legacy mode is never eligible; then emulate healthy verified full mode for this private broker.
-    if not completed:
+    if not (completed or failed):
         with pytest.raises(wire.CapacityError):action(broker.socket_path,evidence)
     broker.mode='capacity'
     monkeypatch.setattr(broker,'_compatibility_proof',lambda:{'activation_id':broker.activation_id})
     monkeypatch.setattr(abandon,'absent',lambda pin:True)
     rows={90:dict(pid=90,started=10,parent=1,executable='/apps/agent')}
     monkeypatch.setattr(abandon,'census',lambda **kwargs:rows)
+    if failed:
+        prepared=client.failed_recovery_evidence(broker.socket_path,'stopped-compile',
+            administrator='maintenance',operator_reference='operator instruction 123')
+        assert prepared==evidence
+        assert client.status(broker.socket_path)['charged_count']==1
     wrong={**evidence,'epoch':2}
     with pytest.raises(wire.CapacityError):action(broker.socket_path,wrong)
     assert client.status(broker.socket_path)['charged_count']==1
-    if unwitnessed:
+    if unwitnessed or failed:
         # Administrative evidence cannot enter normal reconciliation or bypass another charge.
         with pytest.raises(wire.CapacityError):
-            client._rpc(broker.socket_path, {'action':'reconcile','unwitnessed_compile':evidence}, 2.)
+            client._rpc(broker.socket_path, {'action':'reconcile',
+                'failed_job' if failed else 'unwitnessed_compile':evidence}, 2.)
         import copy
         with broker._lock:
             state=broker._load();other=copy.deepcopy(state['records']['stopped-compile'])
@@ -874,18 +886,36 @@ def test_administrative_interruption_is_atomic_fenced_and_not_normal_reconcile(b
         assert client.status(broker.socket_path)['charged_count']==2
         with broker._lock:
             state=broker._load();del state['records']['other'];broker._save(state)
+    if failed:
+        scans=0
+        def lose_compatibility(**kwargs):
+            nonlocal scans
+            scans+=1
+            if scans==2:
+                monkeypatch.setattr(broker,'_compatibility_proof',lambda:{'activation_id':'changed'})
+            return rows
+        monkeypatch.setattr(abandon,'census',lose_compatibility)
+        with pytest.raises(wire.CapacityError,match='compatibility changed'):
+            action(broker.socket_path,evidence)
+        monkeypatch.setattr(broker,'_compatibility_proof',lambda:{'activation_id':broker.activation_id})
+        monkeypatch.setattr(abandon,'census',lambda **kwargs:rows)
+        assert client.status(broker.socket_path)['charged_count']==1
     result=action(broker.socket_path,evidence)
     assert result['released'] is True and result['witness']['output_certified'] is False
     assert client.status(broker.socket_path)['charged_count']==0
     with pytest.raises(wire.CapacityError):action(broker.socket_path,evidence)
     with broker._lock:
         state=broker._load();saved=state['records']['stopped-compile'];broker.connection.rollback()
-    assert saved['release_witness']['kind']==('administrative-unwitnessed-compile' if unwitnessed else
+    assert saved['release_witness']['kind']==('administrative-failed-job' if failed else
+            'administrative-unwitnessed-compile' if unwitnessed else
         'administrative-completed-job' if completed else 'administrative-interruption')
     assert saved['release_witness']['root_exit_observed'] is (not unwitnessed)
     assert saved['exited']==([] if unwitnessed else [[70,700]]) and saved['ancestry_unknown']
     assert json.loads(Path(guards['process_guard']['report']).read_text())['state']=='running'
-    assert json.loads(Path(guards['tree_guard']['report']).read_text())['state']==('child_exited' if completed else 'running')
+    assert json.loads(Path(guards['tree_guard']['report']).read_text())['state']==(
+        'cleanup_incomplete' if failed else 'child_exited' if completed else 'running')
+    if failed:
+        assert broker._check_completion(saved) is None
 
 
 def test_slow_status_reader_cannot_block_a_running_jobs_check(broker, monkeypatch):

@@ -2,21 +2,21 @@
   "asset": "material/japan/materials/buildings-instances",
   "dependencies": {
     "adopted/japan/textures/rock": "e13de1a26d0e34c21956b25b98b10f48aa3c4b18d29e627e521fb1531d668038",
-    "master/japan/surfaces/painted": "10657a1e86c5795172a095638c682bd6d6f4cc2c5e11d6733b8f8508a981def0",
+    "master/japan/surfaces/painted": "ce300fefabdcfdec5f353acae9b47e758c90abcfe840189385caf845bcf9f80f",
     "texture/japan/white": "5d52155722629ce5afa73ac696017dd3c663ebb3e376a74037b961092e3b6349"
   },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Materials/MI_Lattice.uasset": "e5de7bb8a0db501e056cdccc2fbf423d7c4df54f766605e6c18697e7513a3801",
-    "unreal/Content/Japan/Materials/MI_Metal.uasset": "8e10580c8c336c37ce76c4468c076fda1fcf41404251c4eaa0361b1ee04fa66a",
-    "unreal/Content/Japan/Materials/MI_Paint.uasset": "91b0dd6c57aeb208e4b20e85f3ac94ddaf21cbb67c3756de841f496d6beb74b3",
-    "unreal/Content/Japan/Materials/MI_Plaster.uasset": "031b91e6feba1f59c66a9ab277a22b21937ef32786ee22eed7c1323c290f3bab",
-    "unreal/Content/Japan/Materials/MI_RoofTile.uasset": "a31eaf7add38cbbab80b33bc51d9603eebaf460b449354093ca3adeb58afac53",
-    "unreal/Content/Japan/Materials/MI_Tile.uasset": "02bb31db661dce7055404654c392c657e9d6b7f9920af886e2115d9cfa55898f",
-    "unreal/Content/Japan/Materials/MI_Vermilion.uasset": "194359a1ba20b5a1b6a53466ee079d80bcc3eec6680938a2a57e17255b151c34",
-    "unreal/Content/Japan/Materials/MI_Wood.uasset": "a0ea079333dd045735ddd91a57a4c0a3264c6fccebfbb60a5f46c2d86cc35a99"
+    "unreal/Content/Japan/Materials/MI_Lattice.uasset": "fe981190bcb5c91852507b600a9fc68011df1adbfae3e846b158efa5bd1dca0b",
+    "unreal/Content/Japan/Materials/MI_Metal.uasset": "46397cf563f72d1d49c47c36e61059a2b3b088e88d20b760cfdf50e498783343",
+    "unreal/Content/Japan/Materials/MI_Paint.uasset": "f11e59b9d1e2389119571cab3f73bfe5a92686bb0fea5544702dd2c0f6938c87",
+    "unreal/Content/Japan/Materials/MI_Plaster.uasset": "0027101fd2bee1031bef717e2a873f68386626e083420bf498466318049ed15b",
+    "unreal/Content/Japan/Materials/MI_RoofTile.uasset": "7db9da9c2b90361af3eb6b047164f2ece898c495c9ddfcea3542e94a52e309af",
+    "unreal/Content/Japan/Materials/MI_Tile.uasset": "054e9b2cae9b908defab5d2c17e9236ebc3dc1b86c741b905dc7b3ab8d531258",
+    "unreal/Content/Japan/Materials/MI_Vermilion.uasset": "9a2d3c45ffd9ff4dc949530ca74ab67e556bbfd5ac4d501ba5b75b105597ccd1",
+    "unreal/Content/Japan/Materials/MI_Wood.uasset": "b23ade267bdcbb2b9c6f74325929b35ccef1a54d7b8cd50e105346f166502d3a"
   },
-  "input_fingerprint": "452a3279b2364634155117c7067649c78b999c5a3344d0e5bec3e079b1a37835",
+  "input_fingerprint": "535e0526fa32bcc73e55355981be691a0f3a0ba57b3109180d0340ed5f5e7b2f",
   "kind": "imported",
   "schema": 1,
   "tool": "material-instance@2"
