@@ -159,26 +159,21 @@ def _expression_text(expression):
     return json.dumps({'class': type(expression).__name__, 'props': props}, sort_keys=True)
 
 
-def _repeated_source_output(expression, index, source):
-    """Read an actual input selection: the source-node lookup returns only the first matching connection.
-    UE reflects FExpressionInput on CustomInput.Input and DotProduct.A/B, including Expression, OutputIndex and masks.
-    Other classes refuse until their per-input representation can be read, rather than guessing their channels."""
-    kind = type(expression).__name__
-    if kind == 'MaterialExpressionCustom':
-        entry = expression.get_editor_property('inputs')[index].get_editor_property('Input')
-    elif kind == 'MaterialExpressionDotProduct' and index < 2:
-        entry = expression.get_editor_property(('A', 'B')[index])
-    else:
-        raise ValueError('cannot read distinct output selections when one expression feeds multiple inputs of '
-                         + kind)
-    linked = entry.get_editor_property('Expression')
-    if linked is None or linked.get_path_name() != source.get_path_name():
-        raise ValueError('reflected input differs from the material input enumeration')
-    output = int(entry.get_editor_property('OutputIndex'))
+def _input_output(expression, index, source):
+    """Use the native read-only accessor: protected FExpressionInput members cannot be read through Python reflection.
+    The source-node lookup returns only the first matching connection, so every connected input is read by index."""
+    selected = U.MaterialInputAudit.read_input(expression, index)
+    if selected.error:
+        raise ValueError(f'material input audit: {selected.error}')
+    if selected.source_path != source.get_path_name():
+        raise ValueError('native input differs from the material input enumeration')
+    output = int(selected.output_index)
     names = U.MaterialEditingLibrary.get_material_expression_output_names(source)
     if not 0 <= output < len(names):
-        raise ValueError('reflected input has an unreadable output index')
-    mask = [int(entry.get_editor_property(key)) for key in ('Mask', 'MaskR', 'MaskG', 'MaskB', 'MaskA')]
+        raise ValueError('native input has an unreadable output index')
+    mask = [int(value) for value in selected.masks]
+    if len(mask) != 5:
+        raise ValueError('native input audit has an incomplete component mask')
     return json.dumps({'index': output, 'name': str(names[output]), 'mask': mask}, sort_keys=True)
 
 
@@ -219,15 +214,12 @@ def _digest(material):
         # One entry per input pin, unwired pins as None; the names list walks the same pins in the same order.
         sources = list(MEL.get_inputs_for_material_expression(material, expression) or [])
         names = [str(name) for name in (MEL.get_material_expression_input_names(expression) or [])]
-        connected = [source.get_path_name() for source in sources if source is not None]
-        repeated = {key for key, count in collections.Counter(connected).items() if count > 1}
         inputs = []
         for index, source in enumerate(sources):
             if source is None:
                 inputs.append(None)
                 continue
-            out = (_repeated_source_output(expression, index, source) if source.get_path_name() in repeated else
-                   str(MEL.get_input_node_output_name_for_material_expression(expression, source) or ''))
+            out = _input_output(expression, index, source)
             pin = (names[index] if index < len(names) else '') or f'#{index}'
             connections.append(f'{named(source)}.{out} -> {named(expression)}.{pin}')
             inputs.append((pin, out, source.get_path_name()))

@@ -49,17 +49,35 @@ class Editing:
     get_material_property_input_node_output_name = staticmethod(lambda material, pin: material.roots[pin][1])
     get_inputs_for_material_expression = staticmethod(lambda material, expression: [edge[1] for edge in expression.inputs])
     get_material_expression_input_names = staticmethod(lambda expression: [edge[0] for edge in expression.inputs])
-    get_material_expression_output_names = staticmethod(lambda expression: expression.props['outputs'])
+    get_material_expression_output_names = staticmethod(lambda expression: expression.props.get('outputs', ['', 'RGB', 'R', 'G', 'B', 'A']))
 
     @staticmethod
     def get_input_node_output_name_for_material_expression(expression, source):
         return next(edge[2] for edge in expression.inputs if edge[1] is source)
 
 
+class NativeInputAudit:
+    """Stand-in for the public native result; Python never reads protected FExpressionInput properties."""
+    @staticmethod
+    def read_input(expression, index):
+        _, source, name = expression.inputs[index]
+        kind = type(expression).__name__
+        if kind == 'MaterialExpressionCustom':
+            props = expression.props['inputs'][index].props['Input'].props
+        elif kind == 'MaterialExpressionDotProduct':
+            props = expression.props[('A', 'B')[index]].props
+        else:
+            names = Editing.get_material_expression_output_names(source)
+            props = dict(Expression=source, OutputIndex=names.index(name), Mask=0, MaskR=0, MaskG=0, MaskB=0, MaskA=0)
+        return SimpleNamespace(error='', source_path=props['Expression'].get_path_name(), output_index=props['OutputIndex'],
+                               masks=[props[key] for key in ('Mask', 'MaskR', 'MaskG', 'MaskB', 'MaskA')])
+
+
 @pytest.fixture(autouse=True)
 def engine(monkeypatch):
     properties = SimpleNamespace(**{pin: pin for pin in digest.PROPERTY_PINS})
-    monkeypatch.setattr(digest, 'U', SimpleNamespace(MaterialEditingLibrary=Editing, MaterialProperty=properties))
+    monkeypatch.setattr(digest, 'U', SimpleNamespace(MaterialEditingLibrary=Editing, MaterialProperty=properties,
+                                                   MaterialInputAudit=NativeInputAudit))
 
 
 def retail(*, swapped=False, renamed=False):
@@ -165,12 +183,14 @@ def test_a_cycle_is_unreadable_and_never_accepted():
     assert digest.accept(failed, failed)
 
 
-def test_an_api_that_cannot_distinguish_repeated_source_outputs_refuses():
+def test_native_input_indices_distinguish_repeated_sources_for_any_expression_class():
     source = node('MaterialExpressionTextureSample', 'texture', texture=Asset('/Game/Texture'))
     mix = node('MaterialExpressionAdd', 'mix', inputs=[('A', source, 'R'), ('B', source, 'G')])
-    failed = digest.read(Material([source, mix], {'MP_BASE_COLOR': (mix, '')}))
-    assert 'cannot read distinct output selections' in failed['error']
-    assert digest.accept(failed, failed)
+    material = Material([source, mix], {'MP_BASE_COLOR': (mix, '')})
+    saved = digest.read(material)
+    assert 'error' not in saved and digest.accept(saved, digest.read(material)) == []
+    mix.inputs[1] = ('B', source, 'R')
+    assert digest.accept(saved, digest.read(material))
 
 
 class ExpressionInput:
@@ -179,7 +199,7 @@ class ExpressionInput:
                           **dict(zip(('Mask', 'MaskR', 'MaskG', 'MaskB', 'MaskA'), mask)))
 
     def get_editor_property(self, name):
-        return self.props[name]
+        raise PermissionError('native ExpressionInput members are protected from Python')
 
 
 class CustomInput:
@@ -187,6 +207,8 @@ class CustomInput:
         self.props = {'input_name': name, 'Input': ExpressionInput(source, output, mask)}
 
     def get_editor_property(self, name):
+        if name == 'Input':
+            raise PermissionError('CustomInput.Input is protected from Python')
         return self.props[name]
 
 
@@ -220,7 +242,7 @@ def test_custom_input_component_masks_and_source_identity_are_checked():
     assert 'input enumeration' in digest.read(material)['error']
 
 
-def test_surface_dot_product_reads_both_reflected_inputs():
+def test_surface_dot_product_reads_both_native_inputs():
     source = node('MaterialExpressionSubtract', 'vector', outputs=[''])
     dot = node('MaterialExpressionDotProduct', 'dot', inputs=[('A', source, ''), ('B', source, '')],
                A=ExpressionInput(source, 0, [0, 0, 0, 0, 0]), B=ExpressionInput(source, 0, [0, 0, 0, 0, 0]))
@@ -229,3 +251,11 @@ def test_surface_dot_product_reads_both_reflected_inputs():
     assert 'error' not in saved and digest.accept(saved, digest.read(material)) == []
     dot.props['B'].props['MaskR'] = 1
     assert digest.accept(saved, digest.read(material))
+
+
+def test_missing_or_failed_native_reader_never_falls_back_to_source_only_lookup(monkeypatch):
+    monkeypatch.delattr(digest.U, 'MaterialInputAudit')
+    assert 'MaterialInputAudit' in digest.read(retail())['error']
+    monkeypatch.setattr(digest.U, 'MaterialInputAudit', SimpleNamespace(
+        read_input=lambda *args: SimpleNamespace(error='invalid native input')), raising=False)
+    assert 'invalid native input' in digest.read(retail())['error']
