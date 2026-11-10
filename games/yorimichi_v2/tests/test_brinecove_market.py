@@ -120,7 +120,7 @@ def test_replay_tags_every_face_of_a_loop_body_and_replays_the_rng(tmp_path):
     assert a['verts'] == b['verts']                                          # same stream position, same jitter
     owners = a['owner']
     assert owners[:2] == [None, None]                                        # the cobble box
-    assert [owners.count(f'stall-0{n}') for n in (1, 2, 3)] == [4, 4, 4]     # stall and its crate: 2 boxes x 2 faces
+    assert [owners.count((f'stall-0{n}',)) for n in (1, 2, 3)] == [4, 4, 4]  # stall and its crate (a chain of one scope)
     assert owners[-2:] == [None, None]                                       # clutter after the loop is nobody's
     assert len(owners) == len(a['faces'])
     xs = [v[0] for v in a['verts'][8:12]]
@@ -458,7 +458,7 @@ def test_check_for_the_groups_stage_allows_the_tile_record_to_remain(monkeypatch
 
 def test_batch_names_all_lists_and_checks_names():
     names = market.batch_names('all')
-    assert names[:4] == ['market1', 'market2', 'market3', 'town1'] and names[-6:] == ['town9', 'props1', 'props2', 'props3', 'harbor1', 'props4'] and len(names) == 17
+    assert names[:4] == ['market1', 'market2', 'market3', 'town1'] and names[-7:] == ['town9', 'props1', 'props2', 'props3', 'harbor1', 'props4', 'props5'] and len(names) == 18
     assert market.batch_names('town2, market1,town2') == ['town2', 'market1']
     with pytest.raises(market.MarketError, match='unknown batch town99'):
         market.batch_names('town99')
@@ -652,3 +652,131 @@ def test_donor_props4_barrels_and_crates_are_whole():
                 counts[name] = counts.get(name, 0) + len(members)
     assert set(counts) == set(market.BATCHES['props4'])
     assert {counts[n] for n in market.BATCHES['props4'] if '-barrel-' in n} == {128}
+
+
+def test_the_props5_batch_splits_each_coarse_cargo_object_into_its_pieces():
+    """props5: the six props2 cargo clusters (two crates, two barrels, a rope coil each) and the cargo on the three
+    harbor1 piers (a crate and a barrel at t = 22, 52, 78 %, a rope coil at 52 and 78 %), each piece named under its
+    coarse object, which REPLACES lists."""
+    names = market.BATCHES['props5']
+    assert len(names) == len(set(names)) == 6 * 5 + 3 * 8
+    assert market.REPLACES['props5'] == set(market.BATCHES['props2'][:6]) | set(market.BATCHES['harbor1'][:3])
+    assert all(any(n.startswith(c + '-') for c in market.REPLACES['props5']) for n in names)
+    assert 'props-cargo-w250-rope' in names and 'harbor-pier-central-barrel52' in names
+    assert not set(names) & {n for b in market.BATCHES if b != 'props5' for n in market.BATCHES[b]}
+
+
+def _chain_tile(monkeypatch, chains):
+    tris = [('wood', ((i, 0.0, 0.0), (i, 1.0, 0.0), (i, 0.0, 1.0))) for i in range(len(chains))]
+    monkeypatch.setattr(market, 'generated_owners', lambda glb, src, component: {
+        'owner': {'Props_1_1': [c[-1] if c else None for c in chains]}, 'chain': {'Props_1_1': list(chains)},
+        'tris': {'Props_1_1': tris}, 'models': {'Props_1_1': {}}})
+
+
+def test_compute_splits_a_replaced_coarse_prior_into_its_pieces(monkeypatch):
+    """A coarse earlier object in `replaces` gives up the triangles of this batch's pieces inside it and keeps the rest
+    as taken; without `replaces` the pieces collide with the earlier object."""
+    chains = [('props-cargo-w1',), ('props-cargo-w1', 'props-cargo-w1-crate1'), ('props-cargo-w1', 'props-cargo-w1-rope'), None]
+    _chain_tile(monkeypatch, chains)
+    names = ['props-cargo-w1-crate1', 'props-cargo-w1-rope']
+    done = market.compute(Path('glb'), Path('src'), names, {'props-cargo-w1'}, replaces=frozenset({'props-cargo-w1'}))
+    assert done['problems'] == []
+    assert done['owned']['Props_1_1'] == {'props-cargo-w1-crate1': [1], 'props-cargo-w1-rope': [2], '': [3]}
+    assert done['prior']['Props_1_1'] == 1
+    done = market.compute(Path('glb'), Path('src'), names, {'props-cargo-w1'})
+    assert any('already taken' in p for p in done['problems'])
+
+
+PIER_TOML = '''# Recovered from the donor generator (tools/migrate/recover.py): SM_BC_HarborPierWest: the harbor pier west, cut from the fused tile(s) Harbor_3_3 (2868 triangles).
+# The donor file is committed in src/ and pinned by sha256.
+schema = 1
+id = "prop/brinecove/harbor-pier-west"
+kind = "static-mesh"
+authority = "generated"
+owner = "shared/brinecove/harbor-pier-west"
+references = ["adopted/brinecove/materials"]
+
+[[sources]]
+path = "src/SM_BC_HarborPierWest.glb"
+sha256 = "''' + 'a' * 64 + '''"
+
+[recipe]
+importer = "static-mesh"
+version = 1
+
+[recipe.settings]
+slot_materials = ["/Game/M/MI_lantern", "/Game/M/MI_rope", "/Game/M/MI_wood"]
+triangles = 2868
+collision = "complex"
+
+[[outputs]]
+package = "/Game/Brinecove/Meshes/SM_BC_HarborPierWest"
+'''
+
+
+def test_a_carved_coarse_record_pins_its_original_and_selection_once():
+    """The re-cut record keeps its original as the first source, adds the selection and [derive], and counts the derived
+    mesh's slots and triangles; carving the carved text again changes nothing."""
+    cut = {'record': 'prop/brinecove/harbor-pier-west', 'mesh': 'SM_BC_HarborPierWest',
+           'after': {'triangles': 2136, 'slots': ['/Game/M/MI_lantern', '/Game/M/MI_wood'], 'selection_sha256': 'b' * 64}}
+    text = market.recut_asset_text(PIER_TOML, cut)
+    data = market.tomllib.loads(text)
+    assert [s['path'] for s in data['sources']] == ['src/SM_BC_HarborPierWest.glb', 'src/SM_BC_HarborPierWest.carve.json']
+    assert data['sources'][1]['sha256'] == 'b' * 64
+    assert data['derive'] == {'kind': 'carve', 'version': 1, 'original': 'src/SM_BC_HarborPierWest.glb',
+                              'selection': 'src/SM_BC_HarborPierWest.carve.json'}
+    assert data['recipe']['settings']['triangles'] == 2136
+    assert data['recipe']['settings']['slot_materials'] == ['/Game/M/MI_lantern', '/Game/M/MI_wood']
+    assert '(2136 triangles, its cargo split off by the re-split).' in text.split('\n', 1)[0]
+    assert market.recut_asset_text(text, cut) == text
+
+
+def test_retiring_lists_emptied_tiles_and_coarse_records_left_empty():
+    plan = {'remainders': {'Props_2_4': None, 'Props_3_3': {'triangles': 88}},
+            'tiles': {'Props_2_4': {'record': 'prop/brinecove/props-2-4', 'package': '/Game/P24', 'owner': 'region/w09'},
+                      'Props_3_3': {'record': 'prop/brinecove/props-3-3', 'package': '/Game/P33', 'owner': 'region/w09'}},
+            'replaced': {'prop/brinecove/props-cargo-w60': {'mesh': 'SM_BC_PropsCargoW60', 'package': '/Game/C', 'owner': 'o',
+                                                             'after': None},
+                         'prop/brinecove/harbor-pier-west': {'mesh': 'SM_BC_HarborPierWest', 'package': '/Game/W',
+                                                              'owner': 'o', 'after': {'triangles': 2136}}}}
+    assert market.retiring(plan) == {
+        'SM_BC_PropsCargoW60': {'record': 'prop/brinecove/props-cargo-w60', 'package': '/Game/C', 'owner': 'o'},
+        'SM_BC_Props_2_4': {'record': 'prop/brinecove/props-2-4', 'package': '/Game/P24', 'owner': 'region/w09'}}
+
+
+def test_an_earlier_check_drops_only_the_problems_a_later_split_explains():
+    exp = {'parts': {'prop/brinecove/props-cargo-w60': {}, 'prop/brinecove/harbor-pier-west': {}}}
+    replaced = {'prop/brinecove/props-cargo-w60': {'mesh': 'SM_BC_PropsCargoW60', 'after': None},
+                'prop/brinecove/harbor-pier-west': {'mesh': 'SM_BC_HarborPierWest', 'after': {'triangles': 2136}},
+                'prop/brinecove/other': {'mesh': 'SM_BC_Other', 'after': None}}
+    later = ['prop/brinecove/props-cargo-w60: no record', 'SM_BC_PropsCargoW60 appears 0 times in the runtime file',
+             'SM_BC_PropsCargoW60 is not a group of exactly one object (None)',
+             'prop/brinecove/harbor-pier-west: record package or triangle count differs from the expectation']
+    kept = ['prop/brinecove/harbor-pier-west: source hash is not the expected part', 'prop/brinecove/other: no record',
+            'SM_BC_PropsCargoW60 appears 2 times in the runtime file']
+    assert all(market.split_later(exp, replaced, p) for p in later)
+    assert not any(market.split_later(exp, replaced, p) for p in kept)
+
+
+@pytest.mark.skipif(not DONOR or not Path(DONOR).is_dir(), reason='needs the donor export (YV2_DONOR_BUILD)')
+def test_donor_props5_pieces_partition_each_coarse_cargo_object():
+    """Every piece is matched whole inside its coarse object: each cargo cluster is exactly its five pieces (472
+    triangles), each pier gives up 732 triangles of cargo and keeps its deck, piles and lanterns."""
+    donor = Path(DONOR)
+    src = market.donor_source(donor)
+    prior = {'cannon-west', 'cannon-east', 'quay-anchor', 'net-rack-west', 'net-rack-east', 'crane-west', 'crane-east',
+             'fish-shed', 'shipyard-yard'} | market.REPLACES['props5']
+    done = market.compute(donor / 'brinecove' / 'glb', src, list(market.BATCHES['props5']), prior,
+                          replaces=market.REPLACES['props5'])
+    assert done['problems'] == []
+    counts = {}
+    for owned in done['owned'].values():
+        for name, members in owned.items():
+            if name:
+                counts[name] = counts.get(name, 0) + len(members)
+    assert set(counts) == set(market.BATCHES['props5'])
+    for coarse in market.REPLACES['props5']:
+        total = sum(n for name, n in counts.items() if name.startswith(coarse + '-'))
+        assert total == (472 if coarse.startswith('props-cargo-') else 732), coarse
+    assert {counts[n] for n in counts if n.startswith('props-cargo-') and n.endswith('-rope')} == {144}
+    assert {counts[n] for n in counts if '-barrel' in n} == {128}

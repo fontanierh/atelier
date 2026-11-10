@@ -359,7 +359,7 @@ BATCHES['props4'] = tuple(f'props-barrel-quay-{_SIDE(x)}-{y}' for x in (-320, -2
           for kind in ('barrel', 'crate'))
 # The re-split of two accepted coarse objects into their pieces: each quay cargo cluster of props2 into its two crates,
 # two barrels and rope coil, and the cargo on each harbor1 pier into its crates, barrels and rope coils. The clusters
-# are left empty and retire; each pier keeps its deck, piles and lanterns (a carve of its record). See `recut`.
+# are left empty and retire; each pier keeps its deck, piles and lanterns (a carve of its record). See recut_of.
 _CARGO = ('props-cargo-w250', 'props-cargo-w170', 'props-cargo-e120', 'props-cargo-e270', 'props-cargo-w60', 'props-cargo-e60')
 _PIERS = ('harbor-pier-central', 'harbor-pier-west', 'harbor-pier-east')
 BATCHES['props5'] = tuple(f'{c}-{piece}' for c in _CARGO for piece in ('crate1', 'crate2', 'barrel1', 'barrel2', 'rope')) + \
@@ -1134,6 +1134,13 @@ def apply_ops(game: Path, plan: dict, batch: str) -> tuple[dict, dict]:
         if any(k.startswith(f'assets/{rid}/') for k in writes):
             scopes.add((f'asset/{rid}', cut['owner']))
             extra |= {f'{apply_.GAME_REL}/{rel}' for rel in apply_.record_set(game, rid, cut['package'], sel)}
+    objects_rel = f'world/regions/{apply_.REGION}/objects.toml'
+    text = writes[objects_rel].decode() if objects_rel in writes else (game / objects_rel).read_text()
+    for rid, cut in cuts.items():       # a carved object's description counts what it keeps
+        if cut['after'] is not None:
+            text = re.sub(r'(id = "object/brinecove/' + re.escape(cut['object']) + r'"\n(?:.*\n)*?about = "[^"]*?)\(\d+ triangles\)',
+                          lambda m: m.group(1) + f'({cut["after"]["triangles"]} triangles)', text, count=1)
+    put(objects_rel, text.encode())
     exp = json.loads(writes[apply_.EXPECTED].decode()) if apply_.EXPECTED in writes else json.loads(
         (game / apply_.EXPECTED).read_text())
     exp['replaced'] = replaced_section(cuts)
@@ -1296,6 +1303,9 @@ def main(argv=None) -> int:
         if args.command == 'plan':
             for batch, plan in plans:
                 print(apply_.report(plan))
+                for rid, cut in plan.get('replaced', {}).items():
+                    after = 'retired (empty)' if cut['after'] is None else f'{cut["after"]["triangles"]} remain (carved)'
+                    print(f'  re-cut {rid:38} {cut["before"]:6} -> {after}, {len(cut["pieces"])} pieces')
             if args.json:
                 print(json.dumps(summary(plans[0][1]) if len(plans) == 1 else {b: summary(p) for b, p in plans}, indent=2))
         elif args.command == 'paths':

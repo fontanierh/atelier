@@ -179,7 +179,8 @@ the rerun refuses with "saved without <key>". Delete that run's untracked patch 
 `props2` takes the 6 cargo clusters (two crates, two barrels and a rope coil each, `props-cargo-<side><|x|>`) and the 7
 fish baskets by the market shed (`props-fish-basket-1` to `7`) from `procedural/props.py`. The two net racks are batch 1
 objects (`net-rack-west`, `net-rack-east`) and have no scope here; `plan` refuses a batch that would take their triangles.
-The quay cannons and anchor are batch 1 objects too.
+The quay cannons and anchor are batch 1 objects too. `props5` later splits each cluster into its five pieces and
+retires the cluster records.
 
 | Tiles touched | Triangles taken | Tiles remade | Tiles emptied | Records |
 |---|---|---|---|---|
@@ -204,8 +205,8 @@ remains in the Props tiles is loose furniture (the street and pier barrels and c
 `harbor1` is the first batch of the fused `Harbor` component (`procedural/harbor.py`):
 - the 3 piers, `harbor-pier-central`, `-west` and `-east`. Each is the deck, piles, braces, T-head (central and east),
   bollards and its two lantern posts, plus the three cargo clusters (a crate, a barrel and, on the outer two, a rope)
-  that a second `for ... in L.PIERS` loop places on it. The central pier spans four tiles. The pier cargo is an open
-  re-split, like the six quay cargo assemblies of `props2`.
+  that a second `for ... in L.PIERS` loop places on it. The central pier spans four tiles. `props5` splits the pier
+  cargo off into its own objects.
 - the 12 quay palms with their stone planters, `harbor-palm-<side><|x|>`: a hard part and its fronds' Soft part.
 
 The quay wall, promenade paving and water steps belong to no object. Batch 1's cranes, fish shed, net racks and
@@ -239,6 +240,33 @@ read from the loop's variables.
 The emptied tiles are retired with the three stages above (`--batch props4`). Where scopes nest, the innermost owns a
 face. What remains in the Props tiles is the gulls and the rope coils by the fish shed.
 
-Still open, as a re-split of accepted objects: the six quay cargo assemblies of `props2`, and the pier cargo inside the
-three `harbor1` piers. They are still coarse objects (crates, barrels and a rope coil fused together).
+## Cargo re-split (`props5`)
+
+`props5` splits two kinds of accepted coarse objects into their pieces, one per `crate(...)`, `barrel(...)` or
+`b.ring(...)` call:
+- each of the six `props2` quay cargo clusters into its two crates, two barrels and rope coil,
+  `props-cargo-<side><|x|>-{crate1,crate2,barrel1,barrel2,rope}` (36, 128, 144 triangles);
+- the cargo on each `harbor1` pier: a crate and a barrel at 22, 52 and 78 % of its length and a rope coil at 52 and
+  78 %, `harbor-pier-<pier>-{crate,barrel,rope}<t>`.
+
+`REPLACES` names the coarse objects. `plan` takes a replaced earlier object's triangles out of the tile as before,
+except those of this batch's pieces inside it, so the tile remainders do not change. Each coarse record then loses
+exactly its pieces' triangles (every piece triangle must match exactly one of the record's, by its welded corners):
+- a cargo cluster keeps nothing and retires like an emptied tile: its group (`retire --retire-stage groups`), its
+  placement (`placements`, nothing is saved again because the object is gone) and its record (`records`);
+- a pier keeps its deck, piles, braces, bollards and lanterns and is carved like the shipyard yard. Its pinned original
+  stays the first source, `src/<mesh>.carve.json` the second, and `[derive]` names both. `apply` writes the carve with
+  the pieces, so the one import takes both.
+
+The expectation's `replaced` section records each re-cut (before, removed ordinals, pieces, the derived mesh's hash and
+triangles). `check` proves each carve through its derivation and that it holds no piece triangle. The `props2` and
+`harbor1` checks drop only the problems the re-split explains (a retired record, its missing group, a carved count). The
+donor proof counts the later pieces in place of a retired coarse part.
+
+| Coarse record | Before | After | Pieces |
+|---|---|---|---|
+| `props-cargo-*` (6) | 472 each | retired | 5 each |
+| `harbor-pier-central` | 3,672 | 2,940 | 8 |
+| `harbor-pier-east` | 3,180 | 2,448 | 8 |
+| `harbor-pier-west` | 2,868 | 2,136 | 8 |
 
