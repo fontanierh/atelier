@@ -277,10 +277,12 @@ def test_the_swordcamp_references_point_at_the_camp_master():
 
 
 def test_the_hidamari_records_keep_referencing_their_generator_and_the_plaster_feeds_the_city_master():
-    """The generator record stays, so the 56 props and surfaces keep referencing it (no prop names M_HDCity); the plaster
-    record is an input of the master and gains no mention of what it feeds."""
+    """The generator record stays, so the 55 props and surfaces keep referencing it (no prop names M_HDCity; the flat
+    surface's instance record, JAPANMI, depends on the master instead, the only record that names it); the plaster record
+    is an input of the master and gains no mention of what it feeds."""
     referencing = [p for p in records.record_paths(GAME) if CITY['adopted'] in records.load_asset(p).references]
-    assert len(referencing) == 56
-    assert not any('master/hidamari/city' in records.load_asset(p).references + records.load_asset(p).input_dependencies
-                   for p in records.record_paths(GAME))
+    assert len(referencing) == 55
+    naming = [records.load_asset(p) for p in records.record_paths(GAME)]
+    naming = [a.id for a in naming if 'master/hidamari/city' in a.references + a.input_dependencies]
+    assert naming == ['material/japan/hidamari/surface-flat-instances']   # MI_HD_flat's parent, an input as for any instance
     assert CITY['masters'][0]['inputs'] == ['adopted/japan/hidamari/surface-plaster']

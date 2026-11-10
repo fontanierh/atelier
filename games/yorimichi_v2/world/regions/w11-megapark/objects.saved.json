@@ -249,9 +249,13 @@
     "object/megapark/seam": {
       "groups": [],
       "id": "object/megapark/seam",
-      "model": "adopted/megapark/seam",
+      "model": [
+        "prop/megapark/seam",
+        "prop/megapark/seam-collision"
+      ],
       "models": [
-        "adopted/megapark/seam"
+        "prop/megapark/seam",
+        "prop/megapark/seam-collision"
       ],
       "park": [
         "SM_MP_Seam",

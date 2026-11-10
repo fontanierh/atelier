@@ -47,9 +47,9 @@ def test_the_package_list_is_the_43_records_packages_in_order():
     listed = PACKAGES.read_text().split()
     assert len(listed) == len(set(listed)) == 43
     assert all(p.startswith('/Game/Japan/Materials/MI_') for p in listed)
-    family = ROOT / 'assets' / 'adopted' / 'japan' / 'materials'
+    family = ROOT / 'assets' / 'material' / 'japan' / 'materials'   # the JAPANMI records (were adopted/japan/materials/<name>)
     names = ['bark', 'buildings', 'foliage', 'ground', 'rock-concrete', 'sky-wind', 'water']
-    recorded = [o.package for n in names for o in records.load_asset(family / n / 'asset.toml').outputs]
+    recorded = [o.package for n in names for o in records.load_asset(family / f'{n}-instances' / 'asset.toml').outputs]
     recorded += [o.package for n in ('leaf-amber', 'leaf-crimson')
                  for o in records.load_asset(ROOT / 'assets' / 'material' / 'japan' / n / 'asset.toml').outputs]
     assert sorted(listed) == sorted(recorded)

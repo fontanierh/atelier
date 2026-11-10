@@ -142,7 +142,7 @@ id = "object/megapark/seam"
 park = [
     "SM_MP_Seam", "UC_MP_Seam",
 ]
-model = "adopted/megapark/seam"
+model = ["prop/megapark/seam", "prop/megapark/seam-collision"]
 about = "the Mega Park seam meshes joining the park to the zeppelin footbridge"
 
 [[objects]]
