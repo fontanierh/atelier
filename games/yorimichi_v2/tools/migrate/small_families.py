@@ -10,9 +10,13 @@ checkout (read-only). It writes nothing:
 
 `--paths` prints the claim paths, the owner scopes, and the lock paths (LFS-lockable files, such as the copied `src/` GLBs
 and PNGs, are listed as `lock`, the rest as `path`). `--claim TASK` is the one journaled write: the new records and their
-`src/` copies, the adopted records' outputs moved out, and the referencing records rewritten. It covers only the
-determined rows in CLAIM_FAMILIES (the Hippodrome loose meshes and the plaza textures). The tree house textures are not
-claimable: the texture recipe cannot express their settings yet. The donor is read only.
+`src/` copies, the adopted records' outputs moved out, and the referencing records rewritten. It covers exactly:
+- the CLAIM_FAMILIES rows (the Hippodrome loose meshes, and the plaza and tree house textures), each only once its
+  committed read gate confirms the settings (docs/inventory/plaza-textures-read.json, treehouse-textures-read.json);
+  a family whose gate fails writes nothing;
+- the material instances of INSTANCE_FAMILIES (every small_instances family except Hidamari), only the instances whose
+  stated values small_instances.agreement() confirms against the committed reads, grouped by their adopted record.
+Any other row, and a held instance, stays in its adopted record. The donor is read only.
 
 Each registry row states one adopted record, its family, what made its packages (the donor script and line), and the
 status a reader can rely on:

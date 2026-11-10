@@ -177,7 +177,7 @@ def agreement(family: str, donor: Path) -> dict:
             got = eff.get('vector', {}).get(name, own.get('vector', {}).get(name))
             if got is None:
                 held.append(f'vector {name} is stated but the read does not show it')
-            elif any(not _close(g, v, 1e-3) for g, v in zip(got[:3], value[:3])):
+            elif len(got) != len(value) or any(not _close(g, v, 1e-3) for g, v in zip(got, value)):   # alpha too
                 held.append(f'vector {name} reads {got}, not {value}')
         for name, package_path in want['textures'].items():
             if package_path is None:
