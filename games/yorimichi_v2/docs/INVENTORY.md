@@ -70,12 +70,14 @@ Saved, prepared and packaged totals are kept separate:
 - **Hippodrome residuals closed in #804:** four texture and four instance records were imported, the four dependent
   props re-imported, and six unused course instances retired after a reference check. Native before/after reads
   agree. The old adopted owner is retired; this batch is merged and included in `c89f535441be`.
-- **Saved on the branch, not yet packaged:** claim `JAPANMI` (branch `jim5/yv2-japan-instances`) closes the 45
+- **Merged, not yet packaged:** claim `JAPANMI` ([PR #812](https://github.com/fontanierh/atelier/pull/812)) closes the 45
   material instances: the 41 Japan instances, `MI_HD_flat`, `MI_TH_pane` and the two two-sided Mega Park seams become
   10 generated `material-instance` records (`tools/migrate/held_instances.py`), replacing their adopted owners. Each
   row agrees with a native editor read that now includes the base-property overrides (LOD blending, masking, two-sided),
   and each import read back equal to the read before it. See
-  [exceptions](inventory/exceptions.md#current-source-classification).
+  [exceptions](inventory/exceptions.md#current-source-classification). Brine Cove `props1` (13 harbour objects, claim
+  `BCPROPS1`, [PR #813](https://github.com/fontanierh/atelier/pull/813)) is merged too. Package `c89f535441be` predates
+  both.
 - **Remaining source/detail work:** the standalone Mega Park map's reference check, the bike wheels (`Bike.blend`, their
   generator, is not recorded) and the `MPC_SeeThrough` and `RuntimeData` routes: 4 records / 5 packages in
   [exceptions](inventory/exceptions.md#current-source-classification).
@@ -88,12 +90,16 @@ Remaining construction work:
 - Retain the current package while the next source batch proceeds. The guard fixes (#805/#807), multiplayer
   manifest (#809) and host/leave check (#810) are merged. The six manual acceptance checks and final owner-led
   gameplay/two-machine playtesting remain open.
-- **Forecast updated 2026-11-10 15:00, Paris:** the 45 material instances (41 Japan, `MI_HD_flat`, `MI_TH_pane`, two
-  Mega Park seams) are imported on the branch, ahead of the 17:30 estimate; they still need review, merge and a
-  package. The remaining source gaps are the 4 records / 5 packages in
-  [exceptions](inventory/exceptions.md#current-source-classification); they are unsized, so no complete-source date is
-  confirmed. Useful-object splitting stays at **23:00**, low confidence: residual fused scenery and patches are still
-  unsized.
+- **Forecast updated 2026-11-10 16:00, Paris:**
+  - The 45-instance batch is done: it was merged in #812, ahead of its 17:30 target.
+  - Whole-source work is the 4 records / 5 packages in
+    [exceptions](inventory/exceptions.md#current-source-classification). That classification is not source closure.
+    Forecast **19:30**, low confidence, for these steps in order:
+    - the Mega Park standalone map's reference check (a native read);
+    - `MPC_SeeThrough` and `RuntimeData` routes;
+    - the bike wheels. Their `Bike.blend` generator is unrecorded, so this step carries the most risk.
+  - Useful-object splitting stays at **23:00**, low confidence. Brine Cove `props2` (quay cargo and fish baskets) is in
+    progress; the remaining residual fused scenery and patches are unsized.
 
 ## Runtime and ownership facts
 
