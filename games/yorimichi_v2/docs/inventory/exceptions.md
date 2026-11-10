@@ -1335,3 +1335,42 @@ Blockers: no importer for material masters; no native graph read.
 |---|---|---|---|---|
 | `M_RoninBody` | `swordcamp/materials` | blocked | SwordCamp/Textures/T_SwordCampAtlas | `report_materials` (material list) |
 | `M_SwordCamp` | `swordcamp/materials` | blocked | SwordCamp/Textures/T_SwordCampAtlas | `report_materials` (material list) |
+
+### Hidamari surface, racing, see-through and skate runtime (4 records, 4 packages)
+
+Four records, one package each. None is an import; each is a script product or a runtime data asset.
+
+- `adopted/japan/hidamari/surface-flat` (`MI_HD_flat`): `unreal/Scripts/city_material.py:43-44` builds the master
+  `M_HDCity` (owned by `adopted/japan/hidamari/generator`) and `:99` names each instance `MI_HD_<slug>`. Its texture
+  `T_HD_plaster` is owned by `adopted/japan/hidamari/surface-plaster`, from the donor's `tools/hidamari_textures.py`.
+  Status: **need-read**. The instance is a plain one (parent and `Tex`), so a material-instance recipe fits once its
+  parameters are read; the master has no importer.
+- `adopted/racing` (`M_RacingTv`): `unreal/Scripts/racing_tv_material.py:12-16` creates the picture master in `/Game/Racing`
+  with a graph and no texture input. Status: **blocked** (a master, no importer, no native graph read).
+- `adopted/seethrough` (`MPC_SeeThrough`): `unreal/Scripts/see_through.py:47` names the parameter collection and `:246-253`
+  creates it; the game's `USeeThroughComponent` writes it every frame (`SeeThrough.cpp`, cited in the script's header). It is a
+  parameter collection, which no importer kind takes. Status: **blocked**.
+- `adopted/skateruntime` (`RuntimeData`, 31 MB): `build.py:1813` lists it as an output of the skate runtime step, whose
+  inputs are `skate_ride/import_runtime.py`, `import_motion.py`, `verify_data.py` and the donor's `skate-data`
+  (`build/yorimichi/skate-data/verify.json` is the donor's check). It is a data asset, and no importer kind takes one; the
+  editor copy is the only one. Status: **blocked**.
+
+Native reads still needed (read-only; editor and clean hydrate): `MI_HD_flat` through `report_materials.py`, with the list
+`docs/inventory/small-families-hidamari-materials.txt`. That list also names `M_RacingTv` and `MPC_SeeThrough`, which
+`report_materials.py` is not written to read: those two need a master or parameter-collection reader first. `RuntimeData`
+needs a data-asset reader. None of these is in this tree.
+
+Blockers: the `M_HDCity` master (for the instance); the racing and see-through graphs and parameter collection; the
+`RuntimeData` data asset has no importer kind.
+
+- `adopted/japan/hidamari/surface-flat`: generated MI_HD_flat (parent M_HDCity). Evidence: city_material.py (hidamari generator), tools/hidamari_textures.py. Status: **need-read**. parent M_HDCity and T_HD_plaster are owned by adopted/japan/hidamari records
+- `adopted/racing`: generator master M_RacingTv. Evidence: racing_tv_material.py:12-16. Status: **blocked**. no importer for material masters; native read of the graph needed
+- `adopted/seethrough`: generator material parameter collection MPC_SeeThrough. Evidence: see_through.py:47 and :246-253. Status: **blocked**. no importer for parameter collections
+- `adopted/skateruntime`: generated RuntimeData data asset (31 MB). Evidence: build.py:1813 (RuntimeData output); unreal/Scripts/skate_ride/verify_data.py:15. Status: **blocked**. no importer for data assets; the cooked data is the only copy in the editor
+
+| Package | Record | Status | Inputs (owner records) | Native read still needed |
+|---|---|---|---|---|
+| `MI_HD_flat` | `japan/hidamari/surface-flat` | need-read | Japan/Hidamari/Materials/M_HDCity, Japan/Hidamari/Materials/M_HDCity, Japan/Hidamari/Textures/T_HD_plaster | `report_materials` (material list) |
+| `M_RacingTv` | `racing` | blocked | - | `report_materials` (material list) |
+| `MPC_SeeThrough` | `seethrough` | blocked | - | `report_materials` (material list) |
+| `RuntimeData` | `skateruntime` | blocked | - | no reader in this tree |
