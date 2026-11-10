@@ -16,8 +16,17 @@ class Usage(ctypes.Structure):
         'child_elapsed','read_bytes','written_bytes')]
 
 PROC_PPID_ONLY=6
+PROC_PIDT_SHORTBSDINFO=13
+SZOMB=5
 DARWIN=sys.platform=='darwin'
 PROCFS=Path('/proc')
+
+
+class _BsdShortInfo(ctypes.Structure):
+    """Darwin SDK sys/proc_info.h: proc_bsdshortinfo (64 bytes)."""
+    _fields_=[(n,ctypes.c_uint32) for n in ('pid','ppid','pgid','status')]+[
+        ('comm',ctypes.c_char*16)]+[(n,ctypes.c_uint32) for n in (
+            'flags','uid','gid','ruid','rgid','svuid','svgid','reserved')]
 
 
 class _Libproc:
@@ -30,6 +39,8 @@ class _Libproc:
             lib.proc_pid_rusage.argtypes=[ctypes.c_int,ctypes.c_int,ctypes.c_void_p]
             lib.proc_pid_rusage.restype=ctypes.c_int
             lib.proc_listpids.argtypes=[ctypes.c_uint32,ctypes.c_uint32,ctypes.c_void_p,ctypes.c_int]
+            lib.proc_pidinfo.argtypes=[ctypes.c_int,ctypes.c_int,ctypes.c_uint64,ctypes.c_void_p,ctypes.c_int]
+            lib.proc_pidinfo.restype=ctypes.c_int
             lib.proc_name.argtypes=[ctypes.c_int,ctypes.c_void_p,ctypes.c_uint32]
             self._handle=lib
         return self._handle
@@ -163,16 +174,32 @@ def record_helpers(pid,started,path,seen):
         temp=path.with_suffix('.tmp');temp.write_text(json.dumps(dict(game=pid,game_started=started,
             helpers=list(seen.values())),indent=2)+'\n');temp.replace(path)
 
+def _darwin_exited(pid):
+    """A full same-PID zombie status or ESRCH proves exit; every other result remains unknown."""
+    value=_BsdShortInfo()
+    count=LIB.proc_pidinfo(pid,PROC_PIDT_SHORTBSDINFO,0,ctypes.byref(value),ctypes.sizeof(value))
+    if count<=0:return ctypes.get_errno()==errno.ESRCH
+    return count==ctypes.sizeof(value) and value.pid==pid and value.status==SZOMB
+
+
 def usage(pid):
     """@cc [owner:fontanierh,label:safety] process-telemetry-error-identity
-    Darwin sampling failures MUST retain their errno-selected exception class. Only ESRCH
-    may report ProcessLookupError; refused or broken telemetry MUST NOT certify an exit.
+    Darwin sampling failures MUST retain their errno-selected exception class unless ESRCH or
+    a complete same-PID BSD zombie observation proves exit. EPERM MAY retry at most twice with
+    10 ms pauses; unknown, short, mismatched or live BSD samples MUST NOT certify exit. A
+    successful retry MUST return its full fresh sample, never cached accounting or identity.
     """
     if not DARWIN:return _procfs_usage(pid)
-    value=Usage()
-    if LIB.proc_pid_rusage(pid,2,ctypes.byref(value)):
-        raise OSError(ctypes.get_errno(), 'Cannot sample process',pid)
-    return value
+    for attempt in range(3):
+        value=Usage()
+        if not LIB.proc_pid_rusage(pid,2,ctypes.byref(value)):return value
+        error=ctypes.get_errno()
+        if error!=errno.EPERM:raise OSError(error,'Cannot sample process',pid)
+        # task telemetry can be denied while an exiting process sheds its task. BSD status
+        # proves an unreaped zombie without treating a denied live process as absent.
+        if _darwin_exited(pid):raise ProcessLookupError(errno.ESRCH,'Process exited',pid)
+        if attempt==2:raise PermissionError(error,'Cannot sample process',pid)
+        time.sleep(.01)
 
 def _guard(pid,limit_bytes,report,interval=1.,duration=None,expected_start=None):
     try:first=usage(pid)

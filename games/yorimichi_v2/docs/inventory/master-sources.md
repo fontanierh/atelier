@@ -1,10 +1,12 @@
 # Generator-built master materials: recovery design
 
-Current checkpoint: [PR #803](https://github.com/fontanierh/atelier/pull/803) contains 36 imported masters, including
-the 13-master Japan base batch. These are branch results, not yet a merged or packaged checkpoint. The importer and
-native read-back now exist; the original preparation proposal in sections 5–8 is historical, not an outstanding
-approval request. The machine-readable donor inventory is [master-sources.json](master-sources.json); the original
-held list is [small-families-masters.txt](small-families-masters.txt).
+**Historical recovery design, prepared in #799/#801.** [INVENTORY](../INVENTORY.md) owns current progress.
+The following 27-master design and its “not done” statements describe that preparation checkpoint, not the
+current import backlog. #803 contains 36 saved material-master records; #804 adds 13 Japan masters (49 total).
+Those PRs are not merged at main checkpoint `028bc6243b` and are not in package `0adbb5ab212e`.
+The machine-readable [master-sources.json](master-sources.json) and
+[small-families-masters.txt](small-families-masters.txt) retain their original scope and donor evidence;
+they are not current owner lists or instructions to re-import accepted masters.
 Donor paths are relative to the donor root `games/yorimichi/`. Pins are sha256 of the committed blob at the V2 source
 baseline `7eec0f98dd` (docs/DECISIONS.md D01), not of the donor working tree, which is dirty.
 

@@ -1,7 +1,8 @@
 # Brine Cove ships: Nightjar, sloop and per-instance hero hulls
 
-Snapshot: **main `3027366ced` (2026-11-09)**. The three placements below are saved. Retirement of the three
-old ship tiles and obsolete grouped placements is still pending in [PR #787](https://github.com/fontanierh/atelier/pull/787).
+Snapshot: **main `028bc6243b` (2026-11-10)**. The three placements below are saved; the three old ship tiles
+and obsolete grouped placements are retired in merged [PR #787](https://github.com/fontanierh/atelier/pull/787).
+The result is included in package `0adbb5ab212e`.
 The shared hull mesh is reusable model data; each ship now has its own hull instance. See [INVENTORY](../INVENTORY.md).
 
 Tool: `tools/migrate/brinecove_ships.py` (tests `tests/test_brinecove_ships.py`). Pure Python, no Blender or Unreal.
@@ -39,7 +40,7 @@ in place with the first (Adventure) transform and appends the other 8 as single-
 earlier group changes position (plant group keys are positional, `towns.group_keys`: `mesh#index` for repeated names). Keys are
 computed from the final runtime file at apply time and written to `objects.toml`; `check` re-derives them. The old
 `object/brinecove/hero-galleon-hull` entry leaves `objects.toml` at apply (its plain keys no longer exist); its record and actor
-retire only after the replacement imports and saved objects are accepted. That cleanup is not yet complete on this snapshot.
+retire only after the replacement imports and saved objects are accepted. That cleanup is complete in #787; the sequence below documents how it was performed.
 
 ## Retires (after the import, `objects.py` and a passing `check`)
 
@@ -73,4 +74,4 @@ generated `objects.toml` tail change; rerun `towns.py` after `retire`. The tool 
 
 Retirement and journal recovery use the complete claimed path and scope set; they refuse before mutation when
 ownership is stale or incomplete. Keep the original fused sources recoverable: the separate source-preservation
-conversion described in [sources.md](sources.md) is prepared but has not yet landed.
+conversion described in [sources.md](sources.md) landed with #787.
