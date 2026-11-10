@@ -78,9 +78,10 @@ Saved, prepared and packaged totals are kept separate:
   [exceptions](inventory/exceptions.md#current-source-classification). Brine Cove `props1` (13 harbour objects, claim
   `BCPROPS1`, [PR #813](https://github.com/fontanierh/atelier/pull/813)) is merged too. Package `c89f535441be` predates
   both.
-- **Remaining source/detail work:** none of the whole-source items is left: `MPC_SeeThrough` (claim `SEETHRU`, the
-  `parameter-collection` importer) and `RuntimeData` (claim `SKATERT`, the `skate-runtime` importer) are imported from their
-  pinned generators; see [exceptions](inventory/exceptions.md#current-source-classification).
+- **Remaining source/detail work:** no whole-source item is left once #826 and #827 merge: `MPC_SeeThrough` (claim
+  `SEETHRU`, the `parameter-collection` importer) and `RuntimeData` (claim `SKATERT`, the `skate-runtime` importer) are
+  imported from their pinned generators and saved on those branches; see
+  [exceptions](inventory/exceptions.md#current-source-classification).
 
 Remaining construction work:
 - Close the other useful-object/source gaps in [exceptions](inventory/exceptions.md) and
@@ -90,15 +91,17 @@ Remaining construction work:
 - Retain the current package while the next source batch proceeds. The guard fixes (#805/#807), multiplayer
   manifest (#809) and host/leave check (#810) are merged. The six manual acceptance checks and final owner-led
   gameplay/two-machine playtesting remain open.
-- **Forecast updated 2026-11-10 20:30, Paris:**
+- **Forecast updated 2026-11-10 20:45, Paris:**
   - Done since 16:00: the Mega Park standalone map's reference check (#824) and the bike wheels (#820).
-  - The 19:30 target for the whole-source routes was missed. Their code is complete:
-    - `MPC_SeeThrough`: the parameter-collection importer (#826). The collection and its three masters are imported;
-      the 8 dependent material-instance imports remain.
-    - `RuntimeData`: the skate-runtime importer with its pinned inputs and read-back (#827). Its native import remains.
-    - The Brine Cove props5 pier generator (#823) still needs its 3 pier actors saved again.
-  - These native steps wait for the capacity broker to recover from a failed editor start; no grant is possible
-    until then. Forecast **21:30**, low confidence, conditional on that recovery.
+  - The 19:30 target for the whole-source routes was missed. The capacity broker was in recovery after a failed
+    editor start; it recovered at 20:23 (#828), and the native steps then ran:
+    - `MPC_SeeThrough` (#826): the collection, its three masters and the 8 dependent material-instance records are
+      imported (one warm batch at 20:27); a rerun leaves all 12 unchanged.
+    - `RuntimeData` (#827): imported at 20:40 from its pinned inputs, with the plugin's exhaustive read-back; a rerun
+      is unchanged.
+    - The Brine Cove props5 pier generator (#823): the 3 pier placements are saved again from their carved meshes.
+  - These are saved on their branches, not merged. Forecast **21:30**, low confidence, for the three merges (review and
+    CI on the exact heads).
   - Useful-object splitting stays at **23:00**, low confidence. The remaining residual fused scenery and patches are
     unsized.
 
