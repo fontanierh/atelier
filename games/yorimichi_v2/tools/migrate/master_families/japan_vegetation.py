@@ -1,9 +1,9 @@
-"""Prepared surface masters from the fourteen remaining Japan base packages at 085749fd1d: M_Foliage and M_Grass.
+"""Surface masters M_Foliage and M_Grass from the Japan base-materials record (donor pins at 085749fd1d).
 japan_surfaces.py takes M_Painted and M_Village with the same builder module.
 
-No records or packages have moved. The native controller must reconcile this family's keeps with the
-current adopted outputs after the sea and sky families; the only removal set here is these four masters.
-The camera collection is read from adopted/seethrough. MPC_Wind remains an adopted input, with its generator retained in that record's pinned source tree.
+Imported (master_records.py; docs/inventory/master-sources.md). keeps lists the base-materials record's other packages
+at that import; only MPC_Wind is still adopted there, with its generator in that record's pinned source tree, so
+`--refresh` regenerates these records. The camera collection is read from adopted/seethrough.
 """
 WHITE = '/Game/Japan/Textures/T_white'
 WIND = '/Game/Japan/Materials/MPC_Wind'

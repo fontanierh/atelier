@@ -1,8 +1,7 @@
-"""Prepared sky and painterly master sources; no record move or native import is implied.
+"""Sky and painterly masters M_Sky and M_Painterly from the Japan base-materials record; imported with the other
+base families (master_records.py), after which that record keeps only MPC_Wind, its generator in the pinned source tree.
 
-The keeps list describes the fourteen-package base-materials checkpoint at PR803. Before applying this family after
-another base-materials family, reconcile keeps to that adopted record's remaining outputs, excluding only M_Sky and
-M_Painterly. Do not restore packages a preceding family already moved. See docs/inventory/sky-painterly-sources.md.
+keeps lists the record's other packages at the fourteen-package checkpoint. See docs/inventory/sky-painterly-sources.md.
 """
 _SKY = '/Game/Japan/Textures/T_sky'
 
