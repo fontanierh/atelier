@@ -1173,3 +1173,42 @@ Blockers: no importer kind for material masters; no native read of the graphs.
 | `M_Pier_painted` | `skatepark/materials` | blocked | SkatePark/Textures/T_Pier_painted_albedo, SkatePark/Textures/T_Pier_painted_normal, SkatePark/Textures/T_Pier_painted_roughness | `report_materials` (material list) |
 | `M_Pier_steel` | `skatepark/materials` | blocked | SkatePark/Textures/T_Pier_steel_albedo, SkatePark/Textures/T_Pier_steel_normal, SkatePark/Textures/T_Pier_steel_roughness | `report_materials` (material list) |
 | `M_Pier_wood` | `skatepark/materials` | blocked | SkatePark/Textures/T_Pier_wood_albedo, SkatePark/Textures/T_Pier_wood_normal, SkatePark/Textures/T_Pier_wood_roughness | `report_materials` (material list) |
+
+### Belmonte shared materials (2 records, 7 packages)
+
+Donor evidence: `world/regions/belmonte/material_preparation.py:21` names each Belmonte instance `MI_BM_` plus the first
+12 hex digits of the sha256 of its source path. The instances are `MI_BM_*` with parent `M_Belmonte`, which is owned by
+`adopted/belmonte/generator` (its only `/Game` reference). The donor's shared-material path list is what would name each
+hash, so the names are reproducible only by running that preparation.
+
+Byte evidence: all seven `.uasset` files are 6899 bytes, and each names only `/Game/Belmonte/Materials/M_Belmonte` as a
+package reference. Equal size and one shared parent are consistent with seven identical instances differing in name, but
+the parameter values are not compared here.
+
+Status per record:
+- `shared-metal-glass` (five instances, `MI_BM_4ee3168b033c`, `_69b755f9ad2a`, `_aa1a8d45375e`, `_b5dfa6e6373d`,
+  `_fae8893ff89f`): **need-read**.
+- `shared-water` (two instances, `MI_BM_aadab9c1da71`, `_f76f48666871`): **need-read**.
+
+Both records are instances of one master, so a material-instance recipe fits only once the saved parameters are read.
+The instances name no texture, so their recipe would carry scalars and vectors only. Those values are not in the
+committed records.
+
+Native reads still needed (read-only; editor and clean hydrate): the seven instances through `report_materials.py`, with
+`V2_REPORT_PACKAGES` set to `docs/inventory/small-families-belmonte-materials.txt` and `V2_REPORT_OUT` under
+`build/yorimichi_v2/reports/`, as an `editor.run` step. The donor's path list for the hashes is a separate check, not a read.
+
+Blockers: no parameter read yet; the path-to-name mapping is only reproducible by the preparation script.
+
+- `adopted/belmonte/shared-metal-glass`: generator-built MI_BM_<hash>. Evidence: world/regions/belmonte/material_preparation.py:21 (name from sha256 of the path). Status: **need-read**. parent M_Belmonte is owned by adopted/belmonte/generator
+- `adopted/belmonte/shared-water`: generator-built MI_BM_<hash>. Evidence: world/regions/belmonte/material_preparation.py:21. Status: **need-read**. as shared-metal-glass
+
+| Package | Record | Status | Inputs (owner records) | Native read still needed |
+|---|---|---|---|---|
+| `MI_BM_4ee3168b033c` | `belmonte/shared-metal-glass` | need-read | Belmonte/Materials/M_Belmonte, Belmonte/Materials/M_Belmonte | `report_materials` (material list) |
+| `MI_BM_69b755f9ad2a` | `belmonte/shared-metal-glass` | need-read | Belmonte/Materials/M_Belmonte, Belmonte/Materials/M_Belmonte | `report_materials` (material list) |
+| `MI_BM_aa1a8d45375e` | `belmonte/shared-metal-glass` | need-read | Belmonte/Materials/M_Belmonte, Belmonte/Materials/M_Belmonte | `report_materials` (material list) |
+| `MI_BM_b5dfa6e6373d` | `belmonte/shared-metal-glass` | need-read | Belmonte/Materials/M_Belmonte, Belmonte/Materials/M_Belmonte | `report_materials` (material list) |
+| `MI_BM_fae8893ff89f` | `belmonte/shared-metal-glass` | need-read | Belmonte/Materials/M_Belmonte, Belmonte/Materials/M_Belmonte | `report_materials` (material list) |
+| `MI_BM_aadab9c1da71` | `belmonte/shared-water` | need-read | Belmonte/Materials/M_Belmonte, Belmonte/Materials/M_Belmonte | `report_materials` (material list) |
+| `MI_BM_f76f48666871` | `belmonte/shared-water` | need-read | Belmonte/Materials/M_Belmonte, Belmonte/Materials/M_Belmonte | `report_materials` (material list) |
