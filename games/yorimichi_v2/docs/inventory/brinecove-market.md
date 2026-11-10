@@ -1,9 +1,9 @@
 # Brine Cove market stalls and town houses as individual objects (G4a, market and town)
 
-Snapshot: **main `3027366ced` (2026-11-09)**. `market1` has six accepted saved stalls on main.
-[PR #787](https://github.com/fontanierh/atelier/pull/787), snapshot `824ce50094`, adds the other 15 stalls and
-all 265 saved town objects (`town1` 7, `town2` 25, `town3` 31, `town4` 45, `town5` 28, `town6` 33, `town7` 30,
-`town8` 26, `town9` 40), and the 42 emptied town tiles are retired. The initial town2 import was reverted after a name
+Snapshot: **main `028bc6243b` (2026-11-10)**. All 21 market stalls and all 265 town objects are saved and merged
+([PR #787](https://github.com/fontanierh/atelier/pull/787)), and included in package `0adbb5ab212e`.
+Town counts: `town1` 7, `town2` 25, `town3` 31, `town4` 45, `town5` 28, `town6` 33, `town7` 30,
+`town8` 26, `town9` 40. The 42 emptied town tiles are retired. The initial town2 import was reverted after a name
 collision and redone; its first 58 import completions are not accepted content. Current overall status: [INVENTORY](../INVENTORY.md).
 
 Tool: `tools/migrate/brinecove_market.py` (tests `tests/test_brinecove_market.py`). It continues
@@ -48,7 +48,7 @@ at a time; **rerun `plan`/`paths` after the previous batch is applied** (the rem
 
 `--only a,b` takes another subset; town lots are listed by `list`. The follow-up planner rejects duplicate package
 owners before mutation and distinguishes negative-coordinate lots from their non-negative twins. This fix is in
-PR #787, not main at this snapshot; do not run the remaining town plan on the older naming rule. Accepted names stay stable.
+merged PR #787; the town batches are complete. Do not reapply the older naming rule. Accepted names stay stable.
 
 ## Ownership after a batch
 

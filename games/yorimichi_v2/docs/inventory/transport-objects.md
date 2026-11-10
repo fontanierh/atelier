@@ -1,6 +1,6 @@
 # Transport scenery: saved objects and remaining boundaries
 
-Snapshot: **main `3027366ced` (2026-11-09)**. The initial audit described fixed scenery created by the donor's
+Snapshot: **main `028bc6243b` (2026-11-10)**. The initial audit described fixed scenery created by the donor's
 service actors. That migration has since landed: it is no longer correct to say that only the four zeppelin
 stations are saved. [INVENTORY](../INVENTORY.md) tracks port status; this note describes editing boundaries.
 
@@ -12,7 +12,7 @@ stations are saved. [INVENTORY](../INVENTORY.md) tracks port status; this note d
 | Gondola | 16: six stations and ten per-tower pylons (`w18-gondola/objects.saved.json`, [PR #790](https://github.com/fontanierh/atelier/pull/790)) | 26 adopted records / 96 packages | Each tower is its own saved object; cabins and ropes remain dynamic |
 | Railway | 24, including Belmonte station, overbridge, track sections, tunnels and twelve per-fitting objects (`w20-railway/objects.saved.json`, [PR #790](https://github.com/fontanierh/atelier/pull/790)) | 14 adopted records / 146 packages | Track areas are not proof that each useful piece is independently editable. The fittings are saved one per object (2 buffer stops, 2 stop boards, 2 turnouts, 6 tunnel portals, each routed by its row; `tools/migrate/railway_fittings.py`) |
 | Zeppelin | Four station meshes saved with their owning region scenery | Recovered Japan model records; the old single `adopted/japan/assets/zeppelin` proposal is obsolete | Dock gates and the ship move; boarding, line and station data must stay aligned |
-| Train rolling stock | 67 recovered generated mesh records under `prop/belmontetrain/` | Imported mesh records preserve LOD/collision/material settings; other train packages retain adopted owners | Vehicles are dynamic gameplay objects, separate from fixed station/track placements |
+| Train rolling stock | 67 recovered generated mesh records under `prop/belmontetrain/` | Mesh records preserve LOD/collision/material settings; #796 recovered 459 residual packages through 138 texture and 21 material-instance records | Vehicles are dynamic gameplay objects, separate from fixed station/track placements |
 
 `objects.toml` names current model owners and route members. `objects.saved.json` binds the saved definitions;
 `verified.json` binds their package bytes. A model units map alone does not establish a saved placement.
