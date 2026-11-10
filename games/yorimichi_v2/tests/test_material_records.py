@@ -319,3 +319,71 @@ def test_the_import_script_never_rebinds_its_plan():
     main = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == 'main')
     stores = [n.lineno for n in ast.walk(main) if isinstance(n, ast.Name) and n.id == 'plan' and isinstance(n.ctx, ast.Store)]
     assert len(stores) == 1, f'plan is assigned at lines {stores}'
+
+
+# --- base-property overrides ------------------------------------------------------------------------------------
+
+def test_base_overrides_load_in_either_form(tmp_path):
+    base = 'base = { blend_mode = "BLEND_MASKED", opacity_mask_clip_value = 0.5, dithered_lod_transition = true }\n'
+    asset = load_text(tmp_path, material_toml(settings='parent = "/Game/Japan/Materials/M_Foliage"\n' + base))
+    assert asset.recipe['settings']['base'] == {'blend_mode': 'BLEND_MASKED', 'opacity_mask_clip_value': 0.5,
+                                               'dithered_lod_transition': True}
+
+
+@pytest.mark.parametrize('base, reason', [
+    ('base = { shading_model = "MSM_Unlit" }', 'base override'),
+    ('base = { two_sided = 1 }', 'true or false'),
+    ('base = { opacity_mask_clip_value = true }', 'number'),
+    ('base = { blend_mode = "BLEND_SOFT" }', 'BLEND_'),
+    ('base = 1', 'table'),
+])
+def test_a_malformed_base_override_is_refused(tmp_path, base, reason):
+    with pytest.raises(records.RecordError, match=reason):
+        load_text(tmp_path, material_toml(settings=f'parent = "/Game/Japan/Materials/M_Foliage"\n{base}\n'))
+
+
+class FakeOverrides:
+    def __init__(self, **values):
+        self.values = dict(override_blend_mode=False, override_two_sided=False, override_opacity_mask_clip_value=False,
+                           override_dithered_lod_transition=False, override_shading_model=False, blend_mode=None,
+                           two_sided=False, opacity_mask_clip_value=0.3333, dithered_lod_transition=False,
+                           shading_model=None)
+        self.values.update(values)
+
+    def __dir__(self):
+        return list(self.values)
+
+    def get_editor_property(self, key):
+        return self.values[key]
+
+    def set_editor_property(self, key, value):
+        self.values[key] = value
+
+
+def test_base_overrides_are_written_exactly_and_every_other_flag_is_cleared(monkeypatch):
+    """@cc [owner:fontanierh,label:correctness] material-instance-base-exact
+    The import writes exactly the base overrides a row states, clears every other override flag (a donor override the
+    record does not state), and its read-back accepts only that same set and those values."""
+    module = _import_asset_with_fake_unreal(monkeypatch)
+    module.U.BlendMode = types.SimpleNamespace(BLEND_MASKED=types.SimpleNamespace(name='BLEND_MASKED'))
+    overrides = FakeOverrides(override_shading_model=True, override_two_sided=True, two_sided=True)
+
+    class Instance:
+        def get_editor_property(self, key):
+            return overrides
+
+        def set_editor_property(self, key, value):
+            assert key == 'base_property_overrides' and value is overrides
+
+    stated = {'blend_mode': 'BLEND_MASKED', 'opacity_mask_clip_value': 0.5}
+    module._write_base(Instance(), stated, '/Game/X')
+    assert {k for k, v in overrides.values.items() if k.startswith('override_') and v} == {
+        'override_blend_mode', 'override_opacity_mask_clip_value'}
+    read = module.read_base(Instance())
+    assert read == {'blend_mode': 'BLEND_MASKED', 'opacity_mask_clip_value': 0.5}
+    assert module.base_matches(stated, read)
+    assert not module.base_matches(stated, {**read, 'two_sided': True})
+    assert not module.base_matches({**stated, 'opacity_mask_clip_value': 0.4}, read)
+    assert module.base_matches({}, {}) and not module.base_matches({}, {'dithered_lod_transition': True})
+    with pytest.raises(RuntimeError, match='no base override'):
+        module._write_base(Instance(), {'not_a_flag': True}, '/Game/X')
