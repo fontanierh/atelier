@@ -1,0 +1,12 @@
+# One saved object of region/w20-railway (tools/migrate/objects.py, from its objects.toml): a tunnel portal, the face of a tunnel mouth, 5 of 6, saved on their own.
+# Its placement is this actor package; its model is adopted/belmontetrack/track-small. Edit it in the editor and save-validate
+# this record: the region's other objects and actors are not part of it.
+schema = 1
+id = "object/railway/tunnel-portal-4"
+kind = "placement"
+authority = "editor"
+owner = "region/w20-railway"
+references = ["adopted/belmontetrack/track-small"]
+
+[[outputs]]
+package = "/Game/__ExternalActors__/V2/Maps/Slice/3/5W/GS2I6IMEQU9YN38ICY67O4"

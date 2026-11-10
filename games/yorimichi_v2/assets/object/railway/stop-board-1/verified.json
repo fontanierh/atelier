@@ -1,0 +1,12 @@
+{
+  "asset": "object/railway/stop-board-1",
+  "dependencies": {
+    "adopted/belmontetrack/track-small": "e9eae30e7ee4b25c096f9d8cd64dfacc39fa5c8e416de7cfe94eb597abea5205"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/3/27/MWNWZW30H9EGT7XJ4K8LU7.uasset": "b56145e24b892aa3aea57cae200cae3ad1e893d14a22fa9eae0360a915c7ea3c"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}
