@@ -6,7 +6,7 @@
   "sha256": "of the committed blob at the baseline commit, not of the donor working tree (which is dirty)",
   "pins_checked": "docs/inventory/exceptions.md line ~781 pins match these values for shared_materials.py, material_assets.py, forest_ground.py"
  },
- "scope": "Held generator masters in the small families (docs/inventory/small-families-masters.txt: 19) plus the Mega Park retail parents (named in the brief) and M_HDCity (the hidamari family master).",
+ "scope": "Generator-built masters: the 19 held small-family masters (docs/inventory/small-families-masters.txt), the three Mega Park retail parents, M_HDCity, and the four plaza masters M_Arcade, M_ArcadePaving, M_Harbor and M_HarborWater. 27 in all.",
  "masters": [
   {
    "package": "/Game/Hippodrome/Materials/M_HD_Structure",
@@ -872,7 +872,9 @@
    "reason": "Haze comes from atmosphere.py, which imports sea_look.py; a V2 port needs the haze constants and the two formatters (not the whole sea_look module).",
    "reads": [
     "/Game/SwordCamp/Textures/T_SwordCampAtlas"
-   ]
+   ],
+   "planned_record": "master/swordcamp/camp",
+   "status": "planned (family swordcamp)"
   },
   {
    "package": "/Game/SwordCamp/Materials/M_RoninBody",
@@ -925,7 +927,9 @@
    "reason": "Skeletal-mesh material with a recolour custom node; no donor helper.",
    "reads": [
     "/Game/SwordCamp/Textures/T_SwordCampAtlas"
-   ]
+   ],
+   "planned_record": "master/swordcamp/ronin-body",
+   "status": "planned (family swordcamp)"
   },
   {
    "package": "/Game/Racing/M_RacingTv",
@@ -1419,7 +1423,307 @@
    "reason": "Same haze helper as M_SwordCamp. The glow and detail graph is self-contained. M_HDCity keeps its own generator record (adopted/japan/hidamari/generator).",
    "reads": [
     "/Game/Japan/Hidamari/Textures/T_HD_plaster"
-   ]
+   ],
+   "planned_record": "master/hidamari/city",
+   "status": "planned (family hidamari_city)"
+  },
+  {
+   "package": "/Game/Japan/Materials/M_Arcade",
+   "record": "adopted/japan/materials/base-materials",
+   "family": "plaza",
+   "generator": {
+    "path": "games/yorimichi/unreal/Scripts/arcade_material.py",
+    "lines": [
+     24,
+     63
+    ],
+    "builder": "material",
+    "arguments": {
+     "paving": false
+    },
+    "call": "import_hidamari.py:26",
+    "texture_import_lines": [
+     7,
+     21
+    ],
+    "colour_lines": [
+     34,
+     43
+    ],
+    "glow_lines": [
+     54,
+     58
+    ],
+    "constant_lines": [
+     59,
+     60
+    ],
+    "sha256": "21ca3cbc06b18defbc95f7d5ae9a4c580027126bdcd90214d09d0eed016d10ab"
+   },
+   "inputs": [
+    {
+     "kind": "texture",
+     "name": "/Game/Japan/Textures/T_Arcade_timber",
+     "owner": "texture/japan/arcade-timber",
+     "donor_source": "world/regions/hidamari/textures/timber.png (sha256 d71b181a3d0df569f0c83ab2f5ffc0142bbeff3e2d542f2ddd4c1d5e3fb28311); arcade_material.py:33 texture('timber')",
+     "note": "Tex: sampled at UV*.65 for the timber tint (line 40) and the wood test"
+    },
+    {
+     "kind": "parameter",
+     "name": "roughness",
+     "default": 0.87,
+     "note": "constant node, line 59"
+    },
+    {
+     "kind": "parameter",
+     "name": "specular",
+     "default": 0.12,
+     "note": "constant node, line 59"
+    }
+   ],
+   "helpers": [],
+   "fit": "direct",
+   "reason": "Graph is built in one function; its only texture is the timber owner, and the glow, tint and constants are literal code. The texture import (lines 7-21) becomes the texture record, not the builder.",
+   "reads": [
+    "/Game/Japan/Textures/T_Arcade_timber"
+   ],
+   "status": "blocked (family plaza not built): adopted/japan/materials/base-materials also owns 23 packages beyond these four"
+  },
+  {
+   "package": "/Game/Japan/Materials/M_ArcadePaving",
+   "record": "adopted/japan/materials/base-materials",
+   "family": "plaza",
+   "generator": {
+    "path": "games/yorimichi/unreal/Scripts/arcade_material.py",
+    "lines": [
+     24,
+     63
+    ],
+    "builder": "material",
+    "arguments": {
+     "paving": true
+    },
+    "call": "import_hidamari.py:27",
+    "texture_import_lines": [
+     7,
+     21
+    ],
+    "colour_lines": [
+     34,
+     43
+    ],
+    "paving_override_lines": [
+     44,
+     45
+    ],
+    "glow_lines": [
+     54,
+     58
+    ],
+    "constant_lines": [
+     59,
+     60
+    ],
+    "sha256": "21ca3cbc06b18defbc95f7d5ae9a4c580027126bdcd90214d09d0eed016d10ab"
+   },
+   "inputs": [
+    {
+     "kind": "texture",
+     "name": "/Game/Japan/Textures/T_Arcade_paving",
+     "owner": "texture/japan/arcade-paving",
+     "donor_source": "world/regions/hidamari/textures/paving.png (sha256 0cf002e567a081c1e32ff1c9ae56d70f3bd91d1d728d9f32fe358d2dda3df264); arcade_material.py:33 texture('paving')",
+     "note": "Tex: sampled at UV/2.1 (line 45) for the paving colour; leaf mask keeps the palette"
+    },
+    {
+     "kind": "parameter",
+     "name": "roughness",
+     "default": 0.87,
+     "note": "constant node, line 59"
+    },
+    {
+     "kind": "parameter",
+     "name": "specular",
+     "default": 0.12,
+     "note": "constant node, line 59"
+    }
+   ],
+   "helpers": [],
+   "fit": "direct",
+   "reason": "Same function as M_Arcade with paving=True: the colour code is replaced (line 45) and the glow and constants are shared. The only texture is the paving owner.",
+   "reads": [
+    "/Game/Japan/Textures/T_Arcade_paving"
+   ],
+   "status": "blocked (family plaza not built): adopted/japan/materials/base-materials also owns 23 packages beyond these four"
+  },
+  {
+   "package": "/Game/Japan/Materials/M_Harbor",
+   "record": "adopted/japan/materials/base-materials",
+   "family": "plaza",
+   "generator": {
+    "path": "games/yorimichi/unreal/Scripts/harbor_material.py",
+    "lines": [
+     39,
+     176
+    ],
+    "builder": "material",
+    "arguments": {
+     "water": false
+    },
+    "call": "import_hidamari.py:31",
+    "branch_lines": [
+     143,
+     173
+    ],
+    "common_lines": [
+     39,
+     43,
+     174,
+     176
+    ],
+    "texture_import_lines": [
+     21,
+     36
+    ],
+    "constant_lines": [
+     168,
+     170,
+     172
+    ],
+    "sha256": "7681f25484a4d5589b0fbc366203391039a6747ccc07ca8ec90dcc801acc59ad"
+   },
+   "inputs": [
+    {
+     "kind": "texture",
+     "name": "/Game/Japan/Textures/T_Harbor_paving",
+     "owner": "texture/japan/harbor-paving",
+     "donor_source": "world/regions/hidamari/textures/paving.png (sha256 0cf002e567a081c1e32ff1c9ae56d70f3bd91d1d728d9f32fe358d2dda3df264); harbor_material.py:144 texture('paving')",
+     "note": "Stone: slab albedo and normal (lines 151, 157, 163-166)"
+    },
+    {
+     "kind": "texture",
+     "name": "/Game/Japan/Textures/T_Harbor_timber",
+     "owner": "texture/japan/harbor-timber",
+     "donor_source": "world/regions/hidamari/textures/timber.png (sha256 d71b181a3d0df569f0c83ab2f5ffc0142bbeff3e2d542f2ddd4c1d5e3fb28311); harbor_material.py:145 texture('timber')",
+     "note": "Wood: grain tint (lines 152, 157)"
+    },
+    {
+     "kind": "parameter",
+     "name": "roughness",
+     "default": 0.83,
+     "note": "base .83, .19 where A > .95 (line 168)"
+    },
+    {
+     "kind": "parameter",
+     "name": "specular",
+     "default": 0.35,
+     "note": "constant node, line 170"
+    },
+    {
+     "kind": "parameter",
+     "name": "fill",
+     "default": 0.025,
+     "note": "Multiply const_b, line 172 (emissive fill)"
+    }
+   ],
+   "helpers": [],
+   "fit": "direct",
+   "reason": "Non-water branch of harbor_material.material(water=False): two texture owners and literal constants. The module-level sea imports (lines 9-10, 16) are used only by the water branch and must stay out of this builder.",
+   "reads": [
+    "/Game/Japan/Textures/T_Harbor_paving",
+    "/Game/Japan/Textures/T_Harbor_timber"
+   ],
+   "status": "blocked (family plaza not built): adopted/japan/materials/base-materials also owns 23 packages beyond these four"
+  },
+  {
+   "package": "/Game/Japan/Materials/M_HarborWater",
+   "record": "adopted/japan/materials/base-materials",
+   "family": "plaza",
+   "generator": {
+    "path": "games/yorimichi/unreal/Scripts/harbor_material.py",
+    "lines": [
+     39,
+     176
+    ],
+    "builder": "material",
+    "arguments": {
+     "water": true
+    },
+    "call": "import_hidamari.py:32; refresh_water_materials.py:22",
+    "branch_lines": [
+     62,
+     142
+    ],
+    "common_lines": [
+     39,
+     43,
+     174,
+     176
+    ],
+    "edge_lines": [
+     77,
+     82
+    ],
+    "constant_lines": [
+     16,
+     17,
+     18,
+     71
+    ],
+    "sha256": "7681f25484a4d5589b0fbc366203391039a6747ccc07ca8ec90dcc801acc59ad"
+   },
+   "inputs": [
+    {
+     "kind": "parameter",
+     "name": "opacity",
+     "default": 1.0,
+     "note": "constant node, line 71"
+    },
+    {
+     "kind": "parameter",
+     "name": "metallic",
+     "default": 0.0,
+     "note": "constant node, line 117"
+    },
+    {
+     "kind": "parameter",
+     "name": "EDGE",
+     "default": 200,
+     "note": "calm border, metres (line 17)"
+    },
+    {
+     "kind": "parameter",
+     "name": "FAR_FADE",
+     "default": [
+      300,
+      900
+     ],
+     "note": "metres, lit water to open sea (line 18)"
+    }
+   ],
+   "helpers": [
+    {
+     "path": "games/yorimichi/unreal/Scripts/sea_look.py",
+     "sha256": "ffae53cded2bb461534c88c100bc75d3f93ec3bf396eb303e5d4ec3ad4dbb4fa",
+     "lines": [
+      38,
+      150
+     ],
+     "used_for": "WAVES (94-112), LOOK (120-147), HAZE (150), num/f3 (38-45) and the constants BASE..FAR_COLOUR (48-90)"
+    },
+    {
+     "path": "games/yorimichi/world/coast_water.py",
+     "sha256": "a7f9b6f40ae171526aa86999b17f4f3a48ebe35cce6dff4c305baa644c5d9381",
+     "lines": [
+      6,
+      6
+     ],
+     "used_for": "HARBOR_RECT, the rectangle the harbour water owns (harbor_material.py:16)"
+    }
+   ],
+   "fit": "needs helper",
+   "reason": "The water branch reads sea_look (the open-sea waves, look and haze) and coast_water.HARBOR_RECT. Both are pure code with no Unreal calls, and their bytes are already pinned in V2 (adopted/japan/materials/base-materials and adopted/brinecove/materials); the port is wiring them into the master record.",
+   "reads": [],
+   "status": "blocked (family plaza not built): adopted/japan/materials/base-materials also owns 23 packages beyond these four"
   }
  ],
  "helper_files": [
@@ -1512,6 +1816,30 @@
    "sha256": "2abacfc5e937251ae247614d0caca9839ee39f68e67567a7b44ac49c6581e3bf",
    "bytes": 1440,
    "lines": 31
+  },
+  {
+   "path": "games/yorimichi/unreal/Scripts/arcade_material.py",
+   "sha256": "21ca3cbc06b18defbc95f7d5ae9a4c580027126bdcd90214d09d0eed016d10ab",
+   "bytes": 4612,
+   "lines": 63
+  },
+  {
+   "path": "games/yorimichi/unreal/Scripts/harbor_material.py",
+   "sha256": "7681f25484a4d5589b0fbc366203391039a6747ccc07ca8ec90dcc801acc59ad",
+   "bytes": 10371,
+   "lines": 176
+  },
+  {
+   "path": "games/yorimichi/world/coast_water.py",
+   "sha256": "a7f9b6f40ae171526aa86999b17f4f3a48ebe35cce6dff4c305baa644c5d9381",
+   "bytes": 268,
+   "lines": 6
+  },
+  {
+   "path": "games/yorimichi/world/regions/megapark/build.py",
+   "sha256": "819ce61535787181de3915d08e8154117cbad712068166552c7f87a201a5d126",
+   "bytes": 25033,
+   "lines": 454
   }
  ],
  "examined_not_used": [
@@ -1521,22 +1849,182 @@
    "note": "not imported or called by any held master generator (checked); used by instance builders only"
   }
  ],
- "not_inventoried": [
-  {
-   "package": "/Game/Japan/Materials/M_Arcade",
-   "note": "arcade_material.py:24-28 (plaza); not in the held list; owned by adopted/japan/materials/base-materials"
-  },
-  {
-   "package": "/Game/Japan/Materials/M_ArcadePaving",
-   "note": "arcade_material.py:24-28; as M_Arcade"
-  },
-  {
-   "package": "/Game/Japan/Materials/M_Harbor",
-   "note": "harbor_material.py:39-42; plaza family, not in the held list"
-  },
-  {
-   "package": "/Game/Japan/Materials/M_HarborWater",
-   "note": "harbor_material.py:39-42; as M_Harbor"
-  }
- ]
+ "not_inventoried": [],
+ "input_recovery": {
+  "schema": 1,
+  "rule": "An input is listed when it has no source-backed owner: an engine asset; a texture whose owner is an editor-owned (adopted) record; or helper code whose bytes are pinned in V2 but are not yet a dependency of the master. Parameter constants written in a pinned generator are not listed; the generator carries them. Status: engine-default (no donor file; needs reads allowlist); recoverable-now (pinned donor original and an existing importer); recoverable-by-port (generator pinned, pure code to port, output bytes reproduced); wire-dependency (bytes pinned in V2, the master must name them); not-recoverable (none in this pass).",
+  "entries": [
+   {
+    "id": "engine-white-square",
+    "input": "/Engine/EngineResources/WhiteSquareTexture",
+    "kind": "engine",
+    "used_by": [
+     "/Game/Hippodrome/Materials/M_HD_Structure"
+    ],
+    "owner": null,
+    "donor_file": null,
+    "donor_sha256": null,
+    "output_sha256": null,
+    "importer": null,
+    "status": "engine-default",
+    "recovery": "Allow engine defaults in reads, as ENGINE_PARENTS allows engine parents (section 7, decision 3).",
+    "evidence": "import_hippodrome.py:59-78 default of BaseColorTexture; no donor file."
+   },
+   {
+    "id": "engine-black",
+    "input": "/Engine/EngineResources/Black",
+    "kind": "engine",
+    "used_by": [
+     "/Game/Racing/M_RacingTv"
+    ],
+    "owner": null,
+    "donor_file": null,
+    "donor_sha256": null,
+    "output_sha256": null,
+    "importer": null,
+    "status": "engine-default",
+    "recovery": "Allow engine defaults in reads (section 7, decision 3).",
+    "evidence": "racing_tv_material.py Picture default; no donor file."
+   },
+   {
+    "id": "texture-megapark-default-white",
+    "input": "/Game/MegaPark/Textures/T_DefaultWhite",
+    "kind": "texture",
+    "used_by": [
+     "/Game/MegaPark/Materials/M_RetailOpaque",
+     "/Game/MegaPark/Materials/M_RetailMasked",
+     "/Game/MegaPark/Materials/M_RetailTranslucent"
+    ],
+    "owner": "adopted/megapark/shared-textures-common",
+    "donor_file": "games/yorimichi/world/regions/megapark/build.py",
+    "donor_sha256": "819ce61535787181de3915d08e8154117cbad712068166552c7f87a201a5d126",
+    "output_sha256": "7ac2abfce2be8b46dd9826d597d94edeefc1570b4a992622721b90a1850e3ee9",
+    "importer": "texture@1",
+    "status": "recoverable-by-port",
+    "recovery": "Port write_fallbacks (lines 31-38; struct and zlib only) into a pinned source and emit white.png; import as texture@1 with srgb = true. The output is a 68-byte 1x1 PNG.",
+    "evidence": "import_megapark.py:183 texture(OUT/white.png, srgb); games/yorimichi/world/regions/megapark/build.py:31-38 writes white, black and normal PNGs. Executing that function from the donor blob (under python -I) gives the white.png bytes sha256 7ac2abfce2be8b46dd9826d597d94edeefc1570b4a992622721b90a1850e3ee9. The owner record lists the four T_Default packages as outputs, but none of its [[sources]] is the white, black or normal PNG."
+   },
+   {
+    "id": "texture-megapark-default-linear",
+    "input": "/Game/MegaPark/Textures/T_DefaultLinear",
+    "kind": "texture",
+    "used_by": [
+     "/Game/MegaPark/Materials/M_RetailOpaque",
+     "/Game/MegaPark/Materials/M_RetailMasked",
+     "/Game/MegaPark/Materials/M_RetailTranslucent"
+    ],
+    "owner": "adopted/megapark/shared-textures-common",
+    "donor_file": "games/yorimichi/world/regions/megapark/build.py",
+    "donor_sha256": "819ce61535787181de3915d08e8154117cbad712068166552c7f87a201a5d126",
+    "output_sha256": "7ac2abfce2be8b46dd9826d597d94edeefc1570b4a992622721b90a1850e3ee9",
+    "importer": "texture@1",
+    "status": "recoverable-by-port",
+    "recovery": "Port write_fallbacks (lines 31-38; struct and zlib only) into a pinned source and emit white.png; import as texture@1 with srgb = false. The output is a 68-byte 1x1 PNG.",
+    "evidence": "import_megapark.py:184 texture(OUT/white.png, linear); games/yorimichi/world/regions/megapark/build.py:31-38 writes white, black and normal PNGs. Executing that function from the donor blob (under python -I) gives the white.png bytes sha256 7ac2abfce2be8b46dd9826d597d94edeefc1570b4a992622721b90a1850e3ee9. The owner record lists the four T_Default packages as outputs, but none of its [[sources]] is the white, black or normal PNG."
+   },
+   {
+    "id": "texture-megapark-default-black",
+    "input": "/Game/MegaPark/Textures/T_DefaultBlack",
+    "kind": "texture",
+    "used_by": [
+     "/Game/MegaPark/Materials/M_RetailOpaque",
+     "/Game/MegaPark/Materials/M_RetailMasked",
+     "/Game/MegaPark/Materials/M_RetailTranslucent"
+    ],
+    "owner": "adopted/megapark/shared-textures-common",
+    "donor_file": "games/yorimichi/world/regions/megapark/build.py",
+    "donor_sha256": "819ce61535787181de3915d08e8154117cbad712068166552c7f87a201a5d126",
+    "output_sha256": "abc58d5127d7cdf313beb9ec8ee839860a9c6bfbc48c8b8eb6a3f7d8bb63de6f",
+    "importer": "texture@1",
+    "status": "recoverable-by-port",
+    "recovery": "Port write_fallbacks (lines 31-38; struct and zlib only) into a pinned source and emit black.png; import as texture@1 with srgb = false. The output is a 70-byte 1x1 PNG.",
+    "evidence": "import_megapark.py:185 texture(OUT/black.png, linear); games/yorimichi/world/regions/megapark/build.py:31-38 writes white, black and normal PNGs. Executing that function from the donor blob (under python -I) gives the black.png bytes sha256 abc58d5127d7cdf313beb9ec8ee839860a9c6bfbc48c8b8eb6a3f7d8bb63de6f. The owner record lists the four T_Default packages as outputs, but none of its [[sources]] is the white, black or normal PNG."
+   },
+   {
+    "id": "texture-megapark-default-normal",
+    "input": "/Game/MegaPark/Textures/T_DefaultNormal",
+    "kind": "texture",
+    "used_by": [
+     "/Game/MegaPark/Materials/M_RetailOpaque",
+     "/Game/MegaPark/Materials/M_RetailMasked",
+     "/Game/MegaPark/Materials/M_RetailTranslucent"
+    ],
+    "owner": "adopted/megapark/shared-textures-common",
+    "donor_file": "games/yorimichi/world/regions/megapark/build.py",
+    "donor_sha256": "819ce61535787181de3915d08e8154117cbad712068166552c7f87a201a5d126",
+    "output_sha256": "2d30711594b47fc161a96d61adacf85af3185fa768898403d617a45da823a0ec",
+    "importer": "texture@1",
+    "status": "recoverable-by-port",
+    "recovery": "Port write_fallbacks (lines 31-38; struct and zlib only) into a pinned source and emit normal.png; import as texture@1 with srgb = false, compression = TC_NORMALMAP. The output is a 70-byte 1x1 PNG.",
+    "evidence": "import_megapark.py:186 texture(OUT/normal.png, normal); games/yorimichi/world/regions/megapark/build.py:31-38 writes white, black and normal PNGs. Executing that function from the donor blob (under python -I) gives the normal.png bytes sha256 2d30711594b47fc161a96d61adacf85af3185fa768898403d617a45da823a0ec. The owner record lists the four T_Default packages as outputs, but none of its [[sources]] is the white, black or normal PNG."
+   },
+   {
+    "id": "texture-hidamari-plaster",
+    "input": "/Game/Japan/Hidamari/Textures/T_HD_plaster",
+    "kind": "texture",
+    "used_by": [
+     "/Game/Japan/Hidamari/Materials/M_HDCity"
+    ],
+    "owner": "adopted/japan/hidamari/surface-plaster",
+    "donor_file": "games/yorimichi/assets/hidamari/textures/plaster.jpg",
+    "donor_sha256": "e0204be30b781c74f94ab47c02dd31e942a8ef7f6e64c346c8c4bfb3fa3f14f1",
+    "output_sha256": null,
+    "importer": "texture@1",
+    "status": "recoverable-now",
+    "recovery": "The original is pinned in the adopted record (source/assets/hidamari/textures/plaster.jpg, same sha256). texture@1 fits a generated texture record. Because T_HD_plaster is an output of the editor-owned adopted record, choosing its owner is a decision; the record is not converted.",
+    "evidence": "city_material.py:113-117 takes tex.get('plaster'); tools/hidamari_textures.py generates through an image API, so the donor jpg and its plaster.json sidecar are the only originals (sidecar sha256 dd4fba3bac5899173a916bda73e12ec9034c103c3a8d8945f22c21670e29725a)."
+   },
+   {
+    "id": "helper-sea-look",
+    "input": "sea_look (WAVES, LOOK, HAZE, num, f3 and constants)",
+    "kind": "helper",
+    "used_by": [
+     "/Game/Japan/Materials/M_HarborWater",
+     "/Game/SwordCamp/Materials/M_SwordCamp",
+     "/Game/Japan/Hidamari/Materials/M_HDCity"
+    ],
+    "owner": "adopted/japan/materials/base-materials",
+    "donor_file": "games/yorimichi/unreal/Scripts/sea_look.py",
+    "donor_sha256": "ffae53cded2bb461534c88c100bc75d3f93ec3bf396eb303e5d4ec3ad4dbb4fa",
+    "output_sha256": null,
+    "importer": "material-master@1",
+    "status": "wire-dependency",
+    "recovery": "Bytes are pinned in base-materials (asset.toml line 84). Each master that reads them must pin the file in its own src/ or name base-materials as an input dependency; that choice is for the importer pilot.",
+    "evidence": "base-materials source/unreal/Scripts/sea_look.py has the donor sha256; atmosphere.py imports it as S."
+   },
+   {
+    "id": "helper-atmosphere",
+    "input": "atmosphere.py (apply: haze)",
+    "kind": "helper",
+    "used_by": [
+     "/Game/SwordCamp/Materials/M_SwordCamp",
+     "/Game/Japan/Hidamari/Materials/M_HDCity"
+    ],
+    "owner": "adopted/japan/materials/base-materials",
+    "donor_file": "games/yorimichi/unreal/Scripts/atmosphere.py",
+    "donor_sha256": "b59478df43df83b8c7386e7ff7c097f32faf647716fdacb804f3cf0c99336ebf",
+    "output_sha256": null,
+    "importer": "material-master@1",
+    "status": "wire-dependency",
+    "recovery": "Bytes are pinned in base-materials (asset.toml line 16). Pin in the master src with sea_look (helper-sea-look).",
+    "evidence": "atmosphere.py:15 imports sea_look; the masters list it in helpers."
+   },
+   {
+    "id": "helper-coast-water-harbor-rect",
+    "input": "coast_water.HARBOR_RECT",
+    "kind": "helper",
+    "used_by": [
+     "/Game/Japan/Materials/M_HarborWater"
+    ],
+    "owner": "adopted/brinecove/materials",
+    "donor_file": "games/yorimichi/world/coast_water.py",
+    "donor_sha256": "a7f9b6f40ae171526aa86999b17f4f3a48ebe35cce6dff4c305baa644c5d9381",
+    "output_sha256": null,
+    "importer": "material-master@1",
+    "status": "wire-dependency",
+    "recovery": "Bytes are pinned in adopted/brinecove/materials (asset.toml line 92). Pin in the master src (6 lines).",
+    "evidence": "harbor_material.py:16 SEA_RECT = coast_water.HARBOR_RECT; coast_water.py:6 gives (300., -1600., 1800., 600.)."
+   }
+  ]
+ }
 }

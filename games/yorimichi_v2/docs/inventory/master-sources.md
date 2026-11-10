@@ -12,15 +12,15 @@ editor-owned; section 6 lists the conversions that are a decision for the owner.
 
 ## 1. What the inventory covers
 
-23 masters: the 19 in `small-families-masters.txt`, the three Mega Park retail parents named in the brief
-(`M_RetailOpaque`, `M_RetailMasked`, `M_RetailTranslucent`), and `M_HDCity`, the hidamari family's master
-(`adopted/japan/hidamari/generator`). Each row of the JSON gives the donor generator file, the exact line range that
+27 masters: the 19 in `small-families-masters.txt`, the three Mega Park retail parents named in the brief
+(`M_RetailOpaque`, `M_RetailMasked`, `M_RetailTranslucent`), `M_HDCity`, the hidamari family's master
+(`adopted/japan/hidamari/generator`), and the four plaza masters `M_Arcade`, `M_ArcadePaving`, `M_Harbor` and `M_HarborWater`
+(section 2a). Each row of the JSON gives the donor generator file, the exact line range that
 builds the graph (asserted against the baseline bytes when the inventory was generated), every input with its V2
 owner record, and every helper with its sha256.
 
-Not inventoried in this pass: `M_Arcade`, `M_ArcadePaving` (`arcade_material.py:24-28`), `M_Harbor` and
-`M_HarborWater` (`harbor_material.py:39-42`). They are generator-built too, owned by `adopted/japan/materials/base-materials`,
-and sit outside the families the brief names. See decision 4.
+The four plaza masters were left out of the first pass and are added in this one. They are generator-built too and
+owned by `adopted/japan/materials/base-materials`. Decision 4 (section 7) records that they belong in the same recovery.
 
 ## 2. Per-master table
 
@@ -44,8 +44,8 @@ Unreal change); **not recoverable** = none of the 23 is. Every texture input bel
 | `/Game/SkatePark/Materials/M_Pier_steel` | `master/skatepark/pier-steel` planned (family skatepark) | `unreal/Scripts/import_skatepark.py`:132-174 | T_Pier_steel_albedo, _normal, _roughness (texture/skatepark/pier-steel-*) | direct |
 | `/Game/SkatePark/Materials/M_Pier_wood` | `master/skatepark/pier-wood` planned (family skatepark) | `unreal/Scripts/import_skatepark.py`:132-174 | T_Pier_wood_albedo, _normal, _roughness (texture/skatepark/pier-wood-*) | direct |
 | `/Game/SkatePark/Board/M_BoardDissolve` | `master/skatepark/board-dissolve` planned (family skatepark_board) | `unreal/Scripts/board_dissolve_material.py`:1-95 (module body) | none (constants and Dissolve scalar) | direct |
-| `/Game/SwordCamp/Materials/M_SwordCamp` | `adopted/swordcamp/materials` | `unreal/Scripts/import_swordcamp.py`:46-113 (build_material) | T_SwordCampAtlas (texture/swordcamp/atlas); helper atmosphere.py | needs helper |
-| `/Game/SwordCamp/Materials/M_RoninBody` | `adopted/swordcamp/materials` | `unreal/Scripts/import_swordcamp.py`:116-171 (build_ronin_body_material) | T_SwordCampAtlas (texture/swordcamp/atlas) | direct |
+| `/Game/SwordCamp/Materials/M_SwordCamp` | `adopted/swordcamp/materials`; planned (family swordcamp): `master/swordcamp/camp` | `unreal/Scripts/import_swordcamp.py`:46-113 (build_material) | T_SwordCampAtlas (texture/swordcamp/atlas); helper atmosphere.py | needs helper |
+| `/Game/SwordCamp/Materials/M_RoninBody` | `adopted/swordcamp/materials`; planned (family swordcamp): `master/swordcamp/ronin-body` | `unreal/Scripts/import_swordcamp.py`:116-171 (build_ronin_body_material) | T_SwordCampAtlas (texture/swordcamp/atlas) | direct |
 | `/Game/Racing/M_RacingTv` | `adopted/racing` (planned `master/racing/tv`, planned (family racing)) | `unreal/Scripts/racing_tv_material.py`:1-57 (module body) | Black (engine); Picture is a runtime render target | direct |
 | `/Game/FX/M_FX_Additive` | `adopted/fx` (planned `master/fx/additive`, planned (family fx)) | `unreal/Scripts/import_combat_fx.py`:52-70 (sprite_material) | T_FX_Glow (texture/fx/glow) | direct |
 | `/Game/FX/M_FX_Dust` | `adopted/fx` (planned `master/fx/dust`, planned (family fx)) | `unreal/Scripts/import_combat_fx.py`:52-70 (sprite_material) | T_FX_Dust (texture/fx/dust) | direct |
@@ -53,9 +53,34 @@ Unreal change); **not recoverable** = none of the 23 is. Every texture input bel
 | `/Game/MegaPark/Materials/M_RetailOpaque` | `adopted/megapark/base-materials` (planned `master/megapark/opaque`, planned (family megapark)) | `unreal/Scripts/import_megapark.py`:68-163 (material, alpha 0) | T_DefaultWhite, T_DefaultLinear, T_DefaultBlack, T_DefaultNormal (adopted/megapark/shared-textures-common) | direct |
 | `/Game/MegaPark/Materials/M_RetailMasked` | `adopted/megapark/base-materials` (planned `master/megapark/masked`, planned (family megapark)) | `unreal/Scripts/import_megapark.py`:68-163 (material, alpha 1) | as above | direct |
 | `/Game/MegaPark/Materials/M_RetailTranslucent` | `adopted/megapark/base-materials` (planned `master/megapark/translucent`, planned (family megapark)) | `unreal/Scripts/import_megapark.py`:68-163 (material, alpha 2) | as above | direct |
-| `/Game/Japan/Hidamari/Materials/M_HDCity` | `adopted/japan/hidamari/generator` | `unreal/Scripts/city_material.py`:42-95 (parent) | T_HD_plaster (adopted/japan/hidamari/surface-plaster); helper atmosphere.py | needs helper |
+| `/Game/Japan/Hidamari/Materials/M_HDCity` | `adopted/japan/hidamari/generator`; planned (family hidamari_city): `master/hidamari/city` | `unreal/Scripts/city_material.py`:42-95 (parent) | T_HD_plaster (adopted/japan/hidamari/surface-plaster); helper atmosphere.py | needs helper |
+| `/Game/Japan/Materials/M_Arcade` | `adopted/japan/materials/base-materials` | `unreal/Scripts/arcade_material.py`:24-63 (material, paving=False) | T_Arcade_timber (texture/japan/arcade-timber); roughness .87, specular .12 | direct |
+| `/Game/Japan/Materials/M_ArcadePaving` | `adopted/japan/materials/base-materials` | `unreal/Scripts/arcade_material.py`:24-63 (material, paving=True; colour override 44-45) | T_Arcade_paving (texture/japan/arcade-paving); roughness .87, specular .12 | direct |
+| `/Game/Japan/Materials/M_Harbor` | `adopted/japan/materials/base-materials` | `unreal/Scripts/harbor_material.py`:39-176 (material, water=False; branch 143-173) | T_Harbor_paving (texture/japan/harbor-paving), T_Harbor_timber (texture/japan/harbor-timber); roughness .83/.19, specular .35, fill .025 | direct |
+| `/Game/Japan/Materials/M_HarborWater` | `adopted/japan/materials/base-materials` | `unreal/Scripts/harbor_material.py`:39-176 (material, water=True; branch 62-142) | sea_look (WAVES, LOOK, HAZE, constants), coast_water.HARBOR_RECT, EDGE 200 m, FAR_FADE (300, 900) m, opacity 1, metallic 0 | needs helper |
 
-Counts: **21 direct, 2 needs helper, 0 not recoverable.**
+Counts: **24 direct, 3 needs helper, 0 not recoverable.**
+
+### 2a. The four plaza masters
+
+Family status: **not planned**. `adopted/japan/materials/base-materials` owns 27 packages, not only these four. The planner refuses an adopted record that owns more than its family's masters, so no `plaza` family is written. The other 23 are `MPC_Wind`, `M_Bike`, `M_CloudShadow`, `M_CoastRock`, `M_Foliage`, `M_ForestGround`, `M_ForestImpostor`, `M_ForestLakeWater`, `M_Grass`, `M_NorthGate`, `M_NorthMountains`, `M_Painted`, `M_Painterly`, `M_PlazaPaving`, `M_PlazaWater`, `M_PondWater`, `M_SailboatCloth`, `M_SailboatWake`, `M_Sea`, `M_Sky`, `M_Village`, `M_VillageResident`, `M_ZeppelinFabric`. The record must be split by hand first.
+
+Pins: `arcade_material.py` sha256 `21ca3cbc06b18defbc95f7d5ae9a4c580027126bdcd90214d09d0eed016d10ab` (63 lines);
+`harbor_material.py` sha256 `7681f25484a4d5589b0fbc366203391039a6747ccc07ca8ec90dcc801acc59ad` (176 lines);
+`world/coast_water.py` sha256 `a7f9b6f40ae171526aa86999b17f4f3a48ebe35cce6dff4c305baa644c5d9381` (6 lines, `HARBOR_RECT` at line 6).
+The call sites are `import_hidamari.py:26-32` and, for `M_HarborWater`, `refresh_water_materials.py:22`.
+
+- The arcade and paving masters are one function, `material(paving)`. The `texture()` import at lines 7-21 becomes the
+  texture records; the graph is lines 24-63. Paving changes only the colour code (line 45).
+- The harbor is one function, `material(water)`. The non-water branch is lines 143-173 and the water branch is lines 62-142;
+  lines 39-43 and 174-176 are shared. The module-level imports `sea_look` and `coast_water` (lines 9-10, 16) belong to the
+  water branch. The builder for `M_Harbor` must not import them.
+- The texture owners already exist and are source-backed: `texture/japan/arcade-paving` and `texture/japan/harbor-paving` pin
+  `paving.png` (sha256 `0cf002e5…`, the same bytes in both records), and `texture/japan/arcade-timber` and
+  `texture/japan/harbor-timber` pin `timber.png` (sha256 `d71b181a…`). The donor files are
+  `world/regions/hidamari/textures/paving.png` and `timber.png` at the baseline.
+
+Counts after this pass: **24 direct, 3 needs helper, 0 not recoverable.**
 
 Notes on the fits:
 
@@ -146,6 +171,9 @@ Per family:
 - Mega Park: already committed as `adopted/megapark/base-materials/source/unreal/Scripts/import_megapark.py`; the
   `material` builder is in that file, so its three masters need no new source, only the recipe.
 - Hidamari: `src/hidamari_masters.py` with `parent` (city_material.py lines 42-95) and the haze helper.
+- Plaza: `src/plaza_masters.py` with `material(paving)` (arcade_material.py lines 24-63) and `material(water)`
+  (harbor_material.py lines 39-176, with the module-level sea imports moved into the water branch only). The water
+  branch also needs `sea_look` and `coast_water.HARBOR_RECT`; section 9 lists them.
 
 The recipe's `reads` and `input_dependencies` are the texture records already in V2, so nothing new is imported to
 make a master recoverable.
@@ -196,9 +224,9 @@ That extension is a separate change, not part of this preparation.
    their `verified.json`. Recommendation: approve, since the megapark precedent already does it.
 3. **Engine defaults as reads.** `WhiteSquareTexture` (`M_HD_Structure`) and `Black` (`M_RacingTv`) are engine assets, not
    owned by any record. Recommendation: allow engine defaults in `reads` the way `ENGINE_PARENTS` allows engine parents.
-4. **Scope of this pass.** Do the four plaza masters (`M_Arcade`, `M_ArcadePaving`, `M_Harbor`, `M_HarborWater`) belong
-   in the same recovery? They are generator-built and in the same rule. Recommendation: yes, in a second pass, after the
-   importer exists.
+4. **Scope of this pass.** Resolved in this pass: the four plaza masters (`M_Arcade`, `M_ArcadePaving`, `M_Harbor`,
+   `M_HarborWater`) are inventoried (section 2a) and their inputs are in section 9. Their recovery stays a recipe until the
+   importer exists, as for the others.
 5. **Painted pier metallic.** The `painted` master uses the steel maps with metallic 0. Recommendation: state it as an
    argument (`metallic = 0.0`), not as a second builder.
 
@@ -210,3 +238,48 @@ That extension is a separate change, not part of this preparation.
   `build_batches.py` or guard and capacity code is changed.
 - Nothing was imported, claimed, pushed, or run in Unreal or Blender.
 - The donor was read only.
+
+## 9. Input recovery for the 27 masters
+
+Machine-readable form: `input_recovery` in [master-sources.json](master-sources.json) (10 entries, same ids as below).
+
+Rule. An input is listed when it has no source-backed owner: an engine asset; a texture whose owner is an editor-owned
+(adopted) record; or helper code whose bytes are pinned in V2 but are not yet a dependency of the master. Parameter constants
+written in a pinned generator are not listed, because the generator carries them. Textures with a generated owner that pins
+its own donor file are source-backed and are not listed. Nothing here writes a record.
+
+| id | Input | Kind | Used by | Owner today | Donor original (sha256) | Importer | Status | Recovery needed |
+|---|---|---|---|---|---|---|---|---|
+| engine-white-square | `/Engine/EngineResources/WhiteSquareTexture` | engine | M_HD_Structure | engine | none | none | engine-default | engine reads allowlist (decision 3) |
+| engine-black | `/Engine/EngineResources/Black` | engine | M_RacingTv | engine | none | none | engine-default | engine reads allowlist (decision 3) |
+| texture-megapark-default-white | `/Game/MegaPark/Textures/T_DefaultWhite` | texture | M_RetailOpaque, M_RetailMasked, M_RetailTranslucent | adopted/megapark/shared-textures-common | `world/regions/megapark/build.py` `write_fallbacks` (lines 31-38), sha `819ce615…`; output white.png `7ac2abfc…` (68 bytes) | texture@1, srgb | recoverable-by-port | port the 8-line writer into a pinned src |
+| texture-megapark-default-linear | `/Game/MegaPark/Textures/T_DefaultLinear` | texture | the same three | adopted/megapark/shared-textures-common | same donor function; white.png `7ac2abfc…` | texture@1, srgb off | recoverable-by-port | as above |
+| texture-megapark-default-black | `/Game/MegaPark/Textures/T_DefaultBlack` | texture | the same three | adopted/megapark/shared-textures-common | same donor function; black.png `abc58d51…` (70 bytes) | texture@1, srgb off | recoverable-by-port | as above |
+| texture-megapark-default-normal | `/Game/MegaPark/Textures/T_DefaultNormal` | texture | the same three | adopted/megapark/shared-textures-common | same donor function; normal.png `2d307115…` (70 bytes) | texture@1, srgb off, TC_NORMALMAP | recoverable-by-port | as above |
+| texture-hidamari-plaster | `/Game/Japan/Hidamari/Textures/T_HD_plaster` | texture | M_HDCity | adopted/japan/hidamari/surface-plaster (editor) | `games/yorimichi/assets/hidamari/textures/plaster.jpg`, sha `e0204be3…`; the adopted record pins the same bytes | texture@1, srgb | recoverable-now | owner decision; the original is in hand |
+| helper-sea-look | sea_look: WAVES, LOOK, HAZE and constants | helper | M_HarborWater, M_SwordCamp, M_HDCity | base-materials, line 84 | `unreal/Scripts/sea_look.py`, sha `ffae53cd…` | material-master@1 (pinned src) | wire-dependency | pin in the master src, or depend on base-materials |
+| helper-atmosphere | atmosphere.py (haze) | helper | M_SwordCamp, M_HDCity | base-materials, line 16 | `unreal/Scripts/atmosphere.py`, sha `b59478df…` | material-master@1 | wire-dependency | pin with sea_look |
+| helper-coast-water-harbor-rect | coast_water.HARBOR_RECT | helper | M_HarborWater | adopted/brinecove/materials, line 92 | `world/coast_water.py`, sha `a7f9b6f4…` | material-master@1 | wire-dependency | pin the 6-line file |
+
+Counts: **10 inputs in total**, by kind: **engine 2, texture 5, helper 3**. By status: engine-default 2, recoverable-by-port 4,
+recoverable-now 1, wire-dependency 3, not-recoverable 0.
+
+Evidence for each recovery:
+
+- The megapark defaults are 1x1 PNGs written by `write_fallbacks` (`world/regions/megapark/build.py:31-38`), which
+  `import_megapark.py:183-186` imports. No file is committed, so they are not pinned by file. Running the donor function
+  from the baseline blob, under `python -I`, reproduces the bytes: white 68 bytes `7ac2abfc…`, black 70 bytes `abc58d51…`,
+  normal 70 bytes `2d307115…`. The owner record lists the four T_Default packages as outputs, but none of its `[[sources]]`
+  is one of these PNGs.
+- The plaster original is pinned (`plaster.jpg`, sha `e0204be3…`, the same bytes as the donor file). `tools/hidamari_textures.py`
+  generates through an image API, so the pinned file is the only original, not a rerun. texture@1 fits it.
+- The helper rows are bytes already pinned in V2 (`sea_look.py` and `atmosphere.py` in base-materials; `coast_water.py` in
+  brinecove). The gap is wiring: no master names them yet. The donor file for each sha is the baseline blob.
+- Engine defaults have no donor file and no importer. They need the reads allowlist from decision 3.
+
+What is not recoverable: nothing in this pass. Each of the 10 has either a pinned original, a reproducible generator, or
+pinned helper bytes.
+
+What the importer pilot must decide (not decided here): the owner of T_HD_plaster, given that the adopted record already
+outputs it; whether helper bytes are copied into each master's src or read through a dependency on base-materials or
+brinecove; and whether the megapark defaults are re-homed to a generated texture record or stay in shared-textures-common.
