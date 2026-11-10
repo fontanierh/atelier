@@ -1,0 +1,26 @@
+{
+  "asset": "prop/brinecove/props-fish-basket-7",
+  "dependencies": {},
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/Brinecove/Meshes/SM_BC_PropsFishBasket7.uasset": "cf43cd80cc9ca82f02e0120e5f44e82eb3f83feb5e611b4d0b107a04293f3245"
+  },
+  "input_fingerprint": "d512b2d0898ae33ec04f4765496271bbb922f65c17e059c8982a9b0b3f42e4d7",
+  "kind": "imported",
+  "lods": {
+    "/Game/Brinecove/Meshes/SM_BC_PropsFishBasket7": {
+      "after": {
+        "count": 1,
+        "reductions": [
+          1.0
+        ],
+        "screen_sizes": [
+          0.0
+        ]
+      },
+      "before": null
+    }
+  },
+  "schema": 1,
+  "tool": "static-mesh@1"
+}

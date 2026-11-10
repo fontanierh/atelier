@@ -1,0 +1,12 @@
+{
+  "asset": "object/brinecove/props-cargo-w60",
+  "dependencies": {
+    "prop/brinecove/props-cargo-w60": "c04fdc249c100e0ffffaa37e884b5548e18d63f8f54e622743f30fcf68fed393"
+  },
+  "engine": "5.8.2-56702186",
+  "files": {
+    "unreal/Content/__ExternalActors__/V2/Maps/Slice/5/SK/DZ7VMON3OOSO930O69IUT5.uasset": "e50687f999214c2d208e86b0ac38c6daefe468e53cc7d0553bbcad1e5a9f08c4"
+  },
+  "kind": "editor-saved",
+  "schema": 1
+}
