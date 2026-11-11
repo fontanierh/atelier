@@ -10,7 +10,7 @@ The source baseline `7eec0f98dd` is documented separately in [features](inventor
 
 ## Post-handoff development checkpoint
 
-At main `65318620c4` (2026-11-11), these follow-ups are merged:
+At main `a6626057b1` (2026-11-11), these follow-ups are merged:
 
 | Change | Source/content delivered | Verification limit |
 | --- | --- | --- |
@@ -20,8 +20,10 @@ At main `65318620c4` (2026-11-11), these follow-ups are merged:
 | [#840](https://github.com/fontanierh/atelier/pull/840) | Texture compression/mipmaps, multi-level mesh LODs and removal of unused render-mesh collision/CPU buffers | The PR records accepted editor saves and 130 generated/dependent imports. This work is merged, not still planned. |
 | [#841](https://github.com/fontanierh/atelier/pull/841) | Sea/water HLSL string formatting and treehouse shader input names corrected after runtime fallback materials were found | Nine master/instance imports are recorded. Import acceptance alone does not prove every runtime shader or view correct. |
 | [#842](https://github.com/fontanierh/atelier/pull/842) | Lower per-frame World Partition streaming budgets and registration batch sizes | Included in the passing runtime checkpoint below; its individual effect is not isolated. |
-| [#844](https://github.com/fontanierh/atelier/pull/844) | Non-Shipping game loading-range override: 896 m Performance, 576 m Laptop; Quality restores the authored range | Included in the Editor-game observation below. The override is excluded from Shipping builds; do not project its memory result onto a release package. |
+| [#844](https://github.com/fontanierh/atelier/pull/844) | Earlier non-Shipping loading-range override: 896 m Performance, 576 m Laptop; Quality restores the authored range | This is the configuration measured below. #848 subsequently changes the ranges and adds a Shipping code path; the earlier result does not verify those changes. |
 | [#845](https://github.com/fontanierh/atelier/pull/845) | macOS game activity token and offscreen idle-setting adjustment | Merged and included below; earlier runs with this code still failed under the original caller context, so this PR alone is not a proven cure for the capture slowdown. |
+| [#847](https://github.com/fontanierh/atelier/pull/847) | Four-level LOD settings and saved mesh updates for 170 standalone building, ship, stall and related asset records | The PR records content-check and focused-test acceptance. Saved LODs do not establish visual quality or a measured frame-rate improvement across towns. |
+| [#848](https://github.com/fontanierh/atelier/pull/848) | Runtime spatial-bucket pooling of eligible static patch components, 2 ms async-loading budgets, and loading ranges of 1,344 m Performance / 640 m Laptop; Quality restores the authored range | Code is merged and compilation is recorded. Shipping uses a separate SpatialHash console-command path whose effect on the cooked map still needs verification; neither the new ranges nor pooling are covered by the earlier route receipt. |
 
 These changes are later than the package above. The record census remains 7,662 asset records;
 the migration-handoff snapshots remain historical. Planned optimization is not counted as delivered. Performance
@@ -53,8 +55,9 @@ while retaining normal Atelier admission and guards; earlier caller-context atte
 [launch-context diagnostic](BUDGETS.md#check-the-launch-context-before-tuning-around-a-slow-capture).
 This is a sampled route pass, not sustained whole-island 60 FPS or human visual acceptance. It is not a packaged
 build, a two-machine check or a measured standalone-package memory forecast. The aborted pre-change attempt
-still does not support a matched percentage-saving claim. Carbon's assigned performance/visual pass is handed
-off; further issues can be addressed through normal testing and development.
+still does not support a matched percentage-saving claim. The first performance/visual pass was handed off at
+that revision. A second pass is now active; #847/#848 are merged, while additional visual work and a fresh package remain in progress. Keep their eventual captures,
+route results and package fingerprint separate from this earlier checkpoint.
 
 ## How to read status
 
