@@ -28,8 +28,8 @@ spec = importlib.util.spec_from_file_location('v2_japan_sea_masters', MODULE)
 builders = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(builders)
 
-SEA_TRACE = 'ee83d765b988477639bdbfbdd33a1d75bbaddb507bc267078642d1d0cc1574da'
-HARBOR_WATER_TRACE = '37fe610302c722ea972553bf9901aa972fbd83672b0171ca433a10f2bfb8c0dc'
+SEA_TRACE = '4520ea6b6206382491ea0d35d743ccc3c68d25812d8dae0e9307ae76990f07bd'
+HARBOR_WATER_TRACE = 'b21db2db283183b8f1b4c6744c85538a77d848ddba2984007298d499bcfe5906'
 
 
 class Recorder:

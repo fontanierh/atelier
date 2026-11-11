@@ -1,14 +1,14 @@
 {
   "asset": "material/japan/treehouse/surface-flat-instances",
   "dependencies": {
-    "master/treehouse/surface": "2e1604b3d09751e99ab236d6cc8b5099686e749293a1a77c80d7b82d9d07a5ef",
+    "master/treehouse/surface": "610e3e37e0bd21906225fbf42381bd6fd63c3c901f56ed655a34d665579246f7",
     "texture/japan/treehouse-flat": "598ab6eb6186c780b6709ce6736bb8703a8335eb2bddbcaf0abb4403e1ecb797"
   },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Treehouse/Materials/MI_TH_flat.uasset": "a0772722af528becf66eb1ed387616cedcffd32bd9b52b30707757383ec5a4ae"
+    "unreal/Content/Japan/Treehouse/Materials/MI_TH_flat.uasset": "f16d74af89324dd2dd063368b36a4c39fed98b66dcfc0936c496092027d4c0f9"
   },
-  "input_fingerprint": "b09207fe81057e20dca1a23fa4b9b15443a3165d6fd15873fa7ad662df4bd94f",
+  "input_fingerprint": "287a8c56205278d69b9144acd5a97a9985b83ae0042ac50ae0ba6962a69e9680",
   "kind": "imported",
   "schema": 1,
   "tool": "material-instance@2"

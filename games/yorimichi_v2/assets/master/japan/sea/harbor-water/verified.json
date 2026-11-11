@@ -3,9 +3,9 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Materials/M_HarborWater.uasset": "3a5107d701d7751bb84ecffc6fc4d554f0c95f26894b961820e1f743c21d4283"
+    "unreal/Content/Japan/Materials/M_HarborWater.uasset": "8d9c096c54dd39c51721ca023b684311d4dae16d57192458ba3062c554ff9511"
   },
-  "input_fingerprint": "e311b8fbdc401e44f209f65a6cb170e6196dcef377d5f701d6a70149f281586f",
+  "input_fingerprint": "7bb0ee0fb7312fb6136bfcd572d9d805c46f6dd21c2488b38dbc392a131bdd30",
   "kind": "imported",
   "schema": 1,
   "tool": "material-master@1"
