@@ -1,10 +1,12 @@
 #include "Yorimichi.h"
 #include "Engine/StaticMesh.h"
 #include "GameFramework/InputSettings.h"
+#include "Misc/App.h"
 #include "Misc/CommandLine.h"
 #include "Misc/Parse.h"
 #include "Modules/ModuleManager.h"
 #include "UObject/ObjectSaveContext.h"
+#include "WorldPartition/WorldPartitionSubsystem.h"
 
 class FYorimichiModule : public FDefaultGameModuleImpl
 {
@@ -23,6 +25,16 @@ class FYorimichiModule : public FDefaultGameModuleImpl
         {
             if (UStaticMesh* Mesh = Cast<UStaticMesh>(Object); Mesh && Context.IsCooking()) Mesh->MarkAsNotHavingNavigationData();
         });
+#endif
+
+#if !UE_BUILD_SHIPPING
+        // Default Performance mode streams a 896 m local detail bubble (91% fewer cells than 3 km Quality mode) while
+        // always_loaded island terrain, far hills, roads and sea preserve the full horizon silhouette. JapanPreferences::Apply
+        // updates this dynamically if the player selects Laptop (576 m) or Quality (full 3 km) in settings.txt.
+        if (!GIsEditor && !IsRunningCommandlet() && FApp::IsGame())
+        {
+            UWorldPartitionSubsystem::SetOverrideLoadingRange(TEXT("MainPartition"), 89600);
+        }
 #endif
 
         // An offscreen run (-RenderOffscreen: the captures, films and QA runs driven over the live bridge) has no window to
