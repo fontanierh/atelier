@@ -54,7 +54,7 @@ def show(value):
 
 PLUMBING = {'get_asset_tools', 'save_loaded_asset', 'load_asset', 'load_object', 'does_asset_exist',
             'MaterialFactoryNew', 'create_asset', 'delete_all_material_expressions', 'recompile_material'}
-DONOR_TRACES = {'painted_material': (124, '8233a82fb754ee9f343dd3e979c13437123f2ac525910741471e48df035a34bd'),
+DONOR_TRACES = {'painted_material': (178, '5ea77892c1c5fe0aa71e201d212ebe938431f61b46b4bb41ef45ff7a98701aa8'),
  'foliage_material': (326, 'c896c90fac7ee022bd7c41156815acf01c3b41684a0af1a8c38ff27234b0bf58'),
  'grass_material': (277, '15003655adb512ad2e1ff5b214fcaa94d4cc3f8435b03ddde7b960c7e47d17e4'),
  'village_material': (73, 'efb79272fa645b94cd7b7690d7a55637d534d70538bf5c5a140f72f3a663144f')}

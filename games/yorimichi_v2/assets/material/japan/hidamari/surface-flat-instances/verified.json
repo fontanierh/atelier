@@ -2,13 +2,13 @@
   "asset": "material/japan/hidamari/surface-flat-instances",
   "dependencies": {
     "adopted/japan/hidamari/surface-plaster": "96406cb083f126d95e744068b8f410040ffc91edb02f79c850bee80892855ff5",
-    "master/hidamari/city": "066110a259244129bd4cb33b11f02eb5b998b29fa0fc3a31962d2a8126613e68"
+    "master/hidamari/city": "d16434bd822776137cb675c999e5e84c05527d370a3d1c45204e70079a846882"
   },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Hidamari/Materials/MI_HD_flat.uasset": "bd0933faf1a11d33c7ca95dc21a3e399fc26116ac18dc3003d4fad0cc73be95b"
+    "unreal/Content/Japan/Hidamari/Materials/MI_HD_flat.uasset": "89f0a5b29adf068a0c540e88e7a860668849690c74839eb4a56e2f2bfe388a4b"
   },
-  "input_fingerprint": "910d5116b7799e18ee69cf3505d5c1071fcc391973a56083174b53313ee784da",
+  "input_fingerprint": "46545c9c617fbb54393622e36d8ddbf63e9c7f6cea4def52987bc8abde670ba4",
   "kind": "imported",
   "schema": 1,
   "tool": "material-instance@2"

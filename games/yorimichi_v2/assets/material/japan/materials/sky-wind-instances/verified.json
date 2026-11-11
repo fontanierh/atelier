@@ -1,13 +1,13 @@
 {
   "asset": "material/japan/materials/sky-wind-instances",
   "dependencies": {
-    "master/japan/base/sky": "c82abea5cdfba9a1bff22dbbe64d4eac2f255d2c337bb39c271b73670acc860e"
+    "master/japan/base/sky": "17c1bb56a850d0c4b4f2c26dfecd311726616bc704f223d7d1078f4b1f8e9f4b"
   },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Materials/MI_Sky.uasset": "1ffdd4ea55cc4ebe4560df83262c932bc841bc3b5fa0d783d7d7e31ef32e67da"
+    "unreal/Content/Japan/Materials/MI_Sky.uasset": "ff0552c58de92314e03dc64da1a5d9be5725eda3f45ed2abbed3416f1192358d"
   },
-  "input_fingerprint": "9003a7c09a1db3615d26f4bd7530e049ac1a24732e106bac721d40c2cdbe0b1e",
+  "input_fingerprint": "cc31480d9589cab9b85c3299f9a324687bb0ec834e41a86d52b4466655356663",
   "kind": "imported",
   "schema": 1,
   "tool": "material-instance@2"

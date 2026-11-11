@@ -5,9 +5,9 @@
   },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Hidamari/Materials/M_HDCity.uasset": "742920f434b00ba6abed8bb42a676981929f612884bab20f42d0a146565fecdc"
+    "unreal/Content/Japan/Hidamari/Materials/M_HDCity.uasset": "85d4b2cee22cb1c07732370adea60665044fe62246edcaa25155866cbe3acef3"
   },
-  "input_fingerprint": "484e9f50dcb7e11705497cd22c23defc9ab58f1262ffe2f4c7c4f0acc08c41a9",
+  "input_fingerprint": "34545dbacc6a3b06bd1884da7febf5debd82559be3b0bdcd18954041ef7b00a5",
   "kind": "imported",
   "schema": 1,
   "tool": "material-master@1"

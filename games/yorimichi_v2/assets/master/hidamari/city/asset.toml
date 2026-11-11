@@ -12,7 +12,7 @@ input_dependencies = ["adopted/japan/hidamari/surface-plaster"]
 
 [[sources]]
 path = "src/hidamari_city_masters.py"
-sha256 = "fc79e7e4637600de7e4f3cfb8b8f64cb2f4de1291da5c4c99c619111cb18c947"
+sha256 = "313d99ca9db1ca9604a048e7f5c976726626807ce495d1f9a1a938d398e75577"
 
 [[sources]]
 path = "src/master_haze.py"

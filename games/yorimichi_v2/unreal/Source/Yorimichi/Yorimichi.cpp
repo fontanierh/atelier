@@ -67,7 +67,7 @@ class FYorimichiModule : public FDefaultGameModuleImpl
 #if !UE_BUILD_SHIPPING
         // Default Performance mode streams a 1,344 m detail bubble (preserving cross-bay town and headland vistas in Brine Cove
         // and Hidamari while cutting streamed cells ~80% vs 3 km Quality mode). JapanPreferences::Apply updates this dynamically
-        // (and sets wp.Runtime.OverrideRuntimeSpatialHashLoadingRange in Shipping builds) for Laptop (640 m) or Quality (3 km).
+        // for Laptop (640 m) or Quality (3 km) across editor -game and Development packaged builds.
         if (!GIsEditor && !IsRunningCommandlet() && FApp::IsGame())
         {
             UWorldPartitionSubsystem::SetOverrideLoadingRange(TEXT("MainPartition"), 134400);

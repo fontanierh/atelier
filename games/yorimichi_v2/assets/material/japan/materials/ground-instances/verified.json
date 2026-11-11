@@ -2,19 +2,19 @@
   "asset": "material/japan/materials/ground-instances",
   "dependencies": {
     "adopted/japan/textures/ground": "41732c2386c7900c2e4b3eee9d4aef56af68e9fbd4b08dfda9e2ab6f038b5a9a",
-    "master/japan/surfaces/foliage": "908ac3c0d823eb68a1cb8c290a0e73f73bd3db80c303ccfb9b487b2b569fe14b",
-    "master/japan/surfaces/painted": "37431891d268ffe079036e0222a7e8dac4c57b104a98e7383a2bfc359c7d3d1a",
+    "master/japan/surfaces/foliage": "8a41ee4ba772a15f13bdab39b7fdedcdb4e83631018ada55016f9b9cc731e5bc",
+    "master/japan/surfaces/painted": "0c918c86249ef8746a67347df628114617f4314387b82ae41d37f2c0511553fb",
     "texture/japan/white": "5d52155722629ce5afa73ac696017dd3c663ebb3e376a74037b961092e3b6349"
   },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Materials/MI_Ground.uasset": "34e66a841a6d7a4216d72525e43b6859348d2b588bcb9f351ebdd69dcb505b9d",
-    "unreal/Content/Japan/Materials/MI_Litter.uasset": "ba44b6d2857bf6b3391a02ecd62f84070e7fef0fc5183b9503f8cd8abaf8d71e",
-    "unreal/Content/Japan/Materials/MI_Moss.uasset": "16c431e333014c4af6235ad62c07e2ca009872839ce1934223bde229b84eed42",
-    "unreal/Content/Japan/Materials/MI_Road.uasset": "65b2c941f56208c6066f50865b3453b0049b089bddddd6ffe93e79217372357c",
-    "unreal/Content/Japan/Materials/MI_Sand.uasset": "09b15a32d1516c5ff123edb5de1f979c2d109794881b252af695a0c915de6d6d"
+    "unreal/Content/Japan/Materials/MI_Ground.uasset": "0fb84df1721aa365c2821c283837e03a97fdfecd027182b55cef4ccd87b77ce8",
+    "unreal/Content/Japan/Materials/MI_Litter.uasset": "72b43915b2341b38f6a54527ceeeeddb7c16fd3d9aebf05f96e9b2e1fec8af77",
+    "unreal/Content/Japan/Materials/MI_Moss.uasset": "7221958f8098701a1a9ae92d3fc9a36c475bd8073803141067a826db69081ade",
+    "unreal/Content/Japan/Materials/MI_Road.uasset": "aa6a7da802bd88f088a4c539f7d1797e0d8b1dd4b3874b20a0a3313ee5a7602a",
+    "unreal/Content/Japan/Materials/MI_Sand.uasset": "61d119f47242574fd6fa6769f87f80d80207ee23a8f241d56684e7f6b8bb0bb6"
   },
-  "input_fingerprint": "417ed5bdc3dd2651448f39f9e58f736b3508036a9bd1ec57e5ccb3b87f61fa3a",
+  "input_fingerprint": "ef189e06673700e5a12bf762875e05463f261b26f656a493d6fdb75ff5fa5f51",
   "kind": "imported",
   "schema": 1,
   "tool": "material-instance@2"

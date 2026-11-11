@@ -3,9 +3,9 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Materials/M_Sea.uasset": "982b264d85957d8f356bc3dbf2cc74a9dca6896dd414e408663d98d23d8c2032"
+    "unreal/Content/Japan/Materials/M_Sea.uasset": "09ed945de60ceac26c41c04cf030262d220e4cc1c1fbe166d4ab325a7e3e7e5c"
   },
-  "input_fingerprint": "b97d9ba4f63a18d66b8315cab7f415772e6110ec21a28b046eea74bc3cad2c30",
+  "input_fingerprint": "d12bea4096fcef3d200f61f87d3fe0267984f27408b01829c5a43cb8f314a4b3",
   "kind": "imported",
   "schema": 1,
   "tool": "material-master@1"

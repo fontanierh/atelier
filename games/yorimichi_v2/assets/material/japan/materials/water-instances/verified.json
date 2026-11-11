@@ -1,14 +1,14 @@
 {
   "asset": "material/japan/materials/water-instances",
   "dependencies": {
-    "master/japan/surfaces/painted": "37431891d268ffe079036e0222a7e8dac4c57b104a98e7383a2bfc359c7d3d1a",
+    "master/japan/surfaces/painted": "0c918c86249ef8746a67347df628114617f4314387b82ae41d37f2c0511553fb",
     "texture/japan/water": "010bc1ee76b630d332e7ed94ff6b7ea37c98c6283c353ca155b1aa7196fd4133"
   },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Materials/MI_Water.uasset": "67c86ca0f133446c95afdc7ea0682b00f395194980ce3a257e7a8329abaefde2"
+    "unreal/Content/Japan/Materials/MI_Water.uasset": "f64b9ce18fb84fc554595cf99bd44a654e1da9fcb3b2a51c6b87c4c64cdbccca"
   },
-  "input_fingerprint": "ecf690d6671310419ec64e87b903a37d21740934555ffec26ce4cb03465da320",
+  "input_fingerprint": "8a6919623ab67d469369862e50717ec9625b8c19ce9a36c3aa63a93f03e7867f",
   "kind": "imported",
   "schema": 1,
   "tool": "material-instance@2"

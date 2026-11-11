@@ -2,13 +2,13 @@
   "asset": "material/japan/leaf-crimson",
   "dependencies": {
     "adopted/japan/textures/leaf-atlases": "04ea94eb263c608ac9ca5731764af2809c0060fa66d9969e1ac27e0bb17767a5",
-    "master/japan/surfaces/foliage": "908ac3c0d823eb68a1cb8c290a0e73f73bd3db80c303ccfb9b487b2b569fe14b"
+    "master/japan/surfaces/foliage": "8a41ee4ba772a15f13bdab39b7fdedcdb4e83631018ada55016f9b9cc731e5bc"
   },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Materials/MI_LeafCrimson.uasset": "5c0e6e4b0907b267a77663be5130e02c2fb4aa83ba3477306716b4c715f835d1"
+    "unreal/Content/Japan/Materials/MI_LeafCrimson.uasset": "7d450c460da7cf500f479285f85fd454d29b9235b2aa49d5af5413d2e9563560"
   },
-  "input_fingerprint": "6c546e7a2bf70fe1e2e76aac81b6ab251a049da5fcc738f6d876af197c1e3fc6",
+  "input_fingerprint": "1febdfc20edead6db005baf07e8c43273c1828a090762ef7aafdc221fe530e07",
   "kind": "imported",
   "schema": 1,
   "tool": "material-instance@2"
