@@ -1,11 +1,9 @@
 {
   "asset": "adopted/megapark/cell-x350-zm850",
-  "dependencies": {
-    "adopted/megapark/base-materials": "81b0e86814e67e23a3f2758823ec3ba2fc6621d9e30cbc70a96871e8471cf80b"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/MegaPark/Meshes/SM_MP_B482B33EDA279C4A.uasset": "61ba6f1b2772367aaa00137fb79bb55ec5c24af40e8fc04d676e2d21d011bfc9",
+    "unreal/Content/MegaPark/Meshes/SM_MP_B482B33EDA279C4A.uasset": "d7c2be4181e0729d2f3a8650b31537878f8c08ad08de255d8966012a3bbaefb0",
     "unreal/Content/MegaPark/Meshes/UC_MP_393316F6A0664791_0.uasset": "ab4808966905706df103635aa03a2a93b798153322bbd0ed86c20de7499116f4"
   },
   "kind": "editor-saved",

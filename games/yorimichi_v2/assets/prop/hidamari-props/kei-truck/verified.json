@@ -3,19 +3,25 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/HD_P_kei_truck.uasset": "d6a1a72d5e3198510c14834813e9fe235a5c5ead0e7a84a09b73cf9d8eb38189"
+    "unreal/Content/Japan/Assets/HD_P_kei_truck.uasset": "2ae5457d185e1d4c046957e267e2d8027e0f522cdc4b08db3d79379dc2b5f4f6"
   },
-  "input_fingerprint": "a0696d239bbe527eea5ed183d5ea27f92436b70895e76f05e903db2afff96f60",
+  "input_fingerprint": "ede8c7aeffeefbb6934d7d148d4f9334b06e8ca9121f656c29e6cdaf1ef9dc8c",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/HD_P_kei_truck": {
       "after": {
-        "count": 1,
+        "count": 4,
         "reductions": [
-          1.0
+          1.0,
+          0.3499999940395355,
+          0.11999999731779099,
+          0.03999999910593033
         ],
         "screen_sizes": [
-          0.0
+          1.0,
+          0.2800000011920929,
+          0.11999999731779099,
+          0.03999999910593033
         ]
       },
       "before": {
@@ -24,7 +30,16 @@
           1.0
         ],
         "screen_sizes": [
-          0.0
+          2.0
+        ]
+      },
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.28,
+          0.12,
+          0.04
         ]
       }
     }

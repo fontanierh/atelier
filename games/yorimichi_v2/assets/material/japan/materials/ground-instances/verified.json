@@ -1,20 +1,20 @@
 {
   "asset": "material/japan/materials/ground-instances",
   "dependencies": {
-    "adopted/japan/textures/ground": "184e0013594b69b4500ca3985b6a42ddfa5bbc946ba848b25694a9a236483cf0",
+    "adopted/japan/textures/ground": "41732c2386c7900c2e4b3eee9d4aef56af68e9fbd4b08dfda9e2ab6f038b5a9a",
     "master/japan/surfaces/foliage": "908ac3c0d823eb68a1cb8c290a0e73f73bd3db80c303ccfb9b487b2b569fe14b",
     "master/japan/surfaces/painted": "37431891d268ffe079036e0222a7e8dac4c57b104a98e7383a2bfc359c7d3d1a",
     "texture/japan/white": "5d52155722629ce5afa73ac696017dd3c663ebb3e376a74037b961092e3b6349"
   },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Materials/MI_Ground.uasset": "873d9649e06252c39d5fecc7b57fb61c1229603f706b2ea62d480789d882a0b1",
-    "unreal/Content/Japan/Materials/MI_Litter.uasset": "0d71a4f5e28a3057f4d1e5a12206f55c44cf49ee5294d3c8cf3d43843edfcaa4",
-    "unreal/Content/Japan/Materials/MI_Moss.uasset": "af410f7e8ccbe4c2399adf1a888edd24f3b5744e706c0df1ad6bf68657ed02fb",
-    "unreal/Content/Japan/Materials/MI_Road.uasset": "9df5d107fbe197678961371df71941b4f452645dbd38a82b52cbd9170ee75472",
-    "unreal/Content/Japan/Materials/MI_Sand.uasset": "41619ef94455ee579ca61ef045f7da4dc815e940d5f4e2ce73c206ecb3115a57"
+    "unreal/Content/Japan/Materials/MI_Ground.uasset": "34e66a841a6d7a4216d72525e43b6859348d2b588bcb9f351ebdd69dcb505b9d",
+    "unreal/Content/Japan/Materials/MI_Litter.uasset": "ba44b6d2857bf6b3391a02ecd62f84070e7fef0fc5183b9503f8cd8abaf8d71e",
+    "unreal/Content/Japan/Materials/MI_Moss.uasset": "16c431e333014c4af6235ad62c07e2ca009872839ce1934223bde229b84eed42",
+    "unreal/Content/Japan/Materials/MI_Road.uasset": "65b2c941f56208c6066f50865b3453b0049b089bddddd6ffe93e79217372357c",
+    "unreal/Content/Japan/Materials/MI_Sand.uasset": "09b15a32d1516c5ff123edb5de1f979c2d109794881b252af695a0c915de6d6d"
   },
-  "input_fingerprint": "6b4eb1bda07045c5f2a87e13384f3d17d8bda39d77b09d821b3f1fd87f09ab48",
+  "input_fingerprint": "417ed5bdc3dd2651448f39f9e58f736b3508036a9bd1ec57e5ccb3b87f61fa3a",
   "kind": "imported",
   "schema": 1,
   "tool": "material-instance@2"

@@ -1,13 +1,13 @@
 {
   "asset": "master/japan/base/arcade",
   "dependencies": {
-    "texture/japan/arcade-timber": "40ad0689aa9fa004b4bd7b9cc4b90234ce533aa00d9a747962d47ce0d97e0a9c"
+    "texture/japan/arcade-timber": "bbd63e55faa22ed3d5be7ab801573d8271c75750b991627f2bca98d4af9e19a2"
   },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Materials/M_Arcade.uasset": "91fb558a9c56cf61e7f869d953a5c21a09359d4147aac4e0d5161feed61d5c3c"
+    "unreal/Content/Japan/Materials/M_Arcade.uasset": "fc3e0852f98268cf080b6ab91d22bfd452e1f3c33fc077a2c29bad19d1697da7"
   },
-  "input_fingerprint": "85e1c0afeb5ce276575d9ed271af5986fc6396623c81b2971670e34c7959c5c4",
+  "input_fingerprint": "ab75aafcd6dc05666937bfc563918c441c8ad08dccb5fb77d72df78f45b8d052",
   "kind": "imported",
   "schema": 1,
   "tool": "material-master@1"

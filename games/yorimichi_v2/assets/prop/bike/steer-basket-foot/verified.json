@@ -3,19 +3,25 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/BK_Steer_BasketFoot.uasset": "7f6fa34a79a1400563ea14f531a96c6d965775044787d8d16109a6948876a038"
+    "unreal/Content/Japan/Assets/BK_Steer_BasketFoot.uasset": "c7f05db1685f251d73fcf5547f011c9b6cebb189d906ecb5d384645060ffec32"
   },
-  "input_fingerprint": "ecf581a8a08c0222f7e554480e1ccc3690d427d284a2699b1a9fd60c9d9006e7",
+  "input_fingerprint": "3b29716264474b85d4c6552ec46769ddf22f261f661a78550db4644e8adc0570",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/BK_Steer_BasketFoot": {
       "after": {
-        "count": 1,
+        "count": 4,
         "reductions": [
-          1.0
+          1.0,
+          0.4000000059604645,
+          0.15000000596046448,
+          0.05000000074505806
         ],
         "screen_sizes": [
-          0.0
+          1.0,
+          0.3499999940395355,
+          0.15000000596046448,
+          0.05000000074505806
         ]
       },
       "before": {
@@ -25,6 +31,15 @@
         ],
         "screen_sizes": [
           2.0
+        ]
+      },
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.35,
+          0.15,
+          0.05
         ]
       }
     }

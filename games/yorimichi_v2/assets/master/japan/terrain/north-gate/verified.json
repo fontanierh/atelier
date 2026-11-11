@@ -1,13 +1,13 @@
 {
   "asset": "master/japan/terrain/north-gate",
   "dependencies": {
-    "adopted/japan/textures/ground": "184e0013594b69b4500ca3985b6a42ddfa5bbc946ba848b25694a9a236483cf0"
+    "adopted/japan/textures/ground": "41732c2386c7900c2e4b3eee9d4aef56af68e9fbd4b08dfda9e2ab6f038b5a9a"
   },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Materials/M_NorthGate.uasset": "36f1384c543afa60ba6e5b999ec9c0e75bdb11190e869fe6be119b581f7b1899"
+    "unreal/Content/Japan/Materials/M_NorthGate.uasset": "5fa8233dd9f30251a6df66bb397a500e712951174d4ec0ca73aa5dc5d5e53e70"
   },
-  "input_fingerprint": "cc17e8e0c7a88fb1f49964d4bbaba156344bf07b684d5ece2f0bf0e1e6fde5c7",
+  "input_fingerprint": "432678196bb347fee98937512e6fc05ab27ae3bb09a73933f5bf09e335187190",
   "kind": "imported",
   "schema": 1,
   "tool": "material-master@1"

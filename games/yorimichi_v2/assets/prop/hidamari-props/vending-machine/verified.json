@@ -3,19 +3,25 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/HD_P_vending_machine.uasset": "acb270375a36f11c85f0d3e26d9119761644b66d3bb8f106ebb4e7ba6c99512a"
+    "unreal/Content/Japan/Assets/HD_P_vending_machine.uasset": "a2fd7d2974f493cbbcc6800a1afc816a34fd5a073922af7ff8dd111038950570"
   },
-  "input_fingerprint": "af56686d83fa5e9d4aee898675f9497672a6f9253a0ca289be49651b4ffec337",
+  "input_fingerprint": "439179c9de6b81ea36439e1dd7f35d381b66d80daf239fee02c3768845d4241d",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/HD_P_vending_machine": {
       "after": {
-        "count": 1,
+        "count": 4,
         "reductions": [
-          1.0
+          1.0,
+          0.3499999940395355,
+          0.11999999731779099,
+          0.03999999910593033
         ],
         "screen_sizes": [
-          0.0
+          1.0,
+          0.2800000011920929,
+          0.11999999731779099,
+          0.03999999910593033
         ]
       },
       "before": {
@@ -24,7 +30,16 @@
           1.0
         ],
         "screen_sizes": [
-          0.0
+          2.0
+        ]
+      },
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.28,
+          0.12,
+          0.04
         ]
       }
     }

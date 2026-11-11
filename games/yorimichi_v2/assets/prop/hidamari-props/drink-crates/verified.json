@@ -3,19 +3,25 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/HD_P_drink_crates.uasset": "05f5a9e16a97d2d6a421c8422a87544ff23c5477a1d1307e2103265db309fe0f"
+    "unreal/Content/Japan/Assets/HD_P_drink_crates.uasset": "6e2f9e5b1328ef3f630c941544baabeb665282f22f84a49d9194ff0d36c73d86"
   },
-  "input_fingerprint": "d9d5028fff8ca748e5bc81f0b1cff96e5ea50e7e8fd3a1049cd0ba0eebc09377",
+  "input_fingerprint": "08a35bafb19e3ca1a110236076a89271a4829a39a44e24ebd172c7784cbf974b",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/HD_P_drink_crates": {
       "after": {
-        "count": 1,
+        "count": 4,
         "reductions": [
-          1.0
+          1.0,
+          0.3499999940395355,
+          0.11999999731779099,
+          0.03999999910593033
         ],
         "screen_sizes": [
-          0.0
+          1.0,
+          0.2800000011920929,
+          0.11999999731779099,
+          0.03999999910593033
         ]
       },
       "before": {
@@ -24,7 +30,16 @@
           1.0
         ],
         "screen_sizes": [
-          0.0
+          2.0
+        ]
+      },
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.28,
+          0.12,
+          0.04
         ]
       }
     }

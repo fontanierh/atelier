@@ -3,19 +3,25 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/HD_P_bicycle.uasset": "7585d0fc5dc87bfefea270bc9524afdebc16109cc1c5e4b650122b7fe69dc85d"
+    "unreal/Content/Japan/Assets/HD_P_bicycle.uasset": "11f82007ffcb9ee75161c2d4650a5c7a12a6b1d6d20e5c810908383230fbc725"
   },
-  "input_fingerprint": "7aa54c3bd3d10fd6af2a219f3863b33afcc2a3a3762cc6fe66f6aea6487c2869",
+  "input_fingerprint": "072d4af9b84be984063016fed8ca125e7da1a9fed8a9e5038b0905942546d25d",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/HD_P_bicycle": {
       "after": {
-        "count": 1,
+        "count": 4,
         "reductions": [
-          1.0
+          1.0,
+          0.3499999940395355,
+          0.11999999731779099,
+          0.03999999910593033
         ],
         "screen_sizes": [
-          0.0
+          1.0,
+          0.2800000011920929,
+          0.11999999731779099,
+          0.03999999910593033
         ]
       },
       "before": {
@@ -25,6 +31,15 @@
         ],
         "screen_sizes": [
           2.0
+        ]
+      },
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.28,
+          0.12,
+          0.04
         ]
       }
     }

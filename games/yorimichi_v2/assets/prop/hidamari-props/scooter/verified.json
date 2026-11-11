@@ -3,19 +3,25 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/HD_P_scooter.uasset": "5f36695f4d2c46b08acf136542b12c9aa5346a40b57b4c25fa53816f6c1b8ea2"
+    "unreal/Content/Japan/Assets/HD_P_scooter.uasset": "1e4d5d37f7195bcc089745d82640f489b1b16fb0a497fbfa04afd2bb357483e0"
   },
-  "input_fingerprint": "756dd5ce7d6fe6d93d78c0a6ae969341a9c54fe9d4984f85f943327d6953d357",
+  "input_fingerprint": "c6192e99695b0e2d417365dcdf61624bf918e86f44fbd34dc64c04feca6dc27b",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/HD_P_scooter": {
       "after": {
-        "count": 1,
+        "count": 4,
         "reductions": [
-          1.0
+          1.0,
+          0.3499999940395355,
+          0.11999999731779099,
+          0.03999999910593033
         ],
         "screen_sizes": [
-          0.0
+          1.0,
+          0.2800000011920929,
+          0.11999999731779099,
+          0.03999999910593033
         ]
       },
       "before": {
@@ -25,6 +31,15 @@
         ],
         "screen_sizes": [
           2.0
+        ]
+      },
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.28,
+          0.12,
+          0.04
         ]
       }
     }

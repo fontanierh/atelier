@@ -3,19 +3,25 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/TH_P_crate_desk.uasset": "3b03f08f99dbeb5c8db66bc95a96f6a8dbea81464446aa2325fae199f87e23fa"
+    "unreal/Content/Japan/Assets/TH_P_crate_desk.uasset": "e4ab778fe0872b03b5e3b48e4cba519558a526923f49a980fbae6affad98a65b"
   },
-  "input_fingerprint": "bc51817b47b7755d1f8c06ac12d229b2f8cfa47d866c5fa93acce544986d37bf",
+  "input_fingerprint": "9f687dc8ecfe980d41747b36d80f55d455621960603ceeb283459c3caf305d45",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/TH_P_crate_desk": {
       "after": {
-        "count": 1,
+        "count": 4,
         "reductions": [
-          1.0
+          1.0,
+          0.3499999940395355,
+          0.11999999731779099,
+          0.03999999910593033
         ],
         "screen_sizes": [
-          0.0
+          1.0,
+          0.2800000011920929,
+          0.11999999731779099,
+          0.03999999910593033
         ]
       },
       "before": {
@@ -24,7 +30,16 @@
           1.0
         ],
         "screen_sizes": [
-          0.0
+          2.0
+        ]
+      },
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.28,
+          0.12,
+          0.04
         ]
       }
     }

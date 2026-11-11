@@ -3,19 +3,25 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/HD_P_hokora.uasset": "f2cb9cac834470cf9413dd73bbfe2fe5290b3ec9317625abf3d067d3e929bf9e"
+    "unreal/Content/Japan/Assets/HD_P_hokora.uasset": "5595837b6fef839cd6b8d45ca6c71db8c1ee6bbf6c25890f552e507595c32c38"
   },
-  "input_fingerprint": "f911a5e42647cd94f3eb39a1ffac65f7cbf05f1f49641870cf5f37896202ca93",
+  "input_fingerprint": "f4157c3bf3c36e260918219a126ae1454b70e03dab0a360af7751abfbb3129c5",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/HD_P_hokora": {
       "after": {
-        "count": 1,
+        "count": 4,
         "reductions": [
-          1.0
+          1.0,
+          0.3499999940395355,
+          0.11999999731779099,
+          0.03999999910593033
         ],
         "screen_sizes": [
-          0.0
+          1.0,
+          0.2800000011920929,
+          0.11999999731779099,
+          0.03999999910593033
         ]
       },
       "before": {
@@ -24,7 +30,16 @@
           1.0
         ],
         "screen_sizes": [
-          0.0
+          2.0
+        ]
+      },
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.28,
+          0.12,
+          0.04
         ]
       }
     }

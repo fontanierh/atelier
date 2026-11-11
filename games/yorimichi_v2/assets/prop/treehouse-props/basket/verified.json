@@ -3,19 +3,25 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/TH_P_basket.uasset": "5197e1225d66933e91c931b6bfe8e527f88c1fab1a9a2406900ee3ebf6b3b470"
+    "unreal/Content/Japan/Assets/TH_P_basket.uasset": "d1f74c2c4326f021e20a176ae7a36b5aab4d9415eeb066ab70def5d6aeee90ec"
   },
-  "input_fingerprint": "2ce0f7c6f5cdd7a2282954017e03c8bc8453dec5162d430364c76a40df231616",
+  "input_fingerprint": "0d20eb9396f4040d8e1463a13b9d7aa27c9606193df35b3545e88d4e5a0e051d",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/TH_P_basket": {
       "after": {
-        "count": 1,
+        "count": 4,
         "reductions": [
-          1.0
+          1.0,
+          0.3499999940395355,
+          0.11999999731779099,
+          0.03999999910593033
         ],
         "screen_sizes": [
-          0.0
+          1.0,
+          0.2800000011920929,
+          0.11999999731779099,
+          0.03999999910593033
         ]
       },
       "before": {
@@ -25,6 +31,15 @@
         ],
         "screen_sizes": [
           2.0
+        ]
+      },
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.28,
+          0.12,
+          0.04
         ]
       }
     }

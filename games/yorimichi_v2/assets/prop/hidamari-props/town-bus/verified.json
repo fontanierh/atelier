@@ -3,19 +3,25 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/HD_P_town_bus.uasset": "02058c90a635628d3eae0b24e0fbfbc399b0fa5b4778c9f262a31d59af564ffc"
+    "unreal/Content/Japan/Assets/HD_P_town_bus.uasset": "a1728c8e6f6f53a357563c41facf404115fc267d946af33c01c7c1d9fe56cc2d"
   },
-  "input_fingerprint": "384d9f1ced4ed9ece35aa385ac6aa123a7fd45705f517e901b1c2541ed134dd0",
+  "input_fingerprint": "3aec6649eed38173bda8cb983204a4fa7990e39488dda4ad5ad9f32344ce1124",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/HD_P_town_bus": {
       "after": {
-        "count": 1,
+        "count": 4,
         "reductions": [
-          1.0
+          1.0,
+          0.3499999940395355,
+          0.11999999731779099,
+          0.03999999910593033
         ],
         "screen_sizes": [
-          0.0
+          1.0,
+          0.2800000011920929,
+          0.11999999731779099,
+          0.03999999910593033
         ]
       },
       "before": {
@@ -24,7 +30,16 @@
           1.0
         ],
         "screen_sizes": [
-          0.0
+          2.0
+        ]
+      },
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.28,
+          0.12,
+          0.04
         ]
       }
     }

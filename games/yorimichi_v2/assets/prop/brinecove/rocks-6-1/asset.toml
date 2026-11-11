@@ -21,6 +21,8 @@ slot_materials = ["/Game/Brinecove/Materials/MI_BC_blossom", "/Game/Brinecove/Ma
 triangles = 22495
 collision = "complex"
 full_precision_uvs = true
+apply_lods = true
+lods = [[1.0, 1.0], [0.45, 0.3], [0.18, 0.12]]
 
 [[outputs]]
 package = "/Game/Brinecove/Meshes/SM_BC_Rocks_6_1"

@@ -3,19 +3,25 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/HD_P_produce_stand.uasset": "a3571e8142d68f26234520812e6f887afb6ec89e87e4254bd6bbd61929d6b56d"
+    "unreal/Content/Japan/Assets/HD_P_produce_stand.uasset": "db96626c1bec5386cc8c24baf39829a3d0d478a150a3a5b0d5a020b88583031f"
   },
-  "input_fingerprint": "4069be7eeded817dd8c63bf31d5094fc069d85049494a6fb2e87f011dfe964fe",
+  "input_fingerprint": "b984f19ffa76aff669313575fd472bbcc3676d1e2ad9d07fc18d66f0828a405c",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/HD_P_produce_stand": {
       "after": {
-        "count": 1,
+        "count": 4,
         "reductions": [
-          1.0
+          1.0,
+          0.3499999940395355,
+          0.11999999731779099,
+          0.03999999910593033
         ],
         "screen_sizes": [
-          0.0
+          1.0,
+          0.2800000011920929,
+          0.11999999731779099,
+          0.03999999910593033
         ]
       },
       "before": {
@@ -24,7 +30,16 @@
           1.0
         ],
         "screen_sizes": [
-          0.0
+          2.0
+        ]
+      },
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.28,
+          0.12,
+          0.04
         ]
       }
     }

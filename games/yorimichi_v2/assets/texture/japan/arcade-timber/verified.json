@@ -3,9 +3,9 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Textures/T_Arcade_timber.uasset": "5568595cecfc54bd9ebb26f85534e197da926e7127a7a5effd07c9dbef4915c1"
+    "unreal/Content/Japan/Textures/T_Arcade_timber.uasset": "c202ec4fff3cd2cfb01560db9275bfb14e0d20d983d925cc95cb823e8ba53feb"
   },
-  "input_fingerprint": "9d66d950e209f4447e07f339f7e33b276ae1ada61203a7eaad24754c24905e44",
+  "input_fingerprint": "8d109c706c021d4198a7cd16082665337eaf126049acf039f2cff98914bf80e7",
   "kind": "imported",
   "schema": 1,
   "tool": "texture@1"

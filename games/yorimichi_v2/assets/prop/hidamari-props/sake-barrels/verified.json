@@ -3,19 +3,25 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/HD_P_sake_barrels.uasset": "613edba28cdb18e1800eeb64d6885c16ae50770b5aef257283e6738e469a310b"
+    "unreal/Content/Japan/Assets/HD_P_sake_barrels.uasset": "26531dc34c8e64793a882ab432706ea5e039d621cb337d87da283a6c41178871"
   },
-  "input_fingerprint": "22643f9b7fd5a40aad569596275caf6bb42e73edd28e5a6769fd0b23901a1ae3",
+  "input_fingerprint": "c0f53ea068e4e84f3ac4d9a5f7ad0dc30997d790939dbb680e8642a0ad8df130",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/HD_P_sake_barrels": {
       "after": {
-        "count": 1,
+        "count": 4,
         "reductions": [
-          1.0
+          1.0,
+          0.3499999940395355,
+          0.11999999731779099,
+          0.03999999910593033
         ],
         "screen_sizes": [
-          0.0
+          1.0,
+          0.2800000011920929,
+          0.11999999731779099,
+          0.03999999910593033
         ]
       },
       "before": {
@@ -24,7 +30,16 @@
           1.0
         ],
         "screen_sizes": [
-          0.0
+          2.0
+        ]
+      },
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.28,
+          0.12,
+          0.04
         ]
       }
     }

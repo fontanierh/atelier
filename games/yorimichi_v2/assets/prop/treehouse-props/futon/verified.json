@@ -3,19 +3,25 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/TH_P_futon.uasset": "d6ba70b644ab25220a438edece7a5f345357ead5a3b500a0d23df3c7d5231d54"
+    "unreal/Content/Japan/Assets/TH_P_futon.uasset": "a64c2b2962a4ffed4215716a4dbcf34afe9aee351ed49630905f31dd117d19f6"
   },
-  "input_fingerprint": "065f875d065e2b65c060bd562a69af3e41e7ed9f3afa5401f92df660458abdcd",
+  "input_fingerprint": "9bb0b513b19c3d08dd1280b6e7a7bdd3e691af3925d50b0efa7140e9d030e13d",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/TH_P_futon": {
       "after": {
-        "count": 1,
+        "count": 4,
         "reductions": [
-          1.0
+          1.0,
+          0.3499999940395355,
+          0.11999999731779099,
+          0.03999999910593033
         ],
         "screen_sizes": [
-          0.0
+          1.0,
+          0.2800000011920929,
+          0.11999999731779099,
+          0.03999999910593033
         ]
       },
       "before": {
@@ -25,6 +31,15 @@
         ],
         "screen_sizes": [
           2.0
+        ]
+      },
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.28,
+          0.12,
+          0.04
         ]
       }
     }

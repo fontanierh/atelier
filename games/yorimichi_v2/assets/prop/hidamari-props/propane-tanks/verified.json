@@ -3,19 +3,25 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/HD_P_propane_tanks.uasset": "d8cbbe2671772d15295904bbcb1e95a0b4b01437790b24220014ed9920c29d2b"
+    "unreal/Content/Japan/Assets/HD_P_propane_tanks.uasset": "a215cbd67a51d9ced1664b5c8fda29ae902912d480e5d06160e40dee3cb7e092"
   },
-  "input_fingerprint": "64e873f4c441e9ace95e26df683fbfbfc41d0a4b4968313b61864f86117748d6",
+  "input_fingerprint": "1c5dce7d348cda6ba71a2d86cb37efa2485884db69c065bb4b033168d8926b26",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/HD_P_propane_tanks": {
       "after": {
-        "count": 1,
+        "count": 4,
         "reductions": [
-          1.0
+          1.0,
+          0.3499999940395355,
+          0.11999999731779099,
+          0.03999999910593033
         ],
         "screen_sizes": [
-          0.0
+          1.0,
+          0.2800000011920929,
+          0.11999999731779099,
+          0.03999999910593033
         ]
       },
       "before": {
@@ -24,7 +30,16 @@
           1.0
         ],
         "screen_sizes": [
-          0.0
+          2.0
+        ]
+      },
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.28,
+          0.12,
+          0.04
         ]
       }
     }

@@ -3,19 +3,25 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/HD_P_curve_mirror.uasset": "3289671c1b457146836c72e9fdf6205b6e895eac55c5d562df3955e082ad5b2f"
+    "unreal/Content/Japan/Assets/HD_P_curve_mirror.uasset": "12011f15bdb93c6064ecc6f5b0b7f9ee04707d08b30e313d6c4200171a2ba4cf"
   },
-  "input_fingerprint": "476e9ed9ba4b2fb04c1978538ad325f428bcf8eb562f9e741a41b94729b852be",
+  "input_fingerprint": "79a4d977ef775d88537d9894e829f499795f0f26edfb850b88c0f723bdee506e",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/HD_P_curve_mirror": {
       "after": {
-        "count": 1,
+        "count": 4,
         "reductions": [
-          1.0
+          1.0,
+          0.3499999940395355,
+          0.11999999731779099,
+          0.03999999910593033
         ],
         "screen_sizes": [
-          0.0
+          1.0,
+          0.2800000011920929,
+          0.11999999731779099,
+          0.03999999910593033
         ]
       },
       "before": {
@@ -25,6 +31,15 @@
         ],
         "screen_sizes": [
           2.0
+        ]
+      },
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.28,
+          0.12,
+          0.04
         ]
       }
     }

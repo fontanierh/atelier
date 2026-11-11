@@ -3,19 +3,25 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/TH_P_backpack.uasset": "3f95b8aa87118946789e225bb93c965dbb7cf4ebfe04ae5ae521d83bf082715d"
+    "unreal/Content/Japan/Assets/TH_P_backpack.uasset": "e823ac88e0599fca4b2e0922f824df0f06f1e2aecc7443c1a1225ca9e88580c1"
   },
-  "input_fingerprint": "4621b442dc00cb4697d93f102b09820173db450fb02c9a1fd2913ef69ee27d7c",
+  "input_fingerprint": "58a00060ec8caa3fdbcf3ea03bbfedebd2d6b764a8e954fec04635df3e297df4",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/TH_P_backpack": {
       "after": {
-        "count": 1,
+        "count": 4,
         "reductions": [
-          1.0
+          1.0,
+          0.3499999940395355,
+          0.11999999731779099,
+          0.03999999910593033
         ],
         "screen_sizes": [
-          0.0
+          1.0,
+          0.2800000011920929,
+          0.11999999731779099,
+          0.03999999910593033
         ]
       },
       "before": {
@@ -25,6 +31,15 @@
         ],
         "screen_sizes": [
           2.0
+        ]
+      },
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.28,
+          0.12,
+          0.04
         ]
       }
     }

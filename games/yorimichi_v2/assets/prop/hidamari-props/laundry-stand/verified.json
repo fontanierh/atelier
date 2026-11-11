@@ -3,19 +3,25 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/HD_P_laundry_stand.uasset": "bc9b24f3ab7af38e7d053279ca6bcdbc2e69f0bc8165f50d39610e779af7e54e"
+    "unreal/Content/Japan/Assets/HD_P_laundry_stand.uasset": "c21c9da690c9c80d010551259e12b62295ddda751b1952157bcdbf3392bd03f2"
   },
-  "input_fingerprint": "40504801e5cdde4c271b775ae14d2cf2de3f80265dae56a306aa70cb12ca8624",
+  "input_fingerprint": "cf401ea3d02fc337b24446f566a4025b270d64ddf2986fab4869ac00ada8bce1",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/HD_P_laundry_stand": {
       "after": {
-        "count": 1,
+        "count": 4,
         "reductions": [
-          1.0
+          1.0,
+          0.3499999940395355,
+          0.11999999731779099,
+          0.03999999910593033
         ],
         "screen_sizes": [
-          0.0
+          1.0,
+          0.2800000011920929,
+          0.11999999731779099,
+          0.03999999910593033
         ]
       },
       "before": {
@@ -25,6 +31,15 @@
         ],
         "screen_sizes": [
           2.0
+        ]
+      },
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.28,
+          0.12,
+          0.04
         ]
       }
     }

@@ -3,19 +3,25 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/TH_P_telescope.uasset": "41635a7041524910759bea294d3c00942049553b84a010d27f8e166ce0aaca74"
+    "unreal/Content/Japan/Assets/TH_P_telescope.uasset": "3cb2527fe2695a9b604ebd64b900cfe4d797fde402ef25b63799fcba5ee3ce3d"
   },
-  "input_fingerprint": "c260d8c05909a09113556e96b514552a443ed7f42ca4d1b40ebafd6b4b94b511",
+  "input_fingerprint": "d0a49359fb8cfa31fd5865e99bf14ee860f9ef000bf092397a989e82e7548f9e",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/TH_P_telescope": {
       "after": {
-        "count": 1,
+        "count": 4,
         "reductions": [
-          1.0
+          1.0,
+          0.3499999940395355,
+          0.11999999731779099,
+          0.03999999910593033
         ],
         "screen_sizes": [
-          0.0
+          1.0,
+          0.2800000011920929,
+          0.11999999731779099,
+          0.03999999910593033
         ]
       },
       "before": {
@@ -25,6 +31,15 @@
         ],
         "screen_sizes": [
           2.0
+        ]
+      },
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.28,
+          0.12,
+          0.04
         ]
       }
     }

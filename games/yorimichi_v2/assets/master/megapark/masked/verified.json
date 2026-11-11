@@ -1,13 +1,13 @@
 {
   "asset": "master/megapark/masked",
   "dependencies": {
-    "adopted/megapark/shared-textures-common": "f279797ca888677031e0d50ea2bc2308950faf90caa3822a71f98aee26a7882c"
+    "adopted/megapark/shared-textures-common": "f716661a7d836da63b97d6155a910c9fa025f5fb82881066b78c9276fb39a20c"
   },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/MegaPark/Materials/M_RetailMasked.uasset": "7d610695140840baeb0c6c3883bd7793002494b242953c529005b00260c34052"
+    "unreal/Content/MegaPark/Materials/M_RetailMasked.uasset": "6b064c30a2a860298395d3c31ac4b3cb858237fcf77608dad9d744e966770665"
   },
-  "input_fingerprint": "c613063e566c9403e8bfff6fc5789d1d32de09258b17950d1d6caa9e507d2c7d",
+  "input_fingerprint": "810b48f5c1ba1f8c4f70fe1812aa3dc01e5d01d56a86bf363af3ce0513e5d062",
   "kind": "imported",
   "schema": 1,
   "tool": "material-master@1"

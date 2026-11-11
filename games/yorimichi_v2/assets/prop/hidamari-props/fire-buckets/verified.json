@@ -3,19 +3,25 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/HD_P_fire_buckets.uasset": "c0fab874e438a7a6af5b96d15a35da7fe895e8d503db6a6d5c6ccc7824d6a56d"
+    "unreal/Content/Japan/Assets/HD_P_fire_buckets.uasset": "6dfca509f4d051ec6d8c85625738e0d00a439ce2f6d96debc1b968cc3ef25ecf"
   },
-  "input_fingerprint": "b1ef4a59796ae9adfec9d991ea513445298fe11c890dc83383b5ab4e5ed4b118",
+  "input_fingerprint": "2f4088f17922c3754b883b3aed07e1a64442d6f2167e134663b9198b14bda726",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/HD_P_fire_buckets": {
       "after": {
-        "count": 1,
+        "count": 4,
         "reductions": [
-          1.0
+          1.0,
+          0.3499999940395355,
+          0.11999999731779099,
+          0.03999999910593033
         ],
         "screen_sizes": [
-          0.0
+          1.0,
+          0.2800000011920929,
+          0.11999999731779099,
+          0.03999999910593033
         ]
       },
       "before": {
@@ -24,7 +30,16 @@
           1.0
         ],
         "screen_sizes": [
-          0.0
+          2.0
+        ]
+      },
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.28,
+          0.12,
+          0.04
         ]
       }
     }

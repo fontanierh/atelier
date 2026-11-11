@@ -3,19 +3,25 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/HD_P_bus_stop.uasset": "a285272ec8cb22c3c3b9175b574f3fa2fddc135d54f768dcffcdc6e9b1497455"
+    "unreal/Content/Japan/Assets/HD_P_bus_stop.uasset": "371eedb9b000cd1fb33953d4242301b2c7594868f76f2d3edeedf897cd731641"
   },
-  "input_fingerprint": "2f62ea390dad6e4ecd42c5cfabeceed8fbf0b886622cd7b9c27a74c3d9091d0e",
+  "input_fingerprint": "71938f765eed6b070b32753efd863d38a2bfd45f0ad84e18a79d1eca6b1fa998",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/HD_P_bus_stop": {
       "after": {
-        "count": 1,
+        "count": 4,
         "reductions": [
-          1.0
+          1.0,
+          0.3499999940395355,
+          0.11999999731779099,
+          0.03999999910593033
         ],
         "screen_sizes": [
-          0.0
+          1.0,
+          0.2800000011920929,
+          0.11999999731779099,
+          0.03999999910593033
         ]
       },
       "before": {
@@ -24,7 +30,16 @@
           1.0
         ],
         "screen_sizes": [
-          0.0
+          2.0
+        ]
+      },
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.28,
+          0.12,
+          0.04
         ]
       }
     }

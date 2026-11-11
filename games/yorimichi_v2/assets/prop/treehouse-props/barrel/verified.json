@@ -3,19 +3,25 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/TH_P_barrel.uasset": "36d1a65d5a234c580ef85e4cc2590bba56535f5b44c01bea97cf3c6aca042d28"
+    "unreal/Content/Japan/Assets/TH_P_barrel.uasset": "b0e1b12100e99cb3fc51c8130f7013615d4a545f9edabd5b624a2c7a0aa245fd"
   },
-  "input_fingerprint": "e53a27f999d1527563df53a582a8f04870449c697a7d86220cb77b80ccae8510",
+  "input_fingerprint": "37f70be8ceccf14ab47a51ae5d2e455169aecc495b339df67f85fba428485e41",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/TH_P_barrel": {
       "after": {
-        "count": 1,
+        "count": 4,
         "reductions": [
-          1.0
+          1.0,
+          0.3499999940395355,
+          0.11999999731779099,
+          0.03999999910593033
         ],
         "screen_sizes": [
-          0.0
+          1.0,
+          0.2800000011920929,
+          0.11999999731779099,
+          0.03999999910593033
         ]
       },
       "before": {
@@ -24,7 +30,16 @@
           1.0
         ],
         "screen_sizes": [
-          0.0
+          2.0
+        ]
+      },
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.28,
+          0.12,
+          0.04
         ]
       }
     }

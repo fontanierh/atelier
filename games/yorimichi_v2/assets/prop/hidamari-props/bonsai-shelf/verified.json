@@ -3,19 +3,25 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/HD_P_bonsai_shelf.uasset": "58c8db34252989890346a78c27c88ecda88133041abd4b4f72d04e40cb532e7b"
+    "unreal/Content/Japan/Assets/HD_P_bonsai_shelf.uasset": "3d6702a20f592fc3690cc211281fa7431e4f27841279acf8287b78f329ffbc45"
   },
-  "input_fingerprint": "6e488c6be27002e8aa262972999ef6bfd9456697cf1776ecda4cf365763f6e03",
+  "input_fingerprint": "4809c6e7326ae013103f089ce70c7da4767cbd740d1ba3733a353f78f6eed4aa",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/HD_P_bonsai_shelf": {
       "after": {
-        "count": 1,
+        "count": 4,
         "reductions": [
-          1.0
+          1.0,
+          0.3499999940395355,
+          0.11999999731779099,
+          0.03999999910593033
         ],
         "screen_sizes": [
-          0.0
+          1.0,
+          0.2800000011920929,
+          0.11999999731779099,
+          0.03999999910593033
         ]
       },
       "before": {
@@ -24,7 +30,16 @@
           1.0
         ],
         "screen_sizes": [
-          0.0
+          2.0
+        ]
+      },
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.28,
+          0.12,
+          0.04
         ]
       }
     }

@@ -3,9 +3,9 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Textures/T_Harbor_timber.uasset": "f6100b37d352e1b98751632448b9a48f02a61cc26b96eed66f0c7fc6527eb117"
+    "unreal/Content/Japan/Textures/T_Harbor_timber.uasset": "bce18b2d21fc0ad5eef56a86e2a7b16504edfe6c6bf9e81c901de7c305ab931a"
   },
-  "input_fingerprint": "e75c5377b23719217707950a3f0d9e25f71a3c03746fc48e7d7ecbc9955c363a",
+  "input_fingerprint": "cb2a485151ba3ffc4ff4efdab43a25a147f3a7434b3159bb3bcef77c7eae544c",
   "kind": "imported",
   "schema": 1,
   "tool": "texture@1"

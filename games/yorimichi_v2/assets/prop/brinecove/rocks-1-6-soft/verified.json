@@ -3,19 +3,23 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Brinecove/Meshes/SM_BC_Rocks_1_6_Soft.uasset": "50e7d486d7bb7c492c12236f5f84a420c9f6e7e6dcc765058b3e9d925aa4362b"
+    "unreal/Content/Brinecove/Meshes/SM_BC_Rocks_1_6_Soft.uasset": "f310b59ae524cc465eed1515238f523a6342bc1efda5a52bfb2f0e83d13a6b7b"
   },
-  "input_fingerprint": "b4261e2c5583d60982b95e1b081b881f9630dda0e70daed5b8b4b0d943b2a825",
+  "input_fingerprint": "cea0fc7d8b1dee8eba9f2fdd130c0d6f95feac137c83a3d5a00332b7a39cd4cb",
   "kind": "imported",
   "lods": {
     "/Game/Brinecove/Meshes/SM_BC_Rocks_1_6_Soft": {
       "after": {
-        "count": 1,
+        "count": 3,
         "reductions": [
-          1.0
+          1.0,
+          0.44999998807907104,
+          0.18000000715255737
         ],
         "screen_sizes": [
-          0.0
+          1.0,
+          0.30000001192092896,
+          0.11999999731779099
         ]
       },
       "before": {
@@ -25,6 +29,14 @@
         ],
         "screen_sizes": [
           2.0
+        ]
+      },
+      "target": {
+        "count": 3,
+        "screen_sizes": [
+          1.0,
+          0.3,
+          0.12
         ]
       }
     }

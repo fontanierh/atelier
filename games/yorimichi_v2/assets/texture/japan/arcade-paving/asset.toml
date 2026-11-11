@@ -11,7 +11,7 @@ provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DEC
 
 [[sources]]
 path = "src/T_Arcade_paving.png"
-sha256 = "0cf002e567a081c1e32ff1c9ae56d70f3bd91d1d728d9f32fe358d2dda3df264"
+sha256 = "ec949500db95fa0972de72f33e511fae3875f5ca871f22378ac360dcb9f38044"
 
 [recipe]
 importer = "texture"
@@ -21,8 +21,9 @@ version = 1
 srgb = true
 max_texture_size = 1024
 lod_group = "TEXTUREGROUP_WORLD"
-compression = "TC_EDITOR_ICON"
+compression = "TC_DEFAULT"
 address = "mirror"
+mip_gen = "TMGS_FROM_TEXTURE_GROUP"
 
 [[outputs]]
 package = "/Game/Japan/Textures/T_Arcade_paving"

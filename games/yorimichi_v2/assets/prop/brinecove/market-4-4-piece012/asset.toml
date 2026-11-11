@@ -21,6 +21,8 @@ slot_materials = ["/Game/Brinecove/Materials/MI_BC_canvas", "/Game/Brinecove/Mat
 triangles = 16592
 collision = "complex"
 full_precision_uvs = true
+apply_lods = true
+lods = [[1.0, 1.0], [0.45, 0.3], [0.18, 0.12]]
 
 [[outputs]]
 package = "/Game/Brinecove/Meshes/SM_BC_Market_4_4_Piece012"

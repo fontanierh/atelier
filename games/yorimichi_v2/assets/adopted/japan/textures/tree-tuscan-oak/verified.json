@@ -1,10 +1,12 @@
 {
   "asset": "adopted/japan/textures/tree-tuscan-oak",
-  "dependencies": {},
+  "dependencies": {
+    "adopted/japan/materials/base-materials": "cf8c1d285e35a9b944ae8db9f167ba98559f618d588660673d5c24ac43b048ba"
+  },
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/Japan/Textures/T_Tree_Tuscan_Oak_colour.uasset": "c7316713f489aa4339c01409013cea735e44ac02963e125e1e7230228f92dafd",
-    "unreal/Content/Japan/Textures/T_Tree_Tuscan_Oak_normal.uasset": "85423e6aeeb0dac40248debcff90a8da157e25d536ac6b937770b608ae613f53"
+    "unreal/Content/Japan/Textures/T_Tree_Tuscan_Oak_normal.uasset": "211d0842771343e71ca3d426c14728662b12452fc34bfd9e6716cfe21deff2c3"
   },
   "kind": "editor-saved",
   "schema": 1

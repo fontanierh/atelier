@@ -1,16 +1,16 @@
 {
   "asset": "material/megapark/seam-two-sided-instances",
   "dependencies": {
-    "adopted/megapark/shared-textures-common": "f279797ca888677031e0d50ea2bc2308950faf90caa3822a71f98aee26a7882c",
+    "adopted/megapark/shared-textures-common": "f716661a7d836da63b97d6155a910c9fa025f5fb82881066b78c9276fb39a20c",
     "adopted/megapark/shared-textures-dirtgravel": "a2d69e34b75bd972a51732e601e539f2582804a59128af4580aec2ab8cd7b1bd",
-    "master/megapark/opaque": "4b3c2b4c4994113316d36ae629854073ab22f272d1a7f1e79520e05a7f709e5b"
+    "master/megapark/opaque": "d2d524eb55f91ee5ea3596813237468202bdf1f5e17b1f1474b136c70133e200"
   },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/MegaPark/Materials/MI_4cef5bb305cb09eb_Seam.uasset": "52d7cc240dca2ffb2a2e7d003bad680c4b1a7925a64fa339f4e76f2d63d8c410",
-    "unreal/Content/MegaPark/Materials/MI_b4686eeb54647811_Seam.uasset": "da394b306cb86766f378c4e95b417fc6bdec5d3756c6a84e6283d25ac2e91fba"
+    "unreal/Content/MegaPark/Materials/MI_4cef5bb305cb09eb_Seam.uasset": "2832a3c0f12b5f8d9297db2661e81fe49bbdf673588316d3d13a5d3fbd20ae2f",
+    "unreal/Content/MegaPark/Materials/MI_b4686eeb54647811_Seam.uasset": "f6d7f888f11b83e65e49adc0f18b0bc77e156944b6a3fda8d43a806ce630bf34"
   },
-  "input_fingerprint": "f03aab3c4e468f19aa3211d819efe61a8f1fcc7b2b87553d4111de4713f96378",
+  "input_fingerprint": "3200809e97b374422a3758645d7bf17abdba61e4323cad0daaa868eedca43906",
   "kind": "imported",
   "schema": 1,
   "tool": "material-instance@2"

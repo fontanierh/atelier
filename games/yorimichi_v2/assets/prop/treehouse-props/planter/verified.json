@@ -3,19 +3,25 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/TH_P_planter.uasset": "b3522f06373b3c843361184fdb6bfb08bf38ba2364587220146531a2c544ad63"
+    "unreal/Content/Japan/Assets/TH_P_planter.uasset": "b41b39bc94de9f8d6a4e1ca941085ad76dc7d9cf64601b560c5f757f9f52b9b7"
   },
-  "input_fingerprint": "7c9cf8244b632d45763811daa02d5b373a87109e107b0f951f22a335916e243a",
+  "input_fingerprint": "ed325f68eea7fef6029e9e266669bb48b915806e66ec55f9b5aec7fdb761a3a1",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/TH_P_planter": {
       "after": {
-        "count": 1,
+        "count": 4,
         "reductions": [
-          1.0
+          1.0,
+          0.3499999940395355,
+          0.11999999731779099,
+          0.03999999910593033
         ],
         "screen_sizes": [
-          0.0
+          1.0,
+          0.2800000011920929,
+          0.11999999731779099,
+          0.03999999910593033
         ]
       },
       "before": {
@@ -24,7 +30,16 @@
           1.0
         ],
         "screen_sizes": [
-          0.0
+          2.0
+        ]
+      },
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.28,
+          0.12,
+          0.04
         ]
       }
     }

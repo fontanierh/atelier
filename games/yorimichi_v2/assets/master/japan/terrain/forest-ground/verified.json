@@ -1,13 +1,13 @@
 {
   "asset": "master/japan/terrain/forest-ground",
   "dependencies": {
-    "adopted/japan/textures/ground": "184e0013594b69b4500ca3985b6a42ddfa5bbc946ba848b25694a9a236483cf0"
+    "adopted/japan/textures/ground": "41732c2386c7900c2e4b3eee9d4aef56af68e9fbd4b08dfda9e2ab6f038b5a9a"
   },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Materials/M_ForestGround.uasset": "79612d5e80b68f2de482f96d212a9c458ad0a091556a5af924b4dce463256d06"
+    "unreal/Content/Japan/Materials/M_ForestGround.uasset": "ded3641e79cbf602fc9654c0e70c7b3da25d9a2ddf2bde281509b9571981e877"
   },
-  "input_fingerprint": "d14b27619ad5a8eb7d374a1dd5beb7a6bc36a158cf8ad8d0b22bb80a63422927",
+  "input_fingerprint": "a2268137d7fcb8b7407721efd58e296c60c5754d7b751b967876fb31be39aace",
   "kind": "imported",
   "schema": 1,
   "tool": "material-master@1"

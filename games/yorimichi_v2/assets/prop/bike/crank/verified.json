@@ -3,19 +3,25 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/BK_Crank.uasset": "85fcbc6fe068620aea1da479cbe6465fe6df37786682429d4a7c5fe9263e3c37"
+    "unreal/Content/Japan/Assets/BK_Crank.uasset": "ed0fd0c5b7f0a66691806399e4f9adc25c8e45be7396bce12a5c0a2c61954653"
   },
-  "input_fingerprint": "f587e820dfe272976c814d9319aed4fc74bcd5c9b98a2582a84c1f0edb5cee21",
+  "input_fingerprint": "61e92bb4bd19c4be84cfdd844ab014152b049791f41df5883e294d42b22d5655",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/BK_Crank": {
       "after": {
-        "count": 1,
+        "count": 4,
         "reductions": [
-          1.0
+          1.0,
+          0.4000000059604645,
+          0.15000000596046448,
+          0.05000000074505806
         ],
         "screen_sizes": [
-          0.0
+          1.0,
+          0.3499999940395355,
+          0.15000000596046448,
+          0.05000000074505806
         ]
       },
       "before": {
@@ -25,6 +31,15 @@
         ],
         "screen_sizes": [
           2.0
+        ]
+      },
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.35,
+          0.15,
+          0.05
         ]
       }
     }

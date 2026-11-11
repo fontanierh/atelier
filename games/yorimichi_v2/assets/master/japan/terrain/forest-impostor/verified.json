@@ -1,13 +1,13 @@
 {
   "asset": "master/japan/terrain/forest-impostor",
   "dependencies": {
-    "adopted/japan/textures/ground": "184e0013594b69b4500ca3985b6a42ddfa5bbc946ba848b25694a9a236483cf0"
+    "adopted/japan/textures/ground": "41732c2386c7900c2e4b3eee9d4aef56af68e9fbd4b08dfda9e2ab6f038b5a9a"
   },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Materials/M_ForestImpostor.uasset": "bff8204d20ca51157f08456725ff73b6a732d2d1220151b9b9896f8312fcb3d4"
+    "unreal/Content/Japan/Materials/M_ForestImpostor.uasset": "21588896cdc31efa0da9f8df3b89eac320593c837b1030ea41f83aa15ee1e2a3"
   },
-  "input_fingerprint": "4c33d7612c8ee54431db7d05e8168d550f34ffcca725b07a4ee28ad7fab31707",
+  "input_fingerprint": "c5c9b0e3da9eaf117a25d393f6673bf811e2ef338eb52b27731bac77e94e0206",
   "kind": "imported",
   "schema": 1,
   "tool": "material-master@1"

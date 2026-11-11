@@ -1,10 +1,12 @@
 {
   "asset": "adopted/japan/textures/tree-forest-oak",
-  "dependencies": {},
+  "dependencies": {
+    "adopted/japan/materials/base-materials": "cf8c1d285e35a9b944ae8db9f167ba98559f618d588660673d5c24ac43b048ba"
+  },
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/Japan/Textures/T_Tree_Forest_Oak_colour.uasset": "900678c55df767b523e2d120f825d16345b9f187e1f142ba259653d7dccc5cf1",
-    "unreal/Content/Japan/Textures/T_Tree_Forest_Oak_normal.uasset": "10260bef00fe67ca65581291a78f916198d70f37c35833afe7eee4dfddf2f48f"
+    "unreal/Content/Japan/Textures/T_Tree_Forest_Oak_normal.uasset": "93894ab9699913c570af57fb741775f4b7cbbc7af4fd5d35b82658b423532f63"
   },
   "kind": "editor-saved",
   "schema": 1

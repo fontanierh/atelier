@@ -1,11 +1,9 @@
 {
   "asset": "adopted/megapark/cell-x150-zm850",
-  "dependencies": {
-    "adopted/megapark/base-materials": "81b0e86814e67e23a3f2758823ec3ba2fc6621d9e30cbc70a96871e8471cf80b"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/MegaPark/Meshes/SM_MP_23BEE1BECD19BE5A.uasset": "4d8f741675719ff8aebf862f2b66efc9907d0a9b33f34435e048da7f2dbe2b5a",
+    "unreal/Content/MegaPark/Meshes/SM_MP_23BEE1BECD19BE5A.uasset": "9eba73d057333dd2f36a933d280b50be89459014997610a43560b36b2ca3e9c8",
     "unreal/Content/MegaPark/Meshes/UC_MP_550AC3210EC10CB1_0.uasset": "8c70f4a02faaefd5e0e0bd4da2e64fc39f58dbd6b5cc1d9802f0765a91ea8bd1"
   },
   "kind": "editor-saved",

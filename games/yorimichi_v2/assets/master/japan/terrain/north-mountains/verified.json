@@ -2,14 +2,14 @@
   "asset": "master/japan/terrain/north-mountains",
   "dependencies": {
     "adopted/japan/materials/base-materials": "cf8c1d285e35a9b944ae8db9f167ba98559f618d588660673d5c24ac43b048ba",
-    "adopted/japan/textures/ground": "184e0013594b69b4500ca3985b6a42ddfa5bbc946ba848b25694a9a236483cf0",
+    "adopted/japan/textures/ground": "41732c2386c7900c2e4b3eee9d4aef56af68e9fbd4b08dfda9e2ab6f038b5a9a",
     "adopted/japan/textures/rock": "e13de1a26d0e34c21956b25b98b10f48aa3c4b18d29e627e521fb1531d668038"
   },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Materials/M_NorthMountains.uasset": "8fa710882f2aa73e4d5fae4ef4340d0430553919cfc160300988fc01327a7fe1"
+    "unreal/Content/Japan/Materials/M_NorthMountains.uasset": "2e685e0c60d6482c07e7f81afd008a24dedc1d29a8c311542aa40f3a3d30c14b"
   },
-  "input_fingerprint": "c347940eb13ea5cd6563c3ef04d407834e382a62b32ceaad7eca43f3aa60a0e0",
+  "input_fingerprint": "e2796e26eeda644ebd6fc98919644f907b9c0f78d272489585032a5224d952a5",
   "kind": "imported",
   "schema": 1,
   "tool": "material-master@1"

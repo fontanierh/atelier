@@ -22,6 +22,9 @@ triangles = 8861
 collision = "simple_and_complex"
 hulls = 1
 collision_trace = "CTF_USE_SIMPLE_AS_COMPLEX"
+apply_lods = true
+lods = [[1.0, 1.0], [0.35, 0.28], [0.12, 0.12], [0.04, 0.04]]
+allow_cpu_access = false
 
 [[outputs]]
 package = "/Game/Japan/Assets/TH_P_crate_desk"

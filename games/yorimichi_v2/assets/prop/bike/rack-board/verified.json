@@ -3,19 +3,25 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/BK_RackBoard.uasset": "8144cd2963b2a9bf9963b4ebb033c0c9eaff8e39b43510f93f1382315910ac31"
+    "unreal/Content/Japan/Assets/BK_RackBoard.uasset": "71c07720fb636969989acca0dea35b6c96f4fad4c85a23d68999223f4c8ec772"
   },
-  "input_fingerprint": "406c90913e5ffef323b895d8f1484a32babaf4e549d7014b9f4d298087128b5d",
+  "input_fingerprint": "48316c9daca492bffbd70e19e78fcad314ce9488a4cddd8bfa45e1aae1855da1",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/BK_RackBoard": {
       "after": {
-        "count": 1,
+        "count": 4,
         "reductions": [
-          1.0
+          1.0,
+          0.4000000059604645,
+          0.15000000596046448,
+          0.05000000074505806
         ],
         "screen_sizes": [
-          0.0
+          1.0,
+          0.3499999940395355,
+          0.15000000596046448,
+          0.05000000074505806
         ]
       },
       "before": {
@@ -25,6 +31,15 @@
         ],
         "screen_sizes": [
           2.0
+        ]
+      },
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.35,
+          0.15,
+          0.05
         ]
       }
     }
