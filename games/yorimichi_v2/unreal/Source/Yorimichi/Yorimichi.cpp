@@ -64,15 +64,7 @@ class FYorimichiModule : public FDefaultGameModuleImpl
         }
 #endif
 
-#if !UE_BUILD_SHIPPING
-        // Default Performance mode streams a 1,344 m detail bubble (preserving cross-bay town and headland vistas in Brine Cove
-        // and Hidamari while cutting streamed cells ~80% vs 3 km Quality mode). JapanPreferences::Apply updates this dynamically
-        // for Laptop (640 m) or Quality (3 km) across editor -game and Development packaged builds.
-        if (!GIsEditor && !IsRunningCommandlet() && FApp::IsGame())
-        {
-            UWorldPartitionSubsystem::SetOverrideLoadingRange(TEXT("MainPartition"), 134400);
-        }
-#endif
+
 
         // An offscreen run (-RenderOffscreen: the captures, films and QA runs driven over the live bridge) has no window to
         // play in, so it never takes the mouse: no capture at launch and no lock to the hidden viewport, and the cursor stays

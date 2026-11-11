@@ -132,7 +132,7 @@ ACraterCloud* ACraterCloud::Spawn(UWorld* World, const FString& Path)
         Shell->bVisibleInRealTimeSkyCaptures = false;
         Shell->bVisibleInRayTracing = false;
         Shell->bReceivesDecals = false;
-        Shell->SetCullDistance(250000.f);
+        Shell->SetCullDistance(380000.f);
         // The veil samples the scene behind it, so it goes first; the plain shells then lay their white over it.
         Shell->TranslucencySortPriority = bVeil ? -1 : Index;
         Shell->CreateMeshSection_LinearColor(0, Vertices, Tris, Normals, TArray<FVector2D>(), TArray<FLinearColor>(),
