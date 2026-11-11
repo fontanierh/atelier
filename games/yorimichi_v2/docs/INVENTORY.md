@@ -8,6 +8,22 @@ acceptance and actual two-machine play remain open; see [the testing handoff](PA
 The source baseline `7eec0f98dd` is documented separately in [features](inventory/features.md) and
 [world](inventory/world.md); those pages describe the donor, not today's V2 completion state.
 
+## Post-handoff development checkpoint
+
+At main `082384e706` (2026-11-11), these follow-ups are merged:
+
+| Change | Source/content delivered | Verification limit |
+| --- | --- | --- |
+| [#836](https://github.com/fontanierh/atelier/pull/836) | Runtime tick, audio-probe, raycast and allocation changes | Compilation is recorded in the PR; this is not a measured whole-game frame-rate or memory improvement. |
+| [#837](https://github.com/fontanierh/atelier/pull/837) | Forward-renderer configuration, aspect-matched 1440p viewport, tree LOD defaults, streaming and lazy map/JSON loading | The settings and code are merged; a completed comparable runtime capture is still needed to quantify their effect. |
+| [#838](https://github.com/fontanierh/atelier/pull/838) | Foliage, treehouse, water and other material builders and saved imports; duplicate capture-CVar registration fixed | The import/check evidence is in the PR. Saved materials do not establish human visual acceptance. |
+
+These changes are later than the package above. The record census at this checkpoint is 7,662 asset records;
+the migration-handoff snapshots remain historical. Asset optimization continues separately; planned texture,
+mesh LOD or collision changes are not included here until merged. Further performance and visual work is
+owner-authorized normal development, not a reopening of the migration or whole-world splitting campaign.
+Use [measurement guidance](BUDGETS.md#recording-a-current-performance-run) for new evidence.
+
 ## How to read status
 
 - **Ported** means the implementation and its committed inputs are present in V2. It does not certify every
@@ -219,7 +235,7 @@ W10 shares W06's region scope; W19's stations belong to their host regions, so t
 | X01 | Phone streaming, Pixel Streaming, touch controls | Not ported. Plugins disabled in `YorimichiV2.uproject`; `YorimichiPhone`, the stream hooks in `WandererCharacter`, `JapanHUD`, `JapanGameMode` and the phone profile in `JapanPreferences` are removed from the V2 copy | deferred by owner |
 | X02 | Go-kart driving | Not ported. `Driving` disabled; `CarRide`, `JapanKartGrip`, kart HUD, animation and live hooks, and `/Game/Japan/Kart` stay out of V2 | deferred by owner |
 | X03 | Browser and mobile ports, Hakuba rendering experiments | Not implemented | deferred by owner |
-| X04 | New gameplay, engine upgrade, new art direction | Separate future work | deferred by owner |
+| X04 | New gameplay, engine upgrade, new art direction | Outside the migration scope; owner-authorized performance and visual follow-ups are tracked above | separate development |
 
 ## Keeping the status current
 

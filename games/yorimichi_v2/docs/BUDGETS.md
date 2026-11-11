@@ -42,3 +42,24 @@ and needs `--cook-memory-gib 20` (PARITY "Packaged slice").
   (not `up to date`) and wrote that log after the run began; each run keeps its own copy. The review found that an
   older log under an `up to date` build would otherwise pass. In the six C++ runs above the build ran the step each
   time (six `unreal.compile done in` lines). Only the last run's log was kept, and it holds the rebuilt file.
+
+## Recording a current performance run
+
+Use the existing guarded play/capture tools and the run already needed for the changed behavior. This does not
+require repeating the historical five-run slice campaign for routine changes.
+
+- Keep each attempt in a new output directory or under a unique tag. A retry must preserve prior captures,
+  stdout and receipts, including failed attempts. Write a failure summary after cleanup as well as a success summary.
+- Record the source revision, renderer and saved preferences, requested resolution, actual viewport/capture size,
+  memory ceiling and guard paths. A logical Retina window size is not proof of the render-target size.
+- Separate capacity queue time from admitted startup and playable-world readiness. A live-session registry entry
+  can exist while waiting for admission; it does not prove that Unreal started or the world became playable.
+  A readiness timeout spent in that queue is not a measured game startup failure.
+- Preserve both `memory-health.json` and `memory-health-tree.json` when the guard emits them. The first describes
+  the primary process; the aggregate tree can exceed its limit even when the primary peak is below that limit.
+  Report the guard's termination reason and cleanup result, not just one peak number.
+- A memory-limit termination before gameplay readiness is an incomplete attempt, not an accepted performance
+  result. A source change intended to reduce memory is not a measured reduction until a comparable run completes.
+
+The existing `tools/test/budgets.py` separates observed queue wait from its operation timing. Custom capture
+callers need the same distinction and must preserve the existing admission, deadlines and owned-process cleanup.

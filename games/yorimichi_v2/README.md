@@ -152,6 +152,14 @@ Routine play uses the saved renderer and tree-optimization preferences. If a ses
 use the supported `--memory-gib N` option (10–24), with its full admission reservation and a recorded reason;
 larger guarded sessions are already authorized. Do not force a heavier renderer for routine work.
 
+On main since [#837](https://github.com/fontanierh/atelier/pull/837), normal desktop play uses an
+aspect-matched scene target 1440 pixels high; its width follows the window aspect. The window's logical size
+on a Retina display is not the render-target size. Offscreen captures retain their requested `-resx`/`-resy`,
+and explicit non-1440p windowed launches retain their selected size. Check the `DESKTOP PREVIEW viewport=`
+log for managed desktop sessions and the actual image dimensions for captures. This describes the current
+source behavior; older packaged apps retain their own revision's behavior. Current merged changes and their
+acceptance limits are in [INVENTORY](docs/INVENTORY.md#post-handoff-development-checkpoint).
+
 `/Game/V2/Maps/TestMinimal` is the minimal World Partition map (`map/test-minimal`, `region/test-minimal`): it opens
 from a fresh checkout without donor content. Collaboration test results are kept in
 [docs/COLLABORATION_TESTS.md](docs/COLLABORATION_TESTS.md), the slice budgets in [docs/BUDGETS.md](docs/BUDGETS.md).
