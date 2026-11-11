@@ -50,7 +50,9 @@ float3 b=Texture2DSample(Tex,TexSampler,float2(p.x*.8-p.y*.6,p.x*.6+p.y*.8)*.2+.
 float3 d=a*lerp(1,b,.35*Macro);
 float2 w=P.xy*.0001;   // metres / 100
 float n=sin(w.x*3.1+sin(w.y*2.3)*1.7)*sin(w.y*2.7+sin(w.x*1.9)*1.3)+.5*sin(w.x*7.3-w.y*6.1);
-return L*lerp(1,d,Strength)*(1+.11*Macro*n)*Gain;
+float grass=saturate((L.g-max(L.r,L.b))*5.5);
+float3 meadow=lerp(float3(.85,.95,1.04),float3(1.15,1.07,.83),saturate(.5+.38*n));
+return L*lerp(1,d,Strength)*(1+.11*Macro*n)*lerp(float3(1,1,1),meadow,grass*.72)*Gain;
 '''
 
 GLOW_CODE = '''

@@ -568,19 +568,13 @@ void UJapanPreferences::Apply()
         Set(TEXT("r.Shadow.CSM.TransitionScale"),Laptop ? .25f : 1.f);
         Set(TEXT("r.DistanceFieldShadowing"),bForward || PerformanceMode ? 0.f : 1.f);
         Set(TEXT("foliage.LODDistanceScale"),PerformanceMode ? .75f : 1.f);
+#if !UE_BUILD_SHIPPING
         if (!GIsEditor && !IsRunningCommandlet())
         {
             const int32 WpRangeCm = Laptop ? 64000 : (PerformanceMode ? 134400 : -1);
-#if !UE_BUILD_SHIPPING
             UWorldPartitionSubsystem::SetOverrideLoadingRange(TEXT("MainPartition"), WpRangeCm);
-#else
-            if (GEngine && Owner && Owner->GetWorld())
-            {
-                GEngine->Exec(Owner->GetWorld(), *FString::Printf(
-                    TEXT("wp.Runtime.OverrideRuntimeSpatialHashLoadingRange grid=0 range=%d"), WpRangeCm));
-            }
-#endif
         }
+#endif
         AppliedPerformanceMode = ShadowProfile;
     }
     Set(TEXT("r.ContactShadows"),1.f);
@@ -596,7 +590,7 @@ void UJapanPreferences::Apply()
     // game's own: forward has no Lumen bounce, so the full sky light washed out the ambient and the water. A third of it,
     // no distance-field sky occlusion (the original generated no distance fields in forward) and a warm 3 lux harbor
     // fill standing in for the second directional light forward cannot render. Lumen keeps the full sky light.
-    Set(TEXT("r.SkylightIntensityMultiplier"), bForward ? .33f : 1.f);
+    Set(TEXT("r.SkylightIntensityMultiplier"), bForward ? .38f : 1.f);
     Set(TEXT("r.DistanceFieldAO"), bForward ? 0.f : 1.f);
     if (GEngine) GEngine->Exec(Owner->GetWorld(), bForward ? TEXT("japan.ForwardHarborFill 3") : TEXT("japan.ForwardHarborFill 0"));
     Owner->ApplyCameraPreferences(Get(TEXT("mouse")),Get(TEXT("cam_dist")),Get(TEXT("fov")));

@@ -158,10 +158,11 @@ float3 beer=lerp(%(body)s,lerp(%(mid_teal)s,%(shallow)s,exp(-l*.85)),exp(-l*.18)
 float slwVis=1.-smoothstep(8000.,22000.,D);
 float bodyWeight=lerp(1.,1.-exp(-l*.45),slwVis);
 float3 c=lerp(beer*bodyWeight,sky,fres);
-// Stylized Ghibli sun glints: smoothstepped dancing sparkles instead of sub-pixel capillary noise.
+// Stylized Ghibli sun glints: broad-swell normal prevents noisy capillary speckles while keeping crisp diamond sparkles.
 float3 sunDir=normalize(ResolvedView.DirectionalLightDirection.xyz+float3(0,0,1e-5));
-float sunAlign=dot(R,sunDir);
-float glint=(smoothstep(.991,.9975,sunAlign)*1.55+pow(saturate(sunAlign),96.)*.16)*(1.-smoothstep(25000.,180000.,D));
+float3 R_glint=reflect(-V,normalize(lerp(N,float3(0,0,1),.54)));
+float sunAlign=dot(R_glint,sunDir);
+float glint=(smoothstep(.9935,.9986,sunAlign)*1.45+pow(saturate(sunAlign),56.)*.20)*(1.-smoothstep(28000.,180000.,D));
 float3 sunTint=lerp(float3(1.,.92,.72),saturate(ResolvedView.DirectionalLightColor.rgb),.35);
 c+=glint*sunTint;
 // surf: sloped beach wash + vertical quay/pier/hull contact foam
@@ -171,7 +172,8 @@ float wob=.5+.25*sin(p.x*.83+p.y*.37+T*.6)+.25*sin(p.y*1.13-p.x*.51-T*.45);
 float edge=saturate(1-l/(w*(.55+.9*wob)));
 float surf=edge*edge*(3-2*edge)*(.7+.3*sin(T*1.2+l/w*4))*(1-smoothstep(%(far0)s,%(far1)s,D*.01));
 ''' + QUAY_FOAM_HLSL + '''
-float fleck=smoothstep(.58,.84,W.z)*(.6+.8*gust)*%(fleck)s;
+float streak=saturate(.5+.5*sin(dot(p,float2(-.95,-.30))*2.2+sin(dot(p,float2(.30,-.95))*.65)*1.7-T*.85));
+float fleck=smoothstep(.66,.88,W.z)*streak*(.5+.7*gust)*(1.-smoothstep(5500.,19000.,D))*%(fleck)s;
 float foamMask=saturate(max(max(surf,quayFoam),fleck));
 c=lerp(c,%(foam)s,foamMask);
 return lerp(c,%(far)s,1-exp(-D/%(haze)s));
@@ -308,8 +310,9 @@ float slwVis=1.-smoothstep(8000.,22000.,D);
 float bodyWeight=lerp(1.,1.-exp(-l*.45),slwVis);
 float3 baseInner=lerp(beer*bodyWeight*.65,sky,fres);
 float3 sunDir=normalize(ResolvedView.DirectionalLightDirection.xyz+float3(0,0,1e-5));
-float sunAlign=dot(R,sunDir);
-float glint=(smoothstep(.990,.997,sunAlign)*1.45+pow(saturate(sunAlign),84.)*.14)*(1.-smoothstep(22000.,150000.,D));
+float3 R_glint=reflect(-V,normalize(lerp(N,float3(0,0,1),.56)));
+float sunAlign=dot(R_glint,sunDir);
+float glint=(smoothstep(.993,.9985,sunAlign)*1.38+pow(saturate(sunAlign),52.)*.19)*(1.-smoothstep(24000.,150000.,D));
 float3 sunTint=lerp(float3(1.,.92,.72),saturate(ResolvedView.DirectionalLightColor.rgb),.35);
 baseInner+=glint*sunTint;
 float fp=max(abs(ddx(l)),abs(ddy(l)));
@@ -318,7 +321,8 @@ float wob=.5+.25*sin(p.x*.83+p.y*.37+T*.6)+.25*sin(p.y*1.13-p.x*.51-T*.45);
 float s_edge=saturate(1-l/(w*(.55+.9*wob)));
 float surf=s_edge*s_edge*(3-2*s_edge)*(.7+.3*sin(T*1.2+l/w*4))*(1-smoothstep(%(far0)s,%(far1)s,D*.01));
 ''' + QUAY_FOAM_HLSL + '''
-float fleck=smoothstep(.58,.84,W.z)*%(fleck)s*.5;
+float streak=saturate(.5+.5*sin(dot(p,float2(-.95,-.30))*2.1+sin(dot(p,float2(.30,-.95))*.65)*1.6-T*.8));
+float fleck=smoothstep(.67,.89,W.z)*streak*(1.-smoothstep(4500.,15000.,D))*%(fleck)s*.45;
 float3 harbor_foam=lerp(baseInner,%(foam)s,saturate(max(max(surf,quayFoam),fleck)));
 float3 inner=lerp(harbor_foam,%(far)s,H);
 return lerp(C,inner,E);

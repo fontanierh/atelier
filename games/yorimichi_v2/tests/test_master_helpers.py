@@ -110,7 +110,7 @@ HAZE_GLOW = ('float h=saturate(1-exp(-max(D-3000.0,0)/900000.0)); '
 # the traced donor calls, pinned by sha256 (see the module docstring)
 CAMP_TRACE = '90c93082edf27e81390cab4c2f49fec1c8e808e2803ba8a1b59ed0af1c392394'
 RONIN_TRACE = 'f564c737d7c2a5549a3ce521e38fff2bc34822fafd38812622cb226f54705be4'
-CITY_TRACE = '18b54300c0c3dc326274f0642a4f0f7a6578405104a44cd073d3bb5e419e9a16'
+CITY_TRACE = '1b4a39caaab81f2c0a5e3e7503062d368e51c66993a4921dcd211fc56a8f645f'
 
 
 # --- the builders -----------------------------------------------------------------------------------------------------------

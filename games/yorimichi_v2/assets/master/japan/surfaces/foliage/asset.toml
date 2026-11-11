@@ -12,7 +12,7 @@ input_dependencies = ["texture/japan/white", "adopted/japan/materials/base-mater
 
 [[sources]]
 path = "src/japan_surface_masters.py"
-sha256 = "45d32fc3d7d07b9b7f76d1d1c0a82d5eb4ce190adf0f2c53dcc66fba4177d7ed"
+sha256 = "5091e60bb8d290df4885fa99f82e7e296721a51fb014f3f19d513b859afd4685"
 
 [[sources]]
 path = "src/master_haze.py"

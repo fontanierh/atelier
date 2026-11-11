@@ -111,12 +111,12 @@ def _shared_material(package, white, *, masked=False, mpc=None, foliage_lobe=Fal
     tint = MEL.create_material_expression(m, U.MaterialExpressionVectorParameter, -700, 300)
     tint.set_editor_property('parameter_name', 'Tint')
     tint.set_editor_property('default_value', U.LinearColor(1, 1, 1, 1))
-    mul0 = MEL.create_material_expression(m, U.MaterialExpressionMultiply, -350, 100)
-    MEL.connect_material_expressions(tex, 'RGB', mul0, 'A')
-    MEL.connect_material_expressions(tint, '', mul0, 'B')
-    mul, haze_glow = haze.apply(unreal, m, mul0, x=260, y=300)
-    MEL.connect_material_property(haze_glow, '', U.MaterialProperty.MP_EMISSIVE_COLOR)
     if masked:
+        mul0 = MEL.create_material_expression(m, U.MaterialExpressionMultiply, -350, 100)
+        MEL.connect_material_expressions(tex, 'RGB', mul0, 'A')
+        MEL.connect_material_expressions(tint, '', mul0, 'B')
+        mul, haze_glow = haze.apply(unreal, m, mul0, x=260, y=300)
+        MEL.connect_material_property(haze_glow, '', U.MaterialProperty.MP_EMISSIVE_COLOR)
         vc = node(m, U.MaterialExpressionVertexColor, -350, -150)
         gg = node(m, U.MaterialExpressionComponentMask, -200, -150, r=False, g=True, b=False, a=False)
         link(vc, '', gg, '')
@@ -180,7 +180,76 @@ def _shared_material(package, white, *, masked=False, mpc=None, foliage_lobe=Fal
             link(dark, '', ss, 'A')
             MEL.connect_material_property(ss, '', U.MaterialProperty.MP_SUBSURFACE_COLOR)
     else:
+        # Golden-angle rotated macro UV + world-space clover/straw meadow modulation breaks repeating ~8 m T_ground
+        # circular tiles while leaving T_white solid-tint instances (1,1,1) unchanged; hemisphere AO + warm eave bounce
+        # ground Forward-lit walls, roofs, stones and beams.
+        uv0 = node(m, U.MaterialExpressionTextureCoordinate, -1100, -180)
+        pos0 = node(m, U.MaterialExpressionWorldPosition, -1100, -60)
+        vn0 = node(m, U.MaterialExpressionVertexNormalWS, -1100, 60)
+        uv_rot = node(
+            m,
+            U.MaterialExpressionCustom,
+            -900,
+            -180,
+            code=('float2 w = P.xy * 0.00018;'
+                  ' float2 warp = float2(sin(w.y * 1.7 + 0.4), cos(w.x * 1.5 - 0.3)) * 0.09;'
+                  ' return float2(UV.x * 0.78 - UV.y * 0.625, UV.x * 0.625 + UV.y * 0.78) * 0.27 + float2(0.37, 0.19) + warp;'),
+            output_type=U.CustomMaterialOutputType.CMOT_FLOAT2,
+        )
+        uv_rot.set_editor_property('inputs', haze.custom_inputs(U, ['UV', 'P']))
+        link(uv0, '', uv_rot, 'UV')
+        link(pos0, '', uv_rot, 'P')
+        tex2 = MEL.create_material_expression(m, U.MaterialExpressionTextureSampleParameter2D, -700, -180)
+        tex2.set_editor_property('parameter_name', 'Tex')
+        tex2.set_editor_property('texture', white)
+        link(uv_rot, '', tex2, 'UVs')
+        painted_base = node(
+            m,
+            U.MaterialExpressionCustom,
+            -180,
+            20,
+            code=('float w = 0.5 + 0.36 * sin(P.x * 0.00067 + sin(P.y * 0.00053) * 1.5);'
+                  ' float3 texMix = lerp(T1, T2, w * 0.48);'
+                  ' float3 col = texMix * Tint;'
+                  ' float grass = saturate((col.g - max(col.r, col.b)) * 4.5) * saturate(N.z);'
+                  ' float m1 = sin(P.x * 0.00041 + P.y * 0.00029 + sin(P.y * 0.00079) * 1.35);'
+                  ' float m2 = sin(P.x * 0.00131 - P.y * 0.00109);'
+                  ' float swell = saturate(0.5 + 0.32 * m1 + 0.18 * m2);'
+                  ' float3 meadow = lerp(float3(0.85, 0.95, 1.03), float3(1.15, 1.07, 0.84), swell);'
+                  ' return col * lerp(float3(1.0, 1.0, 1.0), meadow, grass * 0.72);'),
+            output_type=U.CustomMaterialOutputType.CMOT_FLOAT3,
+        )
+        painted_base.set_editor_property('inputs', haze.custom_inputs(U, ['T1', 'T2', 'Tint', 'P', 'N']))
+        link(tex, 'RGB', painted_base, 'T1')
+        link(tex2, 'RGB', painted_base, 'T2')
+        link(tint, '', painted_base, 'Tint')
+        link(pos0, '', painted_base, 'P')
+        link(vn0, '', painted_base, 'N')
+        painted_bounce = node(
+            m,
+            U.MaterialExpressionCustom,
+            40,
+            160,
+            code='return B * float3(0.038, 0.028, 0.015) * saturate(-N.z);',
+            output_type=U.CustomMaterialOutputType.CMOT_FLOAT3,
+        )
+        painted_bounce.set_editor_property('inputs', haze.custom_inputs(U, ['B', 'N']))
+        link(painted_base, '', painted_bounce, 'B')
+        link(vn0, '', painted_bounce, 'N')
+        mul, haze_glow = haze.apply(unreal, m, painted_base, painted_bounce, x=260, y=300)
         MEL.connect_material_property(mul, '', U.MaterialProperty.MP_BASE_COLOR)
+        MEL.connect_material_property(haze_glow, '', U.MaterialProperty.MP_EMISSIVE_COLOR)
+        painted_ao = node(
+            m,
+            U.MaterialExpressionCustom,
+            260,
+            160,
+            code='return lerp(0.54, 1.0, saturate(N.z * 0.5 + 0.5));',
+            output_type=U.CustomMaterialOutputType.CMOT_FLOAT1,
+        )
+        painted_ao.set_editor_property('inputs', haze.custom_inputs(U, ['N']))
+        link(vn0, '', painted_ao, 'N')
+        MEL.connect_material_property(painted_ao, '', U.MaterialProperty.MP_AMBIENT_OCCLUSION)
     rough = MEL.create_material_expression(m, U.MaterialExpressionConstant, -350, 350)
     rough.set_editor_property('r', 1.0)
     spec = MEL.create_material_expression(m, U.MaterialExpressionConstant, -350, 450)

@@ -11,7 +11,7 @@ provenance = "donor generator games/yorimichi/unreal/Scripts/shared_materials.py
 
 [[sources]]
 path = "src/sky_painterly_masters.py"
-sha256 = "4caaa61d999d31d1114dc38560fa8439edf6229d0031c7f6606a044a3e106f8f"
+sha256 = "7d17882c70ace7f9674a299df0ddc7d84726b7d24484328253c3593cb39452e3"
 
 [recipe]
 importer = "material-master"
