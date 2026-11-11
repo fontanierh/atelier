@@ -225,6 +225,8 @@ uv run python games/yorimichi_v2/tools/package/acceptance.py automated --app "$H
 ATELIER_AGENT=OWNER nice -n 10 uv run atelier playtest yorimichi_v2 --app "$HOME/YorimichiV2-Package/YorimichiV2.app" --memory-gib 22
 ```
 
-The last line plays the extracted package under the render lock and memory guard. The available package predates
-the final migration fixes. Use the [testing handoff](docs/PACKAGE.md#testing-the-final-handoff) to select current
-source or a matching package, record observed manual checks and keep each package's evidence separate.
+The last line plays the extracted package under the render lock and memory guard. The
+[current package checkpoint](docs/PACKAGE.md#current-development-package-checkpoint-2026-11-11) contains the final
+migration and later performance/visual work; its automated results do not complete manual acceptance. Use the
+[testing handoff](docs/PACKAGE.md#testing-the-final-handoff) to select a revision or matching package, record
+observed manual checks and keep each package's evidence separate.
