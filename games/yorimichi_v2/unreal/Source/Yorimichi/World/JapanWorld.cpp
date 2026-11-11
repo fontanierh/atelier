@@ -70,6 +70,7 @@ void AJapanWorld::BeginPlay()
 
 void AJapanWorld::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
+    ClearAllRuntimeBatches();
     if (ScreenSizeCullSpawnHandle.IsValid() && GetWorld())
     {
         GetWorld()->RemoveOnActorSpawnedHandler(ScreenSizeCullSpawnHandle);
@@ -87,6 +88,9 @@ static UStaticMesh* LoadMesh(const FString& Name)
 
 static TAutoConsoleVariable<float> CVarScreenSizeCull(TEXT("japan.ScreenSizeCull"), 1000.f,
     TEXT("Cull static meshes beyond this multiple of their bounds radius (0 = off)."), ECVF_Default);
+
+static TAutoConsoleVariable<int32> CVarRuntimeISMBatching(TEXT("yorimichi.RuntimeISMBatching"), 1,
+    TEXT("Coalesce small static V2ScenePatch components per 256 m cell into pooled HISMs (1 = on, 0 = off)."), ECVF_Default);
 
 // Replace a top-level JSON object/array field with {} or [] before FJsonSerializer::Deserialize
 // so bOnlyMigrated maps do not allocate millions of FJsonValue nodes for covered static instances.
@@ -1083,6 +1087,7 @@ void AJapanWorld::Load()
             FOnActorSpawned::FDelegate::CreateUObject(this, &ThisClass::RegisterActorScreenSizeCull));
     // V2: the saved scenery this map holds joins the same lists (patches streamed in later join on their BeginPlay).
     for (TActorIterator<AV2ScenePatch> It(GetWorld()); It; ++It) RegisterScenePatch(*It);
+    FlushRuntimeBatches();
     UpdateShadowTwinResidency(true);
     if (Manifest) UE_LOG(LogTemp, Display, TEXT("V2 SCENERY %d instances saved in this map, %d patches%s"),
         MigratedInstances, ScenePatches.Num(), bAllMigrated ? TEXT(" (only migrated scenery)") : TEXT(""));
@@ -1204,6 +1209,7 @@ void AJapanWorld::RegisterScenePatch(AV2ScenePatch* Patch)
             }
         }
         RegisterScreenSizeCullComponent(C);
+        TryEnqueueRuntimeBatchComponent(Patch, C);
     }
     // japan.HideGroups is a diagnosis: while one runs, its next pass revisits every group.
     if (!AppliedHideGroups.IsEmpty()) AppliedHideGroups.Reset();
@@ -1216,6 +1222,7 @@ void AJapanWorld::UnregisterScenePatch(AV2ScenePatch* Patch)
     Patch->GetComponents(Components);
     for (UStaticMeshComponent* C : Components)
     {
+        RemoveRuntimeBatchComponent(C);
         if (auto* H = Cast<UHierarchicalInstancedStaticMeshComponent>(C))
         {
             if (RegisteredGroups.Remove(H) > 0) { Groups.RemoveSingleSwap(H, EAllowShrinking::No); TotalInstances -= H->GetInstanceCount(); }
@@ -1228,6 +1235,224 @@ void AJapanWorld::UnregisterScenePatch(AV2ScenePatch* Patch)
         ScreenSizeCullComponents.Remove(C);
         ScreenSizeCullStates.Remove(C);
     }
+}
+
+void AJapanWorld::TryEnqueueRuntimeBatchComponent(AV2ScenePatch* Patch, UStaticMeshComponent* C)
+{
+    if (bMigrationBuild || !Patch || !IsValid(C) || !GetWorld() || !GetWorld()->IsGameWorld()) return;
+    UStaticMesh* Mesh = C->GetStaticMesh();
+    if (!Mesh || C->Mobility != EComponentMobility::Static || !C->IsVisible() || C->bHiddenInGame || !C->bRenderInMainPass) return;
+    if (C->bRenderCustomDepth || !C->GetCustomPrimitiveData().Data.IsEmpty()) return;
+    if (C->ComponentHasTag(AV2ScenePatch::RoleShadowTwin) || C->ComponentHasTag(AV2ScenePatch::RoleSeeThrough)
+        || C->ComponentHasTag(AV2ScenePatch::RoleSkyDome) || C->ComponentHasTag(AV2ScenePatch::RoleSea)
+        || C->ComponentHasTag(JapanSeeThrough::Tag))
+        return;
+    if (Patch->SourceKey.StartsWith(TEXT("city:"), ESearchCase::CaseSensitive))
+    {
+        for (const FName& Tag : C->ComponentTags)
+            if (IsCityTreePiece(Tag)) return;
+    }
+    else
+    {
+        for (const FName& Tag : C->ComponentTags)
+            if (IsCityTreePiece(Tag)) return;
+    }
+
+    const auto* Instanced = Cast<UInstancedStaticMeshComponent>(C);
+    FVector Anchor = FVector::ZeroVector;
+    if (Instanced)
+    {
+        const int32 Count = Instanced->GetInstanceCount();
+        if (Count < 1 || Count > 4 || Instanced->NumCustomDataFloats > 0) return;
+        for (int32 I = 0; I < Count; ++I)
+        {
+            FTransform X;
+            Instanced->GetInstanceTransform(I, X, true);
+            if (X.GetDeterminant() <= 0.0) return;
+            if (I == 0) Anchor = X.GetLocation();
+        }
+    }
+    else
+    {
+        const FTransform X = C->GetComponentTransform();
+        if (X.GetDeterminant() <= 0.0) return;
+        Anchor = X.GetLocation();
+    }
+
+    constexpr double BucketSizeCm = 25600.0;
+    FRuntimeBatchKey Key;
+    Key.Cell = FIntPoint(FMath::FloorToInt(Anchor.X / BucketSizeCm), FMath::FloorToInt(Anchor.Y / BucketSizeCm));
+    Key.Mesh = Mesh;
+    const int32 NumMats = C->GetNumMaterials();
+    Key.Materials.Reserve(NumMats);
+    for (int32 M = 0; M < NumMats; ++M) Key.Materials.Add(C->GetMaterial(M));
+    Key.bCastShadow = C->CastShadow ? 1 : 0;
+    Key.bReceivesDecals = C->bReceivesDecals ? 1 : 0;
+    Key.bBackdrop = C->ComponentHasTag(AV2ScenePatch::RoleBackdrop) ? 1 : 0;
+
+    FRuntimeBatchBucket& Bucket = RuntimeBatchBuckets.FindOrAdd(Key);
+    Bucket.Sources.AddUnique(C);
+    if (Instanced)
+    {
+        if (Instanced->InstanceEndCullDistance > Bucket.BaseEndCull)
+        {
+            Bucket.BaseStartCull = Instanced->InstanceStartCullDistance;
+            Bucket.BaseEndCull = Instanced->InstanceEndCullDistance;
+        }
+    }
+    else if (C->LDMaxDrawDistance > 0.f && FMath::RoundToInt(C->LDMaxDrawDistance) > Bucket.BaseEndCull)
+    {
+        Bucket.BaseEndCull = FMath::RoundToInt(C->LDMaxDrawDistance);
+    }
+    if (C->WorldPositionOffsetDisableDistance > Bucket.WpoDisableDistance)
+        Bucket.WpoDisableDistance = C->WorldPositionOffsetDisableDistance;
+
+    RuntimeBatchedComponentKeys.Add(C, Key);
+    if (Bucket.Sources.Num() >= 2 || IsValid(Bucket.PooledHISM)) DirtyRuntimeBatches.Add(Key);
+}
+
+void AJapanWorld::RemoveRuntimeBatchComponent(UStaticMeshComponent* C)
+{
+    if (!C) return;
+    FRuntimeBatchKey Key;
+    if (!RuntimeBatchedComponentKeys.RemoveAndCopyValue(C, Key)) return;
+    if (C->bHiddenInGame) C->SetHiddenInGame(false);
+    if (FRuntimeBatchBucket* Bucket = RuntimeBatchBuckets.Find(Key))
+    {
+        Bucket->Sources.RemoveSingleSwap(C, EAllowShrinking::No);
+        DirtyRuntimeBatches.Add(Key);
+    }
+}
+
+void AJapanWorld::RebuildRuntimeBatchBucket(const FRuntimeBatchKey& Key, FRuntimeBatchBucket& Bucket)
+{
+    const bool bEnable = CVarRuntimeISMBatching.GetValueOnGameThread() != 0;
+    TArray<UStaticMeshComponent*> ValidSources;
+    ValidSources.Reserve(Bucket.Sources.Num());
+    for (int32 I = Bucket.Sources.Num() - 1; I >= 0; --I)
+    {
+        if (UStaticMeshComponent* Src = Bucket.Sources[I].Get(); IsValid(Src) && Src->GetStaticMesh() == Key.Mesh)
+            ValidSources.Add(Src);
+        else
+            Bucket.Sources.RemoveAtSwap(I, EAllowShrinking::No);
+    }
+
+    if (!bEnable || ValidSources.Num() < 2)
+    {
+        for (UStaticMeshComponent* Src : ValidSources)
+            if (Src->bHiddenInGame) Src->SetHiddenInGame(false);
+        if (UHierarchicalInstancedStaticMeshComponent* Old = Bucket.PooledHISM)
+        {
+            Groups.RemoveSingleSwap(Old, EAllowShrinking::No);
+            BackdropGroups.RemoveSingleSwap(Old, EAllowShrinking::No);
+            ScreenSizeCullComponents.Remove(Old);
+            ScreenSizeCullStates.Remove(Old);
+            Old->DestroyComponent();
+            Bucket.PooledHISM = nullptr;
+        }
+        return;
+    }
+
+    TArray<FTransform> AllTransforms;
+    AllTransforms.Reserve(ValidSources.Num() * 2);
+    for (UStaticMeshComponent* Src : ValidSources)
+    {
+        Src->bCastHiddenShadow = false;
+        if (!Src->bHiddenInGame) Src->SetHiddenInGame(true);
+        if (const auto* Inst = Cast<UInstancedStaticMeshComponent>(Src))
+        {
+            const int32 N = Inst->GetInstanceCount();
+            for (int32 J = 0; J < N; ++J)
+            {
+                FTransform X;
+                Inst->GetInstanceTransform(J, X, true);
+                AllTransforms.Add(X);
+            }
+        }
+        else
+        {
+            AllTransforms.Add(Src->GetComponentTransform());
+        }
+    }
+
+    UHierarchicalInstancedStaticMeshComponent* H = Bucket.PooledHISM;
+    if (!IsValid(H))
+    {
+        H = NewObject<UHierarchicalInstancedStaticMeshComponent>(this);
+        H->SetMobility(EComponentMobility::Static);
+        H->SetupAttachment(GetRootComponent());
+        H->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+        H->SetCanEverAffectNavigation(false);
+        H->bAffectDynamicIndirectLighting = false;
+        H->bAffectDistanceFieldLighting = false;
+        H->SetStaticMesh(Key.Mesh);
+        for (int32 M = 0; M < Key.Materials.Num(); ++M)
+            if (Key.Materials[M]) H->SetMaterial(M, Key.Materials[M]);
+        H->SetCastShadow(Key.bCastShadow != 0);
+        H->bReceivesDecals = Key.bReceivesDecals != 0;
+        if (Bucket.BaseEndCull > 0) H->SetCullDistances(Bucket.BaseStartCull, Bucket.BaseEndCull);
+        if (Bucket.WpoDisableDistance > 0) H->WorldPositionOffsetDisableDistance = Bucket.WpoDisableDistance;
+        H->bAutoRebuildTreeOnInstanceChanges = false;
+        H->RegisterComponent();
+        Bucket.PooledHISM = H;
+        Groups.AddUnique(H);
+        if (Key.bBackdrop) BackdropGroups.AddUnique(H);
+    }
+    else
+    {
+        H->bAutoRebuildTreeOnInstanceChanges = false;
+        H->ClearInstances();
+    }
+
+    H->AddInstances(AllTransforms, false, true, false);
+    H->BuildTreeIfOutdated(false, true);
+    ApplyPerformanceToGroup(H);
+    ForgetScreenSizeCull(H);
+}
+
+void AJapanWorld::FlushRuntimeBatches()
+{
+    const int32 Mode = CVarRuntimeISMBatching.GetValueOnGameThread() != 0 ? 1 : 0;
+    if (LastRuntimeISMBatchingMode != Mode)
+    {
+        LastRuntimeISMBatchingMode = Mode;
+        for (const auto& Pair : RuntimeBatchBuckets)
+            if (Pair.Value.Sources.Num() >= 2 || IsValid(Pair.Value.PooledHISM))
+                DirtyRuntimeBatches.Add(Pair.Key);
+    }
+    if (DirtyRuntimeBatches.IsEmpty()) return;
+    TArray<FRuntimeBatchKey> ToRebuild = DirtyRuntimeBatches.Array();
+    DirtyRuntimeBatches.Reset();
+    for (const FRuntimeBatchKey& Key : ToRebuild)
+    {
+        if (FRuntimeBatchBucket* Bucket = RuntimeBatchBuckets.Find(Key))
+        {
+            RebuildRuntimeBatchBucket(Key, *Bucket);
+            if (Bucket->Sources.IsEmpty() && !IsValid(Bucket->PooledHISM))
+                RuntimeBatchBuckets.Remove(Key);
+        }
+    }
+}
+
+void AJapanWorld::ClearAllRuntimeBatches()
+{
+    DirtyRuntimeBatches.Reset();
+    RuntimeBatchedComponentKeys.Reset();
+    for (auto& Pair : RuntimeBatchBuckets)
+    {
+        for (const TWeakObjectPtr<UStaticMeshComponent>& WeakSrc : Pair.Value.Sources)
+            if (UStaticMeshComponent* Src = WeakSrc.Get(); IsValid(Src) && Src->bHiddenInGame)
+                Src->SetHiddenInGame(false);
+        if (UHierarchicalInstancedStaticMeshComponent* H = Pair.Value.PooledHISM; IsValid(H))
+        {
+            Groups.RemoveSingleSwap(H, EAllowShrinking::No);
+            BackdropGroups.RemoveSingleSwap(H, EAllowShrinking::No);
+            ScreenSizeCullComponents.Remove(H);
+            ScreenSizeCullStates.Remove(H);
+            H->DestroyComponent();
+        }
+    }
+    RuntimeBatchBuckets.Reset();
 }
 
 bool AJapanWorld::IsInSeeThroughRoom(int32 Index, const FVector& P, float Margin) const
@@ -1619,6 +1844,7 @@ void AJapanWorld::Tick(float Dt)
     UpdateHarborLook(this);
     UpdateFogDensity(Dt);
     UpdateNorthAerialGrade(Dt);
+    FlushRuntimeBatches();
     ApplyGroupDiagnostics();
     ApplyScreenSizeCull();
     ShadowTwinResidencyElapsed += Dt;

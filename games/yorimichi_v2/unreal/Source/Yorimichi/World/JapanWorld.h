@@ -8,6 +8,7 @@ class FJsonObject;
 
 class UHierarchicalInstancedStaticMeshComponent;
 class UStaticMeshComponent;
+class UMaterialInterface;
 class AV2ScenePatch;
 
 /** The volumetric fog's look, from the settings menu (UJapanPreferences, docs/VOLUMETRIC_FOG.md). */
@@ -199,5 +200,48 @@ private:
     void UpdateNorthAerialGrade(float Dt);
     bool bSeeThroughProbeIgnored = false;
     TSet<TWeakObjectPtr<AV2ScenePatch>> ScenePatches;
+
+    // Runtime cell-scoped ISM auto-coalescing: small static AV2ScenePatch components (1..4 instances) inside a 256 m
+    // cell sharing mesh, material overrides, shadow and decal flags render from one pooled HISM while keeping each
+    // source component's collision body and ExpectedMembers intact.
+    struct FRuntimeBatchKey
+    {
+        FIntPoint Cell = FIntPoint::ZeroValue;
+        TObjectPtr<UStaticMesh> Mesh = nullptr;
+        TArray<TObjectPtr<UMaterialInterface>> Materials;
+        uint8 bCastShadow : 1;
+        uint8 bReceivesDecals : 1;
+        uint8 bBackdrop : 1;
+        FRuntimeBatchKey() : bCastShadow(0), bReceivesDecals(0), bBackdrop(0) {}
+        bool operator==(const FRuntimeBatchKey& Other) const
+        {
+            return Cell == Other.Cell && Mesh == Other.Mesh && Materials == Other.Materials
+                && bCastShadow == Other.bCastShadow && bReceivesDecals == Other.bReceivesDecals
+                && bBackdrop == Other.bBackdrop;
+        }
+        friend uint32 GetTypeHash(const FRuntimeBatchKey& K)
+        {
+            uint32 H = HashCombine(GetTypeHash(K.Cell), GetTypeHash(K.Mesh));
+            for (const auto& M : K.Materials) H = HashCombine(H, GetTypeHash(M));
+            return HashCombine(H, uint32(K.bCastShadow) | (uint32(K.bReceivesDecals) << 1) | (uint32(K.bBackdrop) << 2));
+        }
+    };
+    struct FRuntimeBatchBucket
+    {
+        TArray<TWeakObjectPtr<UStaticMeshComponent>> Sources;
+        TObjectPtr<UHierarchicalInstancedStaticMeshComponent> PooledHISM = nullptr;
+        int32 BaseStartCull = 0;
+        int32 BaseEndCull = 0;
+        int32 WpoDisableDistance = 0;
+    };
+    TMap<FRuntimeBatchKey, FRuntimeBatchBucket> RuntimeBatchBuckets;
+    TMap<TWeakObjectPtr<UStaticMeshComponent>, FRuntimeBatchKey> RuntimeBatchedComponentKeys;
+    TSet<FRuntimeBatchKey> DirtyRuntimeBatches;
+    int32 LastRuntimeISMBatchingMode = -1;
+    void TryEnqueueRuntimeBatchComponent(AV2ScenePatch* Patch, UStaticMeshComponent* Component);
+    void RemoveRuntimeBatchComponent(UStaticMeshComponent* Component);
+    void RebuildRuntimeBatchBucket(const FRuntimeBatchKey& Key, FRuntimeBatchBucket& Bucket);
+    void FlushRuntimeBatches();
+    void ClearAllRuntimeBatches();
     void Load();
 };
