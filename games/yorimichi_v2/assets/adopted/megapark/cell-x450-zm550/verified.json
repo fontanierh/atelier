@@ -1,12 +1,10 @@
 {
   "asset": "adopted/megapark/cell-x450-zm550",
-  "dependencies": {
-    "adopted/megapark/base-materials": "81b0e86814e67e23a3f2758823ec3ba2fc6621d9e30cbc70a96871e8471cf80b"
-  },
+  "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/MegaPark/Meshes/SM_MP_C41D333E7557EA22.uasset": "e89c0b9290dd34c36f7cd36c52dcfd0d790ca7abce7f04abba9fda67ed30d6bf",
-    "unreal/Content/MegaPark/Meshes/SM_MP_EB6AB76807F5192A.uasset": "556a93214347c7c54c26f22119b4807713222b4a42234388d3a31ab1f6d26937",
+    "unreal/Content/MegaPark/Meshes/SM_MP_C41D333E7557EA22.uasset": "d12cb22962988599ec6eec4d86dd47596fa4ffacb7eaaffd78c464cb69f746c8",
+    "unreal/Content/MegaPark/Meshes/SM_MP_EB6AB76807F5192A.uasset": "3e8c2b4dd4e4de481125fda27d9022327be33996947e377e71e87023b715c7cc",
     "unreal/Content/MegaPark/Meshes/UC_MP_79BF297E1999261B_0.uasset": "4164b98bda23bf4d7851759d68a413d6d7d83a7dcc641a1c1f45a236d0058f27",
     "unreal/Content/MegaPark/Meshes/UC_MP_B9117148FE4DDA75_0.uasset": "4cbee28b7481d96c2cc759a5d7f180886a56316df01da3311f8922f5bd4c6bb5"
   },

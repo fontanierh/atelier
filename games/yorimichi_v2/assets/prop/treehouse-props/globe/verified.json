@@ -3,19 +3,25 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/TH_P_globe.uasset": "e438c7e10fc6e531df50ab2272809ec8b64dedfd27a15c968fa498d519fe37ba"
+    "unreal/Content/Japan/Assets/TH_P_globe.uasset": "ac4cad1ad3f5f6d38ffe7dcccdc81e358a198ec93b0d31161d67ef30d47e4b11"
   },
-  "input_fingerprint": "146966167679ad9dd9984cb63c23d05c3167819a2c66ccc8cb3772a035c4c182",
+  "input_fingerprint": "80723b9067e7c7fc19159929f7085bfc4a36bb6108b413b8a02a7e80f7dadff0",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/TH_P_globe": {
       "after": {
-        "count": 1,
+        "count": 4,
         "reductions": [
-          1.0
+          1.0,
+          0.3499999940395355,
+          0.11999999731779099,
+          0.03999999910593033
         ],
         "screen_sizes": [
-          0.0
+          1.0,
+          0.2800000011920929,
+          0.11999999731779099,
+          0.03999999910593033
         ]
       },
       "before": {
@@ -25,6 +31,15 @@
         ],
         "screen_sizes": [
           2.0
+        ]
+      },
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.28,
+          0.12,
+          0.04
         ]
       }
     }

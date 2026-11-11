@@ -1,14 +1,14 @@
 {
   "asset": "master/japan/base/harbor",
   "dependencies": {
-    "texture/japan/harbor-paving": "d7080294e4efe18fa081c563c386a0f4fc67533483c5129a5481b39883862e05",
-    "texture/japan/harbor-timber": "40b1df880065aacae98cefc9ff95de761b6526c3da0ee251d7d445c8bc9a93aa"
+    "texture/japan/harbor-paving": "e51d64d900e87ae92ed78b9fe0b63978d8ecffa9a95412c39e9a832b43341b5f",
+    "texture/japan/harbor-timber": "2efb349aa6f569ac1430742d2b9577960c630cf130badbc27d9d7869c2727f7f"
   },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Materials/M_Harbor.uasset": "01f74b9675123f2d5e8cb7ac2dc51ff5c68e50688c7fdf63bf88836df4814242"
+    "unreal/Content/Japan/Materials/M_Harbor.uasset": "a94ff41c6413924f00c36a66bc27b07ce8e556ecdf4f3c4bdf938499d0db42d8"
   },
-  "input_fingerprint": "4cc9b64ea1e29866653608e03002b72f6c335351526652429047351b50793ed7",
+  "input_fingerprint": "ac29ef513fadcb2e90524d978c71c4c43a3ed322786f1472f7adac15faa29b16",
   "kind": "imported",
   "schema": 1,
   "tool": "material-master@1"

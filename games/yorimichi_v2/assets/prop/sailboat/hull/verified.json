@@ -3,9 +3,9 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/SB_Hull.uasset": "ce9fa8c5a5c53c65bf0b55bbd4650830a2f067b452419bf84ce03c7e3d64ac6a"
+    "unreal/Content/Japan/Assets/SB_Hull.uasset": "819089abf828b4c9f808f2e6d7eb953188e1a3b6cad54df8397193073f7f5576"
   },
-  "input_fingerprint": "590b23aefc04862473b8ee9d39fa7b01a88c956c558c51beb5324e2928ace263",
+  "input_fingerprint": "fda44305fe868e96bdc75ee7b4f2ccaf75fe5f0eb38fc75eaa9e983d441cf90d",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/SB_Hull": {

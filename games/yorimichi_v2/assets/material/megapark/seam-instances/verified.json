@@ -1,15 +1,15 @@
 {
   "asset": "material/megapark/seam-instances",
   "dependencies": {
-    "adopted/megapark/shared-textures-common": "f279797ca888677031e0d50ea2bc2308950faf90caa3822a71f98aee26a7882c",
+    "adopted/megapark/shared-textures-common": "f716661a7d836da63b97d6155a910c9fa025f5fb82881066b78c9276fb39a20c",
     "adopted/megapark/shared-textures-concrete": "7484d84211f3949f955d44cdc9632a44f35bb2326698d6112fe6defa6520e6ca",
-    "master/megapark/opaque": "4b3c2b4c4994113316d36ae629854073ab22f272d1a7f1e79520e05a7f709e5b"
+    "master/megapark/opaque": "d2d524eb55f91ee5ea3596813237468202bdf1f5e17b1f1474b136c70133e200"
   },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/MegaPark/Materials/MI_3fc3174182abbed4_Seam.uasset": "ac18f75d80aea3b84be3d00d319b91af2b69fab79955b50d62942e9be046063b"
+    "unreal/Content/MegaPark/Materials/MI_3fc3174182abbed4_Seam.uasset": "27c81854995cd144ecab2c10d27b634085310403941629bc052e1fe6ac545f66"
   },
-  "input_fingerprint": "c8688ec5848c0409f0274451bc1bccb1b379b3dda60b90042c3643600c9c72f0",
+  "input_fingerprint": "5504a898a00d1860b9b144e01bb1ba8a476af9072cee8024cd26494027e80555",
   "kind": "imported",
   "schema": 1,
   "tool": "material-instance@2"

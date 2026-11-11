@@ -3,19 +3,25 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/BK_WheelFront.uasset": "4baa3f00e4d05323b9b7de03bb72f9ea54e9b5e13c3243c3ce984a691456da8c"
+    "unreal/Content/Japan/Assets/BK_WheelFront.uasset": "c0338edc29b1fd7d2a71c0ad3841fb3ab570b62f3c6bb9ea5736aa11afbdaca6"
   },
-  "input_fingerprint": "246a105b1410e1b895cefcdcc6518020aaa9508b9c2f39e3209eb0ce1e929986",
+  "input_fingerprint": "ce57e5d1352fe45ea5a91f24ba5cd38793fee8ca97500ed012fbca218b48ebb3",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/BK_WheelFront": {
       "after": {
-        "count": 1,
+        "count": 4,
         "reductions": [
-          1.0
+          1.0,
+          0.4000000059604645,
+          0.15000000596046448,
+          0.05000000074505806
         ],
         "screen_sizes": [
-          0.0
+          1.0,
+          0.3499999940395355,
+          0.15000000596046448,
+          0.05000000074505806
         ]
       },
       "before": {
@@ -25,6 +31,15 @@
         ],
         "screen_sizes": [
           2.0
+        ]
+      },
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.35,
+          0.15,
+          0.05
         ]
       }
     }

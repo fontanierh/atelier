@@ -1,13 +1,13 @@
 {
   "asset": "master/japan/base/plaza-paving",
   "dependencies": {
-    "texture/japan/arcade-paving": "787446f1d6de859c39f65be2af0c1406debdf388c2462be621ae818d11766296"
+    "texture/japan/arcade-paving": "f9a3f6d215755d6c53980cc3fb02006438cf835b61e7f94a8cbd284864aa5581"
   },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Materials/M_PlazaPaving.uasset": "ac8383a3c42954a8067247a0b053047e5ac5490430aa9347d0e4e643ad9a5276"
+    "unreal/Content/Japan/Materials/M_PlazaPaving.uasset": "924a28ee2fe4570bb823630acdb647fa6c07fe92bd4308172299fa389d28001c"
   },
-  "input_fingerprint": "82fa3843dd98f306df39a4ba28fc2b5c7ddb70cd102384758f5f2acdd0c8c64a",
+  "input_fingerprint": "c30ab2148490ac7e2c84da96dc0159a45a47d17cf5ee76079f3bd1f6844ffa11",
   "kind": "imported",
   "schema": 1,
   "tool": "material-master@1"

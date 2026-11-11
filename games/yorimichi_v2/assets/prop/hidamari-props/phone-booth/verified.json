@@ -3,19 +3,25 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/HD_P_phone_booth.uasset": "64c0006a95148916f4c36e225f486f92acc7a0a46a62fe5324a277b87cb14a1b"
+    "unreal/Content/Japan/Assets/HD_P_phone_booth.uasset": "3fdb414f27059af5d458b59f10ccc286348a7a5b87072a985dc3e47e5dbe2c03"
   },
-  "input_fingerprint": "b4f5d66580c7058a28d3519f5a51e18adb64e005a550a2fc54d89d43b8a426f7",
+  "input_fingerprint": "10299c0d104af53ab0161379c8c739abcffc5c5ba48629419e6893f70f46c864",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/HD_P_phone_booth": {
       "after": {
-        "count": 1,
+        "count": 4,
         "reductions": [
-          1.0
+          1.0,
+          0.3499999940395355,
+          0.11999999731779099,
+          0.03999999910593033
         ],
         "screen_sizes": [
-          0.0
+          1.0,
+          0.2800000011920929,
+          0.11999999731779099,
+          0.03999999910593033
         ]
       },
       "before": {
@@ -24,7 +30,16 @@
           1.0
         ],
         "screen_sizes": [
-          0.0
+          2.0
+        ]
+      },
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.28,
+          0.12,
+          0.04
         ]
       }
     }

@@ -1,13 +1,13 @@
 {
   "asset": "master/megapark/translucent",
   "dependencies": {
-    "adopted/megapark/shared-textures-common": "f279797ca888677031e0d50ea2bc2308950faf90caa3822a71f98aee26a7882c"
+    "adopted/megapark/shared-textures-common": "f716661a7d836da63b97d6155a910c9fa025f5fb82881066b78c9276fb39a20c"
   },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/MegaPark/Materials/M_RetailTranslucent.uasset": "8221c1ddeeef4cc084fc48e7481f6d5eeeac908991eca5ccd049cd1a062c1094"
+    "unreal/Content/MegaPark/Materials/M_RetailTranslucent.uasset": "8f6aba8514ad463eb441c9ab193961448a02cfcf5006b0760a8a22f2a239a30a"
   },
-  "input_fingerprint": "2d91ab365d7bafb18cd8a7762ff6c5624a5e1842b4503305272d8c7aa956d3fd",
+  "input_fingerprint": "76235d638238f7cbcbeb50feb0cfa052012226b374226d0490b976eabbff72a9",
   "kind": "imported",
   "schema": 1,
   "tool": "material-master@1"

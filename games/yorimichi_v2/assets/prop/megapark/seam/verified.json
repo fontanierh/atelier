@@ -3,9 +3,9 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/MegaPark/Meshes/SM_MP_Seam.uasset": "8e9206e6ce8ccc7cfee1511f4a56d065e232e76801f2e07a7868c9bb7795419f"
+    "unreal/Content/MegaPark/Meshes/SM_MP_Seam.uasset": "189284916bdd0bc785d9459be262b1191550f68310e19433dae6de385b9b4984"
   },
-  "input_fingerprint": "f8a085d5bd3e6cc3f6bb99139f1119b1649b184f930ac24a60f1db8a4c61a9ff",
+  "input_fingerprint": "3ec0ddec8a39d50a56193fa32386c682d22e5923e2b5bd1f90594cd2b0f69c82",
   "kind": "imported",
   "lods": {
     "/Game/MegaPark/Meshes/SM_MP_Seam": {

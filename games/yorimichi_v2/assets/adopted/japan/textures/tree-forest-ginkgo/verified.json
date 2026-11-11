@@ -1,10 +1,12 @@
 {
   "asset": "adopted/japan/textures/tree-forest-ginkgo",
-  "dependencies": {},
+  "dependencies": {
+    "adopted/japan/materials/base-materials": "cf8c1d285e35a9b944ae8db9f167ba98559f618d588660673d5c24ac43b048ba"
+  },
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/Japan/Textures/T_Tree_Forest_Ginkgo_colour.uasset": "e07b2148e461288a44ac67e5afeb8c9b9f1954aeb6d85dc7bb366f7aa5a9d2a3",
-    "unreal/Content/Japan/Textures/T_Tree_Forest_Ginkgo_normal.uasset": "69d911a96bf95b434c90fc8990566346fe85067bdae00bfeb06b1b7d3799a508"
+    "unreal/Content/Japan/Textures/T_Tree_Forest_Ginkgo_normal.uasset": "2f477565560d92dba6df96caf000b2acff2e89ae218d77dd2f7771b8f9690c7e"
   },
   "kind": "editor-saved",
   "schema": 1

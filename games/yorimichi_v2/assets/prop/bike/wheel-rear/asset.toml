@@ -20,6 +20,10 @@ version = 1
 slot_materials = ["/Game/Japan/Materials/M_Bike"]
 triangles = 26060
 allow_cpu_access = true
+apply_lods = true
+lods = [[1.0, 1.0], [0.4, 0.35], [0.15, 0.15], [0.05, 0.05]]
+collision = "none"
+collision_trace = "CTF_USE_DEFAULT"
 
 [[outputs]]
 package = "/Game/Japan/Assets/BK_WheelRear"

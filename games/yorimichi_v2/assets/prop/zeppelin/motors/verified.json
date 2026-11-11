@@ -3,9 +3,9 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/ZP_Motors.uasset": "0da24c0c86bbc593998040df4a189e9f518841d1b32c86be863eb4ffb55cc154"
+    "unreal/Content/Japan/Assets/ZP_Motors.uasset": "26d432fb8606bbbc28fcbd7fa1e49d0d10329150421a2f7c0d0cc39a8a321e31"
   },
-  "input_fingerprint": "3147bdcaa4427c62854b99967aa6ac578265e9e1da3e65ece7d66a9cba9c9776",
+  "input_fingerprint": "cb93170ec5e725ab366efe69a83500338f0435cc2ce64c5af40345bf443da293",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/ZP_Motors": {

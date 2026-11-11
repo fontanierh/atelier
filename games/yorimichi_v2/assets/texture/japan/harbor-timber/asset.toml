@@ -11,7 +11,7 @@ provenance = "donor build of games/yorimichi at the V2 source baseline (docs/DEC
 
 [[sources]]
 path = "src/T_Harbor_timber.png"
-sha256 = "d71b181a3d0df569f0c83ab2f5ffc0142bbeff3e2d542f2ddd4c1d5e3fb28311"
+sha256 = "8f27526e15de03e3c91a08176e1c397912c614e71d240d6b455ea9554168aa22"
 
 [recipe]
 importer = "texture"
@@ -21,8 +21,9 @@ version = 1
 srgb = true
 max_texture_size = 1024
 lod_group = "TEXTUREGROUP_WORLD"
-compression = "TC_EDITOR_ICON"
+compression = "TC_DEFAULT"
 address = "mirror"
+mip_gen = "TMGS_FROM_TEXTURE_GROUP"
 
 [[outputs]]
 package = "/Game/Japan/Textures/T_Harbor_timber"

@@ -3,19 +3,25 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/HD_P_taxi.uasset": "f97704274680f71546e9c8bfd330c40374531a685f562cb8fdbb45f5827873d1"
+    "unreal/Content/Japan/Assets/HD_P_taxi.uasset": "bd92895ef8563e24cd058bc98b7fde3c38ef92d55c4c7c8888a869cc133e44ba"
   },
-  "input_fingerprint": "be276b8d0d14844ea95f7f887ee914034dbd1b6453655923c73dbe4091ca920a",
+  "input_fingerprint": "72d5cb46842dec364a6041259c670748aa341f8b088d94a6a8f2c9946471c1a7",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/HD_P_taxi": {
       "after": {
-        "count": 1,
+        "count": 4,
         "reductions": [
-          1.0
+          1.0,
+          0.3499999940395355,
+          0.11999999731779099,
+          0.03999999910593033
         ],
         "screen_sizes": [
-          0.0
+          1.0,
+          0.2800000011920929,
+          0.11999999731779099,
+          0.03999999910593033
         ]
       },
       "before": {
@@ -24,7 +30,16 @@
           1.0
         ],
         "screen_sizes": [
-          0.0
+          2.0
+        ]
+      },
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.28,
+          0.12,
+          0.04
         ]
       }
     }

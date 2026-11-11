@@ -3,19 +3,25 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/HD_P_bicycle_shelter.uasset": "a587fcbedba92da4e31da9f432a12e2bfe417c5f9b6b717243ebc437dc7aaa1c"
+    "unreal/Content/Japan/Assets/HD_P_bicycle_shelter.uasset": "d53639660888e7b43d67a6819f2d941dd9dbc9cea0f350aef601ea9dc9ff5d64"
   },
-  "input_fingerprint": "999ae47e5a4b8de545ec4404cdbf2e7c4496d2a4acea2ac6b11006c63b6357d3",
+  "input_fingerprint": "2498ed50abc924e364d4e2e87ad09437df45cfe2e9600b661b5100fd583dde21",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/HD_P_bicycle_shelter": {
       "after": {
-        "count": 1,
+        "count": 4,
         "reductions": [
-          1.0
+          1.0,
+          0.3499999940395355,
+          0.11999999731779099,
+          0.03999999910593033
         ],
         "screen_sizes": [
-          0.0
+          1.0,
+          0.2800000011920929,
+          0.11999999731779099,
+          0.03999999910593033
         ]
       },
       "before": {
@@ -24,7 +30,16 @@
           1.0
         ],
         "screen_sizes": [
-          0.0
+          2.0
+        ]
+      },
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.28,
+          0.12,
+          0.04
         ]
       }
     }

@@ -3,19 +3,23 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Brinecove/Meshes/SM_BC_Landmarks_6_3_Soft_Piece23.uasset": "00b5752c0b8e368cbc8b4c68b3261c82d0d5de91e9bf7b2826a2810483905706"
+    "unreal/Content/Brinecove/Meshes/SM_BC_Landmarks_6_3_Soft_Piece23.uasset": "73dc3c39c52493253683f211562c4bcfc5756caccb6cc761a8a9a7acb0bbaf76"
   },
-  "input_fingerprint": "856e1928417068a90631a512fb9376ac772c7aad8a7c7bd37efece82badb22e6",
+  "input_fingerprint": "8743246cdf5767377e378a6a3f16cab081ce0818c270c6ad018ee2ddb07f5796",
   "kind": "imported",
   "lods": {
     "/Game/Brinecove/Meshes/SM_BC_Landmarks_6_3_Soft_Piece23": {
       "after": {
-        "count": 1,
+        "count": 3,
         "reductions": [
-          1.0
+          1.0,
+          0.44999998807907104,
+          0.18000000715255737
         ],
         "screen_sizes": [
-          0.0
+          1.0,
+          0.30000001192092896,
+          0.11999999731779099
         ]
       },
       "before": {
@@ -25,6 +29,14 @@
         ],
         "screen_sizes": [
           2.0
+        ]
+      },
+      "target": {
+        "count": 3,
+        "screen_sizes": [
+          1.0,
+          0.3,
+          0.12
         ]
       }
     }

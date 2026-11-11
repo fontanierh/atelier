@@ -3,19 +3,25 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/HD_P_stone_lantern.uasset": "892af9853cb89d3b1250c728641e62708a59c26654c109c455030743c5493beb"
+    "unreal/Content/Japan/Assets/HD_P_stone_lantern.uasset": "7e47e5fa7ed0e02985654c9870a0fa9e16537716767d9b90158b117652b6aa99"
   },
-  "input_fingerprint": "72ca3f0d8cb2d170f9f8b8a208677d9ca98070b40a53b56cf1d299f05b9feebf",
+  "input_fingerprint": "97601739c24afc3b76c655cf4fc56e00fa80c364244ef41d5fc582ff85ccb69c",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/HD_P_stone_lantern": {
       "after": {
-        "count": 1,
+        "count": 4,
         "reductions": [
-          1.0
+          1.0,
+          0.3499999940395355,
+          0.11999999731779099,
+          0.03999999910593033
         ],
         "screen_sizes": [
-          0.0
+          1.0,
+          0.2800000011920929,
+          0.11999999731779099,
+          0.03999999910593033
         ]
       },
       "before": {
@@ -24,7 +30,16 @@
           1.0
         ],
         "screen_sizes": [
-          0.0
+          2.0
+        ]
+      },
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.28,
+          0.12,
+          0.04
         ]
       }
     }

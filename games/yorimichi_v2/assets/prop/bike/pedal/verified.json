@@ -3,19 +3,25 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/BK_Pedal.uasset": "0ea7ff94c2484622ff0577218470ffb6d85c086fa895e3fa1e69f5b40d53ce96"
+    "unreal/Content/Japan/Assets/BK_Pedal.uasset": "774d5cdf1730245d8ef6b6cad89d2b0a2b23100a1d082c17e53118a683018c20"
   },
-  "input_fingerprint": "c7303981123c4b085d883b3ed1243aa0c84cdf06e1262af2440f6774c942c28f",
+  "input_fingerprint": "2c6ac873de1d2945ab7d051c85e59fd3fb97fed60a85677d0264909858f940ce",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/BK_Pedal": {
       "after": {
-        "count": 1,
+        "count": 4,
         "reductions": [
-          1.0
+          1.0,
+          0.4000000059604645,
+          0.15000000596046448,
+          0.05000000074505806
         ],
         "screen_sizes": [
-          0.0
+          1.0,
+          0.3499999940395355,
+          0.15000000596046448,
+          0.05000000074505806
         ]
       },
       "before": {
@@ -25,6 +31,15 @@
         ],
         "screen_sizes": [
           2.0
+        ]
+      },
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.35,
+          0.15,
+          0.05
         ]
       }
     }

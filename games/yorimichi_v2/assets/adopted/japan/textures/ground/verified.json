@@ -1,9 +1,11 @@
 {
   "asset": "adopted/japan/textures/ground",
-  "dependencies": {},
+  "dependencies": {
+    "adopted/japan/materials/base-materials": "cf8c1d285e35a9b944ae8db9f167ba98559f618d588660673d5c24ac43b048ba"
+  },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Textures/T_ForestNormalDefault.uasset": "38a3495d89c90787e9af7dd9761842873be195788ace342a1d0e72057f0049a4",
+    "unreal/Content/Japan/Textures/T_ForestNormalDefault.uasset": "19d11160fd172977a302ff5e8fdb6739515b16e1dbdbecddf39331fc8d178f97",
     "unreal/Content/Japan/Textures/T_flower.uasset": "f2e72f45527dfa216dece1dd72f0a9550ee30e7eb9e7884cfc90105eb1ad6090",
     "unreal/Content/Japan/Textures/T_grass.uasset": "a4ec63cb48f39814546d9087db469ee164fae22cbe212eb720c8d1fdf9fdf77b",
     "unreal/Content/Japan/Textures/T_ground.uasset": "53f75f5e548b2480e4ad2d62f5af04acd2b2aa82f0861fe3dc9f7b7ab42827c4",

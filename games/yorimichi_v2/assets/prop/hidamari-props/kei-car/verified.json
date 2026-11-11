@@ -3,19 +3,25 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/HD_P_kei_car.uasset": "c81bc403ef3bfbbe96a45b945fb393e5d72412389475d1e28f8010bece7f5948"
+    "unreal/Content/Japan/Assets/HD_P_kei_car.uasset": "c086d6416282ec4142640920ec25ef9f0b99e3350f15f130afc2824b1562a8c3"
   },
-  "input_fingerprint": "a18251e0dd4fc8e36ecbb5624eb73fa306824bcacc59fe67f8766071ff800961",
+  "input_fingerprint": "a9a8a125602f8db92f7e90296491f0289e88eae63533376ac287f38e79f51e8b",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/HD_P_kei_car": {
       "after": {
-        "count": 1,
+        "count": 4,
         "reductions": [
-          1.0
+          1.0,
+          0.3499999940395355,
+          0.11999999731779099,
+          0.03999999910593033
         ],
         "screen_sizes": [
-          0.0
+          1.0,
+          0.2800000011920929,
+          0.11999999731779099,
+          0.03999999910593033
         ]
       },
       "before": {
@@ -24,7 +30,16 @@
           1.0
         ],
         "screen_sizes": [
-          0.0
+          2.0
+        ]
+      },
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.28,
+          0.12,
+          0.04
         ]
       }
     }

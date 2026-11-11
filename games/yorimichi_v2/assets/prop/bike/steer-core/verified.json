@@ -3,19 +3,25 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/BK_Steer_Core.uasset": "5566117cf1ea362a48217e7982d2e666cb3e73fda99b5f87fa9d913febb2853c"
+    "unreal/Content/Japan/Assets/BK_Steer_Core.uasset": "72a8c7337e52ccb867ec4af92bd1d7221fe427f8f3a97928e77477e4edab9491"
   },
-  "input_fingerprint": "143d9928cf811bc198945d3ffe2d57a63981ebdfbf00890f2196df5191b8e7f1",
+  "input_fingerprint": "389cf1a9146d866ff31647ef240d89cec02f9d452c7f59cc5f8e457e158642dc",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/BK_Steer_Core": {
       "after": {
-        "count": 1,
+        "count": 4,
         "reductions": [
-          1.0
+          1.0,
+          0.4000000059604645,
+          0.15000000596046448,
+          0.05000000074505806
         ],
         "screen_sizes": [
-          0.0
+          1.0,
+          0.3499999940395355,
+          0.15000000596046448,
+          0.05000000074505806
         ]
       },
       "before": {
@@ -25,6 +31,15 @@
         ],
         "screen_sizes": [
           2.0
+        ]
+      },
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.35,
+          0.15,
+          0.05
         ]
       }
     }

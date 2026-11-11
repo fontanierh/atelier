@@ -3,9 +3,9 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/SkatePark/Textures/T_Pier_mural_albedo.uasset": "5f5b147aaa3544032f8203219ddc9972b815e1a380ca778d831e0041b798b0ea"
+    "unreal/Content/SkatePark/Textures/T_Pier_mural_albedo.uasset": "a1ba1fbf1223ad4ad2bec78252d194bf563829c4758886a4a97ddf01b71d6fc8"
   },
-  "input_fingerprint": "acf9835b1ac49044b6e27b2735f0f352df7a8c18649991930a0e1ffeb2126841",
+  "input_fingerprint": "d3db63aef7da6fcd2060dec14a0c0ca58a70de8c005c6e58606ca37f2e5938bb",
   "kind": "imported",
   "schema": 1,
   "tool": "texture@1"

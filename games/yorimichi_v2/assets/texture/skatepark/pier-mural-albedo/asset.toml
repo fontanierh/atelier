@@ -9,7 +9,7 @@ owner = "shared/skatepark/pier-mural-albedo"
 
 [[sources]]
 path = "src/mural-albedo.png"
-sha256 = "2a104666e1b22c91acddc0c110cf188e1652529a46f8329e02dfc4fc1735ae49"
+sha256 = "7b69ff47fbffa3de04bb4a4b7b9c8abb1d7f459cdad8cd55792da351477a7475"
 
 [recipe]
 importer = "texture"
@@ -18,6 +18,9 @@ version = 1
 [recipe.settings]
 srgb = true
 compression = "TC_DEFAULT"
+max_texture_size = 1024
+lod_group = "TEXTUREGROUP_WORLD"
+mip_gen = "TMGS_FROM_TEXTURE_GROUP"
 
 [[outputs]]
 package = "/Game/SkatePark/Textures/T_Pier_mural_albedo"

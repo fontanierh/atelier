@@ -1,6 +1,8 @@
 {
   "asset": "adopted/brinecove/hero-galleon-hull",
-  "dependencies": {},
+  "dependencies": {
+    "adopted/brinecove/materials": "0d8c3754ab1e85deec6b487041555fc9ddafa9eca5bbc1389121aa279c99afc9"
+  },
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/Brinecove/Materials/MI_BC_hero_galleon-hull_0.uasset": "33ae0f18ce944864725da9c1bbbb60854276fd1666267d539e4a85c0285d5f65",
@@ -8,7 +10,7 @@
     "unreal/Content/Brinecove/Meshes/SM_BC_Hero_GalleonHull_cell_-1_0.uasset": "e266f1ebbd6728bbdfa91e4f1a0588ad717f13d1c701f1fec82e7c9326ca0598",
     "unreal/Content/Brinecove/Meshes/SM_BC_Hero_GalleonHull_cell_0_-1.uasset": "8fbe4fd3aa3a905b8c5f14bb4367b404363a863c5cbf166360be664df7c35b23",
     "unreal/Content/Brinecove/Meshes/SM_BC_Hero_GalleonHull_cell_0_0.uasset": "a26bf3fd93bd08b913e0b4f6b1c94759707b5ac7d9a8b068763c4553c664946b",
-    "unreal/Content/Brinecove/Textures/T_BC_hero_galleon-hull_0.uasset": "37921abc0659da3af64da6ba506670e83259028eec94700928154136fc055e9f"
+    "unreal/Content/Brinecove/Textures/T_BC_hero_galleon-hull_0.uasset": "4f3d4e751c4ec0666e929b2b980e8f5a18f257031084ea00d64ebdf2f1e9c9d0"
   },
   "kind": "editor-saved",
   "schema": 1

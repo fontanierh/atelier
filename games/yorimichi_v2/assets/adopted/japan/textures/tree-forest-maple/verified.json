@@ -1,10 +1,12 @@
 {
   "asset": "adopted/japan/textures/tree-forest-maple",
-  "dependencies": {},
+  "dependencies": {
+    "adopted/japan/materials/base-materials": "cf8c1d285e35a9b944ae8db9f167ba98559f618d588660673d5c24ac43b048ba"
+  },
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/Japan/Textures/T_Tree_Forest_Maple_colour.uasset": "f5fe5245bde20264318cc1b188f003644eb3e7ad131d9f21d8970a5a4b3e2361",
-    "unreal/Content/Japan/Textures/T_Tree_Forest_Maple_normal.uasset": "4a7defaba3f9cf0aaa3fc9186b95afc71cf81f8f62975a5c8412888af59062a4"
+    "unreal/Content/Japan/Textures/T_Tree_Forest_Maple_normal.uasset": "ed9b9c6d9572bedd992cad6f27a57b18aa3627219d2b04f8efba4726403cbc1c"
   },
   "kind": "editor-saved",
   "schema": 1

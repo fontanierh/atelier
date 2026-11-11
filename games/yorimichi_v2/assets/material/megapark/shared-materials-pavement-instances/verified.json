@@ -1,15 +1,15 @@
 {
   "asset": "material/megapark/shared-materials-pavement-instances",
   "dependencies": {
-    "adopted/megapark/shared-textures-common": "f279797ca888677031e0d50ea2bc2308950faf90caa3822a71f98aee26a7882c",
+    "adopted/megapark/shared-textures-common": "f716661a7d836da63b97d6155a910c9fa025f5fb82881066b78c9276fb39a20c",
     "adopted/megapark/shared-textures-pavement": "e5f1f1192e5ea6991742d02898308ae75fff2d7121539f2cf552ac645fc9a82d",
-    "master/megapark/opaque": "4b3c2b4c4994113316d36ae629854073ab22f272d1a7f1e79520e05a7f709e5b"
+    "master/megapark/opaque": "d2d524eb55f91ee5ea3596813237468202bdf1f5e17b1f1474b136c70133e200"
   },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/MegaPark/Materials/MI_99622005a8467a13.uasset": "d28c97bc591b19bc8a3718b1fa32444b71bafff57eeae9d2bf84959a7d9a51ad"
+    "unreal/Content/MegaPark/Materials/MI_99622005a8467a13.uasset": "167d8dfc8a2fd8cd37d6cff262f5ea9a2f3ae846909a12bd0793a7ac859f3516"
   },
-  "input_fingerprint": "4c3055541459c7bca20ce8737f30f64727f3b4df8739cd57d04bedaa842c20cd",
+  "input_fingerprint": "d44d06ca0ec95185a2b68106f38e1918c91ff3e5c11e6a71d0dae6ab7178b43b",
   "kind": "imported",
   "schema": 1,
   "tool": "material-instance@2"

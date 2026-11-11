@@ -3,9 +3,9 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/SB_Boom.uasset": "abe8f4ff682159d9c63094f8b73893c9dab75171301f0b14be68278664e43af5"
+    "unreal/Content/Japan/Assets/SB_Boom.uasset": "b795b797ac6e2cf67c4c3ea23c869f8b6826035f537933bcbdfd5fbe6f8c6836"
   },
-  "input_fingerprint": "31e91c03dd40e2c23ce668edb02fd83e9715ab7469891a31f4246fd15f61c2f3",
+  "input_fingerprint": "61c70e719753bc0160f837a4a872b6c63e938ed84ee10b38604abca510afc8e3",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/SB_Boom": {

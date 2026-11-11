@@ -3,19 +3,25 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/HD_P_tanuki.uasset": "a5d7221e2d2ff5aeb38974e90bd46ca5eb4b666350c7d64fa229fb75cee411bb"
+    "unreal/Content/Japan/Assets/HD_P_tanuki.uasset": "e35ed8aa113ae9dcb31e24375405a3ee7122d11b0f23457630f71b06a13f096b"
   },
-  "input_fingerprint": "bd0cb58db2c2ef10334c7acbe02e74703447370afdcb0840b4ec7bd382295210",
+  "input_fingerprint": "4e5f5254050a5ced90dac9b51096b17d7ec1da14f128664a89dc34bb4f0e2dbc",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/HD_P_tanuki": {
       "after": {
-        "count": 1,
+        "count": 4,
         "reductions": [
-          1.0
+          1.0,
+          0.3499999940395355,
+          0.11999999731779099,
+          0.03999999910593033
         ],
         "screen_sizes": [
-          0.0
+          1.0,
+          0.2800000011920929,
+          0.11999999731779099,
+          0.03999999910593033
         ]
       },
       "before": {
@@ -24,7 +30,16 @@
           1.0
         ],
         "screen_sizes": [
-          0.0
+          2.0
+        ]
+      },
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.28,
+          0.12,
+          0.04
         ]
       }
     }

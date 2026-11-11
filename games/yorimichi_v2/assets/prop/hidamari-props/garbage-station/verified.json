@@ -3,19 +3,25 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/HD_P_garbage_station.uasset": "1856cc47435eeaa07466435aaae86dce12e1359b42d1cfcf0310d884f457e184"
+    "unreal/Content/Japan/Assets/HD_P_garbage_station.uasset": "2b3a26594f247fbd56165a50941b5718456b35a2b6021f79fd77271e2c150aec"
   },
-  "input_fingerprint": "8c5b79604e24e2473aba31df1860d094d2fd6f98b931441ee6387f1cfbbb7471",
+  "input_fingerprint": "e9b08b49396e4c3c3b8fd94e30cc0939516d300068d917079ae58e0a3e44d4d9",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/HD_P_garbage_station": {
       "after": {
-        "count": 1,
+        "count": 4,
         "reductions": [
-          1.0
+          1.0,
+          0.3499999940395355,
+          0.11999999731779099,
+          0.03999999910593033
         ],
         "screen_sizes": [
-          0.0
+          1.0,
+          0.2800000011920929,
+          0.11999999731779099,
+          0.03999999910593033
         ]
       },
       "before": {
@@ -24,7 +30,16 @@
           1.0
         ],
         "screen_sizes": [
-          0.0
+          2.0
+        ]
+      },
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.28,
+          0.12,
+          0.04
         ]
       }
     }

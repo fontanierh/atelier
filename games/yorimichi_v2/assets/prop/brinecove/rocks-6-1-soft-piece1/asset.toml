@@ -20,6 +20,8 @@ version = 1
 slot_materials = ["/Game/Brinecove/Materials/MI_BC_cover_fern", "/Game/Brinecove/Materials/MI_BC_cover_fern_light", "/Game/Brinecove/Materials/MI_BC_foam", "/Game/Brinecove/Materials/MI_BC_leaf_deep", "/Game/Brinecove/Materials/MI_BC_leaf_light", "/Game/Brinecove/Materials/MI_BC_leaf_mid", "/Game/Brinecove/Materials/MI_BC_leaf_warm", "/Game/Brinecove/Materials/MI_BC_water_mid"]
 triangles = 14282
 full_precision_uvs = true
+apply_lods = true
+lods = [[1.0, 1.0], [0.45, 0.3], [0.18, 0.12]]
 
 [[outputs]]
 package = "/Game/Brinecove/Meshes/SM_BC_Rocks_6_1_Soft_Piece1"

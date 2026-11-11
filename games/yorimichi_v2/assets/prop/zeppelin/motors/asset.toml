@@ -19,8 +19,10 @@ version = 1
 [recipe.settings]
 slot_materials = ["/Game/Japan/Materials/M_Village"]
 triangles = 576
-collision = "complex"
+collision = "none"
 double_sided = false
+collision_trace = "CTF_USE_DEFAULT"
+allow_cpu_access = false
 
 [[outputs]]
 package = "/Game/Japan/Assets/ZP_Motors"

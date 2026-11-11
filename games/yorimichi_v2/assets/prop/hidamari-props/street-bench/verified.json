@@ -3,19 +3,25 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/HD_P_street_bench.uasset": "a3c32561653675b7f14bd5f5bff53ff8ea6a4e8f43ac992e4b879b1bece68218"
+    "unreal/Content/Japan/Assets/HD_P_street_bench.uasset": "3903ad7d6c5f3bd0027d3a7bf07439ba9ff17d7a074f7016f076448b11c55be1"
   },
-  "input_fingerprint": "7b16defe31c221f0a0119bc675350ad54ab0b0a2c12fa5f4e5c38213dcc7697a",
+  "input_fingerprint": "a597eb6ffd9e01657b298e90b40240faf2399fdfb4c5f84058c7797134f58945",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/HD_P_street_bench": {
       "after": {
-        "count": 1,
+        "count": 4,
         "reductions": [
-          1.0
+          1.0,
+          0.3499999940395355,
+          0.11999999731779099,
+          0.03999999910593033
         ],
         "screen_sizes": [
-          0.0
+          1.0,
+          0.2800000011920929,
+          0.11999999731779099,
+          0.03999999910593033
         ]
       },
       "before": {
@@ -24,7 +30,16 @@
           1.0
         ],
         "screen_sizes": [
-          0.0
+          2.0
+        ]
+      },
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.28,
+          0.12,
+          0.04
         ]
       }
     }

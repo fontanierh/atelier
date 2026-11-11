@@ -3,19 +3,25 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/HD_P_water_basin.uasset": "cf7828e9155d3a736f05f1855ca3352c8038b33f397af22ad322876f25e806bf"
+    "unreal/Content/Japan/Assets/HD_P_water_basin.uasset": "690d4322da15b6604e1a44ac0505e24ddbd86142b09b50cb59e99fc50ff73ccb"
   },
-  "input_fingerprint": "71140e5c37adf06fde5a6c7a4fd1af656a229225aa69d99cdca83ab523abf31f",
+  "input_fingerprint": "b0f36255a3da568a26b01200e1de3d8a4f855e3c96e24bea56cd4559884c0ca9",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/HD_P_water_basin": {
       "after": {
-        "count": 1,
+        "count": 4,
         "reductions": [
-          1.0
+          1.0,
+          0.3499999940395355,
+          0.11999999731779099,
+          0.03999999910593033
         ],
         "screen_sizes": [
-          0.0
+          1.0,
+          0.2800000011920929,
+          0.11999999731779099,
+          0.03999999910593033
         ]
       },
       "before": {
@@ -24,7 +30,16 @@
           1.0
         ],
         "screen_sizes": [
-          0.0
+          2.0
+        ]
+      },
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.28,
+          0.12,
+          0.04
         ]
       }
     }

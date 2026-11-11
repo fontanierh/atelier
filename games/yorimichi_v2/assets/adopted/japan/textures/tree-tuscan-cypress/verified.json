@@ -1,10 +1,12 @@
 {
   "asset": "adopted/japan/textures/tree-tuscan-cypress",
-  "dependencies": {},
+  "dependencies": {
+    "adopted/japan/materials/base-materials": "cf8c1d285e35a9b944ae8db9f167ba98559f618d588660673d5c24ac43b048ba"
+  },
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/Japan/Textures/T_Tree_Tuscan_Cypress_colour.uasset": "54445286cf51d15bc80086dce1253bd6e906b5da478799bae376961406763b48",
-    "unreal/Content/Japan/Textures/T_Tree_Tuscan_Cypress_normal.uasset": "6990f694b91bfb44562f0ec002d94966d823895ebddf8ac2535309b4be70e09e"
+    "unreal/Content/Japan/Textures/T_Tree_Tuscan_Cypress_normal.uasset": "5449bf2123d8822281238394226501bbb2b7ca4bf0e1a54829bbb6dd92f88de2"
   },
   "kind": "editor-saved",
   "schema": 1

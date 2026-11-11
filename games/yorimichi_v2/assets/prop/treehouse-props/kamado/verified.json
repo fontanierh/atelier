@@ -3,19 +3,25 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/TH_P_kamado.uasset": "27cb4f969b2bea445a52dc5731cd8eee811995545851b2ee7c81675a39e3ad30"
+    "unreal/Content/Japan/Assets/TH_P_kamado.uasset": "e14cea9388dbe23dbd3ea81882c7b29fd05c74afb981864f4a3765e38a98fe95"
   },
-  "input_fingerprint": "5e000198b26d3ac9a9ce73b4fd96055f157f9a5e79158fd37af7a69c0dc5a69c",
+  "input_fingerprint": "01d5d27e0e787526e57834c7e50d20e4eb61590d9147201aa3c613de0daa1397",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/TH_P_kamado": {
       "after": {
-        "count": 1,
+        "count": 4,
         "reductions": [
-          1.0
+          1.0,
+          0.3499999940395355,
+          0.11999999731779099,
+          0.03999999910593033
         ],
         "screen_sizes": [
-          0.0
+          1.0,
+          0.2800000011920929,
+          0.11999999731779099,
+          0.03999999910593033
         ]
       },
       "before": {
@@ -24,7 +30,16 @@
           1.0
         ],
         "screen_sizes": [
-          0.0
+          2.0
+        ]
+      },
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.28,
+          0.12,
+          0.04
         ]
       }
     }

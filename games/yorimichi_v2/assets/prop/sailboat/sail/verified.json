@@ -3,9 +3,9 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/SB_Sail.uasset": "9cf0a2948b32dd4ab50c370dc0c9f9c4ee0de3ba61eac6901195d471b077349e"
+    "unreal/Content/Japan/Assets/SB_Sail.uasset": "55f8bdabbb7175c951e877ceb829250582fd7c3d7f06fc79d26181edf9de763a"
   },
-  "input_fingerprint": "0b0401fa53f8bafeaaaed7f03aacf6def454438eee87437591c8d05cdcf9e94d",
+  "input_fingerprint": "6f61a67162bfbea8cd6aa85874952ee7769213685e71c03965f1105241da4977",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/SB_Sail": {

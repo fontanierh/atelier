@@ -3,19 +3,25 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/HD_P_lantern_sign.uasset": "466d93c352787f706259b4ca536c5a524544ab15f6d8c70dfe27740b6d158be2"
+    "unreal/Content/Japan/Assets/HD_P_lantern_sign.uasset": "b7e3a8cbb75c94e1a867329daa45e943abb557117cd3d448faf21d175537c5b2"
   },
-  "input_fingerprint": "e0b21cb245bed7c4ca62a1103e10e75c22a6a4b560350d12204aae9ede73ef2a",
+  "input_fingerprint": "5b8cc8f57f45b9e3309b91ef2cac909d34bb8cf6858807ee36a541a9db4fbb6b",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/HD_P_lantern_sign": {
       "after": {
-        "count": 1,
+        "count": 4,
         "reductions": [
-          1.0
+          1.0,
+          0.3499999940395355,
+          0.11999999731779099,
+          0.03999999910593033
         ],
         "screen_sizes": [
-          0.0
+          1.0,
+          0.2800000011920929,
+          0.11999999731779099,
+          0.03999999910593033
         ]
       },
       "before": {
@@ -24,7 +30,16 @@
           1.0
         ],
         "screen_sizes": [
-          0.0
+          2.0
+        ]
+      },
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.28,
+          0.12,
+          0.04
         ]
       }
     }

@@ -3,9 +3,9 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Textures/T_Harbor_paving.uasset": "cf929bc452863a5ee0dd37acb374c4e37ad76931c13ca64a88f41a8ebdd58b7f"
+    "unreal/Content/Japan/Textures/T_Harbor_paving.uasset": "56836de89c40953ba6775b4ca49c6f947948dbed8e1bc4ca2e226fb918d7f25a"
   },
-  "input_fingerprint": "08ebb03394a0c249999f79c05a9d0837ced1346773864c48025d32685ce9955f",
+  "input_fingerprint": "067c8c1f19f2c23d7649cee3c40fcbd91a7f46c0ef58d9465ef2b731412a06df",
   "kind": "imported",
   "schema": 1,
   "tool": "texture@1"
