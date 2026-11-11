@@ -1,13 +1,13 @@
 {
   "asset": "material/japan/treehouse/surface-pane-instances",
   "dependencies": {
-    "master/treehouse/light": "8f0fe7c818af3784b7221f119efd9e186b045aef2089be30bffa8c19e1a8c68f"
+    "master/treehouse/light": "9ae058c78636300a2b6d023ee1caba336726d9098550b62a3be57f5999fcc52f"
   },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Treehouse/Materials/MI_TH_pane.uasset": "a5cf1f37645a525f3c9763731a4f7be562bcb867b9e6bf9d885754f8ff36a3f2"
+    "unreal/Content/Japan/Treehouse/Materials/MI_TH_pane.uasset": "1688ae947cd9ef2d2b778cd416b834c1ee8c7d4bf81b999cd03feb114fc32edc"
   },
-  "input_fingerprint": "a7bd867ffa7987df86acbe5af46cb9edcbe72170643fd4f57f371767e85b8c26",
+  "input_fingerprint": "91f0ab2bf9b240683b606e815ac7a71426a16d06213829aee9e9c2fb65f8a85e",
   "kind": "imported",
   "schema": 1,
   "tool": "material-instance@2"

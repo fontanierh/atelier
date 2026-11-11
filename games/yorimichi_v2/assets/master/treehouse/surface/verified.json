@@ -6,9 +6,9 @@
   },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Treehouse/Materials/M_TreeHouse.uasset": "cdb1001116e8f8a859af31ef54292d1f63cae1c38004309d906849675eb376f3"
+    "unreal/Content/Japan/Treehouse/Materials/M_TreeHouse.uasset": "18e1496f6b87dcbe890b360cccd672c9686c8c2f532debd471f6c26de4b554ac"
   },
-  "input_fingerprint": "4958b82b93f16be0cf74a2cebc50157792dcc0477ab343974975bc2d99efc96a",
+  "input_fingerprint": "4f25794f48fd4fa69b8eb2ddf033ff6feb742c841517555871b50c6856bbc011",
   "kind": "imported",
   "schema": 1,
   "tool": "material-master@1"

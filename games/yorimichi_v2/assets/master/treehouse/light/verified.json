@@ -3,9 +3,9 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Treehouse/Materials/M_TH_Light.uasset": "f37c56c3f42cb9e7a2be9ecf017278e43b7d4213f1550000367722b90d6ed6bc"
+    "unreal/Content/Japan/Treehouse/Materials/M_TH_Light.uasset": "4a8a291ca2b8355b6b635e9f033ccec60416a2ef65aff8357b40a02b5cf0717c"
   },
-  "input_fingerprint": "74493b8a868dddb8e1e7a4bc30ecd6322905aceb57a93e80919c15f610489eea",
+  "input_fingerprint": "abd966031c065e510d1df6cb35781316d81c240df444b6aa9cc52fd287c4c30e",
   "kind": "imported",
   "schema": 1,
   "tool": "material-master@1"

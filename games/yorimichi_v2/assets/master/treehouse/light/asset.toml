@@ -11,7 +11,7 @@ provenance = "donor generator games/yorimichi/unreal/Scripts/import_treehouse.py
 
 [[sources]]
 path = "src/treehouse_masters.py"
-sha256 = "27ec104ab6f2b33534934a22422e60197df8ea5607c7d32db74d6ced1b1c3eae"
+sha256 = "9db4f86e6c2d32e868a7f43fdcdb988ce96efc3069390a5e4ae948e0f0823ee8"
 
 [recipe]
 importer = "material-master"

@@ -142,7 +142,7 @@ float quayFoam=0.;
 
 # W: WAVES, V: camera vector (world, toward the camera), D: pixel depth (cm),
 # L: scene depth without water behind the surface (cm), P: world position (cm), T: time (s) -> emissive colour.
-LOOK = '''
+LOOK = ('''
 float2 p=P.xy*.01;
 float3 N=normalize(float3(-W.xy,1));
 float nv=saturate(dot(N,V));
@@ -175,7 +175,7 @@ float fleck=smoothstep(.58,.84,W.z)*(.6+.8*gust)*%(fleck)s;
 float foamMask=saturate(max(max(surf,quayFoam),fleck));
 c=lerp(c,%(foam)s,foamMask);
 return lerp(c,%(far)s,1-exp(-D/%(haze)s));
-''' % dict(graze_power=num(GRAZE_POWER), reflect=num(REFLECT), graze=num(GRAZE), horizon=f3(HORIZON), zenith=f3(ZENITH),
+''') % dict(graze_power=num(GRAZE_POWER), reflect=num(REFLECT), graze=num(GRAZE), horizon=f3(HORIZON), zenith=f3(ZENITH),
            shallow=f3(SHALLOW), mid_teal=f3(MID_TEAL), body=f3(BODY), surf_m=num(SURF_M), surf_aa_max_m=num(SURF_AA_MAX_M),
            far0=num(SURF_FAR[0]), far1=num(SURF_FAR[1]), fleck=num(FLECK), foam=f3(FOAM), far=f3(FAR_COLOUR), haze=num(HAZE_CM))
 

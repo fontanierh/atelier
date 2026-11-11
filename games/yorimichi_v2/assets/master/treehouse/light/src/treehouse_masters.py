@@ -243,7 +243,8 @@ def treehouse_surface(package, reads, *, texture, see_through):
                      default_value=unreal.LinearColor(1., 1., 1., 1.))
     room_cut = node(unreal.MaterialExpressionScalarParameter, -1350, 2350, parameter_name='RoomCut', default_value=1.)
 
-    cloth_pins = ['T', 'P', 'W', 'A', 'U', 'F', *TRAIL]
+    trail_pins = ('T0', 'T1', 'T2', 'T3')
+    cloth_pins = ['T', 'P', 'W', 'A', 'U', 'F', *trail_pins]
     cloth_wpo = custom(-300, 850, CLOTH, cloth_pins, unreal.CustomMaterialOutputType.CMOT_FLOAT3, TAG)
     link(t, '', cloth_wpo, 'T')
     link(p, '', cloth_wpo, 'P')
@@ -251,7 +252,7 @@ def treehouse_surface(package, reads, *, texture, see_through):
     link(node(unreal.MaterialExpressionVertexTangentWS, -550, 950), '', cloth_wpo, 'A')
     link(node(unreal.MaterialExpressionTextureCoordinate, -550, 1050), '', cloth_wpo, 'U')
     link(focus, '', cloth_wpo, 'F')
-    for pin, tr in zip(TRAIL, trails):
+    for pin, tr in zip(trail_pins, trails):
         link(tr, '', cloth_wpo, pin)
 
     whole_inputs = ['M', 'O', 'P', 'C', 'E', 'F', 'G', 'U1', 'U2', 'U3', 'U4']

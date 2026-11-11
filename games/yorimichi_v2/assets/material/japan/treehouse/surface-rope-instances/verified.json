@@ -1,14 +1,14 @@
 {
   "asset": "material/japan/treehouse/surface-rope-instances",
   "dependencies": {
-    "master/treehouse/surface": "2e1604b3d09751e99ab236d6cc8b5099686e749293a1a77c80d7b82d9d07a5ef",
+    "master/treehouse/surface": "610e3e37e0bd21906225fbf42381bd6fd63c3c901f56ed655a34d665579246f7",
     "texture/japan/treehouse-rope": "6a5b56e2fb31f85709f4c81e1a45df2cf90039c7805d5174716f3a0b1d23ccbc"
   },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Treehouse/Materials/MI_TH_rope.uasset": "f96e9ca9e34e5eaac685a8a498a079e14a41d94e7d7c33072fcfb2fa5a91193a"
+    "unreal/Content/Japan/Treehouse/Materials/MI_TH_rope.uasset": "862c12654c3ccb20e495c5718d4a13cc3a83645f5deea029ea2b649351bd77db"
   },
-  "input_fingerprint": "e331c22ca874e79fb399f99eb6866b5a0c0360685556c1b7d9b320355271de27",
+  "input_fingerprint": "d480b1f60aa97fc77ceaf7679035bc545fad77f4e03be4a440991cecc6a7aacd",
   "kind": "imported",
   "schema": 1,
   "tool": "material-instance@2"
