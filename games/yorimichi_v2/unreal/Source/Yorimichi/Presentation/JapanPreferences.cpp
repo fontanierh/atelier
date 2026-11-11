@@ -568,13 +568,19 @@ void UJapanPreferences::Apply()
         Set(TEXT("r.Shadow.CSM.TransitionScale"),Laptop ? .25f : 1.f);
         Set(TEXT("r.DistanceFieldShadowing"),bForward || PerformanceMode ? 0.f : 1.f);
         Set(TEXT("foliage.LODDistanceScale"),PerformanceMode ? .75f : 1.f);
-#if !UE_BUILD_SHIPPING
         if (!GIsEditor && !IsRunningCommandlet())
         {
-            const int32 WpRangeCm = Laptop ? 57600 : (PerformanceMode ? 89600 : -1);
+            const int32 WpRangeCm = Laptop ? 64000 : (PerformanceMode ? 134400 : -1);
+#if !UE_BUILD_SHIPPING
             UWorldPartitionSubsystem::SetOverrideLoadingRange(TEXT("MainPartition"), WpRangeCm);
-        }
+#else
+            if (GEngine && Owner && Owner->GetWorld())
+            {
+                GEngine->Exec(Owner->GetWorld(), *FString::Printf(
+                    TEXT("wp.Runtime.OverrideRuntimeSpatialHashLoadingRange grid=0 range=%d"), WpRangeCm));
+            }
 #endif
+        }
         AppliedPerformanceMode = ShadowProfile;
     }
     Set(TEXT("r.ContactShadows"),1.f);
