@@ -10,19 +10,34 @@ The source baseline `7eec0f98dd` is documented separately in [features](inventor
 
 ## Post-handoff development checkpoint
 
-At main `082384e706` (2026-11-11), these follow-ups are merged:
+At main `e81b05a623` (2026-11-11), these follow-ups are merged:
 
 | Change | Source/content delivered | Verification limit |
 | --- | --- | --- |
 | [#836](https://github.com/fontanierh/atelier/pull/836) | Runtime tick, audio-probe, raycast and allocation changes | Compilation is recorded in the PR; this is not a measured whole-game frame-rate or memory improvement. |
-| [#837](https://github.com/fontanierh/atelier/pull/837) | Forward-renderer configuration, aspect-matched 1440p viewport, tree LOD defaults, streaming and lazy map/JSON loading | The settings and code are merged; a completed comparable runtime capture is still needed to quantify their effect. |
+| [#837](https://github.com/fontanierh/atelier/pull/837) | Forward-renderer configuration, aspect-matched 1440p viewport, tree LOD defaults, streaming and lazy map/JSON loading | The settings and code are merged; the combined runtime observation below does not isolate this PR's effect. |
 | [#838](https://github.com/fontanierh/atelier/pull/838) | Foliage, treehouse, water and other material builders and saved imports; duplicate capture-CVar registration fixed | The import/check evidence is in the PR. Saved materials do not establish human visual acceptance. |
+| [#840](https://github.com/fontanierh/atelier/pull/840) | Texture compression/mipmaps, multi-level mesh LODs and removal of unused render-mesh collision/CPU buffers | The PR records accepted editor saves and 130 generated/dependent imports. This work is merged, not still planned. |
+| [#841](https://github.com/fontanierh/atelier/pull/841) | Sea/water HLSL string formatting and treehouse shader input names corrected after runtime fallback materials were found | Nine master/instance imports are recorded. Import acceptance alone does not prove every runtime shader or view correct. |
+| [#842](https://github.com/fontanierh/atelier/pull/842) | Lower per-frame World Partition streaming budgets and registration batch sizes | Configuration is merged; the runtime observation below predates this change. |
 
-These changes are later than the package above. The record census at this checkpoint is 7,662 asset records;
-the migration-handoff snapshots remain historical. Asset optimization continues separately; planned texture,
-mesh LOD or collision changes are not included here until merged. Further performance and visual work is
-owner-authorized normal development, not a reopening of the migration or whole-world splitting campaign.
+These changes are later than the package above. The record census remains 7,662 asset records;
+the migration-handoff snapshots remain historical. Planned optimization is not counted as delivered. Performance
+and visual work is owner-authorized normal development, not a reopening of the migration or whole-world splitting
+campaign.
 Use [measurement guidance](BUDGETS.md#recording-a-current-performance-run) for new evidence.
+
+**Observed runtime checkpoint, not a performance pass:** the clean source run `d204bb79e0` (`after-final`,
+2026-11-11) reached gameplay in 68.48 s, recorded a 14.528 GiB aggregate peak under a 16 GiB guard, and ended
+with `child_exited` and completed cleanup. Its route receipt reports `passed: false`: the minimum of 20 sampled
+frames was 12.2 FPS, below the 20 FPS check. Walking/skating measurements and seven 2560×1440 capture poses
+were saved, but this is not sustained 60 FPS, human visual acceptance or a packaged build.
+
+The saved evidence is `build/yorimichi_v2/perf_compare/after-final/summary.json`, `route/report.json` and
+`captures/capture.json` beneath that same run directory in the producing checkout. The earlier pre-change
+attempt hit the aggregate guard at 16.56 GiB before gameplay; that aborted startup is not a complete matched
+baseline or a measured percentage improvement. The lower observed peak is useful evidence, while frame-time
+work remains open. #842 and later changes need their own results; these receipts cannot accept them retroactively.
 
 ## How to read status
 
