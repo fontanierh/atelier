@@ -7,6 +7,8 @@
 #include "JapanHUD.h"
 #include "JapanNetwork.h"
 #include "CraterParkTower.h"
+#include "CraterCloud.h"
+#include "ProceduralMeshComponent.h"
 #include "JapanSession.h"
 #include "PlayableCharacter.h"
 #include "SkateComponent.h"
@@ -571,10 +573,20 @@ void UJapanPreferences::Apply()
 #if !UE_BUILD_SHIPPING
         if (!GIsEditor && !IsRunningCommandlet())
         {
-            const int32 WpRangeCm = Laptop ? 64000 : (PerformanceMode ? 134400 : -1);
+            // Desktop Performance and Quality keep Slice.umap's authored 3,000 m MainPartition range so the Volcano cone
+            // (2.4-2.98 km north of Hidamari) and HD_Sea (1.45 km from Woodland air station) stay loaded under CraterCloud
+            // and over the harbor seabed; Laptop mode clamps MainPartition and CraterCloud together to 896 m.
+            const int32 WpRangeCm = Laptop ? 89600 : -1;
             UWorldPartitionSubsystem::SetOverrideLoadingRange(TEXT("MainPartition"), WpRangeCm);
         }
 #endif
+        if (Owner && Owner->GetWorld())
+        {
+            const float CloudCullCm = Laptop ? 89600.f : 380000.f;
+            for (TActorIterator<ACraterCloud> It(Owner->GetWorld()); It; ++It)
+                for (UProceduralMeshComponent* Shell : It->Shells)
+                    if (Shell) Shell->SetCullDistance(CloudCullCm);
+        }
         AppliedPerformanceMode = ShadowProfile;
     }
     Set(TEXT("r.ContactShadows"),1.f);
