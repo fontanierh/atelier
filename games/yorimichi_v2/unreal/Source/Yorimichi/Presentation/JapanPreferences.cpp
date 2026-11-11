@@ -32,6 +32,7 @@
 #include "HAL/PlatformMisc.h"
 #include "RHI.h"
 #include "DynamicRHI.h"
+#include "WorldPartition/WorldPartitionSubsystem.h"
 #include "Framework/Application/SlateApplication.h"
 #include "Widgets/Layout/SBorder.h"
 #include "Widgets/Layout/SBox.h"
@@ -567,6 +568,13 @@ void UJapanPreferences::Apply()
         Set(TEXT("r.Shadow.CSM.TransitionScale"),Laptop ? .25f : 1.f);
         Set(TEXT("r.DistanceFieldShadowing"),bForward || PerformanceMode ? 0.f : 1.f);
         Set(TEXT("foliage.LODDistanceScale"),PerformanceMode ? .75f : 1.f);
+#if !UE_BUILD_SHIPPING
+        if (!GIsEditor && !IsRunningCommandlet())
+        {
+            const int32 WpRangeCm = Laptop ? 57600 : (PerformanceMode ? 89600 : -1);
+            UWorldPartitionSubsystem::SetOverrideLoadingRange(TEXT("MainPartition"), WpRangeCm);
+        }
+#endif
         AppliedPerformanceMode = ShadowProfile;
     }
     Set(TEXT("r.ContactShadows"),1.f);
