@@ -3,22 +3,45 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Brinecove/Meshes/SM_BC_TownLowerShoreE2.uasset": "2af9af1bc0bd1fa8a4ba9ae9f06b0f7e8afff9ceada0ef6e6bfe123dffe72aec"
+    "unreal/Content/Brinecove/Meshes/SM_BC_TownLowerShoreE2.uasset": "c3d23a5ef1b4d006a423547c8674066c3cdbcb6f94f05fa48ec61b0c2bf77d42"
   },
-  "input_fingerprint": "0ca11002d496763bbbb8c84610850bb7dca154edf15a989e8113c2f73b797951",
+  "input_fingerprint": "1b368b39ca98ba9af8df84ac05684ed63f44617690cb3e1b143f461a40a7be73",
   "kind": "imported",
   "lods": {
     "/Game/Brinecove/Meshes/SM_BC_TownLowerShoreE2": {
       "after": {
+        "count": 4,
+        "reductions": [
+          1.0,
+          0.44999998807907104,
+          0.18000000715255737,
+          0.05999999865889549
+        ],
+        "screen_sizes": [
+          1.0,
+          0.30000001192092896,
+          0.11999999731779099,
+          0.05000000074505806
+        ]
+      },
+      "before": {
         "count": 1,
         "reductions": [
           1.0
         ],
         "screen_sizes": [
-          0.0
+          2.0
         ]
       },
-      "before": null
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.3,
+          0.12,
+          0.05
+        ]
+      }
     }
   },
   "schema": 1,

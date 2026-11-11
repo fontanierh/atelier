@@ -3,19 +3,25 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Boat.uasset": "2d95412cbd6edd9312829ffcae43aeeca38f547237168146905b9b5d4745d8c2"
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_Boat.uasset": "651dd48c5b8d3805fd23bef124ba2b6238a7eef5989f6c7f6c2c0967bed5d45d"
   },
-  "input_fingerprint": "1eb8bdc1e57f562737f37496d86e8b46adf64b5123d91af2c01cf1dfe789897f",
+  "input_fingerprint": "f1e4cbda510c44e10cdd4e12a309f604dc672ac508473ecb56e473161940d503",
   "kind": "imported",
   "lods": {
     "/Game/Experiments/CitySurfaces/v1_128m/HD_Boat": {
       "after": {
-        "count": 1,
+        "count": 4,
         "reductions": [
-          1.0
+          1.0,
+          0.44999998807907104,
+          0.18000000715255737,
+          0.05999999865889549
         ],
         "screen_sizes": [
-          0.0
+          1.0,
+          0.30000001192092896,
+          0.11999999731779099,
+          0.05000000074505806
         ]
       },
       "before": {
@@ -25,6 +31,15 @@
         ],
         "screen_sizes": [
           2.0
+        ]
+      },
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.3,
+          0.12,
+          0.05
         ]
       }
     }

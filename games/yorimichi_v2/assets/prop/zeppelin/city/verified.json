@@ -3,19 +3,25 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/ZP_City.uasset": "38b04e2f14377055f033b2a2cc682e1e425160af07bc4354b50f9f8f77c9f555"
+    "unreal/Content/Japan/Assets/ZP_City.uasset": "9156e66afa7207378034b0f02a8cff2a3829e356080ff5ed8bb25ef0a2dafb44"
   },
-  "input_fingerprint": "3cbe1df4e75fc5775675d538e8135b3fe952fbf3b63a023df4d44fb91d5d9d2b",
+  "input_fingerprint": "029e9092f8c8c196e3083eadecddadcde3546c108f67041fa63cd0090ce57f76",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/ZP_City": {
       "after": {
-        "count": 1,
+        "count": 4,
         "reductions": [
-          1.0
+          1.0,
+          0.44999998807907104,
+          0.18000000715255737,
+          0.05999999865889549
         ],
         "screen_sizes": [
-          0.0
+          1.0,
+          0.30000001192092896,
+          0.11999999731779099,
+          0.05000000074505806
         ]
       },
       "before": {
@@ -25,6 +31,15 @@
         ],
         "screen_sizes": [
           2.0
+        ]
+      },
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.3,
+          0.12,
+          0.05
         ]
       }
     }

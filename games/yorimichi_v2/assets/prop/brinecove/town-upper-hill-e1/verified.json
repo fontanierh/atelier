@@ -3,22 +3,45 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Brinecove/Meshes/SM_BC_TownUpperHillE1.uasset": "49b60eb8418d63f2c306f527dab19ddb630a64da0ac9e8cc6c6c13104ed82a81"
+    "unreal/Content/Brinecove/Meshes/SM_BC_TownUpperHillE1.uasset": "8db8cd5c64495cbe7e6f2efc073ae4c506df470fad18a15562a334a57f68b213"
   },
-  "input_fingerprint": "2828864f1b06bf1a25f170f46f728ec1fe9ea3fb35d1a9ac27ad6dcd291dac84",
+  "input_fingerprint": "fab0d1df411cd35c34feeeb58c69a04d756ab2478207f433370558122532bf4a",
   "kind": "imported",
   "lods": {
     "/Game/Brinecove/Meshes/SM_BC_TownUpperHillE1": {
       "after": {
+        "count": 4,
+        "reductions": [
+          1.0,
+          0.44999998807907104,
+          0.18000000715255737,
+          0.05999999865889549
+        ],
+        "screen_sizes": [
+          1.0,
+          0.30000001192092896,
+          0.11999999731779099,
+          0.05000000074505806
+        ]
+      },
+      "before": {
         "count": 1,
         "reductions": [
           1.0
         ],
         "screen_sizes": [
-          0.0
+          2.0
         ]
       },
-      "before": null
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.3,
+          0.12,
+          0.05
+        ]
+      }
     }
   },
   "schema": 1,

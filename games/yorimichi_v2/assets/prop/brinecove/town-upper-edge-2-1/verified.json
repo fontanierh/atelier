@@ -3,22 +3,45 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Brinecove/Meshes/SM_BC_TownUpperEdge21.uasset": "b51bad395148ec95faf1a09bbbad8e08a95c199982cf11f6ff56d315b6f399cb"
+    "unreal/Content/Brinecove/Meshes/SM_BC_TownUpperEdge21.uasset": "47d2d7b1598ba65d7d5f2758ab431ebbd49017dde31debbf7792fca168cd25c3"
   },
-  "input_fingerprint": "8c3d31b2c9918ebfd772d2c4fdf12c88d17d4b5c937a1ec1436b39f10c1ac105",
+  "input_fingerprint": "1deb4e90c41930a561c804c5408ff81ebc521633621e5e0809856d779ef70ebd",
   "kind": "imported",
   "lods": {
     "/Game/Brinecove/Meshes/SM_BC_TownUpperEdge21": {
       "after": {
+        "count": 4,
+        "reductions": [
+          1.0,
+          0.44999998807907104,
+          0.18000000715255737,
+          0.05999999865889549
+        ],
+        "screen_sizes": [
+          1.0,
+          0.30000001192092896,
+          0.11999999731779099,
+          0.05000000074505806
+        ]
+      },
+      "before": {
         "count": 1,
         "reductions": [
           1.0
         ],
         "screen_sizes": [
-          0.0
+          2.0
         ]
       },
-      "before": null
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.3,
+          0.12,
+          0.05
+        ]
+      }
     }
   },
   "schema": 1,

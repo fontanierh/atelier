@@ -3,19 +3,25 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Southwest/Pieces/SW_Temple.uasset": "882a105b0eacb78f45910bbfe7ef2acf2154dcd2127f60b1a72f074ecf25a2a2"
+    "unreal/Content/Japan/Southwest/Pieces/SW_Temple.uasset": "678bb95d3dcc1c90c56cce00ad0b98259bf8b2108880475f2e6b6ec89f91b251"
   },
-  "input_fingerprint": "6fa178a64bf0bf10edfbd7d6758b5d003f2134af6809a5db235647a519a4e360",
+  "input_fingerprint": "b13ca5c90fcfd87b05550844b0ab43b1394335956557528a78bdfe1496401a6e",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Southwest/Pieces/SW_Temple": {
       "after": {
-        "count": 1,
+        "count": 4,
         "reductions": [
-          1.0
+          1.0,
+          0.44999998807907104,
+          0.18000000715255737,
+          0.05999999865889549
         ],
         "screen_sizes": [
-          0.0
+          1.0,
+          0.30000001192092896,
+          0.11999999731779099,
+          0.05000000074505806
         ]
       },
       "before": {
@@ -25,6 +31,15 @@
         ],
         "screen_sizes": [
           2.0
+        ]
+      },
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.3,
+          0.12,
+          0.05
         ]
       }
     }

@@ -3,22 +3,45 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Brinecove/Meshes/SM_BC_MarketStall03.uasset": "9dcd0f92eaa1e925831661b4fc0636fb3391fe009920d319cf61fcebd05e1557"
+    "unreal/Content/Brinecove/Meshes/SM_BC_MarketStall03.uasset": "07c8e71fc1988408f03e8fea3efd474a4c53682912e55615b98b43347cf9f8cb"
   },
-  "input_fingerprint": "7fdde60af36d80dca9fdc79d98dde9c73e8ea513767906ac183448a8d6b832ee",
+  "input_fingerprint": "38ff2958b0e26801812291faf45372cb1291736bd6e2d625acee3ae155470538",
   "kind": "imported",
   "lods": {
     "/Game/Brinecove/Meshes/SM_BC_MarketStall03": {
       "after": {
+        "count": 4,
+        "reductions": [
+          1.0,
+          0.44999998807907104,
+          0.18000000715255737,
+          0.05999999865889549
+        ],
+        "screen_sizes": [
+          1.0,
+          0.30000001192092896,
+          0.11999999731779099,
+          0.05000000074505806
+        ]
+      },
+      "before": {
         "count": 1,
         "reductions": [
           1.0
         ],
         "screen_sizes": [
-          0.0
+          2.0
         ]
       },
-      "before": null
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.3,
+          0.12,
+          0.05
+        ]
+      }
     }
   },
   "schema": 1,

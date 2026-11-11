@@ -3,19 +3,25 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Experiments/VillageAtomic/v1_atomic/Village_TeaHouse.uasset": "1a9a1238f0692439ca87e851f5ae1c37847e95ee7b5fc52d4337fdf0b029e512"
+    "unreal/Content/Experiments/VillageAtomic/v1_atomic/Village_TeaHouse.uasset": "6da1b2709e0c9991fb44258f287328177136562b586cfb49589d435ee64059fb"
   },
-  "input_fingerprint": "cafc32e1a61219c81e10de9c69dce9564811658ad3a67975a5c9ac2e0a469776",
+  "input_fingerprint": "401079e43439745d6362e6efc6fc38bc115ba4aa5c607f098e104a43a85bad2f",
   "kind": "imported",
   "lods": {
     "/Game/Experiments/VillageAtomic/v1_atomic/Village_TeaHouse": {
       "after": {
-        "count": 1,
+        "count": 4,
         "reductions": [
-          1.0
+          1.0,
+          0.44999998807907104,
+          0.18000000715255737,
+          0.05999999865889549
         ],
         "screen_sizes": [
-          0.0
+          1.0,
+          0.30000001192092896,
+          0.11999999731779099,
+          0.05000000074505806
         ]
       },
       "before": {
@@ -24,7 +30,16 @@
           1.0
         ],
         "screen_sizes": [
-          0.0
+          2.0
+        ]
+      },
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.3,
+          0.12,
+          0.05
         ]
       }
     }

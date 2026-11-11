@@ -17,6 +17,8 @@ importer = "static-mesh"
 version = 1
 
 [recipe.settings]
+apply_lods = true
+lods = [[1.0, 1.0], [0.45, 0.3], [0.18, 0.12], [0.06, 0.05]]
 slot_map = {TH_rope = "/Game/Japan/Treehouse/Materials/MI_TH_rope", TH_wood_plank = "/Game/Japan/Treehouse/Materials/MI_TH_wood_plank", TH_wood_timber = "/Game/Japan/Treehouse/Materials/MI_TH_wood_timber"}
 triangles = 30584
 collision = "complex"

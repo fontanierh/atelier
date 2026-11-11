@@ -3,19 +3,25 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_ArcadeShop_02.uasset": "22ec90092c0908ebc176b82755425b01027f0d64693940a7de233223bfa19ec6"
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/HD_ArcadeShop_02.uasset": "a3be14f52e83bcc584d3adfe8a4ed378148ec40f61162616238cd2869cf63ea8"
   },
-  "input_fingerprint": "36c2482d70ab6347a33265863ab962d45117b58c4ea260ad1a3d68e2cff5eec9",
+  "input_fingerprint": "af988ebbac06d05c56221b8fdd7393f2400b69f5180b4d179a8570a7ccbefe1b",
   "kind": "imported",
   "lods": {
     "/Game/Experiments/CitySurfaces/v1_128m/HD_ArcadeShop_02": {
       "after": {
-        "count": 1,
+        "count": 4,
         "reductions": [
-          1.0
+          1.0,
+          0.44999998807907104,
+          0.18000000715255737,
+          0.05999999865889549
         ],
         "screen_sizes": [
-          0.0
+          1.0,
+          0.30000001192092896,
+          0.11999999731779099,
+          0.05000000074505806
         ]
       },
       "before": {
@@ -24,7 +30,16 @@
           1.0
         ],
         "screen_sizes": [
-          0.0
+          2.0
+        ]
+      },
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.3,
+          0.12,
+          0.05
         ]
       }
     }

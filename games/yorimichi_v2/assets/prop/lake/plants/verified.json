@@ -3,19 +3,25 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Lake/Pieces/Lake_Plants.uasset": "86eda8b774734933008c6ad1b5e369a0ec4f6879cfc60fabf377f185b28efa8c"
+    "unreal/Content/Japan/Lake/Pieces/Lake_Plants.uasset": "309cf665159557844b5ef2f6803c411fe0a2f2cfd00e627aa80fad9dfc338214"
   },
-  "input_fingerprint": "8b2b4896c40cca6ffd85632b24a5f7d31fab4d1e295b4139dadf14840f5121ec",
+  "input_fingerprint": "6a5c22ce5a8d30646f70f602fe2cb0cb8606ea0f8b8ed2bd74dadd3f4e8ee124",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Lake/Pieces/Lake_Plants": {
       "after": {
-        "count": 1,
+        "count": 4,
         "reductions": [
-          1.0
+          1.0,
+          0.44999998807907104,
+          0.18000000715255737,
+          0.05999999865889549
         ],
         "screen_sizes": [
-          0.0
+          1.0,
+          0.30000001192092896,
+          0.11999999731779099,
+          0.05000000074505806
         ]
       },
       "before": {
@@ -25,6 +31,15 @@
         ],
         "screen_sizes": [
           2.0
+        ]
+      },
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.3,
+          0.12,
+          0.05
         ]
       }
     }

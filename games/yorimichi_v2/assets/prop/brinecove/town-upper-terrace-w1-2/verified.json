@@ -3,22 +3,45 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Brinecove/Meshes/SM_BC_TownUpperTerraceW12.uasset": "b619cd2673d58c16c19e03718500ecbfa67c5c440f83feb477b6763e0fba7bc6"
+    "unreal/Content/Brinecove/Meshes/SM_BC_TownUpperTerraceW12.uasset": "719c2f3b25f4df872a50dd45eefe4a8d28c1b62a666e29a6eb677476d26ee386"
   },
-  "input_fingerprint": "7c1135a01da9521027e2d582d6afec8fba6e1aec3b2d972fed919876304912b2",
+  "input_fingerprint": "c4737d275bd9214fff819304535059b55833ee72996dce37df44277299cab58a",
   "kind": "imported",
   "lods": {
     "/Game/Brinecove/Meshes/SM_BC_TownUpperTerraceW12": {
       "after": {
+        "count": 4,
+        "reductions": [
+          1.0,
+          0.44999998807907104,
+          0.18000000715255737,
+          0.05999999865889549
+        ],
+        "screen_sizes": [
+          1.0,
+          0.30000001192092896,
+          0.11999999731779099,
+          0.05000000074505806
+        ]
+      },
+      "before": {
         "count": 1,
         "reductions": [
           1.0
         ],
         "screen_sizes": [
-          0.0
+          2.0
         ]
       },
-      "before": null
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.3,
+          0.12,
+          0.05
+        ]
+      }
     }
   },
   "schema": 1,

@@ -3,19 +3,25 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/ZP_Woodland.uasset": "b2b898d38611db5999ded0d7b9074a2ebf03169f44021c4401e8601d20e5f288"
+    "unreal/Content/Japan/Assets/ZP_Woodland.uasset": "ad5d9489aa39f0f525bcafbaa47e5f3c2c57bfe30dc29545ae92fbb1eb03962a"
   },
-  "input_fingerprint": "413033a9afa8ff77f08d04c0f622a83b7fc7c7166e855bd6fdea44bda8cc18d8",
+  "input_fingerprint": "cb211e36ae04cb5626ed21002eb4231707d76e03c0b85f236bea6c180bf35fad",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/ZP_Woodland": {
       "after": {
-        "count": 1,
+        "count": 4,
         "reductions": [
-          1.0
+          1.0,
+          0.44999998807907104,
+          0.18000000715255737,
+          0.05999999865889549
         ],
         "screen_sizes": [
-          0.0
+          1.0,
+          0.30000001192092896,
+          0.11999999731779099,
+          0.05000000074505806
         ]
       },
       "before": {
@@ -25,6 +31,15 @@
         ],
         "screen_sizes": [
           2.0
+        ]
+      },
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.3,
+          0.12,
+          0.05
         ]
       }
     }

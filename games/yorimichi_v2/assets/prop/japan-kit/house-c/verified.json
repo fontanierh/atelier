@@ -3,19 +3,25 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/House_C.uasset": "8bf40ac582a39522fc72deae08c514d152b1808a2a839d8aebda3621898c76ea"
+    "unreal/Content/Japan/Assets/House_C.uasset": "5aeb49322be162075da9dff46d13a69e5978293f6f877c3dda5b8df89c7b3ca2"
   },
-  "input_fingerprint": "348d346d210bc4b3cfa4f944f53200b0f7f3ffa84e1049c45bf7a4883ad0a26e",
+  "input_fingerprint": "4f88990ee2b762482ffb156709a0b8793da53b0cb10c56baced32f011ab0eb0e",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/House_C": {
       "after": {
-        "count": 1,
+        "count": 4,
         "reductions": [
-          1.0
+          1.0,
+          0.44999998807907104,
+          0.18000000715255737,
+          0.05999999865889549
         ],
         "screen_sizes": [
-          0.0
+          1.0,
+          0.30000001192092896,
+          0.11999999731779099,
+          0.05000000074505806
         ]
       },
       "before": {
@@ -24,7 +30,16 @@
           1.0
         ],
         "screen_sizes": [
-          0.0
+          2.0
+        ]
+      },
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.3,
+          0.12,
+          0.05
         ]
       }
     }

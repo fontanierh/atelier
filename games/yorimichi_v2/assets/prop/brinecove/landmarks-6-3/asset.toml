@@ -17,6 +17,8 @@ importer = "static-mesh"
 version = 1
 
 [recipe.settings]
+apply_lods = true
+lods = [[1.0, 1.0], [0.45, 0.3], [0.18, 0.12], [0.06, 0.05]]
 slot_materials = ["/Game/Brinecove/Materials/MI_BC_blossom", "/Game/Brinecove/Materials/MI_BC_blossom_pale", "/Game/Brinecove/Materials/MI_BC_coral", "/Game/Brinecove/Materials/MI_BC_gold", "/Game/Brinecove/Materials/MI_BC_jungle", "/Game/Brinecove/Materials/MI_BC_jungle_light", "/Game/Brinecove/Materials/MI_BC_rock", "/Game/Brinecove/Materials/MI_BC_rock_dark", "/Game/Brinecove/Materials/MI_BC_rock_light"]
 triangles = 13290
 collision = "complex"

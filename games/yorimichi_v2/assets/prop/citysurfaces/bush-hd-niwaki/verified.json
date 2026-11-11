@@ -3,19 +3,25 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Experiments/CitySurfaces/v1_128m/Bush_HD_Niwaki.uasset": "d85abc015647ee149d6108c323427ac82fe8458b912b0c5e3685849bff68f385"
+    "unreal/Content/Experiments/CitySurfaces/v1_128m/Bush_HD_Niwaki.uasset": "5cb2004f785fb33e0fd7d6fd9cb0683ab9ff3e0539f2b2556bf051e40aef4522"
   },
-  "input_fingerprint": "3496478feffb48a48fa789bc961d1c95af34f1c05c3fa0098960af758f85f7fb",
+  "input_fingerprint": "dfab4f0ac1ef6b220c42f5d5f3b9bf39abfb85eebb9f4c19818a3bd08deb05ee",
   "kind": "imported",
   "lods": {
     "/Game/Experiments/CitySurfaces/v1_128m/Bush_HD_Niwaki": {
       "after": {
-        "count": 1,
+        "count": 4,
         "reductions": [
-          1.0
+          1.0,
+          0.44999998807907104,
+          0.18000000715255737,
+          0.05999999865889549
         ],
         "screen_sizes": [
-          0.0
+          1.0,
+          0.30000001192092896,
+          0.11999999731779099,
+          0.05000000074505806
         ]
       },
       "before": {
@@ -25,6 +31,15 @@
         ],
         "screen_sizes": [
           2.0
+        ]
+      },
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.3,
+          0.12,
+          0.05
         ]
       }
     }

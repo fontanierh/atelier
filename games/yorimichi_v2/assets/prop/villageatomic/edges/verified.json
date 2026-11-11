@@ -3,19 +3,25 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Experiments/VillageAtomic/v1_atomic/Village_Edges.uasset": "5029623da9bc2edf454b9c330eb0c3be27659a7238485f9ea2769fd8ee738704"
+    "unreal/Content/Experiments/VillageAtomic/v1_atomic/Village_Edges.uasset": "ecd9d9a61cb13df61c085e92f65d3008d7ef48d224a986871a5271109121c919"
   },
-  "input_fingerprint": "4e39b3be1f1b58101d6765af4d8102051d3ad861e887476fd145b38a9e182207",
+  "input_fingerprint": "60906dcd5b0d00956d45fbe855e343b55640d0131ad80456438ea72290545453",
   "kind": "imported",
   "lods": {
     "/Game/Experiments/VillageAtomic/v1_atomic/Village_Edges": {
       "after": {
-        "count": 1,
+        "count": 4,
         "reductions": [
-          1.0
+          1.0,
+          0.44999998807907104,
+          0.18000000715255737,
+          0.05999999865889549
         ],
         "screen_sizes": [
-          0.0
+          1.0,
+          0.30000001192092896,
+          0.11999999731779099,
+          0.05000000074505806
         ]
       },
       "before": {
@@ -24,7 +30,16 @@
           1.0
         ],
         "screen_sizes": [
-          0.0
+          2.0
+        ]
+      },
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.3,
+          0.12,
+          0.05
         ]
       }
     }
