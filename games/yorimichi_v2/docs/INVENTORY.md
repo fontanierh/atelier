@@ -2,15 +2,16 @@
 
 **Migration complete by owner decision, 2026-11-10. Final handoff: main `1abaab9d70` (#831). Further splitting is on demand; the remaining list below is an authoring backlog.**
 This is the status index for the original-game port and subsequent authoring work.
-The latest available package, `c89f535441be` from `da0a41f891`, **predates the final handoff** and its material-slot
-repairs. Its automated checks, launch, shutdown and host-to-Solo checks passed. Six manual checks, human visual
-acceptance and actual two-machine play remain open; see [the testing handoff](PACKAGE.md#testing-the-final-handoff).
+The current Development package is `1a45eac4a6ee`, reported from `75bc99b55a`; it includes the final handoff
+and later performance/visual work. Automated checks and host/leave pass, but packaged Zeppelin performance
+remains below 60 FPS and manual/human/two-machine acceptance is still open. Existing old extraction-root
+ledgers do not apply to this fingerprint; see the [current package checkpoint](PACKAGE.md#current-development-package-checkpoint-2026-11-11).
 The source baseline `7eec0f98dd` is documented separately in [features](inventory/features.md) and
 [world](inventory/world.md); those pages describe the donor, not today's V2 completion state.
 
 ## Post-handoff development checkpoint
 
-At main `a6626057b1` (2026-11-11), these follow-ups are merged:
+At main `75bc99b55a` (2026-11-11), these follow-ups are merged:
 
 | Change | Source/content delivered | Verification limit |
 | --- | --- | --- |
@@ -23,9 +24,11 @@ At main `a6626057b1` (2026-11-11), these follow-ups are merged:
 | [#844](https://github.com/fontanierh/atelier/pull/844) | Earlier non-Shipping loading-range override: 896 m Performance, 576 m Laptop; Quality restores the authored range | This is the configuration measured below. #848 subsequently changes the ranges and adds a Shipping code path; the earlier result does not verify those changes. |
 | [#845](https://github.com/fontanierh/atelier/pull/845) | macOS game activity token and offscreen idle-setting adjustment | Merged and included below; earlier runs with this code still failed under the original caller context, so this PR alone is not a proven cure for the capture slowdown. |
 | [#847](https://github.com/fontanierh/atelier/pull/847) | Four-level LOD settings and saved mesh updates for 170 standalone building, ship, stall and related asset records | The PR records content-check and focused-test acceptance. Saved LODs do not establish visual quality or a measured frame-rate improvement across towns. |
-| [#848](https://github.com/fontanierh/atelier/pull/848) | Runtime spatial-bucket pooling of eligible static patch components, 2 ms async-loading budgets, and loading ranges of 1,344 m Performance / 640 m Laptop; Quality restores the authored range | Code is merged and compilation is recorded. Shipping uses a separate SpatialHash console-command path whose effect on the cooked map still needs verification; neither the new ranges nor pooling are covered by the earlier route receipt. |
+| [#848](https://github.com/fontanierh/atelier/pull/848) | Runtime spatial-bucket pooling of eligible static patch components, 2 ms async-loading budgets, and loading ranges of 1,344 m Performance / 640 m Laptop; Quality restores the authored range | Code and compilation are recorded. #850 removes its incompatible Shipping SpatialHash path; #851 supersedes its ranges. The earlier route receipt does not verify this pooling change. |
+| [#850](https://github.com/fontanierh/atelier/pull/850) | Meadow anti-tiling, water glints, sky cumulus, surface AO and sky-fill changes; incompatible Shipping SpatialHash branch removed | The PR records 19 material imports and focused checks. The current package uses Development and its RuntimeHashSet route; Shipping behavior and human visual acceptance remain separate. |
+| [#851](https://github.com/fontanierh/atelier/pull/851) | Restores authored 3 km Desktop Performance/Quality vistas after mountain/sea unstreaming was observed; Laptop uses 896 m and matching cloud cull | Included in the current package. The packaged north view is near 60 FPS; Zeppelin and route hitches remain limited as recorded in PACKAGE.md. |
 
-These changes are later than the package above. The record census remains 7,662 asset records;
+These changes are included in the current package above. The record census remains 7,662 asset records;
 the migration-handoff snapshots remain historical. Planned optimization is not counted as delivered. Performance
 and visual work is owner-authorized normal development, not a reopening of the migration or whole-world splitting
 campaign.
@@ -56,8 +59,8 @@ while retaining normal Atelier admission and guards; earlier caller-context atte
 This is a sampled route pass, not sustained whole-island 60 FPS or human visual acceptance. It is not a packaged
 build, a two-machine check or a measured standalone-package memory forecast. The aborted pre-change attempt
 still does not support a matched percentage-saving claim. The first performance/visual pass was handed off at
-that revision. A second pass is now active; #847/#848 are merged, while additional visual work and a fresh package remain in progress. Keep their eventual captures,
-route results and package fingerprint separate from this earlier checkpoint.
+that revision. The second pass through #851 and its Development package are now delivered; their
+[packaged measurements](PACKAGE.md#current-development-package-checkpoint-2026-11-11) remain separate from this earlier checkpoint.
 
 ## How to read status
 
@@ -81,7 +84,8 @@ route results and package fingerprint separate from this earlier checkpoint.
 | Restricted and Adventure originals | 6,768 restricted package entries and 124 Adventure/animation entries have source routes; the manifest records 6,086 original pins. | [restricted.originals.json](../restricted.originals.json), [PR #785](https://github.com/fontanierh/atelier/pull/785). Private bytes stay on the pinned restricted route. These are source links, not gameplay acceptance. |
 | Brine Cove individual objects | All 21 market stalls, all 265 town objects, the two harbour Soft fragments, eleven small props and three ship objects have saved placements in main ([PR #787](https://github.com/fontanierh/atelier/pull/787)). The signal mast and the shipyard slip are saved, merged and packaged ([PR #798](https://github.com/fontanierh/atelier/pull/798), [PR #800](https://github.com/fontanierh/atelier/pull/800)). The 13 harbour rowboats, buoys and potted palms (`props1`) are merged ([PR #813](https://github.com/fontanierh/atelier/pull/813)); the 6 quay cargo clusters and 7 fish baskets (`props2`, [PR #815](https://github.com/fontanierh/atelier/pull/815)) are merged; the 32 lantern posts (`props3`, [PR #816](https://github.com/fontanierh/atelier/pull/816)) are merged; the 3 harbour piers and 12 quay palms (`harbor1`, [PR #817](https://github.com/fontanierh/atelier/pull/817)) are merged; the 45 loose barrels and crates (`props4`, [PR #818](https://github.com/fontanierh/atelier/pull/818)) are merged; the re-split of the six quay cargo clusters and the pier cargo into 54 pieces (`props5`, #823) is merged; the 3 fish-shed rope coils and 18 gulls (`props6`, #830) are merged; and the 8 shipyard crates and 8 open-water rowboats (`harbor2`, #831) are merged. Other scenery still includes fused models/patches. | [Brine Cove scope](inventory/brinecove-objects.md), [split work](inventory/brinecove-split.md), [remaining exceptions](inventory/exceptions.md). |
 | Transport objects | The 10 gondola pylons and 12 railway fittings are saved as their own objects; their fused groups and the train LOD records are retired. | [PR #790](https://github.com/fontanierh/atelier/pull/790), [exceptions](inventory/exceptions.md). |
-| Desktop package | Main `da0a41f891`, fingerprint `c89f535441be`: guarded package in 255.7 s; automated acceptance 8/8; host/leave 9/9; first launch (Slice in 15.9 s, peak 7.8 GiB, no error lines) and shutdown recorded passing. | [Package guide](PACKAGE.md#current-main-checkpoint-2026-11-10). Log-only launch evidence; human input, travel, gameplay, sound and persistence remain unrecorded. Host/leave covers one process, not a second machine joining. |
+| Current Development package | Reported source `75bc99b55a`, fingerprint `1a45eac4a6ee`: automated checks 8/8 reported; saved host/leave 9/9; packaged north/route/Zeppelin CSVs available. | [Current package evidence](PACKAGE.md#current-development-package-checkpoint-2026-11-11). Zeppelin averages 50.70 FPS (39.68 1% low); route max frame 671.771 ms. Dynamic resolution, manual acceptance and two-machine limits remain explicit. |
+| Historical desktop package | Main `da0a41f891`, fingerprint `c89f535441be`: guarded package in 255.7 s; automated acceptance 8/8; host/leave 9/9; first launch (Slice in 15.9 s, peak 7.8 GiB, no error lines) and shutdown recorded passing. | [Package guide](PACKAGE.md#current-main-checkpoint-2026-11-10). Log-only launch evidence; human input, travel, gameplay, sound and persistence remain unrecorded. Host/leave covers one process, not a second machine joining. |
 | Earlier integration package (#803, #804) | Built 2026-11-10 13:03 Paris from branch `7f43b4ccf3`, fingerprint `88d415e733ec`; automated checks, first launch and shutdown passed. | [Historical package evidence](PACKAGE.md#integration-package-for-803-and-804-2026-11-10). It predates #808/#809 and cannot host; later success does not upgrade this older app. |
 | Appearance | Whole-island captures exist, as well as the earlier slice route/package measurements. | [PARITY](PARITY.md) retains their exact revisions and limits; those earlier captures do not accept every later split. |
 
@@ -124,14 +128,14 @@ Saved, prepared and packaged totals are kept separate:
 - **Hippodrome residuals closed in #804:** four texture and four instance records were imported, the four dependent
   props re-imported, and six unused course instances retired after a reference check. Native before/after reads
   agree. The old adopted owner is retired; this batch is merged and included in `c89f535441be`.
-- **Merged, not yet packaged:** claim `JAPANMI` ([PR #812](https://github.com/fontanierh/atelier/pull/812)) closes the 45
+- **Merged and included in the current package:** claim `JAPANMI` ([PR #812](https://github.com/fontanierh/atelier/pull/812)) closes the 45
   material instances: the 41 Japan instances, `MI_HD_flat`, `MI_TH_pane` and the two two-sided Mega Park seams become
   10 generated `material-instance` records (`tools/migrate/held_instances.py`), replacing their adopted owners. Each
   row agrees with a native editor read that now includes the base-property overrides (LOD blending, masking, two-sided),
   and each import read back equal to the read before it. See
   [exceptions](inventory/exceptions.md#current-source-classification). Brine Cove `props1` (13 harbour objects, claim
   `BCPROPS1`, [PR #813](https://github.com/fontanierh/atelier/pull/813)) is merged too. Package `c89f535441be` predates
-  both.
+  both; current package `1a45eac4a6ee` includes them.
 - **Final source batches merged:** no whole-source item is left in the tracked recovery list (#826, #827 merged): `MPC_SeeThrough` (claim
   `SEETHRU`, the `parameter-collection` importer) and `RuntimeData` (claim `SKATERT`, the `skate-runtime` importer) are
   imported from their pinned generators; see
@@ -141,16 +145,16 @@ The final handoff also repairs stale material-slot overrides in eleven Brine Cov
 market-3-4, market-4-3, market-4-4, townlower-4-4, townupper-3-4, townupper-4-4 and harbor-2-3 through harbor-5-3.
 PR #831 re-saved them from their current tiles and added `brinecove-remainder-slots-resaved`; the all-batch retired
 check with donor evidence and the content check reported no problems. These saves are on main `1abaab9d70`,
-**not** in the available package. They still need human visual acceptance.
+and included in current package `1a45eac4a6ee`, unlike historical `c89f535441be`. They still need human visual acceptance.
 
 After the migration (on demand, not acceptance gates):
 - Split the remaining useful objects when someone needs to edit them (backlog below); an imported package with an
   unknown original stays marked as such in [sources](inventory/sources.md) and [exceptions](inventory/exceptions.md).
 - The master follow-ups are integrated. The earlier #799/#801 preparation and
   [master recovery design](inventory/master-sources.md) explain their provenance; they are not another backlog.
-- The available package `c89f535441be` (main `da0a41f891`) predates the batches merged since; no newer package is
-  built. The guard fixes (#805/#807), multiplayer manifest (#809) and host/leave check (#810) are merged. The six
-  manual acceptance checks and owner-led gameplay/two-machine playtesting are still open: nothing above records them.
+- Current package `1a45eac4a6ee` includes the final handoff and later changes through #851. The guard fixes
+  (#805/#807), multiplayer manifest (#809) and host/leave check (#810) are merged. Manual acceptance and
+  owner-led gameplay/two-machine playtesting remain open; old package ledger entries do not transfer.
 - **Migration complete by owner decision (2026-11-10, Paris).** The owner chose on-demand splitting: the V2 migration is
   complete with the work merged so far, and the earlier full-splitting targets are withdrawn. Useful objects still
   bundled in generated tiles or area patches are split **on demand**, when someone needs to edit them. The table below

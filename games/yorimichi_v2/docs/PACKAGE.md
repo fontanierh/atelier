@@ -4,15 +4,47 @@ The package workflow is implemented. A normal build validates and compiles; cook
 below run from the repository root of an owned checkout at a stopped native-job boundary. Publication uses the
 existing verified package and the [release workflow](../../../docs/RELEASES.md), without another cook.
 
+## Current Development package checkpoint (2026-11-11)
+
+The builder reports source `75bc99b55a` (#851), including the final migration handoff and the second
+performance/visual pass. The extracted app fingerprints as `1a45eac4a6ee` (full digest
+`1a45eac4a6eed51524b86b4be88caecb75ad537dc8f8477337bb81fe39c1c38e`). The normal
+`unreal.package` route builds **Development**, not Shipping; do not infer Shipping configuration behavior from it.
+The saved build stamp records 291.181 s total, with 250.689 s for the package command and completed cleanup.
+
+- Automated package checks: the builder reports **8/8 passing** (board evidence #31662).
+- Host/leave: the saved `host-leave-20261111-124453/checks.json` reports **9/9 passing**, clean exit and return to
+  Solo. This remains a single-process lifecycle check, not another machine joining.
+- Benchmark evidence: `build/yorimichi_v2/packaged_app_benchmarks/summary.json` and its copied CSVs in the
+  producing checkout. The builder records fullscreen 2560×1440 output and an Interactive launch context with
+  normal Atelier guards. Dynamic resolution means this is not fixed native 1440p internal rendering.
+
+| Packaged view | Frames | Average / 1% low FPS | Max frame / frames >33 ms | Reported guard peak | Median screen percentage |
+| --- | ---: | --- | --- | ---: | ---: |
+| Hidamari toward Volcano (`north_overview`) | 599 | 59.88 / 59.88 | 34.964 ms / 1 | 6.955 GiB | 77.828% |
+| Walk/skate pier (`slice_route`) | 1,295 | 58.11 / 59.88 | 671.771 ms / 2 | 6.609 GiB | 100% |
+| Woodland–Hidamari flight (`zeppelin`) | 1,441 | 50.70 / 39.68 | 417.803 ms / 1 | 7.135 GiB | 75% |
+
+These are bounded recorded runs, not a whole-island locked-60-FPS claim. The Zeppelin result remains below that
+bar, and the route's high 1% low does not erase its largest hitch. The summary reports `guard_peak_gib`; do not
+silently relabel it aggregate-tree memory or compare it to a different memory measure.
+
+**Keep acceptance ledgers separate.** At this review, the extraction root's existing `evidence.json` and
+`verdict.json` still name old fingerprint `0adbb5ab212e` (the verdict records source `7719234597`). They are
+historical and do not accept `1a45eac4a6ee`. Preserve them and choose fresh evidence/verdict paths for the new
+fingerprint using the commands below; do not copy earlier launch/shutdown passes. Current automated host/leave
+and benchmark receipts are useful evidence, but the new package still needs its own recorded manual input,
+travel, gameplay, sound, settings/save persistence, visual and actual two-machine acceptance.
+
 <a id="current-main-checkpoint-2026-11-10"></a>
 
-## Available package checkpoint (2026-11-10)
+## Historical package checkpoint (2026-11-10)
 
 **This app is older than the final migration handoff.** Main `1abaab9d70` (#831) contains the final harbor2 batch
 and eleven repaired tile-placement material overrides. Package `c89f535441be` was built from `da0a41f891`; it
 predates #812 and the later splits, including #823–#831. It contains the earlier fused content and does not
 include the later override repairs; that does not establish a mismatch between its own older meshes and overrides.
-No package of the final handoff has been built. Do not use this app to accept the later fixes.
+A newer package is recorded above. Do not use this older app to accept the later fixes.
 
 - **Built:** clean main `da0a41f891` (after #803/#804/#809/#810); fingerprint `c89f535441be`.
   Guarded `unreal.package` completed in 255.7 s. The 49 recovered material masters and Hippodrome residual batch
@@ -161,12 +193,15 @@ dependencies, excluded content names and pinned runtime-data bytes. They do not 
 
 ## Record observed playtests
 
-The person/controller records only observed results for the exact running package:
+The person/controller records only observed results for the exact running package. Use a new acceptance
+directory for a new package. The example creates a unique directory; keep its path and reuse it only for
+additional observations of the same fingerprint. Keep older directories intact:
 
 ```sh
-EV="$HOME/YorimichiV2-Package/evidence.json"
+ACCEPTANCE=$(mktemp -d "$HOME/YorimichiV2-Package/acceptance.XXXXXX")
+EV="$ACCEPTANCE/evidence.json"
 uv run python games/yorimichi_v2/tools/package/acceptance.py record --app "$APP" --evidence "$EV" first_launch pass --note "Observed result"
-uv run python games/yorimichi_v2/tools/package/acceptance.py verify --app "$APP" --evidence "$EV" --report "$HOME/YorimichiV2-Package/verdict.json"
+uv run python games/yorimichi_v2/tools/package/acceptance.py verify --app "$APP" --evidence "$EV" --report "$ACCEPTANCE/verdict.json"
 ```
 
 Required manual items are `first_launch`, `input`, `map_travel`, `gameplay`, `sound`, `settings_persistence`,
@@ -203,7 +238,7 @@ rebuild or broad local suite is needed for a documentation/status update.
 
 ## Still open
 
-- A package containing the final handoff, when testing needs the packaged version of those changes.
+- A fingerprint-bound manual acceptance ledger for the current package; older ledgers do not transfer.
 - Human input, travel, gameplay, sound, settings/save persistence, visuals and two-machine playtests on the selected revision/package.
 - Any current defects found in those playtests. The missing-asset and performance observations in
   [PARITY.md](PARITY.md) are explicitly bound to older revisions, not an assertion that the latest app has them.
