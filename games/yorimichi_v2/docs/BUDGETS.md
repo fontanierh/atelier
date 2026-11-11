@@ -63,3 +63,30 @@ require repeating the historical five-run slice campaign for routine changes.
 
 The existing `tools/test/budgets.py` separates observed queue wait from its operation timing. Custom capture
 callers need the same distinction and must preserve the existing admission, deadlines and owned-process cleanup.
+
+### Check the launch context before tuning around a slow capture
+
+If an automated macOS run has very low sampled FPS while CPU/GPU work appears much shorter than the frame,
+inspect the actual Unreal PID from `memory-health.json`, not just the caller:
+
+```sh
+ps -o pid,ppid,ni,pri -p GAME_PID
+```
+
+Keep that observation with the launch command and receipts. Priority is a diagnostic clue, not proof of a
+particular QoS class or a complete explanation of frame time. The shared launcher applies application resource
+policies and at least nice 10; it explicitly does not clear inherited background or QoS clamps. Neither
+`taskpolicy -a` nor `launchctl asuser` alone establishes that those clamps were removed.
+
+At a stopped boundary, retry the same normal guarded play/capture command from an interactive terminal whose
+child scheduling context has been checked. Preserve the same source/settings and use a new evidence directory.
+Do not restart the agent daemon, change a shared service, lower reservations, or launch Unreal outside Atelier
+just to obtain a faster measurement. If a delegated launch is needed, coordinate its sole controller and retain
+normal admission, the actual-child memory guard, deadlines and cleanup.
+
+In the November 11 investigation, repeated VSync, fullscreen, offscreen and warm-up experiments still failed.
+A separate launchd `ProcessType=Interactive` capture caller retained the normal guarded `atelier play` path and
+produced the passing `after-interactive-qos` receipt described in [INVENTORY.md](INVENTORY.md). The observed
+scheduling-context difference is useful recovery evidence; it does not independently prove every proposed
+QoS/timer mechanism or guarantee that another host needs the same workaround. Check this early rather than
+repeating renderer experiments to compensate for a launcher constraint.

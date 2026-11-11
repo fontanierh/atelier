@@ -10,7 +10,7 @@ The source baseline `7eec0f98dd` is documented separately in [features](inventor
 
 ## Post-handoff development checkpoint
 
-At main `e81b05a623` (2026-11-11), these follow-ups are merged:
+At main `65318620c4` (2026-11-11), these follow-ups are merged:
 
 | Change | Source/content delivered | Verification limit |
 | --- | --- | --- |
@@ -19,7 +19,9 @@ At main `e81b05a623` (2026-11-11), these follow-ups are merged:
 | [#838](https://github.com/fontanierh/atelier/pull/838) | Foliage, treehouse, water and other material builders and saved imports; duplicate capture-CVar registration fixed | The import/check evidence is in the PR. Saved materials do not establish human visual acceptance. |
 | [#840](https://github.com/fontanierh/atelier/pull/840) | Texture compression/mipmaps, multi-level mesh LODs and removal of unused render-mesh collision/CPU buffers | The PR records accepted editor saves and 130 generated/dependent imports. This work is merged, not still planned. |
 | [#841](https://github.com/fontanierh/atelier/pull/841) | Sea/water HLSL string formatting and treehouse shader input names corrected after runtime fallback materials were found | Nine master/instance imports are recorded. Import acceptance alone does not prove every runtime shader or view correct. |
-| [#842](https://github.com/fontanierh/atelier/pull/842) | Lower per-frame World Partition streaming budgets and registration batch sizes | Configuration is merged; the runtime observation below predates this change. |
+| [#842](https://github.com/fontanierh/atelier/pull/842) | Lower per-frame World Partition streaming budgets and registration batch sizes | Included in the passing runtime checkpoint below; its individual effect is not isolated. |
+| [#844](https://github.com/fontanierh/atelier/pull/844) | Non-Shipping game loading-range override: 896 m Performance, 576 m Laptop; Quality restores the authored range | Included in the Editor-game observation below. The override is excluded from Shipping builds; do not project its memory result onto a release package. |
+| [#845](https://github.com/fontanierh/atelier/pull/845) | macOS game activity token and offscreen idle-setting adjustment | Merged and included below; earlier runs with this code still failed under the original caller context, so this PR alone is not a proven cure for the capture slowdown. |
 
 These changes are later than the package above. The record census remains 7,662 asset records;
 the migration-handoff snapshots remain historical. Planned optimization is not counted as delivered. Performance
@@ -27,7 +29,7 @@ and visual work is owner-authorized normal development, not a reopening of the m
 campaign.
 Use [measurement guidance](BUDGETS.md#recording-a-current-performance-run) for new evidence.
 
-**Observed runtime checkpoint, not a performance pass:** the clean source run `d204bb79e0` (`after-final`,
+**Earlier runtime checkpoint, not a performance pass:** the clean source run `d204bb79e0` (`after-final`,
 2026-11-11) reached gameplay in 68.48 s, recorded a 14.528 GiB aggregate peak under a 16 GiB guard, and ended
 with `child_exited` and completed cleanup. Its route receipt reports `passed: false`: the minimum of 20 sampled
 frames was 12.2 FPS, below the 20 FPS check. Walking/skating measurements and seven 2560×1440 capture poses
@@ -36,8 +38,23 @@ were saved, but this is not sustained 60 FPS, human visual acceptance or a packa
 The saved evidence is `build/yorimichi_v2/perf_compare/after-final/summary.json`, `route/report.json` and
 `captures/capture.json` beneath that same run directory in the producing checkout. The earlier pre-change
 attempt hit the aggregate guard at 16.56 GiB before gameplay; that aborted startup is not a complete matched
-baseline or a measured percentage improvement. The lower observed peak is useful evidence, while frame-time
-work remains open. #842 and later changes need their own results; these receipts cannot accept them retroactively.
+baseline or a measured percentage improvement. The lower observed peak was useful evidence despite the failed route.
+These earlier receipts do not accept #842 or later changes retroactively.
+
+**Later bounded route/capture pass:** the clean `65318620c4` Editor-game run `after-interactive-qos`
+(2026-11-11) reached gameplay in 53.41 s under a 14 GiB guard. It recorded 11.476 GiB primary and
+11.574 GiB aggregate peak memory, clean game/route/capture exits and completed cleanup. The route passed:
+all 20 scored walking/skating frame-rate readings were 60.0 FPS, with 15.6 m walking and 27.7 m skating. Three 2560×1440
+poses were captured: spawn houses, harbour pier and Brine Cove quay. The summary correctly labels fullscreen.
+
+Evidence is `build/yorimichi_v2/perf_compare/after-interactive-qos/summary.json`, `route/report.json` and
+`captures/capture.json` in the producing checkout. Its capture caller used launchd `ProcessType=Interactive`
+while retaining normal Atelier admission and guards; earlier caller-context attempts failed. See the
+[launch-context diagnostic](BUDGETS.md#check-the-launch-context-before-tuning-around-a-slow-capture).
+This is a sampled route pass, not sustained whole-island 60 FPS or human visual acceptance. It is not a packaged
+build, a two-machine check or a measured standalone-package memory forecast. The aborted pre-change attempt
+still does not support a matched percentage-saving claim. Carbon's assigned performance/visual pass is handed
+off; further issues can be addressed through normal testing and development.
 
 ## How to read status
 
