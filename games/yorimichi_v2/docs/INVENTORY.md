@@ -44,7 +44,7 @@ These earlier receipts do not accept #842 or later changes retroactively.
 **Later bounded route/capture pass:** the clean `65318620c4` Editor-game run `after-interactive-qos`
 (2026-11-11) reached gameplay in 53.41 s under a 14 GiB guard. It recorded 11.476 GiB primary and
 11.574 GiB aggregate peak memory, clean game/route/capture exits and completed cleanup. The route passed:
-all 20 sampled frame-rate readings were 60.0 FPS, with 15.6 m walking and 27.7 m skating. Three 2560×1440
+all 20 scored walking/skating frame-rate readings were 60.0 FPS, with 15.6 m walking and 27.7 m skating. Three 2560×1440
 poses were captured: spawn houses, harbour pier and Brine Cove quay. The summary correctly labels fullscreen.
 
 Evidence is `build/yorimichi_v2/perf_compare/after-interactive-qos/summary.json`, `route/report.json` and
