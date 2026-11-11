@@ -3,19 +3,25 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Experiments/VillageAtomic/v1_atomic/Village_CottageB.uasset": "44b94950066449c000c2accad0a6ced42965df4fe72a72e8a87eb5e5aefd6c76"
+    "unreal/Content/Experiments/VillageAtomic/v1_atomic/Village_CottageB.uasset": "f82a08997b9a318485d2bd61722f127a52f1f8d46b666fafdaffca97af45b13b"
   },
-  "input_fingerprint": "6a8fcbf05780d7de86b135e9bd053e29e65ae56b2bf9f0ec5e6d7aaed9e41a7b",
+  "input_fingerprint": "c02dc78ef7c363178a1ab52f6cb3f37e00b9f6cf1e56339cdf197268824ef2c7",
   "kind": "imported",
   "lods": {
     "/Game/Experiments/VillageAtomic/v1_atomic/Village_CottageB": {
       "after": {
-        "count": 1,
+        "count": 4,
         "reductions": [
-          1.0
+          1.0,
+          0.44999998807907104,
+          0.18000000715255737,
+          0.05999999865889549
         ],
         "screen_sizes": [
-          0.0
+          1.0,
+          0.30000001192092896,
+          0.11999999731779099,
+          0.05000000074505806
         ]
       },
       "before": {
@@ -24,7 +30,16 @@
           1.0
         ],
         "screen_sizes": [
-          0.0
+          2.0
+        ]
+      },
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.3,
+          0.12,
+          0.05
         ]
       }
     }

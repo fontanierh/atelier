@@ -3,19 +3,25 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/ZP_MegaPark.uasset": "3d5295dbe43acbdaead43acddaf88cb1f4133cb2cc0d15a83f0ef7ebf5732977"
+    "unreal/Content/Japan/Assets/ZP_MegaPark.uasset": "f65fd3b44eb5ca4417672aa1d051afdecf1039b5411a93d57990589b33699a7a"
   },
-  "input_fingerprint": "1073b74fcf49f7254d876c864e44cfbbae6e0535399006f83210f0ac72bf870e",
+  "input_fingerprint": "fe0276388ed76e39f85d0a8dc78d11a90100d97bfd62882b507ad9ef1b362212",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/ZP_MegaPark": {
       "after": {
-        "count": 1,
+        "count": 4,
         "reductions": [
-          1.0
+          1.0,
+          0.44999998807907104,
+          0.18000000715255737,
+          0.05999999865889549
         ],
         "screen_sizes": [
-          0.0
+          1.0,
+          0.30000001192092896,
+          0.11999999731779099,
+          0.05000000074505806
         ]
       },
       "before": {
@@ -25,6 +31,15 @@
         ],
         "screen_sizes": [
           2.0
+        ]
+      },
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.3,
+          0.12,
+          0.05
         ]
       }
     }

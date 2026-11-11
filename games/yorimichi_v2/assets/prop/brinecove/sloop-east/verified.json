@@ -3,22 +3,45 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Brinecove/Meshes/SM_BC_SloopEast.uasset": "9f03fd1e5b781b3e22ebd32ecc2b35cd5f2be2b951f12451611f886034c840a8"
+    "unreal/Content/Brinecove/Meshes/SM_BC_SloopEast.uasset": "d46ceaf09d8ad460dd1c02892b2c698e4cf718c71b95861bd7910e5cea63c464"
   },
-  "input_fingerprint": "8b4ba8d4fd5a771ab899f4918a540b9ec940badb24d3ba74a512fa19af6bc76d",
+  "input_fingerprint": "f945b2e025ebae17cc2f901a0bb62cad94a5c1de2f4e5827feb07998cd782551",
   "kind": "imported",
   "lods": {
     "/Game/Brinecove/Meshes/SM_BC_SloopEast": {
       "after": {
+        "count": 4,
+        "reductions": [
+          1.0,
+          0.44999998807907104,
+          0.18000000715255737,
+          0.05999999865889549
+        ],
+        "screen_sizes": [
+          1.0,
+          0.30000001192092896,
+          0.11999999731779099,
+          0.05000000074505806
+        ]
+      },
+      "before": {
         "count": 1,
         "reductions": [
           1.0
         ],
         "screen_sizes": [
-          0.0
+          2.0
         ]
       },
-      "before": null
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.3,
+          0.12,
+          0.05
+        ]
+      }
     }
   },
   "schema": 1,

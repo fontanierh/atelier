@@ -3,22 +3,45 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Brinecove/Meshes/SM_BC_GalleonNightjar.uasset": "b0a4635786fd9aabb8c7576b2c09afeee3aa8ad70f231c620b76638266aff276"
+    "unreal/Content/Brinecove/Meshes/SM_BC_GalleonNightjar.uasset": "d66d80d770dd61d88e13c8807d19820214beed75cd849c95cf64942bfe21cf21"
   },
-  "input_fingerprint": "884ecf9803ed3ac4557a0a99f1fe2464f76a2070a55a7600969c75545df2f078",
+  "input_fingerprint": "397bf562633e7e7b86351438558b72d5c623550527c1d0c8f6f54a4ae51546f0",
   "kind": "imported",
   "lods": {
     "/Game/Brinecove/Meshes/SM_BC_GalleonNightjar": {
       "after": {
+        "count": 4,
+        "reductions": [
+          1.0,
+          0.44999998807907104,
+          0.18000000715255737,
+          0.05999999865889549
+        ],
+        "screen_sizes": [
+          1.0,
+          0.30000001192092896,
+          0.11999999731779099,
+          0.05000000074505806
+        ]
+      },
+      "before": {
         "count": 1,
         "reductions": [
           1.0
         ],
         "screen_sizes": [
-          0.0
+          2.0
         ]
       },
-      "before": null
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.3,
+          0.12,
+          0.05
+        ]
+      }
     }
   },
   "schema": 1,

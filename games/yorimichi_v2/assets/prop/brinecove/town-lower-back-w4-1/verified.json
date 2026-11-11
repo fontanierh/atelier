@@ -3,22 +3,45 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Brinecove/Meshes/SM_BC_TownLowerBackW41.uasset": "ea39846ebdfb16eb1e09a4914d14e261140e0d7134bdad89549c1c0a759f60c5"
+    "unreal/Content/Brinecove/Meshes/SM_BC_TownLowerBackW41.uasset": "d4f6be34ec3ed8c7693e7e0ff05c5abfd6cb73eb629618da704f467d9fcd0c8c"
   },
-  "input_fingerprint": "e388c7d0a8b19baf489d6320fd976df74e855915dfffb22a0ed51e4dfc00548f",
+  "input_fingerprint": "52645694208b4efaa74a8018411540b4d18595fdc2b86b5a8d217faac881be9f",
   "kind": "imported",
   "lods": {
     "/Game/Brinecove/Meshes/SM_BC_TownLowerBackW41": {
       "after": {
+        "count": 4,
+        "reductions": [
+          1.0,
+          0.44999998807907104,
+          0.18000000715255737,
+          0.05999999865889549
+        ],
+        "screen_sizes": [
+          1.0,
+          0.30000001192092896,
+          0.11999999731779099,
+          0.05000000074505806
+        ]
+      },
+      "before": {
         "count": 1,
         "reductions": [
           1.0
         ],
         "screen_sizes": [
-          0.0
+          2.0
         ]
       },
-      "before": null
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.3,
+          0.12,
+          0.05
+        ]
+      }
     }
   },
   "schema": 1,

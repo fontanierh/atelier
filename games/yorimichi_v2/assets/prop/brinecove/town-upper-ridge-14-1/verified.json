@@ -3,22 +3,45 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Brinecove/Meshes/SM_BC_TownUpperRidge141.uasset": "65baf668796246782bf5af14117e59a34ab61860440d3e1a0221f3a57a7021f5"
+    "unreal/Content/Brinecove/Meshes/SM_BC_TownUpperRidge141.uasset": "d807a4264c21df956e9048da9b5cfb7d6d1493ac25291fc438513e99a1c0feca"
   },
-  "input_fingerprint": "9c0449d94d6e6f8fa7016855f4047813c41fe05f9ec3735815e4dfde31959499",
+  "input_fingerprint": "32ea67dee0094e1f78006079742467d5e49b4ff8dfb019cdf568a4bf62e13e8f",
   "kind": "imported",
   "lods": {
     "/Game/Brinecove/Meshes/SM_BC_TownUpperRidge141": {
       "after": {
+        "count": 4,
+        "reductions": [
+          1.0,
+          0.44999998807907104,
+          0.18000000715255737,
+          0.05999999865889549
+        ],
+        "screen_sizes": [
+          1.0,
+          0.30000001192092896,
+          0.11999999731779099,
+          0.05000000074505806
+        ]
+      },
+      "before": {
         "count": 1,
         "reductions": [
           1.0
         ],
         "screen_sizes": [
-          0.0
+          2.0
         ]
       },
-      "before": null
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.3,
+          0.12,
+          0.05
+        ]
+      }
     }
   },
   "schema": 1,

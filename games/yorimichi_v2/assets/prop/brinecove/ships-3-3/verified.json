@@ -3,19 +3,25 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Brinecove/Meshes/SM_BC_Ships_3_3.uasset": "40bbf168ec2bdb055f3a05992f9797efedef0ff8d01fab3c0aeca4707228da5f"
+    "unreal/Content/Brinecove/Meshes/SM_BC_Ships_3_3.uasset": "b4c69088abef446fc48bd6cbcd092a441bbe8982384679a79d142b7ff8d1e165"
   },
-  "input_fingerprint": "cb8179853761d5dc7bc490172672260ac7d37dba951f9cc243e93a28e8844158",
+  "input_fingerprint": "4e46095c9f0eda48ef665901cb58c4b7fea7808ddb7a95d64944fa6351c29cb3",
   "kind": "imported",
   "lods": {
     "/Game/Brinecove/Meshes/SM_BC_Ships_3_3": {
       "after": {
-        "count": 1,
+        "count": 4,
         "reductions": [
-          1.0
+          1.0,
+          0.44999998807907104,
+          0.18000000715255737,
+          0.05999999865889549
         ],
         "screen_sizes": [
-          0.0
+          1.0,
+          0.30000001192092896,
+          0.11999999731779099,
+          0.05000000074505806
         ]
       },
       "before": {
@@ -25,6 +31,15 @@
         ],
         "screen_sizes": [
           2.0
+        ]
+      },
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.3,
+          0.12,
+          0.05
         ]
       }
     }

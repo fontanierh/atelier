@@ -3,19 +3,25 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/ZP_Airship.uasset": "11b079f678d716cb01f9d254f1c54f33dbd6a742e3b5dd053fe4687f7d622942"
+    "unreal/Content/Japan/Assets/ZP_Airship.uasset": "7175bc7a508b106957d5cbb27c18a3de7b67fd2c40717e70a4cab2532b9500d9"
   },
-  "input_fingerprint": "e48d184059e58d1c92b5583d08612d788fd518d81b2f194c2163bdb7bb0fac95",
+  "input_fingerprint": "228f04df9f3ba72f910c1a2b05dc4a9c2872b7dc3ad42616f5223405ca9d0de7",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/ZP_Airship": {
       "after": {
-        "count": 1,
+        "count": 4,
         "reductions": [
-          1.0
+          1.0,
+          0.44999998807907104,
+          0.18000000715255737,
+          0.05999999865889549
         ],
         "screen_sizes": [
-          0.0
+          1.0,
+          0.30000001192092896,
+          0.11999999731779099,
+          0.05000000074505806
         ]
       },
       "before": {
@@ -25,6 +31,15 @@
         ],
         "screen_sizes": [
           2.0
+        ]
+      },
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.3,
+          0.12,
+          0.05
         ]
       }
     }

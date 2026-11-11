@@ -3,22 +3,45 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Brinecove/Meshes/SM_BC_TownUpperCrestE20.uasset": "d842565cd2659b4c7b482d8c5adced01591dbed75a536a6a436dc66ac8bf0046"
+    "unreal/Content/Brinecove/Meshes/SM_BC_TownUpperCrestE20.uasset": "8b5ab91e31f38f6253a608defc7b8dacd9ec25ab0e6bdb491599ce5f082dd0bd"
   },
-  "input_fingerprint": "e140b763aeb5f865da6d3d69302795bf7a5d3c7f27ce383d28c4e9255506845f",
+  "input_fingerprint": "09c67193a9e1652dab0a416d4cc9fbd5c40e7cf7f6ea2e184338bd96717ff03c",
   "kind": "imported",
   "lods": {
     "/Game/Brinecove/Meshes/SM_BC_TownUpperCrestE20": {
       "after": {
+        "count": 4,
+        "reductions": [
+          1.0,
+          0.44999998807907104,
+          0.18000000715255737,
+          0.05999999865889549
+        ],
+        "screen_sizes": [
+          1.0,
+          0.30000001192092896,
+          0.11999999731779099,
+          0.05000000074505806
+        ]
+      },
+      "before": {
         "count": 1,
         "reductions": [
           1.0
         ],
         "screen_sizes": [
-          0.0
+          2.0
         ]
       },
-      "before": null
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.3,
+          0.12,
+          0.05
+        ]
+      }
     }
   },
   "schema": 1,

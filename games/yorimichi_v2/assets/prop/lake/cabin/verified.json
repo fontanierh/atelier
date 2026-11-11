@@ -3,19 +3,25 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Lake/Pieces/Lake_Cabin.uasset": "13d87bf0ed7f1016320675ec7c1a29cbf60ba00400cf5b5fe549ffe329d5e4b7"
+    "unreal/Content/Japan/Lake/Pieces/Lake_Cabin.uasset": "61e6638fbe336de0d159ad9ab5d25063471d65e6342456c01c40978d2dce64da"
   },
-  "input_fingerprint": "9f9f590e62d0710ad9154f4e6b2bf60ba7600e7c14f6ec82469442e3a83b8827",
+  "input_fingerprint": "905ade08d5aa03069cfd8b09422a466a8716e6b5d339c50d7f0895508a431725",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Lake/Pieces/Lake_Cabin": {
       "after": {
-        "count": 1,
+        "count": 4,
         "reductions": [
-          1.0
+          1.0,
+          0.44999998807907104,
+          0.18000000715255737,
+          0.05999999865889549
         ],
         "screen_sizes": [
-          0.0
+          1.0,
+          0.30000001192092896,
+          0.11999999731779099,
+          0.05000000074505806
         ]
       },
       "before": {
@@ -25,6 +31,15 @@
         ],
         "screen_sizes": [
           2.0
+        ]
+      },
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.3,
+          0.12,
+          0.05
         ]
       }
     }

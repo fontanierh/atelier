@@ -3,19 +3,25 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/SwordCamp/Assets/SM_CampWeaponRack.uasset": "1b5dceeeae764395fbe8348b0f7201cd3bf1aeee05dcd0bcec0b8aa235b03e61"
+    "unreal/Content/SwordCamp/Assets/SM_CampWeaponRack.uasset": "986718094c5273317e91e66f018a807916a68782a78587a7f6978db389d146ef"
   },
-  "input_fingerprint": "32cc9c765dd9269a01ea9e62890b88be007207d47ffda031874218b4b3f7cd4f",
+  "input_fingerprint": "973dfdb02c3b323d1fb73c0d3cedc22dad0f51535d39110f04f6902619251e0b",
   "kind": "imported",
   "lods": {
     "/Game/SwordCamp/Assets/SM_CampWeaponRack": {
       "after": {
-        "count": 1,
+        "count": 4,
         "reductions": [
-          1.0
+          1.0,
+          0.44999998807907104,
+          0.18000000715255737,
+          0.05999999865889549
         ],
         "screen_sizes": [
-          0.0
+          1.0,
+          0.30000001192092896,
+          0.11999999731779099,
+          0.05000000074505806
         ]
       },
       "before": {
@@ -24,7 +30,16 @@
           1.0
         ],
         "screen_sizes": [
-          0.0
+          2.0
+        ]
+      },
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.3,
+          0.12,
+          0.05
         ]
       }
     }

@@ -3,19 +3,25 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/SwordCamp/Assets/SM_CampJinmaku.uasset": "65771c1e23db9604776f21015c97f0d9b112fce63c4ce6e4d2ce639482954b00"
+    "unreal/Content/SwordCamp/Assets/SM_CampJinmaku.uasset": "f1e7e3b9734b60e7cce3be3653e1c1e2c0943ca841a05cf1acb483522e196735"
   },
-  "input_fingerprint": "da0af5d6df7c5a80b6dca5e1a20d040417a8789563a852b8d1726cd63adc6997",
+  "input_fingerprint": "130aeafa2b88a31e520b1ec34cbfa48705162dd30d0282a6d877c614b2df76d3",
   "kind": "imported",
   "lods": {
     "/Game/SwordCamp/Assets/SM_CampJinmaku": {
       "after": {
-        "count": 1,
+        "count": 4,
         "reductions": [
-          1.0
+          1.0,
+          0.44999998807907104,
+          0.18000000715255737,
+          0.05999999865889549
         ],
         "screen_sizes": [
-          0.0
+          1.0,
+          0.30000001192092896,
+          0.11999999731779099,
+          0.05000000074505806
         ]
       },
       "before": {
@@ -24,7 +30,16 @@
           1.0
         ],
         "screen_sizes": [
-          0.0
+          2.0
+        ]
+      },
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.3,
+          0.12,
+          0.05
         ]
       }
     }

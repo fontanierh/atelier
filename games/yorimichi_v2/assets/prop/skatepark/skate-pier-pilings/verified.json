@@ -3,19 +3,25 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/SkatePark/SM_SkatePierPilings.uasset": "26f30d6cac568417079167a14be271824ea8e6750b788930b838fc9bbada492a"
+    "unreal/Content/SkatePark/SM_SkatePierPilings.uasset": "62387979e92271e15574b9be8b716a17d4d98e890d20dbd9cf0174247885fd4f"
   },
-  "input_fingerprint": "1d1d16e287fb05c00517ad1e370daa7aebe143891d07ff13c97560d22d55e023",
+  "input_fingerprint": "4db1fdbb1d891a57e1bea51663389f0d0e33194cc9893c39a1e10a5b7c4b3cc5",
   "kind": "imported",
   "lods": {
     "/Game/SkatePark/SM_SkatePierPilings": {
       "after": {
-        "count": 1,
+        "count": 4,
         "reductions": [
-          1.0
+          1.0,
+          0.44999998807907104,
+          0.18000000715255737,
+          0.05999999865889549
         ],
         "screen_sizes": [
-          0.0
+          1.0,
+          0.30000001192092896,
+          0.11999999731779099,
+          0.05000000074505806
         ]
       },
       "before": {
@@ -25,6 +31,15 @@
         ],
         "screen_sizes": [
           2.0
+        ]
+      },
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.3,
+          0.12,
+          0.05
         ]
       }
     }

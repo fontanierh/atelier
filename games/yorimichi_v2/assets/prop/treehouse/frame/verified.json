@@ -3,19 +3,25 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/TH_Frame.uasset": "c2e0ecd5b7646291bda2936862d823177b6a033a3d2c8dca9a8215ff588840b1"
+    "unreal/Content/Japan/Assets/TH_Frame.uasset": "8564e0593f7adb80406bd587546e8e21d22cbde85dd14428787e1e10781c5cc0"
   },
-  "input_fingerprint": "c5537dd8ecbcf790502d3e8d8074f6a9ad09ced0c1c322287bcb11d72a7b3fa8",
+  "input_fingerprint": "90dce1c2d81506ea22ad1da18ea64c44f09fc1ac70b4e9bc5998f8cf162b8943",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/TH_Frame": {
       "after": {
-        "count": 1,
+        "count": 4,
         "reductions": [
-          1.0
+          1.0,
+          0.44999998807907104,
+          0.18000000715255737,
+          0.05999999865889549
         ],
         "screen_sizes": [
-          0.0
+          1.0,
+          0.30000001192092896,
+          0.11999999731779099,
+          0.05000000074505806
         ]
       },
       "before": {
@@ -25,6 +31,15 @@
         ],
         "screen_sizes": [
           2.0
+        ]
+      },
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.3,
+          0.12,
+          0.05
         ]
       }
     }

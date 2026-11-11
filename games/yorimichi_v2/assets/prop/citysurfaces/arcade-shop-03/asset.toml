@@ -17,6 +17,8 @@ importer = "static-mesh"
 version = 1
 
 [recipe.settings]
+apply_lods = true
+lods = [[1.0, 1.0], [0.45, 0.3], [0.18, 0.12], [0.06, 0.05]]
 slot_map = {HDS_flat = "/Game/Japan/Hidamari/Materials/MI_HD_flat", HDS_grass = "/Game/Japan/Hidamari/Materials/MI_HD_grass", HDS_metal = "/Game/Japan/Hidamari/Materials/MI_HD_metal", HDS_paint = "/Game/Japan/Hidamari/Materials/MI_HD_paint", HDS_plaster = "/Game/Japan/Hidamari/Materials/MI_HD_plaster", HDS_roof = "/Game/Japan/Hidamari/Materials/MI_HD_roof", HDS_stone = "/Game/Japan/Hidamari/Materials/MI_HD_stone", HDS_timber = "/Game/Japan/Hidamari/Materials/MI_HD_timber"}
 triangles = 12440
 full_precision_uvs = true

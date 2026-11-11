@@ -3,19 +3,25 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/Mega_Ramp.uasset": "08d9ab357776d57c7623b1d2a0b53e726e0b581427f247cdb04cc0d7f290c2fa"
+    "unreal/Content/Japan/Assets/Mega_Ramp.uasset": "59245920b58e0677812549b64d1a749b5df4acfa83c649abfa2c4d55b8c55283"
   },
-  "input_fingerprint": "fa0f11407ff42464b94fe7f8e822bd56738e75a30d0e59744d73120b0df32dd5",
+  "input_fingerprint": "6d23da58b544c7401f1b917108000c56ff3e960fd61d02c6b5b1b3d01f681ec9",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/Mega_Ramp": {
       "after": {
-        "count": 1,
+        "count": 4,
         "reductions": [
-          1.0
+          1.0,
+          0.44999998807907104,
+          0.18000000715255737,
+          0.05999999865889549
         ],
         "screen_sizes": [
-          0.0
+          1.0,
+          0.30000001192092896,
+          0.11999999731779099,
+          0.05000000074505806
         ]
       },
       "before": {
@@ -25,6 +31,15 @@
         ],
         "screen_sizes": [
           2.0
+        ]
+      },
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.3,
+          0.12,
+          0.05
         ]
       }
     }

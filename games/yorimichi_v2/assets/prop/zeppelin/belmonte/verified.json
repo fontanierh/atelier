@@ -3,19 +3,25 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Assets/ZP_Belmonte.uasset": "3c39e5038abc235a0328336f5692fe962f1f690abfe451be3f84a7c854331a03"
+    "unreal/Content/Japan/Assets/ZP_Belmonte.uasset": "a6a6d9d54f1c869e732365e533bd03194eef81eba551dbc7f732faba43f8c224"
   },
-  "input_fingerprint": "79cbbec5f36396724c6d80955c215ec5621693222f2fdfaf16e32f8e7818f3b5",
+  "input_fingerprint": "2489ad54453c9d18414bad3ac3f14a6abc4624ca406842afbc0308a87595dc4a",
   "kind": "imported",
   "lods": {
     "/Game/Japan/Assets/ZP_Belmonte": {
       "after": {
-        "count": 1,
+        "count": 4,
         "reductions": [
-          1.0
+          1.0,
+          0.44999998807907104,
+          0.18000000715255737,
+          0.05999999865889549
         ],
         "screen_sizes": [
-          0.0
+          1.0,
+          0.30000001192092896,
+          0.11999999731779099,
+          0.05000000074505806
         ]
       },
       "before": {
@@ -25,6 +31,15 @@
         ],
         "screen_sizes": [
           2.0
+        ]
+      },
+      "target": {
+        "count": 4,
+        "screen_sizes": [
+          1.0,
+          0.3,
+          0.12,
+          0.05
         ]
       }
     }
