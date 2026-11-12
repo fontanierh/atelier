@@ -3,7 +3,8 @@
 **Migration complete by owner decision, 2026-11-10. Final handoff: main `1abaab9d70` (#831). Further splitting is on demand; the remaining list below is an authoring backlog.**
 This is the status index for the original-game port and subsequent authoring work.
 The current Development package is `1a45eac4a6ee`, reported from `75bc99b55a`; it includes the final handoff
-and later performance/visual work. Automated checks and host/leave pass, but packaged Zeppelin performance
+and performance/visual work through #851. Later merged #853/#854 are not included in this package.
+Automated checks and host/leave pass, but packaged Zeppelin performance
 remains below 60 FPS and manual/human/two-machine acceptance is still open. Existing old extraction-root
 ledgers do not apply to this fingerprint; see the [current package checkpoint](PACKAGE.md#current-development-package-checkpoint-2026-11-11).
 The source baseline `7eec0f98dd` is documented separately in [features](inventory/features.md) and
@@ -11,7 +12,8 @@ The source baseline `7eec0f98dd` is documented separately in [features](inventor
 
 ## Post-handoff development checkpoint
 
-At main `75bc99b55a` (2026-11-11), these follow-ups are merged:
+At main `bb803a4c9f` (2026-11-12), follow-ups through #854 are merged. The package checkpoint remains
+`75bc99b55a` (2026-11-11); later source/content changes are listed separately below.
 
 | Change | Source/content delivered | Verification limit |
 | --- | --- | --- |
@@ -28,11 +30,29 @@ At main `75bc99b55a` (2026-11-11), these follow-ups are merged:
 | [#850](https://github.com/fontanierh/atelier/pull/850) | Meadow anti-tiling, water glints, sky cumulus, surface AO and sky-fill changes; incompatible Shipping SpatialHash branch removed | The PR records 19 material imports and focused checks. The current package uses Development and its RuntimeHashSet route; Shipping behavior and human visual acceptance remain separate. |
 | [#851](https://github.com/fontanierh/atelier/pull/851) | Restores authored 3 km Desktop Performance/Quality vistas after mountain/sea unstreaming was observed; Laptop uses 896 m and matching cloud cull | Included in the current package. The packaged north view is near 60 FPS; Zeppelin and route hitches remain limited as recorded in PACKAGE.md. |
 
-These changes are included in the current package above. The record census remains 7,662 asset records;
-the migration-handoff snapshots remain historical. Planned optimization is not counted as delivered. Performance
+Changes through #851 in the table above are included in the current package. The record census remains
+7,662 asset records; the migration-handoff snapshots remain historical. Planned optimization is not counted as
+delivered. Performance
 and visual work is owner-authorized normal development, not a reopening of the migration or whole-world splitting
 campaign.
 Use [measurement guidance](BUDGETS.md#recording-a-current-performance-run) for new evidence.
+
+### Later merged changes, not yet in the package checkpoint
+
+| Change | Source/content delivered | Verification limit |
+| --- | --- | --- |
+| [#853](https://github.com/fontanierh/atelier/pull/853), `7dd334391a` | Tree-material dither settings and saved imports; farther visible tree LOD defaults with capped shadow detail; racing clock, pose, ground-offset and save-cadence changes; review-camera aspect constraints and explicit viewport sizing; initial rider board scaling. | The PR records focused Python checks, 12 racing automation checks and content validation. These do not establish smooth transitions/racing, undistorted projection or whole-game frame-rate acceptance. Its capsule-based board scaling is superseded by #854. |
+| [#854](https://github.com/fontanierh/atelier/pull/854), `bb803a4c9f` | Default rider board scale uses the Adventure `BodyScale` leg ratio relative to Cairo, with a capsule fallback; explicit non-default scales are retained. | Compilation and content checks are reported in the PR. Post-fix rider appearance and gameplay still need verification; the earlier package cannot validate this change. |
+
+The teaser review reported distorted proportions, abrupt tree LOD transitions, incoherent routes, choppy
+horse racing and a possible skateboard-scale mismatch. Carbon-god owns the fixes and replacement video;
+front-man is checking the evidence (board thread #31665). The latest short real-time benchmark claims are
+still being reconciled: #31680/#31681 flag retained long stalls, the definition of low-FPS metrics, effective
+render scale/profile, current material-slot flags, projection and post-fix rider checks. They are not a new
+packaged or sustained-60-FPS acceptance checkpoint. Capture frame rate, scripted shot labels and output
+image dimensions alone do not prove real-time performance, successful traversal or undistorted projection.
+
+### Historical runtime evidence
 
 **Earlier runtime checkpoint, not a performance pass:** the clean source run `d204bb79e0` (`after-final`,
 2026-11-11) reached gameplay in 68.48 s, recorded a 14.528 GiB aggregate peak under a 16 GiB guard, and ended
