@@ -507,7 +507,11 @@ bool ARacingService::OpenWorld(const FString& Path, const FString& Seed)
         State = HRRules::CreateWorld(Seed);
         UE_LOG(LogTemp, Display, TEXT("RACING world created from seed %s in %.2f s: day %d"), *Seed, FPlatformTime::Seconds() - Started, State.T);
     }
-    if (State.EpochUnix == 0) HRRules::StartClock(State, int64(RacingLooks::UnixNow()));
+    const double OpenedUnix = RacingLooks::UnixNow();
+    if (State.EpochUnix == 0) HRRules::StartClock(State, int64(OpenedUnix));
+    HostUnix = OpenedUnix;
+    bHostClockAnchored = true;
+    NextRegister = NextPublish = NextReport = LastSave = 0.;
     bHasWorld = true;
     Registered.Reset();
     LookCache.Reset();
@@ -525,7 +529,7 @@ bool ARacingService::SaveNow()
     DevSeconds -= Whole;
     FString Error;
     const bool bSaved = SaveWorldFile(State, SavePath, Error);
-    LastSave = FPlatformTime::Seconds();
+    LastSave = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.;
     if (bSaved)
     {
         bDirty = false;
@@ -542,7 +546,8 @@ bool ARacingService::SaveNow()
 
 double ARacingService::HostWorldSeconds() const
 {
-    return bHasWorld ? HRRules::WorldSeconds(State, RacingLooks::UnixNow() + DevSeconds) : 0.;
+    const double BaseUnix = bHostClockAnchored ? HostUnix : RacingLooks::UnixNow();
+    return bHasWorld ? HRRules::WorldSeconds(State, BaseUnix + DevSeconds) : 0.;
 }
 
 static double ServerTimeOf(const UWorld* World)
@@ -563,10 +568,10 @@ void ARacingService::Tick(float DeltaSeconds)
     if (!bCoursesLoaded) LoadCourses();
     if (HasAuthority() && bHasWorld) TickHost(DeltaSeconds);
     TickPresentation(DeltaSeconds);
-    const double Real = FPlatformTime::Seconds();
-    if (Real >= NextReport)
+    const double GameNow = ServerTimeOf(GetWorld());
+    if (GameNow >= NextReport)
     {
-        NextReport = Real + 10.;
+        NextReport = GameNow + 10.;
         const double Now = WorldNow();
         UE_LOG(LogTemp, Display, TEXT("RACING day=%d world=%.0f race=%s venue=%s t=%.1f run=%d shown=%d serial=%u"), Net.Day, Now, *Net.Race.Key,
             RacingLooks::VenueName(ERacingVenue(Net.Race.Venue)), Now - Net.Race.Start, Net.Race.bRun, Shown.Num(), Net.Serial);
@@ -576,6 +581,8 @@ void ARacingService::Tick(float DeltaSeconds)
 void ARacingService::TickHost(float DeltaSeconds)
 {
     const float Scale = FMath::Clamp(CVarRacingTimeScale.GetValueOnGameThread(), 0.f, 600.f);
+    if (!bHostClockAnchored) { HostUnix = RacingLooks::UnixNow(); bHostClockAnchored = true; }
+    HostUnix += double(DeltaSeconds);
     if (Scale != 1.f) DevSeconds += double(DeltaSeconds) * (Scale - 1.);
     double Now = HostWorldSeconds();
     // A host away for longer than the rules' catch-up (one real week) resumes as if the world had paused then: the clock
@@ -595,10 +602,12 @@ void ARacingService::TickHost(float DeltaSeconds)
     const bool bChanged = State.T != DayBefore || RunAfter != RunBefore;
     if (State.T != DayBefore) LookCache.Reset();
     bDirty |= bChanged;
-    const double Real = FPlatformTime::Seconds();
-    if (Real >= NextRegister) { NextRegister = Real + 1.; RegisterPlayers(); }
-    if (bChanged || Scale != AppliedScale || Real >= NextPublish) Publish(Scale != AppliedScale);
-    if (bDirty && Real - LastSave > 15.) SaveNow();
+    const double GameNow = ServerTimeOf(GetWorld());
+    if (GameNow >= NextRegister) { NextRegister = GameNow + 1.; RegisterPlayers(); }
+    if (bChanged || Scale != AppliedScale || GameNow >= NextPublish) Publish(Scale != AppliedScale);
+    const double RaceT = Now - Net.Race.Start;
+    const bool bRaceActive = Shown.Num() > 0 && !Net.Race.Key.IsEmpty() && RaceT >= -5. && RaceT < 95.;
+    if (bDirty && !bRaceActive && GameNow - LastSave > 15.) SaveNow();
 }
 
 void ARacingService::RegisterPlayers()
@@ -629,7 +638,7 @@ void ARacingService::RegisterPlayers()
 void ARacingService::Publish(bool bForceAnchor)
 {
     if (!HasAuthority() || !bHasWorld) return;
-    NextPublish = FPlatformTime::Seconds() + 1.;
+    NextPublish = ServerTimeOf(GetWorld()) + 1.;
     const double Now = HostWorldSeconds();
     FRacingNetState Next = Net;
     BuildSnapshot(State, Now, LastResult, Next, &LookCache);
@@ -896,7 +905,7 @@ bool ARacingService::SpawnRunners(const FRacingNetRace& Race)
         C->SetCanEverAffectNavigation(false);
         C->SetAnimationMode(EAnimationMode::AnimationSingleNode);
         C->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::OnlyTickPoseWhenRendered;
-        C->bEnableUpdateRateOptimizations = true;
+        C->bEnableUpdateRateOptimizations = false;
         C->SetUsingAbsoluteLocation(true);
         C->SetUsingAbsoluteRotation(true);
         C->SetUsingAbsoluteScale(true);
@@ -956,6 +965,7 @@ bool ARacingService::SpawnRunners(const FRacingNetRace& Race)
         S.Saddle->SetUsingAbsoluteScale(false);
         S.Saddle->SetupAttachment(S.Horse);
         S.Saddle->SetSkeletalMesh(Look.Saddle);
+        S.Saddle->PrimaryComponentTick.bCanEverTick = false;
         S.Saddle->RegisterComponent();
         S.Saddle->SetLeaderPoseComponent(S.Horse, true);
         // The stable's colours on the saddle and its cloth.
@@ -969,8 +979,9 @@ bool ARacingService::SpawnRunners(const FRacingNetRace& Race)
         S.Jockey->SetSkeletalMesh(JockeyMesh);
         S.Jockey->SetWorldScale3D(JockeyScale);
         S.Jockey->RegisterComponent();
-        // Each horse starts its cycle at a different point, so the field does not step in unison.
+        // Each horse starts its cycle and ground probe at a staggered offset, so the field neither steps nor traces in unison.
         S.Phase = FMath::Frac(I * .37);
+        S.NextTrace = Race.Runners.Num() > 0 ? (.4f * float(I) / float(Race.Runners.Num())) : 0.f;
         Shown.Add(S);
     }
     ShownKey = Race.Key;
@@ -1044,11 +1055,14 @@ void ARacingService::TickPresentation(float DeltaSeconds)
             if (RacingGround::Pick(Candidates, Authored, Ground))
             {
                 const float Offset = float(Ground - Authored);
-                S.GroundOffset = S.bGround ? FMath::Lerp(S.GroundOffset, Offset, .5f) : Offset;
+                S.TargetGroundOffset = Offset;
+                if (!S.bGround) S.GroundOffset = Offset;
                 S.bGround = true;
             }
             else S.bGround = false;
         }
+        if (S.bGround)
+            S.GroundOffset = FMath::FInterpTo(S.GroundOffset, S.TargetGroundOffset, DeltaSeconds, 12.f);
         Where.Z = S.bGround ? Authored + S.GroundOffset : Authored;
         const FLookBreed& Look = LookBreeds[S.Breed];
         S.Horse->SetWorldLocationAndRotation(Where, FRotator(0.f, Yaw + Look.MeshYaw, 0.f));

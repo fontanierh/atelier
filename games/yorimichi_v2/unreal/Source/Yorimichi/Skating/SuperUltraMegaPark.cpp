@@ -453,6 +453,7 @@ bool UMegaParkValidation::ReviewCamera(FVector Location, FVector Target, float F
         Camera->Tags.Add(Tag);
     }
     Camera->SetActorLocationAndRotation(Location, (Target-Location).Rotation());
+    Camera->GetCameraComponent()->SetConstraintAspectRatio(false);
     Camera->GetCameraComponent()->SetFieldOfView(Fov);
     Controller->SetViewTarget(Camera);
     return true;

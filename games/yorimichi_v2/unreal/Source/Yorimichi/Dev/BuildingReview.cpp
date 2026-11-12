@@ -205,7 +205,7 @@ void AWandererCharacter::AdvanceBuildingReview(float)
   if(auto* PC=Cast<APlayerController>(Controller))
   {
    DisableInput(PC);if(PC->GetHUD())PC->GetHUD()->bShowHUD=false;
-   S.Camera=GetWorld()->SpawnActor<ACameraActor>();if(S.Camera.IsValid())PC->SetViewTarget(S.Camera.Get());
+   S.Camera=GetWorld()->SpawnActor<ACameraActor>();if(S.Camera.IsValid()){S.Camera->GetCameraComponent()->SetConstraintAspectRatio(false);PC->SetViewTarget(S.Camera.Get());}
   }
   if(!S.Camera.IsValid())S.Errors.Add(MakeShared<FJsonValueString>(TEXT("Could not create review camera/player view")));
   FApp::SetFixedDeltaTime(1./60.);FApp::SetUseFixedTimeStep(true);

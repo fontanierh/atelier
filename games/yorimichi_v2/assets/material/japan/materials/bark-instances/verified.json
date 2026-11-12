@@ -6,11 +6,11 @@
   },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Materials/MI_Bark.uasset": "fd11291bc881e554fc832292270de4f705502ba57cf626b950286fbdf9fbfb96",
-    "unreal/Content/Japan/Materials/MI_BarkOlive.uasset": "fafba94dba0b00bbe712dd0f8d4551f7a56bdeaba3e69cde086fdbd0ffeb1d03",
-    "unreal/Content/Japan/Materials/MI_BarkTuscan.uasset": "be2eeb103dcabb4f30123a63467b80b554a78889f563977a95cc78a6ca43c686"
+    "unreal/Content/Japan/Materials/MI_Bark.uasset": "e8f5ddbe53bbd3fdb3f099c982a9ee14aefe7ef7553d88bac00e67a84f94f93a",
+    "unreal/Content/Japan/Materials/MI_BarkOlive.uasset": "2055c51c5e49b95317e42c32cb56bb39136617ee86c3cc86af5ffb96985378ec",
+    "unreal/Content/Japan/Materials/MI_BarkTuscan.uasset": "d3d42a854432caa90ab85b2e30b9699cab1fd44251d6d708283e3fce45bbd68a"
   },
-  "input_fingerprint": "137528e0912364596212c64178b80a39c6ea699b8db727707eedeabcbede713c",
+  "input_fingerprint": "6204661d20a61befdd90304091b6d9c16ff8ec4e8b6fa78dc941e4f65d8bbe0c",
   "kind": "imported",
   "schema": 1,
   "tool": "material-instance@2"

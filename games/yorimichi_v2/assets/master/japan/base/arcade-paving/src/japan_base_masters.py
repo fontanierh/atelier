@@ -97,6 +97,8 @@ def arcade_material(package, reads, *, texture, paving):
         n.set_editor_property('r', value)
         MEL.connect_material_property(n, '', prop)
     m.set_editor_property('used_with_instanced_static_meshes', True)
+    if not paving:
+        m.set_editor_property('dithered_lod_transition', True)
     MEL.recompile_material(m)
     return m
 

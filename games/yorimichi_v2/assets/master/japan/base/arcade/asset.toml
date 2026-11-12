@@ -12,7 +12,7 @@ input_dependencies = ["texture/japan/arcade-timber"]
 
 [[sources]]
 path = "src/japan_base_masters.py"
-sha256 = "ff5b73d2461feb3dbf351c18a082aff58aa69ed86cfffbaa5969a46e0bab5833"
+sha256 = "f1e895aeb87a651abe2d59c4d953accb20fbb60ea2c05832145eec04a08d2d75"
 
 [recipe]
 importer = "material-master"

@@ -17,6 +17,7 @@ public:
     bool IsManaging1440Target() const { return bManage1440Target; }
 private:
     bool bManage1440Target = false;
+    FIntPoint ExplicitFixedSize = FIntPoint::ZeroValue;
     FIntPoint LastWindowClientSize = FIntPoint::ZeroValue;
     int32 LastWindowMode = -1;
 };

@@ -219,9 +219,9 @@ private:
 
     // Host
     FHRWorldState State;
-    bool bHasWorld = false, bDirty = false;
+    bool bHasWorld = false, bDirty = false, bHostClockAnchored = false;
     FString SavePath, PersistenceError;
-    double DevSeconds = 0., LastSave = 0., NextRegister = 0., NextPublish = 0., NextReport = 0.;
+    double HostUnix = 0., DevSeconds = 0., LastSave = 0., NextRegister = 0., NextPublish = 0., NextReport = 0.;
     float AppliedScale = 1.f;
     TSet<FString> Registered;
     FRacingNetResult LastResult;
@@ -248,7 +248,7 @@ private:
         int32 Breed = 0, Gait = -1;
         double Phase = 0.;
         /** The traced ground's height above the course's authored height (cm), valid while bGround. */
-        float GroundOffset = 0.f, NextTrace = 0.f;
+        float GroundOffset = 0.f, TargetGroundOffset = 0.f, NextTrace = 0.f;
         bool bGround = false;
     };
     TArray<FLookBreed> LookBreeds;

@@ -184,6 +184,7 @@ def test_arcade_timber_wires_the_timber_texture_and_the_donor_colour_and_glow():
     log = trace(builders.arcade_material, MASTERS['/Game/Japan/Materials/M_Arcade']['package'], {tex: 'TIMBER'}, texture=tex, paving=False)
     assert_pure_build(log)
     assert ("'texture'", "'TIMBER'") in calls(log, 'set_editor_property')
+    assert ("'dithered_lod_transition'", 'True') in calls(log, 'set_editor_property')
     assert codes(log) == [repr(builders.ARCADE_COLOUR), repr(builders.ARCADE_GLOW)]
     assert connected_properties(log) == ['MP_BASE_COLOR', 'MP_EMISSIVE_COLOR', 'MP_ROUGHNESS', 'MP_SPECULAR']
 

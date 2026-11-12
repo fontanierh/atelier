@@ -1713,10 +1713,10 @@ void AJapanWorld::ApplyPerformanceToGroup(UHierarchicalInstancedStaticMeshCompon
 
 void AJapanWorld::ApplyPerformanceToTwin(UHierarchicalInstancedStaticMeshComponent* Twin)
 {
-    // The shadow twins follow their visible groups' sway and detail, and end at the tree shadow distance.
+    // Shadow-only twins keep compact shadow-cascade LODs even when visible crowns hold full detail farther out.
     if (!Twin || AppliedPerformanceMode < 0) return;
     Twin->SetWorldPositionOffsetDisableDistance(FMath::RoundToInt(AppliedTreeSway*100.f));
-    Twin->SetLODDistanceScale(AppliedForestDetail);
+    Twin->SetLODDistanceScale(AppliedPerformanceMode != 0 ? FMath::Min(AppliedForestDetail, .4f) : AppliedForestDetail);
     Twin->SetCullDistances(FMath::RoundToInt(AppliedTreeShadow*90.f),FMath::RoundToInt(AppliedTreeShadow*100.f));
     ForgetScreenSizeCull(Twin);
 }

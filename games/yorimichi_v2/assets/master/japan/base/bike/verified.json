@@ -3,9 +3,9 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Materials/M_Bike.uasset": "c00764c80be7643c202abc1bf35448c68333bc6389f890bb1c7c5411c9b9fdad"
+    "unreal/Content/Japan/Materials/M_Bike.uasset": "ca9acefe6b5af43c2c0c59b3278241a0ae4754f04156375309106c1527868f0d"
   },
-  "input_fingerprint": "c42d079638974747a4d1e9af00c610ae3f633761a988ec60ae032da70970e962",
+  "input_fingerprint": "4519308d555c18f8bd2a02e5166133e675f061e9fbb575f9095e9e389b8aeff0",
   "kind": "imported",
   "schema": 1,
   "tool": "material-master@1"
