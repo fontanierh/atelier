@@ -845,36 +845,53 @@ bool ARacingService::LoadLooks()
         }
     for (int32 C = 1; C < RacingLooks::CoatCount; ++C)
         if (CoatTextures[C].IsEmpty()) Missing.Add(FString::Printf(TEXT("coat %s texture"), RacingLooks::Coats[C]));
-    // The jockey: the default character on his horse clips (authored on the reference breed), seated by the breed's offset.
-    FString Rig;
-    const UClass* Class = FPlayableCharacter::Default().Class();
-    const AWandererCharacter* CDO = Class ? Cast<AWandererCharacter>(Class->GetDefaultObject()) : nullptr;
-    if (CDO)
+    // Jockeys: load every built playable character that has complete horse clips, so race fields do not clone one rider.
+    LookJockeys.Reset();
+    auto TryAddJockey = [&](const FPlayableCharacter& Entry, bool bRequired)
     {
+        if (!Entry.Built()) return;
+        for (const FLookJockey& Existing : LookJockeys)
+            if (Existing.Name == Entry.Name) return;
+        const UClass* Class = Entry.Class ? Entry.Class() : nullptr;
+        const AWandererCharacter* CDO = Class ? Cast<AWandererCharacter>(Class->GetDefaultObject()) : nullptr;
+        if (!CDO) return;
         const USkeletalMeshComponent* Body = CDO->GetMesh();
-        Rig = CDO->GetBikeRig();
-        // A data-defined character gets its body from its definition when it starts playing (AWandererCharacter).
+        const FString Rig = CDO->GetBikeRig();
         const AMoverCharacter* Mover = Cast<AMoverCharacter>(CDO);
         const UWandererDefinition* Definition = Mover && !Mover->DefinitionPath.IsEmpty()
             ? LoadObject<UWandererDefinition>(nullptr, *Mover->DefinitionPath) : nullptr;
-        JockeyMesh = Definition && Definition->Mesh ? Definition->Mesh.Get() : (Body ? Body->GetSkeletalMeshAsset() : nullptr);
-        if (JockeyMesh && Body && !Rig.IsEmpty())
+        USkeletalMesh* Mesh = Definition && Definition->Mesh ? Definition->Mesh.Get() : (Body ? Body->GetSkeletalMeshAsset() : nullptr);
+        if (!Mesh || !Body || Rig.IsEmpty())
         {
-            JockeyYaw = float(Body->GetRelativeRotation().Yaw);
-            JockeyScale = Body->GetRelativeScale3D();
-            for (int32 G = 0; G < RacingLooks::GaitCount; ++G)
-            {
-                UAnimSequence* Clip = LoadObject<UAnimSequence>(nullptr, *FString::Printf(TEXT("/Game/%sHorse/A_%s.A_%s"), *Rig,
-                    RacingLooks::RiderClips[G], RacingLooks::RiderClips[G]));
-                if (Clip && Clip->GetSkeleton() != JockeyMesh->GetSkeleton()) Clip = nullptr;
-                if (!Clip) Missing.Add(FString::Printf(TEXT("jockey clip /Game/%sHorse/A_%s"), *Rig, RacingLooks::RiderClips[G]));
-                JockeyClips.Add(Clip);
-                Held.Add(Clip);
-            }
+            if (bRequired) Missing.Add(FString::Printf(TEXT("the default character's jockey mesh and rig (rig '%s')"), *Rig));
+            return;
         }
-    }
-    if (!JockeyMesh || JockeyClips.Num() != RacingLooks::GaitCount)
-        Missing.Add(FString::Printf(TEXT("the default character's jockey mesh and rig (rig '%s')"), *Rig));
+        FLookJockey J;
+        J.Name = Entry.Name;
+        J.Mesh = Mesh;
+        J.Yaw = float(Body->GetRelativeRotation().Yaw);
+        J.Scale = Body->GetRelativeScale3D();
+        for (int32 G = 0; G < RacingLooks::GaitCount; ++G)
+        {
+            UAnimSequence* Clip = LoadObject<UAnimSequence>(nullptr, *FString::Printf(TEXT("/Game/%sHorse/A_%s.A_%s"), *Rig,
+                RacingLooks::RiderClips[G], RacingLooks::RiderClips[G]), nullptr, bRequired ? LOAD_None : (LOAD_NoWarn | LOAD_Quiet));
+            if (Clip && Clip->GetSkeleton() != Mesh->GetSkeleton()) Clip = nullptr;
+            if (!Clip)
+            {
+                if (bRequired) Missing.Add(FString::Printf(TEXT("jockey clip /Game/%sHorse/A_%s"), *Rig, RacingLooks::RiderClips[G]));
+                return;
+            }
+            J.Clips.Add(Clip);
+        }
+        Held.Add(J.Mesh);
+        for (UAnimSequence* Clip : J.Clips) Held.Add(Clip);
+        LookJockeys.Add(MoveTemp(J));
+    };
+    TryAddJockey(FPlayableCharacter::Default(), true);
+    for (const FPlayableCharacter& Entry : FPlayableCharacter::All())
+        TryAddJockey(Entry, false);
+    if (LookJockeys.IsEmpty())
+        Missing.Add(TEXT("at least one playable character's jockey mesh and horse clips"));
     bLooksLoaded = Missing.IsEmpty();
     if (!bLooksLoaded)
         UE_LOG(LogTemp, Error, TEXT("RACING runners are not shown: missing %s (run `atelier build yorimichi data.racing_assets`)"),
@@ -975,10 +992,34 @@ bool ARacingService::SpawnRunners(const FRacingNetRace& Race)
             Silks->SetVectorParameterValue(TEXT("Color"), FLinearColor(R.Silks));
             for (int32 M = 0; M < S.Saddle->GetNumMaterials(); ++M) S.Saddle->SetMaterial(M, Silks);
         }
+        // Rotate through all loaded rider rigs deterministically per race; when a field has more runners than rigs,
+        // tint dedicated outer-garment slots (e.g. Modori's coat or Nox's jacket) in the stable's silks so no two look alike.
+        const uint32 RaceSeed = GetTypeHash(Race.Key);
+        int32 JockeyIdx = int32((RaceSeed + uint32(I)) % uint32(LookJockeys.Num()));
+        if (I >= LookJockeys.Num())
+        {
+            const TCHAR* WantName = ((I - LookJockeys.Num()) % 2 == 0) ? TEXT("Modori") : TEXT("Nox");
+            for (int32 K = 0; K < LookJockeys.Num(); ++K)
+                if (LookJockeys[K].Name == WantName) { JockeyIdx = K; break; }
+        }
+        S.JockeyIndex = JockeyIdx;
+        const FLookJockey& JockeyLook = LookJockeys[JockeyIdx];
         S.Jockey = Part(TEXT("RaceJockey"), I);
-        S.Jockey->SetSkeletalMesh(JockeyMesh);
-        S.Jockey->SetWorldScale3D(JockeyScale);
+        S.Jockey->SetSkeletalMesh(JockeyLook.Mesh);
+        S.Jockey->SetWorldScale3D(JockeyLook.Scale);
         S.Jockey->RegisterComponent();
+        if (I >= LookJockeys.Num() && SilksMaterial)
+        {
+            UMaterialInstanceDynamic* JockeySilks = UMaterialInstanceDynamic::Create(SilksMaterial, this);
+            JockeySilks->SetVectorParameterValue(TEXT("Color"), FLinearColor(R.Silks));
+            for (int32 M = 0; M < S.Jockey->GetNumMaterials(); ++M)
+            {
+                const UMaterialInterface* Mat = S.Jockey->GetMaterial(M);
+                const FString MatName = Mat ? Mat->GetName() : FString();
+                if (MatName.Contains(TEXT("Coat")) || MatName.Contains(TEXT("Nox_Body")))
+                    S.Jockey->SetMaterial(M, JockeySilks);
+            }
+        }
         // Each horse starts its cycle and ground probe at a staggered offset, so the field neither steps nor traces in unison.
         S.Phase = FMath::Frac(I * .37);
         S.NextTrace = Race.Runners.Num() > 0 ? (.4f * float(I) / float(Race.Runners.Num())) : 0.f;
@@ -1067,11 +1108,12 @@ void ARacingService::TickPresentation(float DeltaSeconds)
         const FLookBreed& Look = LookBreeds[S.Breed];
         S.Horse->SetWorldLocationAndRotation(Where, FRotator(0.f, Yaw + Look.MeshYaw, 0.f));
         const float Scale = S.Horse->GetComponentScale().X;
+        const FLookJockey& JockeyLook = LookJockeys[S.JockeyIndex];
         if (S.Jockey)
         {
             // Seated as on the reference breed, moved by this breed's (scaled) saddle offset.
             const FVector Seat(Look.SeatForward, 0.f, Look.SeatUp + (Scale - 1.f) * Look.SeatZ);
-            S.Jockey->SetWorldLocationAndRotation(Where + FRotator(0.f, Yaw, 0.f).RotateVector(Seat), FRotator(0.f, Yaw + JockeyYaw, 0.f));
+            S.Jockey->SetWorldLocationAndRotation(Where + FRotator(0.f, Yaw, 0.f).RotateVector(Seat), FRotator(0.f, Yaw + JockeyLook.Yaw, 0.f));
         }
         // The gait follows the speed; horse and jockey share one phase through the clip, faster through the gait's band.
         const float SpeedCm = float(Speed * 100.);
@@ -1079,7 +1121,7 @@ void ARacingService::TickPresentation(float DeltaSeconds)
         UAnimSequence* Clip = Look.Clips[Gait].Get();
         const float Length = FMath::Max(Clip->GetPlayLength(), .033f);
         S.Phase = FMath::Frac(S.Phase + DeltaSeconds * RacingLooks::RateFor(Gait, SpeedCm) / Length);
-        UAnimSequence* Ride = JockeyClips[Gait].Get();
+        UAnimSequence* Ride = JockeyLook.Clips[Gait].Get();
         if (Gait != S.Gait)
         {
             S.Horse->SetAnimation(Clip);

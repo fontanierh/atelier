@@ -242,22 +242,27 @@ private:
         /** Idle, Walk, Trot, Canter, Gallop, Sprint. */
         TArray<TObjectPtr<UAnimSequence>> Clips;
     };
+    struct FLookJockey
+    {
+        FString Name;
+        TObjectPtr<USkeletalMesh> Mesh;
+        float Yaw = -90.f;
+        FVector Scale = FVector::OneVector;
+        /** Idle, Walk, Trot, Canter, Gallop, Sprint. */
+        TArray<TObjectPtr<UAnimSequence>> Clips;
+    };
     struct FShown
     {
         TObjectPtr<USkeletalMeshComponent> Horse, Saddle, Jockey;
-        int32 Breed = 0, Gait = -1;
+        int32 Breed = 0, JockeyIndex = 0, Gait = -1;
         double Phase = 0.;
         /** The traced ground's height above the course's authored height (cm), valid while bGround. */
         float GroundOffset = 0.f, TargetGroundOffset = 0.f, NextTrace = 0.f;
         bool bGround = false;
     };
     TArray<FLookBreed> LookBreeds;
+    TArray<FLookJockey> LookJockeys;
     TArray<FString> CoatTextures;
-    TArray<TObjectPtr<UAnimSequence>> JockeyClips;
-    UPROPERTY() TObjectPtr<USkeletalMesh> JockeyMesh;
-    FVector JockeyOffset = FVector::ZeroVector;
-    float JockeyYaw = -90.f;
-    FVector JockeyScale = FVector::OneVector;
     bool bLooksLoaded = false, bLooksTried = false;
     UPROPERTY() TArray<TObjectPtr<UObject>> Held;
     UPROPERTY() TObjectPtr<UMaterialInterface> SilksMaterial;
