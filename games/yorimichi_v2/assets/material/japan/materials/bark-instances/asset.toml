@@ -20,17 +20,20 @@ version = 2
 package = "/Game/Japan/Materials/MI_Bark"
 parent = "/Game/Japan/Materials/M_Painted"
 textures = {Tex = "/Game/Japan/Textures/T_bark"}
+base = {dithered_lod_transition = true}
 
 [[recipe.settings.instances]]
 package = "/Game/Japan/Materials/MI_BarkOlive"
 parent = "/Game/Japan/Materials/M_Painted"
 textures = {Tex = "/Game/Japan/Textures/T_bark_olive"}
+base = {dithered_lod_transition = true}
 
 [[recipe.settings.instances]]
 package = "/Game/Japan/Materials/MI_BarkTuscan"
 parent = "/Game/Japan/Materials/M_Painted"
 textures = {Tex = "/Game/Japan/Textures/T_bark_olive"}
 vectors = {Tint = [0.65, 0.55, 0.4, 1.0]}
+base = {dithered_lod_transition = true}
 
 [[outputs]]
 package = "/Game/Japan/Materials/MI_Bark"

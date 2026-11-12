@@ -3,9 +3,9 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Materials/M_ForestLakeWater.uasset": "c9c4312c7277aebc94c38a0f500ab9e5ff0eb5f3c39dbe320ca3e42adfba60b1"
+    "unreal/Content/Japan/Materials/M_ForestLakeWater.uasset": "d20fd916d33035e0ed1efaecd2909b9644a337118aa1f126c31477e368828f4a"
   },
-  "input_fingerprint": "e5b184bdc70346e1df54a2c6f91d599031144163c7627e2c62d2b39de78d2c80",
+  "input_fingerprint": "4d8b6d2b595e44248b5e722dad1519af9e90e4290ebf7cab7832ed898196b47f",
   "kind": "imported",
   "schema": 1,
   "tool": "material-master@1"

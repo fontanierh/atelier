@@ -3,9 +3,9 @@
   "dependencies": {},
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Materials/M_SailboatWake.uasset": "792532392c5374f1d7d81059923b4ad29ddbadd88c16df0b171efcb336830e69"
+    "unreal/Content/Japan/Materials/M_SailboatWake.uasset": "fdfdf4d3b04f2455d62671bd58d39c9959567c29811652d9c6072ac5d6e96637"
   },
-  "input_fingerprint": "f952d09e50f5a14bd4a4ac3c2c78c8a6526e1362445b81cd5055c8824724c898",
+  "input_fingerprint": "fb78450f4be564fcee07425926f109f745b3c02d699ab6f6eac92f3e4ee0271d",
   "kind": "imported",
   "schema": 1,
   "tool": "material-master@1"

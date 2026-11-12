@@ -182,7 +182,7 @@ const TArray<TPair<const TCHAR*, float>>& JapanReleaseDefaults()
         {TEXT("bounce"), 1.9f}, {TEXT("cam_dist"), 420.f}, {TEXT("exposure"), .95f}, {TEXT("fog"), 1.f},
         {TEXT("fog_density"), .03f}, {TEXT("fog_falloff"), .12f}, {TEXT("fog_glow"), .5f}, {TEXT("fog_reach"), 30.f},
         {TEXT("fog_shafts"), 1.f}, {TEXT("fog_town"), 0.f}, {TEXT("footstep_volume"), 1.f},
-        {TEXT("forest_detail"), .4f}, {TEXT("fov"), 70.f}, {TEXT("goofy"), 1.f}, {TEXT("laptop"), 0.f},
+        {TEXT("forest_detail"), .9f}, {TEXT("fov"), 70.f}, {TEXT("goofy"), 1.f}, {TEXT("laptop"), 0.f},
         {TEXT("leaf_motion"), 0.f}, {TEXT("mouse"), .4f}, {TEXT("music"), 1.f}, {TEXT("music_volume"), .6f},
         {TEXT("outline"), 0.f}, {TEXT("paint_radius"), 2.f}, {TEXT("painterly"), .35f}, {TEXT("performance"), 1.f},
         {TEXT("render_scale"), 100.f}, {TEXT("renderer"), 0.f}, {TEXT("saturation"), 1.f}, {TEXT("show_fps"), 1.f},
@@ -204,7 +204,7 @@ const TArray<TPair<const TCHAR*, float>>& JapanReleaseDefaults()
         {TEXT("skate_wobble_onset"), 1.f}, {TEXT("sky_fill"), 2.3f}, {TEXT("soften_footsteps"), 1.f},
         {TEXT("soften_skate"), 1.f}, {TEXT("stamina_rings"), 5.f}, {TEXT("sun_height"), 26.f},
         {TEXT("sun_strength"), 11.f}, {TEXT("sun_warmth"), .9f}, {TEXT("sun_yaw"), -30.f}, {TEXT("toon"), 0.f},
-        {TEXT("toon_bands"), 7.f}, {TEXT("toon_soft"), .45f}, {TEXT("tree_lod_distance"), 1.5f},
+        {TEXT("toon_bands"), 7.f}, {TEXT("toon_soft"), .45f}, {TEXT("tree_lod_distance"), 2.4f},
         {TEXT("tree_lod_mode"), 0.f}, {TEXT("tree_optimization"), 1.f}, {TEXT("tree_shadow"), 80.f},
         {TEXT("tree_sway"), 60.f}, {TEXT("volume"), .3f}, {TEXT("wind"), 3.5f}
     };
@@ -220,7 +220,7 @@ TArray<FJapanPreference> JapanDefaultPreferences(TArray<FString>* Errors)
         {TEXT("renderer"),TEXT("Lighting"),0.f,0.f,1.f},
         {TEXT("tree_optimization"),TEXT("Tree optimization"),1.f,0.f,1.f},
         {TEXT("tree_lod_mode"),TEXT("Tree detail comparison"),0.f,0.f,3.f,1.f},
-        {TEXT("tree_lod_distance"),TEXT("Keep tree detail farther (x)"),1.5f,.5f,3.f,.1f},
+        {TEXT("tree_lod_distance"),TEXT("Keep tree detail farther (x)"),2.4f,.5f,3.f,.1f},
         {TEXT("show_fps"),TEXT("Frame rate"),1.f,0.f,1.f},
         {TEXT("fog"),TEXT("Volumetric fog"),1.f,0.f,1.f},
         {TEXT("leaf_motion"),TEXT("Swaying leaves"),0.f,0.f,1.f},
@@ -253,7 +253,7 @@ TArray<FJapanPreference> JapanDefaultPreferences(TArray<FString>* Errors)
         {TEXT("outline"),TEXT("Outlines"),0.f,0.f,1.f},
         {TEXT("wind"),TEXT("Wind (m/s)"),3.5f,0.f,12.f},
         {TEXT("tree_sway"),TEXT("Tree sway distance (m)"),60.f,0.f,180.f,5.f},
-        {TEXT("forest_detail"),TEXT("Forest detail distance (x)"),.4f,.25f,2.f,.05f},
+        {TEXT("forest_detail"),TEXT("Forest detail distance (x)"),.9f,.25f,2.f,.05f},
         {TEXT("tree_shadow"),TEXT("Tree shadow distance (m)"),80.f,20.f,300.f,5.f},
         // The light (the menu's Light section, LightKeys): the map's sun, sky light and unbound volume
         // (setup_project.py build_level) as the player tunes them. The defaults are a low, warm afternoon sun
@@ -569,7 +569,7 @@ void UJapanPreferences::Apply()
         Set(TEXT("r.Shadow.DistanceScale"),Laptop ? .5f : PerformanceMode ? .85f : 1.5f);
         Set(TEXT("r.Shadow.CSM.TransitionScale"),Laptop ? .25f : 1.f);
         Set(TEXT("r.DistanceFieldShadowing"),bForward || PerformanceMode ? 0.f : 1.f);
-        Set(TEXT("foliage.LODDistanceScale"),PerformanceMode ? .75f : 1.f);
+        Set(TEXT("foliage.LODDistanceScale"),Laptop ? .65f : 1.f);
 #if !UE_BUILD_SHIPPING
         if (!GIsEditor && !IsRunningCommandlet())
         {

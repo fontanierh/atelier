@@ -8,17 +8,49 @@
 
 namespace
 {
+bool ParseLastIntArg(const TCHAR* CmdLine, const TCHAR* Key, int32& OutValue)
+{
+    bool bFound = false;
+    FString Token;
+    while (FParse::Token(CmdLine, Token, false))
+    {
+        FStringView View(Token);
+        if (View.StartsWith(TEXT("-"))) View.RightChopInline(1);
+        if (View.StartsWith(Key, ESearchCase::IgnoreCase))
+        {
+            const FString NumStr(View.RightChop(FCString::Strlen(Key)));
+            int32 Parsed = 0;
+            if (LexTryParseString(Parsed, *NumStr) && Parsed > 0)
+            {
+                OutValue = Parsed;
+                bFound = true;
+            }
+        }
+    }
+    return bFound;
+}
+
+FIntPoint RequestedFixedResolution()
+{
+    const TCHAR* CmdLine = FCommandLine::Get();
+    if (IsRunningCommandlet() || !FApp::CanEverRender() || !FParse::Param(CmdLine, TEXT("ForceRes")))
+        return FIntPoint::ZeroValue;
+    int32 CliX = 0, CliY = 0;
+    if (ParseLastIntArg(CmdLine, TEXT("ResX="), CliX) && ParseLastIntArg(CmdLine, TEXT("ResY="), CliY))
+        return FIntPoint(CliX, CliY);
+    return FIntPoint::ZeroValue;
+}
+
 bool ShouldManageNative1440Target()
 {
     const TCHAR* CmdLine = FCommandLine::Get();
     if (GIsEditor || IsRunningCommandlet() || !FApp::CanEverRender()) return false;
-    // Offscreen test/parity sessions (-RenderOffScreen) render directly into Slate's offscreen texture at their requested -resx/-resy.
     if (FParse::Param(CmdLine, TEXT("RenderOffScreen"))) return false;
     if (FParse::Param(CmdLine, TEXT("desktopnative1440"))) return true;
     int32 CliX = 0, CliY = 0;
     FString CliRes;
-    const bool bHasX = FParse::Value(CmdLine, TEXT("ResX="), CliX);
-    const bool bHasY = FParse::Value(CmdLine, TEXT("ResY="), CliY);
+    const bool bHasX = ParseLastIntArg(CmdLine, TEXT("ResX="), CliX);
+    const bool bHasY = ParseLastIntArg(CmdLine, TEXT("ResY="), CliY);
     const bool bHasRes = FParse::Value(CmdLine, TEXT("Res="), CliRes);
     if (!bHasX && !bHasY && !bHasRes) return true;   // Bare packaged YorimichiV2.app launch: default to 1440p aspect-matched target.
     if (FParse::Param(CmdLine, TEXT("fullscreen")) && (!bHasY || CliY == 1440)) return true;
@@ -30,21 +62,32 @@ bool ShouldManageNative1440Target()
 
 TSharedRef<FSceneViewport> UDesktopPreviewViewportClient::CreateViewport(TSharedPtr<SViewport> InViewportWidget)
 {
-    bManage1440Target = ShouldManageNative1440Target();
-    if (bManage1440Target && InViewportWidget.IsValid())
+    ExplicitFixedSize = RequestedFixedResolution();
+    bManage1440Target = ExplicitFixedSize == FIntPoint::ZeroValue && ShouldManageNative1440Target();
+    if ((bManage1440Target || ExplicitFixedSize != FIntPoint::ZeroValue) && InViewportWidget.IsValid())
     {
         InViewportWidget->SetRenderDirectlyToWindow(false);
         UE_LOG(LogTemp, Display, TEXT("DESKTOP PREVIEW separate_scene_target=1"));
     }
     TSharedRef<FSceneViewport> SceneViewport = Super::CreateViewport(InViewportWidget);
-    if (bManage1440Target) RefreshNative1440Target(true);
+    if (ExplicitFixedSize != FIntPoint::ZeroValue)
+    {
+        SceneViewport->SetFixedViewportSize(uint32(ExplicitFixedSize.X), uint32(ExplicitFixedSize.Y));
+        UE_LOG(LogTemp, Display, TEXT("DESKTOP PREVIEW explicit_fixed_viewport=%dx%d"), ExplicitFixedSize.X, ExplicitFixedSize.Y);
+    }
+    else if (bManage1440Target) RefreshNative1440Target(true);
     return SceneViewport;
 }
 
 void UDesktopPreviewViewportClient::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
-    if (bManage1440Target) RefreshNative1440Target(false);
+    if (ExplicitFixedSize != FIntPoint::ZeroValue)
+    {
+        if (FSceneViewport* SceneViewport = GetGameViewport(); SceneViewport && SceneViewport->GetSizeXY() != ExplicitFixedSize)
+            SceneViewport->SetFixedViewportSize(uint32(ExplicitFixedSize.X), uint32(ExplicitFixedSize.Y));
+    }
+    else if (bManage1440Target) RefreshNative1440Target(false);
 }
 
 void UDesktopPreviewViewportClient::RefreshNative1440Target(bool bForce)

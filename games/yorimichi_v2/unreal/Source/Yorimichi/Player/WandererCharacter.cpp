@@ -643,7 +643,15 @@ FName AWandererCharacter::GetSkateBone(FName Contract) const
     const FName* Bone = Definition ? Definition->SkateBones.Find(Contract) : nullptr;
     return Bone ? *Bone : Contract;
 }
-float AWandererCharacter::GetSkateBoardScale() const { return Definition ? Definition->SkateBoardScale : 1.f; }
+float AWandererCharacter::GetSkateBoardScale() const
+{
+    const float Explicit = Definition ? Definition->SkateBoardScale : 1.f;
+    if (!FMath::IsNearlyEqual(Explicit, 1.f)) return Explicit;
+    // Cairo's V1 reference rig has unscaled capsule half-height 74 cm; SkateRetarget widens foot stance by leg ratio
+    // on taller riders (Paul/Modori/Nox), so scale an unset 1.0 board proportionally to keep feet on the bolts.
+    const UCapsuleComponent* Capsule = GetCapsuleComponent();
+    return Capsule ? FMath::Clamp(Capsule->GetUnscaledCapsuleHalfHeight() / 74.f, 1.f, 1.22f) : 1.f;
+}
 void AWandererCharacter::PrepareToSkate()
 {
     if (Sword && Sword->IsArmed()) Sword->SetArmed(false);

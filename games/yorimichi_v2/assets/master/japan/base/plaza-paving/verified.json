@@ -5,9 +5,9 @@
   },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Japan/Materials/M_PlazaPaving.uasset": "924a28ee2fe4570bb823630acdb647fa6c07fe92bd4308172299fa389d28001c"
+    "unreal/Content/Japan/Materials/M_PlazaPaving.uasset": "4bcc766fe4bbe88b978977289d6d2dec543c81ae3fc1613b2a54b5545981035c"
   },
-  "input_fingerprint": "c30ab2148490ac7e2c84da96dc0159a45a47d17cf5ee76079f3bd1f6844ffa11",
+  "input_fingerprint": "5adc746b020e72d86cc18ec183b8db1cc0298cdcf3c2bd5551710fe1c804367b",
   "kind": "imported",
   "schema": 1,
   "tool": "material-master@1"
