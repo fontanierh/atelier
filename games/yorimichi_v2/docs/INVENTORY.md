@@ -3,7 +3,7 @@
 **Migration complete by owner decision, 2026-11-10. Final handoff: main `1abaab9d70` (#831). Further splitting is on demand; the remaining list below is an authoring backlog.**
 This is the status index for the original-game port and subsequent authoring work.
 The current Development package is `1a45eac4a6ee`, reported from `75bc99b55a`; it includes the final handoff
-and performance/visual work through #851. Later merged #853/#854 are not included in this package.
+and performance/visual work through #851. Later merged #853/#854/#856 are not included in this package.
 Automated checks and host/leave pass, but packaged Zeppelin performance
 remains below 60 FPS and manual/human/two-machine acceptance is still open. Existing old extraction-root
 ledgers do not apply to this fingerprint; see the [current package checkpoint](PACKAGE.md#current-development-package-checkpoint-2026-11-11).
@@ -12,7 +12,7 @@ The source baseline `7eec0f98dd` is documented separately in [features](inventor
 
 ## Post-handoff development checkpoint
 
-At main `bb803a4c9f` (2026-11-12), follow-ups through #854 are merged. The package checkpoint remains
+At main `a3b145ff2b` (2026-11-12), follow-ups through #856 are merged. The package checkpoint remains
 `75bc99b55a` (2026-11-11); later source/content changes are listed separately below.
 
 | Change | Source/content delivered | Verification limit |
@@ -32,8 +32,7 @@ At main `bb803a4c9f` (2026-11-12), follow-ups through #854 are merged. The packa
 
 Changes through #851 in the table above are included in the current package. The record census remains
 7,662 asset records; the migration-handoff snapshots remain historical. Planned optimization is not counted as
-delivered. Performance
-and visual work is owner-authorized normal development, not a reopening of the migration or whole-world splitting
+delivered. Performance and visual work is owner-authorized normal development, not a reopening of the migration or whole-world splitting
 campaign.
 Use [measurement guidance](BUDGETS.md#recording-a-current-performance-run) for new evidence.
 
@@ -42,15 +41,49 @@ Use [measurement guidance](BUDGETS.md#recording-a-current-performance-run) for n
 | Change | Source/content delivered | Verification limit |
 | --- | --- | --- |
 | [#853](https://github.com/fontanierh/atelier/pull/853), `7dd334391a` | Tree-material dither settings and saved imports; farther visible tree LOD defaults with capped shadow detail; racing clock, pose, ground-offset and save-cadence changes; review-camera aspect constraints and explicit viewport sizing; initial rider board scaling. | The PR records focused Python checks, 12 racing automation checks and content validation. These do not establish smooth transitions/racing, undistorted projection or whole-game frame-rate acceptance. Its capsule-based board scaling is superseded by #854. |
-| [#854](https://github.com/fontanierh/atelier/pull/854), `bb803a4c9f` | Default rider board scale uses the Adventure `BodyScale` leg ratio relative to Cairo, with a capsule fallback; explicit non-default scales are retained. | Compilation and content checks are reported in the PR. Post-fix rider appearance and gameplay still need verification; the earlier package cannot validate this change. |
+| [#854](https://github.com/fontanierh/atelier/pull/854), `bb803a4c9f` | Default rider board scale uses the Adventure `BodyScale` leg ratio relative to Cairo, with a capsule fallback; explicit non-default scales are retained. | Compilation and content checks are reported in the PR. The later receipt below records live deck scales; final appearance/gameplay acceptance remains separate, and the earlier package cannot validate this change. |
+| [#856](https://github.com/fontanierh/atelier/pull/856), `a3b145ff2b` | Race fields rotate through playable jockey rigs with complete horse clips; repeated riders in larger fields use stable-colour outer garments. | The PR reports 12 racing automation checks. Saved runtime component/material receipts show varied rigs in five- and six-rider fields; this is not a new package or performance result. |
 
-The teaser review reported distorted proportions, abrupt tree LOD transitions, incoherent routes, choppy
-horse racing and a possible skateboard-scale mismatch. Carbon-god owns the fixes and replacement video;
-front-man is checking the evidence (board thread #31665). The latest short real-time benchmark claims are
-still being reconciled: #31680/#31681 flag retained long stalls, the definition of low-FPS metrics, effective
-render scale/profile, current material-slot flags, projection and post-fix rider checks. They are not a new
-packaged or sustained-60-FPS acceptance checkpoint. Capture frame rate, scripted shot labels and output
-image dimensions alone do not prove real-time performance, successful traversal or undistorted projection.
+### Teaser handoff and corrected runtime evidence (2026-11-12)
+
+Carbon-god handed off a replacement teaser in board #31684: `build/yorimichi_v2/yorimichi_v2_teaser.mp4`
+in the producing checkout, 89.3 s, 1920×1080 at 30 fps, square pixels and 16:9 display aspect. This is a
+video handoff, not confirmed owner acceptance or evidence that gameplay always runs at the video's frame rate.
+
+Saved evidence is under `build/yorimichi_v2/teaser_v2_evidence/` in that checkout:
+
+- `strict_realtime_fps_and_proofs.json` names source `bb803a4c9f` (#853/#854), records a projected
+  200×200 cm square with equal 332.554 px sides, and live deck scales of Cairo 1.000, Paul 1.426,
+  Nox 1.463 and Modori 1.468. These replace the earlier missing projection/scale observations; they do
+  not independently accept every camera, rider pose or shot.
+- `material_slots_and_fixed100_proof.json` cross-references forest/city material slots with editor-verified
+  dither flags. It still records `all_tree_slots_verified_dithered_true: false`: four multi-LOD Caldera
+  meshes have null flag verification, as do three single-LOD bamboo/lean-pine meshes. Do not describe this
+  as complete tree-transition proof; visual smoothness remains a separate check.
+- `varied_jockeys_runtime_proof.json` records the #856 jockey rigs and garment material assignments.
+  The earlier FPS measurements below do not establish #856's performance.
+
+The seven retained CSVs (`01_*.csv` through `07_*.csv`) support the corrected metrics below. All numeric
+frame-time samples are retained. Average FPS is `1000 / mean(frame_ms)`; 1% low is `1000 / mean(slowest
+ceil(frame_count × 0.01) frame times)`, not the reciprocal of the 99th-percentile frame time.
+
+| Recorded route | Duration | Average / 1% low FPS | Worst frame | Frames >33.3 ms |
+| --- | ---: | ---: | ---: | ---: |
+| Coastal road bike (01) | 10.22 s | 59.57 / 37.00 | 72.63 ms | 1 |
+| Treehouse bridge (02) | 8.17 s | 58.17 / 18.21 | 60.78 ms | 5 |
+| Hidamari race including spawn (03) | 10.16 s | 54.84 / 6.17 | 677.85 ms | 3 |
+| Belmonte race (04) | 10.16 s | 58.87 / 21.51 | 73.65 ms | 3 |
+| Sunset Pier skate (05) | 8.25 s | 55.67 / 13.56 | 101.61 ms | 16 |
+| Volcano skate (06) | 12.16 s | 58.71 / 20.66 | 140.48 ms | 4 |
+| Hidamari steady race, fixed 100% (07) | 10.16 s | 59.85 / 49.54 | 41.14 ms | 1 |
+
+These are short Editor-game runs using the `slice` profile, `-RenderOffscreen -ForceRes` and 2560×1440
+output. Runs 01–06 retained dynamic resolution after preferences were applied; they are not fixed native
+1440p measurements. Run 07's receipt records dynamic resolution disabled after BeginPlay and median screen
+percentage 100%. It measures a steady race and does not replace run 03's spawn stalls. Route names do not
+prove successful traversal or landings. The handoff corrects the earlier metric/profile claims in #31679;
+stalls, human visual/gameplay acceptance and actual two-machine acceptance remain open. No new package
+checkpoint or whole-island sustained-60-FPS claim follows from these results.
 
 ### Historical runtime evidence
 
