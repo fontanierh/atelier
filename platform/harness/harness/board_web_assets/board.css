@@ -2296,3 +2296,14 @@ kbd {
 .ios-action-group .ios-sheet-row:last-child {
   border-bottom: none;
 }
+
+.sl-top-chip.chip-notify-on {
+  border-color: rgba(106, 166, 255, 0.55);
+  background: rgba(56, 114, 224, 0.2);
+  color: #dceaff;
+}
+.ios-shield-btn.notify-on {
+  border-color: rgba(106, 166, 255, 0.6);
+  background: rgba(56, 114, 224, 0.24);
+  color: #dceaff;
+}

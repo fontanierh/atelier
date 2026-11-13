@@ -6,6 +6,7 @@ import type {
   NotificationItem,
   Principal,
   Reaction,
+  SyncEventPayload,
   ThreadDetail,
 } from '../types';
 import { DitherBeam, type BeamPreset } from './DitherBeam';
@@ -181,7 +182,7 @@ const Avatar: React.FC<{
 }> = ({ principal, id, size = 'md', showDot = false, cornerBadge }) => {
   const isActive = principal?.status === 'active';
   const hue = principal?.hue || 'ice';
-  const label = (principal?.display_name || id).replace(/^henry\//, '');
+  const label = (principal?.display_name || id).replace(/^guest:/, '');
   const initials = label
     .split(/[\s/:-]+/)
     .filter(Boolean)
@@ -747,7 +748,7 @@ const SlackMessageRow: React.FC<{
 
 export const App: React.FC = () => {
   const initialParams = useMemo(() => new URLSearchParams(window.location.search), []);
-  const [viewerId, setViewerId] = useState<string>(initialParams.get('viewer') || 'jim');
+  const [viewerQuery, setViewerQuery] = useState<string>(initialParams.get('viewer') || '');
 
   const [railTab, setRailTab] = useState<'home' | 'dms' | 'activity'>(() => {
     const v = initialParams.get('view');
@@ -764,7 +765,7 @@ export const App: React.FC = () => {
 
   const [activeChannelId, setActiveChannelId] = useState<string>(
     initialParams.get('channel') ||
-      (initialParams.get('viewer') === 'henry' ? 'fork-sync' : 'world-build')
+      (initialParams.get('viewer') === 'guest_preview' ? 'fork-sync' : 'world-build')
   );
   const [openThreadId, setOpenThreadId] = useState<number | null>(() => {
     const t = initialParams.get('thread');
@@ -829,8 +830,143 @@ export const App: React.FC = () => {
 
   const showToast = useCallback((text: string) => {
     setToastText(text);
-    window.setTimeout(() => setToastText(null), 1800);
+    window.setTimeout(() => setToastText(null), 2000);
   }, []);
+
+  const [dmNotifyEnabled, setDmNotifyEnabled] = useState<boolean>(() => {
+    try {
+      return (
+        typeof window !== 'undefined' &&
+        localStorage.getItem('atelier.dm_browser_notify') === '1' &&
+        typeof Notification !== 'undefined' &&
+        Notification.permission === 'granted'
+      );
+    } catch {
+      return false;
+    }
+  });
+  const dmNotifyRef = useRef<boolean>(dmNotifyEnabled);
+  const viewerRef = useRef<Principal | null>(null);
+  const csrfRef = useRef<string>('');
+  const maxSeenMsgIdRef = useRef<number>(0);
+  const swRegRef = useRef<ServiceWorkerRegistration | null>(null);
+
+  useEffect(() => {
+    dmNotifyRef.current = dmNotifyEnabled;
+  }, [dmNotifyEnabled]);
+
+  useEffect(() => {
+    if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return;
+    navigator.serviceWorker
+      .register('/sw.js')
+      .then((reg) => {
+        swRegRef.current = reg;
+      })
+      .catch(() => {});
+    const onSwMessage = (ev: MessageEvent) => {
+      const d = ev.data;
+      if (d && d.type === 'atelier-open-dm' && d.channelId) {
+        setActiveChannelId(d.channelId);
+        setRailTab('dms');
+        setCenterMode('channel');
+        setLayer1Mode('channel');
+        if (d.rootId) {
+          setOpenThreadId(Number(d.rootId));
+          setStackDepth(2);
+        } else {
+          setOpenThreadId(null);
+          setStackDepth(1);
+        }
+      }
+    };
+    navigator.serviceWorker.addEventListener('message', onSwMessage);
+    return () => navigator.serviceWorker.removeEventListener('message', onSwMessage);
+  }, []);
+
+  const fireNativeDmNotification = useCallback(
+    (ev: SyncEventPayload) => {
+      if (!dmNotifyRef.current) return;
+      if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+      const curViewer = viewerRef.current;
+      if (!curViewer || curViewer.kind !== 'human' || curViewer.role === 'guest') return;
+      if (ev.kind !== 'message.created' || ev.channel_kind !== 'dm' || !ev.message || !ev.channel_id) return;
+      if (ev.message.author_id === curViewer.id) return;
+      if (ev.message.id <= maxSeenMsgIdRef.current) return;
+      maxSeenMsgIdRef.current = ev.message.id;
+
+      const sender = ev.message.author_display_name || ev.message.author_id;
+      const title = `Direct message from ${sender}`;
+      const body = ev.message.body.length > 180 ? `${ev.message.body.slice(0, 177)}…` : ev.message.body;
+      const targetChannel = ev.channel_id;
+      const targetRoot = ev.message.root_id;
+      const url = `/?channel=${encodeURIComponent(targetChannel)}${targetRoot ? `&thread=${targetRoot}` : ''}`;
+      const tag = `atelier-dm-${targetChannel}-${ev.message.id}`;
+
+      if (swRegRef.current && typeof swRegRef.current.showNotification === 'function') {
+        swRegRef.current
+          .showNotification(title, {
+            body,
+            tag,
+            icon: '/apple-touch-icon.png',
+            data: { url, channelId: targetChannel, rootId: targetRoot },
+          })
+          .catch(() => {
+            const n = new Notification(title, { body, tag, icon: '/apple-touch-icon.png' });
+            n.onclick = () => {
+              window.focus();
+              setActiveChannelId(targetChannel);
+              setCenterMode('channel');
+              setStackDepth(1);
+              n.close();
+            };
+          });
+      } else {
+        const n = new Notification(title, { body, tag, icon: '/apple-touch-icon.png' });
+        n.onclick = () => {
+          window.focus();
+          setActiveChannelId(targetChannel);
+          setCenterMode('channel');
+          setStackDepth(1);
+          n.close();
+        };
+      }
+    },
+    []
+  );
+
+  const toggleDmBrowserNotifications = useCallback(async () => {
+    if (typeof Notification === 'undefined') {
+      showToast('Browser notifications are not supported here');
+      return;
+    }
+    if (dmNotifyEnabled) {
+      setDmNotifyEnabled(false);
+      try { localStorage.setItem('atelier.dm_browser_notify', '0'); } catch {}
+      fetch('/api/preferences/notifications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Atelier-CSRF': csrfRef.current },
+        body: JSON.stringify({ dm_browser_notify: false }),
+      }).catch(() => {});
+      showToast('DM browser notifications paused');
+      return;
+    }
+    let perm = Notification.permission;
+    if (perm === 'default') {
+      perm = await Notification.requestPermission();
+    }
+    if (perm !== 'granted') {
+      showToast('Notifications blocked in browser settings');
+      return;
+    }
+    setDmNotifyEnabled(true);
+    try { localStorage.setItem('atelier.dm_browser_notify', '1'); } catch {}
+    await fetch('/api/preferences/notifications', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Atelier-CSRF': csrfRef.current },
+      body: JSON.stringify({ dm_browser_notify: true }),
+    }).catch(() => {});
+    showToast('Native DM notifications enabled');
+  }, [dmNotifyEnabled, showToast]);
 
   /* Fix #31690: Exact iOS Safari visualViewport lock */
   useEffect(() => {
@@ -892,10 +1028,19 @@ export const App: React.FC = () => {
     }, 50);
   };
 
-  const refreshBootstrap = useCallback(async (vId: string) => {
-    const res = await fetch(`/api/bootstrap?viewer=${encodeURIComponent(vId)}`);
+  const querySuffix = viewerQuery ? `?viewer=${encodeURIComponent(viewerQuery)}` : '';
+
+  const refreshBootstrap = useCallback(async (qSuffix: string) => {
+    const res = await fetch(`/api/bootstrap${qSuffix}`);
     if (!res.ok) return;
     const data: BootstrapPayload = await res.json();
+    viewerRef.current = data.viewer;
+    csrfRef.current = data.csrf_token || '';
+    for (const msgs of Object.values(data.channels_messages)) {
+      for (const m of msgs) {
+        if (m.id > maxSeenMsgIdRef.current) maxSeenMsgIdRef.current = m.id;
+      }
+    }
     setBoot(data);
     if (data.viewer.role === 'guest' && data.viewer.guest_channel_id) {
       setActiveChannelId(data.viewer.guest_channel_id);
@@ -903,19 +1048,23 @@ export const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    refreshBootstrap(viewerId);
+    refreshBootstrap(querySuffix);
     let es: EventSource | null = null;
     const timer = window.setTimeout(() => {
-      es = new EventSource(`/api/events?viewer=${encodeURIComponent(viewerId)}`);
-      es.addEventListener('sync', () => {
-        refreshBootstrap(viewerId);
+      es = new EventSource(`/api/events${querySuffix}`);
+      es.addEventListener('sync', (rawEv: Event) => {
+        try {
+          const parsed: SyncEventPayload = JSON.parse((rawEv as MessageEvent).data || '{}');
+          fireNativeDmNotification(parsed);
+        } catch {}
+        refreshBootstrap(querySuffix);
       });
-    }, 300);
+    }, 250);
     return () => {
       clearTimeout(timer);
       es?.close();
     };
-  }, [viewerId, refreshBootstrap]);
+  }, [querySuffix, refreshBootstrap, fireNativeDmNotification]);
 
   const handleToggleReaction = useCallback(
     async (messageId: number, emoji: string) => {
@@ -947,7 +1096,7 @@ export const App: React.FC = () => {
         };
       });
 
-      await fetch(`/api/messages/${messageId}/react?viewer=${encodeURIComponent(actorId)}`, {
+      await fetch(`/api/messages/${messageId}/react${querySuffix}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-Atelier-CSRF': boot?.csrf_token || '' },
         body: JSON.stringify({ viewer_id: actorId, emoji }),
@@ -956,9 +1105,10 @@ export const App: React.FC = () => {
     [boot]
   );
 
-  const switchViewer = (nextViewer: string) => {
-    setViewerId(nextViewer);
-    if (nextViewer === 'henry' || nextViewer.startsWith('guest:')) {
+  const toggleGuestPreview = () => {
+    const next = viewerQuery === 'guest_preview' ? '' : 'guest_preview';
+    setViewerQuery(next);
+    if (next === 'guest_preview') {
       setRailTab('home');
       setCenterMode('channel');
       setActiveChannelId('fork-sync');
@@ -988,13 +1138,13 @@ export const App: React.FC = () => {
       requestAnimationFrame(() => {
         if (feedRef.current) feedRef.current.scrollTop = feedRef.current.scrollHeight;
       });
-      fetch(`/api/channels/${encodeURIComponent(cid)}/read?viewer=${encodeURIComponent(viewerId)}`, {
+      fetch(`/api/channels/${encodeURIComponent(cid)}/read${querySuffix}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-Atelier-CSRF': boot?.csrf_token || '' },
         body: '{}',
       }).catch(() => {});
     },
-    [viewerId, boot?.csrf_token]
+    [querySuffix, boot?.csrf_token]
   );
 
   const openThread = useCallback((rootId: number) => {
@@ -1065,11 +1215,11 @@ export const App: React.FC = () => {
   const handleApproveFork = async (branch: string, rootId: number) => {
     setApprovedBranches((prev) => ({ ...prev, [branch]: true }));
     showToast(`Approved ${branch}`);
-    await fetch(`/api/messages?viewer=${encodeURIComponent(viewerId)}`, {
+    await fetch(`/api/messages${querySuffix}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Atelier-CSRF': boot?.csrf_token || '' },
       body: JSON.stringify({
-        author_id: 'jim',
+        author_id: boot?.viewer.id,
         channel_id: 'fork-sync',
         root_id: rootId,
         body: `@front-man Approved \`${branch}\` — run checks and merge into \`main\`.`,
@@ -1118,7 +1268,7 @@ export const App: React.FC = () => {
       if (feedRef.current) feedRef.current.scrollTop = feedRef.current.scrollHeight;
     });
 
-    await fetch(`/api/messages?viewer=${encodeURIComponent(viewerId)}`, {
+    await fetch(`/api/messages${querySuffix}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Atelier-CSRF': boot?.csrf_token || '' },
       body: JSON.stringify({ author_id: boot.viewer.id, channel_id: activeChannelId, body: text }),
@@ -1192,7 +1342,7 @@ export const App: React.FC = () => {
       if (threadFeedRef.current) threadFeedRef.current.scrollTop = threadFeedRef.current.scrollHeight;
     });
 
-    await fetch(`/api/messages?viewer=${encodeURIComponent(viewerId)}`, {
+    await fetch(`/api/messages${querySuffix}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Atelier-CSRF': boot?.csrf_token || '' },
       body: JSON.stringify({
@@ -1208,7 +1358,7 @@ export const App: React.FC = () => {
   const submitNewChannel = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newChName.trim() || !boot) return;
-    const res = await fetch(`/api/channels?viewer=${encodeURIComponent(viewerId)}`, {
+    const res = await fetch(`/api/channels${querySuffix}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Atelier-CSRF': boot?.csrf_token || '' },
       body: JSON.stringify({ creator_id: boot.viewer.id, name: newChName, kind: newChKind, topic: newChTopic }),
@@ -1216,7 +1366,7 @@ export const App: React.FC = () => {
     if (res.ok) {
       const data = await res.json();
       setShowNewChannelModal(false);
-      await refreshBootstrap(viewerId);
+      await refreshBootstrap(querySuffix);
       openChannel(data.channel.id);
     }
   };
@@ -1425,9 +1575,10 @@ export const App: React.FC = () => {
           </div>
 
           <div className="sec-tier">
-            <div className="sec-tier-title">2. Your Devices ({(security?.owner_nodes || []).join(', ')}) → Owner</div>
+            <div className="sec-tier-title">2. Tailscale Account ({security?.owner_login || viewer.display_name}) → Owner</div>
             <p>
-              Authenticated via immutable Tailscale <code>Node.StableID</code>. Session:{' '}
+              Human identity comes directly from Tailscale (<code>Tailscale-User-Login</code> + <code>tailscale whois</code>{' '}
+              <code>UserProfile</code>). Active session: <strong>{viewer.display_name}</strong> on{' '}
               <code>{security?.detected_node || 'local'}</code>.
             </p>
           </div>
@@ -1465,7 +1616,7 @@ export const App: React.FC = () => {
           <h3>{diffModalBranch}</h3>
           <button type="button" className="sl-close" onClick={() => setDiffModalBranch(null)}>×</button>
         </div>
-        <p className="sl-modal-sub">henry/atelier · 91c4e02d rebased on a3b145ff2b · 0 C++ files touched</p>
+        <p className="sl-modal-sub">fork/atelier · 91c4e02d rebased on a3b145ff2b · 0 C++ files touched</p>
         <div className="sl-diff-list">
           <div><span>M</span><code>content/data/belmonte_train/platforms.json</code><em>+42 −6</em></div>
           <div><span>M</span><code>content/data/belmonte_train/service.json</code><em>+8 −2</em></div>
@@ -1540,6 +1691,17 @@ export const App: React.FC = () => {
             </div>
 
             <div className="ios-header-pills">
+              {!isGuest && viewer.kind === 'human' && (
+                <button
+                  type="button"
+                  className={`ios-shield-btn ${dmNotifyEnabled ? 'notify-on' : ''}`}
+                  aria-label={dmNotifyEnabled ? 'DM notifications on' : 'Enable DM browser notifications'}
+                  title={dmNotifyEnabled ? 'DM browser notifications ON' : 'Opt in to native DM browser notifications'}
+                  onClick={toggleDmBrowserNotifications}
+                >
+                  <IcoBell filled={dmNotifyEnabled} />
+                </button>
+              )}
               {!isGuest && (
                 <button
                   type="button"
@@ -1550,14 +1712,17 @@ export const App: React.FC = () => {
                   <IcoShield />
                 </button>
               )}
-              <button
-                type="button"
-                className="ios-profile-capsule"
-                onClick={() => switchViewer(isGuest ? 'jim' : 'henry')}
-              >
-                <span className="ios-role-label">{isGuest ? 'Guest' : 'Jim'}</span>
-                <Avatar principal={viewer} id={viewer.id} size="xs" showDot />
-              </button>
+              {(viewer.role === 'owner' || viewerQuery === 'guest_preview') ? (
+                <button type="button" className="ios-profile-capsule" onClick={toggleGuestPreview}>
+                  <span className="ios-role-label">{isGuest ? 'Guest Preview' : viewer.display_name.split(' ')[0]}</span>
+                  <Avatar principal={viewer} id={viewer.id} size="xs" showDot />
+                </button>
+              ) : (
+                <div className="ios-profile-capsule">
+                  <span className="ios-role-label">{viewer.display_name}</span>
+                  <Avatar principal={viewer} id={viewer.id} size="xs" showDot />
+                </div>
+              )}
             </div>
           </header>
 
@@ -1720,7 +1885,7 @@ export const App: React.FC = () => {
                         </div>
                         <div className="ios-dm-preview">
                           {p.id === 'front-man'
-                            ? 'henry/train-agent marked feat/belmonte-platform-benches ready in #fork-sync…'
+                            ? p.status_text
                             : p.status_text}
                         </div>
                       </div>
@@ -1729,7 +1894,7 @@ export const App: React.FC = () => {
                 })}
               </div>
 
-              <button type="button" className="ios-plus-fab" onClick={() => openChannel('dm-jim-front-man')}>+</button>
+              <button type="button" className="ios-plus-fab" onClick={() => dmChannels[0] && openChannel(dmChannels[0].id)}>+</button>
             </div>
           )}
 
@@ -2102,6 +2267,15 @@ export const App: React.FC = () => {
           <kbd className="sl-kbd">⌘K</kbd>
         </button>
         <div className="sl-topbar-right">
+          {!isGuest && viewer.kind === 'human' && (
+            <button
+              type="button"
+              className={`sl-top-chip ${dmNotifyEnabled ? 'chip-notify-on' : ''}`}
+              onClick={toggleDmBrowserNotifications}
+            >
+              {dmNotifyEnabled ? '🔔 DM Alerts: On' : '🔕 Notify on DMs'}
+            </button>
+          )}
           {!isGuest && (
             <button type="button" className="sl-top-chip" onClick={() => setShowAccessModal(true)}>
               Tailnet & Onboarding
@@ -2110,9 +2284,13 @@ export const App: React.FC = () => {
           <button type="button" className="sl-top-chip" onClick={() => setSimulateMobileOnDesktop(true)}>
             Mobile view
           </button>
-          <button type="button" className="sl-top-chip" onClick={() => switchViewer(isGuest ? 'jim' : 'henry')}>
-            Viewing as: {isGuest ? 'Henry (Guest)' : 'Jim'}
-          </button>
+          {(viewer.role === 'owner' || viewerQuery === 'guest_preview') ? (
+            <button type="button" className="sl-top-chip" onClick={toggleGuestPreview}>
+              {isGuest ? 'Previewing: Guest (#fork-sync)' : `${viewer.display_name}`}
+            </button>
+          ) : (
+            <span className="sl-top-chip">{viewer.display_name} (Guest)</span>
+          )}
         </div>
       </header>
 

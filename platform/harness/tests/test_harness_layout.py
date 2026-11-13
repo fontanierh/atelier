@@ -42,10 +42,10 @@ def test_module_entry_point(name):
 
 
 def test_server_sources_and_assets_are_in_harness():
-    from atelier.harness import board_web
-    assert board_web.SERVER == paths.PLATFORM / 'harness' / 'web' / 'server'
-    assert (board_web.SERVER / 'Cargo.toml').is_file()
+    from atelier.harness import board_web, slack_board
+    assert Path(slack_board.__file__).is_file()
     assert (board_web.ASSETS / 'app.js').is_file()
+    assert (board_web.ASSETS / 'index.html').is_file()
 
 
 def test_static_recipe_scan_reaches_harness_and_shared_studio_code(tmp_path):
