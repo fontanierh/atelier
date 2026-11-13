@@ -2067,3 +2067,232 @@ kbd {
   border: 1px solid rgba(255, 255, 255, 0.14);
   box-shadow: 0 28px 80px rgba(0, 0, 0, 0.8);
 }
+
+
+/* ==================== V7 NATIVE MOBILE & ZERO-SHIFT SHEET POLISH ==================== */
+.sl-msg.is-tappable {
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.sl-msg.is-tappable:active {
+  background: rgba(255, 255, 255, 0.055);
+}
+
+/* Desktop Floating Popover — NEVER pushes content down! */
+.sl-floating-emoji-popover {
+  position: absolute;
+  left: 64px;
+  bottom: 8px;
+  padding: 5px 8px;
+  border-radius: 99px;
+  border: 1px solid var(--line-strong);
+  background: rgba(15, 20, 30, 0.96);
+  backdrop-filter: blur(22px);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.62);
+  display: inline-flex;
+  gap: 4px;
+  z-index: 45;
+  animation: palettePop 150ms var(--spring);
+}
+.sl-floating-emoji-popover button {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  font-size: 18px;
+  cursor: pointer;
+  transition: transform 100ms var(--pop), background 100ms ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  .sl-floating-emoji-popover button:hover {
+    transform: scale(1.22);
+    background: rgba(255, 255, 255, 0.09);
+  }
+}
+
+/* Smooth Top & Bottom Scroll Scrims Under Floating Liquid-Glass Chrome */
+.ios-top-scrim {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: calc(68px + env(safe-area-inset-top, 0px));
+  background: linear-gradient(180deg, rgba(7, 9, 13, 0.94) 0%, rgba(7, 9, 13, 0.62) 58%, rgba(7, 9, 13, 0) 100%);
+  pointer-events: none;
+  z-index: 11;
+}
+
+.ios-bottom-scrim {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: calc(92px + env(safe-area-inset-bottom, 0px));
+  background: linear-gradient(0deg, rgba(7, 9, 13, 0.9) 0%, rgba(7, 9, 13, 0.45) 55%, rgba(7, 9, 13, 0) 100%);
+  pointer-events: none;
+  z-index: 12;
+}
+
+.slm-scroll,
+.slm-feed {
+  overscroll-behavior-y: contain;
+}
+.slm-feed {
+  padding-bottom: 18px;
+}
+
+/* Floating Native Toast */
+.ios-toast {
+  position: fixed;
+  top: calc(14px + env(safe-area-inset-top, 0px));
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 7px 16px;
+  border-radius: 99px;
+  border: 1px solid var(--line-strong);
+  background: rgba(20, 26, 38, 0.94);
+  backdrop-filter: blur(22px);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fg);
+  z-index: 95;
+  pointer-events: none;
+  animation: fadeIn 140ms ease;
+}
+
+/* Upgraded Slack iOS Bottom Reaction & Action Sheet */
+.ios-action-sheet {
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 10px 16px calc(20px + env(safe-area-inset-bottom, 12px));
+  border-radius: 26px 26px 0 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(16, 21, 31, 0.96);
+  backdrop-filter: blur(32px);
+  box-shadow: 0 -16px 48px rgba(0, 0, 0, 0.68);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: sheetUp 260ms var(--spring);
+  transition: transform 240ms var(--spring);
+}
+.ios-action-sheet.is-dragging {
+  transition: none !important;
+}
+
+.ios-sheet-context {
+  padding: 2px 4px 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 10px;
+}
+.ios-sheet-context strong {
+  flex-shrink: 0;
+}
+.ios-sheet-snippet {
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ios-hero-emoji-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+.ios-hero-emoji {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.055);
+  font-size: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 110ms var(--pop), background 120ms ease, border-color 120ms ease;
+}
+.ios-hero-emoji:active {
+  transform: scale(1.22);
+}
+.ios-hero-emoji.is-mine {
+  border-color: rgba(106, 166, 255, 0.85);
+  background: rgba(56, 114, 224, 0.28);
+}
+.ios-hero-emoji.more-btn {
+  color: var(--body);
+}
+
+.ios-emoji-search {
+  height: 38px;
+  padding: 0 12px;
+  border-radius: 12px;
+  border: 1px solid var(--line-strong);
+  background: rgba(255, 255, 255, 0.045);
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--muted);
+}
+.ios-emoji-search input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--fg);
+  font-size: 16px;
+  outline: none;
+}
+
+.ios-emoji-grid {
+  max-height: 220px;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+  padding: 2px 0;
+}
+.ios-grid-emoji {
+  height: 44px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  font-size: 23px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 100ms var(--pop), background 120ms ease;
+}
+.ios-grid-emoji:active {
+  transform: scale(1.24);
+  background: rgba(255, 255, 255, 0.1);
+}
+.ios-grid-emoji.is-mine {
+  border-color: rgba(106, 166, 255, 0.8);
+  background: rgba(56, 114, 224, 0.24);
+}
+
+.ios-action-group {
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid var(--line);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.ios-action-group .ios-sheet-row {
+  border-radius: 0;
+  background: transparent;
+  border-bottom: 1px solid var(--line);
+}
+.ios-action-group .ios-sheet-row:last-child {
+  border-bottom: none;
+}

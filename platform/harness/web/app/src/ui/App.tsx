@@ -10,7 +10,34 @@ import type {
 } from '../types';
 import { DitherBeam, type BeamPreset } from './DitherBeam';
 
-const QUICK_EMOJIS = ['👍', '🔥', '✅', '❤️', '👀', '🚀', '🎉', '😂'];
+const HERO_EMOJIS = ['👍', '❤️', '🔥', '✅', '👀', '🚀'];
+
+const EMOJI_CATALOG: { emoji: string; keywords: string }[] = [
+  { emoji: '👍', keywords: 'thumbs up yes approve like ok' },
+  { emoji: '❤️', keywords: 'heart love red' },
+  { emoji: '🔥', keywords: 'fire hot lit ship' },
+  { emoji: '✅', keywords: 'check done green pass verified' },
+  { emoji: '👀', keywords: 'eyes looking review' },
+  { emoji: '🚀', keywords: 'rocket launch deploy ship fast' },
+  { emoji: '🎉', keywords: 'tada party celebrate congrats' },
+  { emoji: '😂', keywords: 'joy laugh lol funny' },
+  { emoji: '🙌', keywords: 'hands raise praise nice' },
+  { emoji: '💯', keywords: '100 hundred perfect' },
+  { emoji: '⚡', keywords: 'zap bolt fast perf' },
+  { emoji: '👏', keywords: 'clap bravo great' },
+  { emoji: '🤝', keywords: 'handshake deal sync merge' },
+  { emoji: '🎯', keywords: 'bullseye target exact' },
+  { emoji: '🛠️', keywords: 'tools build fix wrench' },
+  { emoji: '🐛', keywords: 'bug issue' },
+  { emoji: '✨', keywords: 'sparkles polish clean magic' },
+  { emoji: '🧠', keywords: 'brain smart idea' },
+  { emoji: '🫡', keywords: 'salute ack on it' },
+  { emoji: '📌', keywords: 'pin note keep' },
+  { emoji: '💡', keywords: 'bulb idea tip' },
+  { emoji: '🐎', keywords: 'horse race gallop' },
+  { emoji: '🚂', keywords: 'train express rail' },
+  { emoji: '🛹', keywords: 'skateboard trick' },
+];
 
 function formatClock(unixSeconds: number): string {
   const d = new Date(unixSeconds * 1000);
@@ -44,12 +71,12 @@ function toggleReactionsArray(reactions: Reaction[], emoji: string, userId: stri
 }
 
 function detectMentionQuery(text: string): string | null {
-  const match = text.match(/(?:^|\s)@([a-z0-9._/-]*)$/i);
+  const match = text.match(/(?:^|\s)@([a-z0-9.:_/-]*)$/i);
   return match ? (match[1] ?? '').toLowerCase() : null;
 }
 
 function completeMention(text: string, handle: string): string {
-  return text.replace(/(^|\s)@[a-z0-9._/-]*$/i, `$1@${handle} `);
+  return text.replace(/(^|\s)@[a-z0-9.:_/-]*$/i, `$1@${handle} `);
 }
 
 /* Crisp Slack Icons */
@@ -76,6 +103,23 @@ const IcoBell: React.FC<{ filled?: boolean }> = ({ filled }) => (
 const IcoThreads: React.FC = () => (
   <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
     <path d="M2.8 4.2C2.8 3.4 3.4 2.8 4.2 2.8H13.8C14.6 2.8 15.2 3.4 15.2 4.2V10.8C15.2 11.6 14.6 12.2 13.8 12.2H7.2L3.8 15V12.2C3.25 12.2 2.8 11.75 2.8 11.2V4.2Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+  </svg>
+);
+
+const IcoSmilePlus: React.FC = () => (
+  <svg width="15" height="15" viewBox="0 0 18 18" fill="none">
+    <path d="M14.8 9.4C14.6 12.5 12 15 8.8 15C5.5 15 2.8 12.3 2.8 9C2.8 5.7 5.5 3 8.8 3C9.5 3 10.2 3.1 10.8 3.3" stroke="currentColor" strokeWidth="1.45" strokeLinecap="round" />
+    <circle cx="6.7" cy="7.8" r="0.9" fill="currentColor" />
+    <circle cx="10.9" cy="7.8" r="0.9" fill="currentColor" />
+    <path d="M6.4 10.6C7 11.5 7.8 12 8.8 12C9.8 12 10.6 11.5 11.2 10.6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+    <path d="M14.4 2.6V6.6M12.4 4.6H16.4" stroke="currentColor" strokeWidth="1.45" strokeLinecap="round" />
+  </svg>
+);
+
+const IcoCopy: React.FC = () => (
+  <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
+    <rect x="6.2" y="6.2" width="8.6" height="8.6" rx="2" stroke="currentColor" strokeWidth="1.45" />
+    <path d="M11.8 6.2V4.4C11.8 3.6 11.2 3 10.4 3H4.4C3.6 3 3 3.6 3 4.4V10.4C3 11.2 3.6 11.8 4.4 11.8H6.2" stroke="currentColor" strokeWidth="1.45" />
   </svg>
 );
 
@@ -139,7 +183,8 @@ const Avatar: React.FC<{
   const hue = principal?.hue || 'ice';
   const label = (principal?.display_name || id).replace(/^henry\//, '');
   const initials = label
-    .split(/[\s/-]+/)
+    .split(/[\s/:-]+/)
+    .filter(Boolean)
     .slice(0, 2)
     .map((s) => s[0]?.toUpperCase() || '')
     .join('');
@@ -157,7 +202,7 @@ function renderSlackMarkdown(text: string, viewerId: string): React.ReactNode {
   const clean = text.replace(/^📢\s*/, '');
   const lines = clean.split('\n');
   return lines.map((line, lineIdx) => {
-    const tokens = line.split(/(`[^`]+`|\*\*[^*]+\*\*|@[a-z0-9._/-]+|#[a-z0-9-]+)/gi);
+    const tokens = line.split(/(`[^`]+`|\*\*[^*]+\*\*|@[a-z0-9.:_/-]+|#[a-z0-9-]+)/gi);
     return (
       <React.Fragment key={lineIdx}>
         {lineIdx > 0 && <br />}
@@ -212,10 +257,198 @@ const MentionAutocomplete: React.FC<{
           onClick={() => onSelect(p.id)}
         >
           <Avatar principal={p} id={p.id} size="xs" showDot />
-          <strong>@{p.id}</strong>
-          <span>{p.display_name}</span>
+          <strong>@{p.display_name}</strong>
+          <span>{p.status_text}</span>
         </button>
       ))}
+    </div>
+  );
+};
+
+/* Native Slack Bottom Sheet (Used for BOTH ☺+ Reaction Picker AND Long-Press Message Actions — NEVER shifts layout!) */
+const NativeBottomSheet: React.FC<{
+  msg: BoardMessage | null;
+  mode: 'reactions' | 'actions';
+  viewerId: string;
+  principals: Record<string, Principal>;
+  onSwitchMode: (mode: 'reactions' | 'actions') => void;
+  onSelectEmoji: (emoji: string) => void;
+  onReplyThread: (rootId: number) => void;
+  onCopyText: (text: string) => void;
+  onClose: () => void;
+}> = ({
+  msg,
+  mode,
+  viewerId,
+  principals,
+  onSwitchMode,
+  onSelectEmoji,
+  onReplyThread,
+  onCopyText,
+  onClose,
+}) => {
+  const [emojiSearch, setEmojiSearch] = useState('');
+  const [dragY, setDragY] = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const startYRef = useRef<number | null>(null);
+  const openedAtRef = useRef<number>(performance.now());
+
+  useEffect(() => {
+    if (msg) {
+      openedAtRef.current = performance.now();
+      setEmojiSearch('');
+      setDragY(0);
+      setDragging(false);
+    }
+  }, [msg, mode]);
+
+  if (!msg) return null;
+
+  const existingMine = new Set(
+    msg.reactions.filter((r) => (r.users || []).includes(viewerId)).map((r) => r.emoji)
+  );
+  const author = principals[msg.author_id];
+  const eq = emojiSearch.trim().toLowerCase();
+  const filteredEmojis = EMOJI_CATALOG.filter(
+    (item) => !eq || item.keywords.includes(eq) || item.emoji.includes(eq)
+  );
+
+  const onSheetTouchStart = (e: React.TouchEvent) => {
+    const t = e.touches[0];
+    if (!t) return;
+    startYRef.current = t.clientY;
+    setDragging(false);
+  };
+
+  const onSheetTouchMove = (e: React.TouchEvent) => {
+    if (startYRef.current === null) return;
+    const t = e.touches[0];
+    if (!t) return;
+    const dy = t.clientY - startYRef.current;
+    if (dy > 4) {
+      setDragging(true);
+      setDragY(dy);
+    }
+  };
+
+  const onSheetTouchEnd = () => {
+    startYRef.current = null;
+    if (dragY > 90) {
+      onClose();
+    } else {
+      setDragging(false);
+      setDragY(0);
+    }
+  };
+
+  return (
+    <div
+      className="ios-sheet-backdrop"
+      onClick={() => {
+        // Ignore ghost click from long-press finger release!
+        if (performance.now() - openedAtRef.current < 220) return;
+        onClose();
+      }}
+    >
+      <div
+        className={`ios-action-sheet ${dragging ? 'is-dragging' : ''}`}
+        style={dragY > 0 ? { transform: `translate3d(0, ${dragY.toFixed(1)}px, 0)` } : undefined}
+        onClick={(e) => e.stopPropagation()}
+        onTouchStart={onSheetTouchStart}
+        onTouchMove={onSheetTouchMove}
+        onTouchEnd={onSheetTouchEnd}
+      >
+        <div className="ios-sheet-grabber" />
+
+        {/* Subtle message context header */}
+        <div className="ios-sheet-context">
+          <Avatar principal={author} id={msg.author_id} size="xs" />
+          <strong>{author?.display_name || msg.author_id}</strong>
+          <span className="ios-sheet-snippet">{msg.body}</span>
+        </div>
+
+        {/* Hero 1-Tap Quick Reactions Strip (just like Slack iOS!) */}
+        <div className="ios-hero-emoji-bar">
+          {HERO_EMOJIS.map((em) => (
+            <button
+              key={em}
+              type="button"
+              className={`ios-hero-emoji ${existingMine.has(em) ? 'is-mine' : ''}`}
+              onClick={() => {
+                onSelectEmoji(em);
+                onClose();
+              }}
+            >
+              {em}
+            </button>
+          ))}
+          {mode === 'actions' && (
+            <button
+              type="button"
+              className="ios-hero-emoji more-btn"
+              aria-label="More reactions"
+              onClick={() => onSwitchMode('reactions')}
+            >
+              <IcoSmilePlus />
+            </button>
+          )}
+        </div>
+
+        {mode === 'reactions' ? (
+          <>
+            <div className="ios-emoji-search">
+              <IcoSearch />
+              <input
+                type="text"
+                value={emojiSearch}
+                onChange={(e) => setEmojiSearch(e.target.value)}
+                placeholder="Find an emoji…"
+              />
+            </div>
+            <div className="ios-emoji-grid">
+              {filteredEmojis.map((item) => (
+                <button
+                  key={item.emoji}
+                  type="button"
+                  className={`ios-grid-emoji ${existingMine.has(item.emoji) ? 'is-mine' : ''}`}
+                  onClick={() => {
+                    onSelectEmoji(item.emoji);
+                    onClose();
+                  }}
+                >
+                  {item.emoji}
+                </button>
+              ))}
+            </div>
+          </>
+        ) : (
+          <div className="ios-action-group">
+            <button
+              type="button"
+              className="ios-sheet-row"
+              onClick={() => {
+                const rootId = msg.root_id || msg.id;
+                onClose();
+                onReplyThread(rootId);
+              }}
+            >
+              <IcoThreads />
+              <span>Reply in thread</span>
+            </button>
+            <button
+              type="button"
+              className="ios-sheet-row"
+              onClick={() => {
+                onCopyText(msg.body);
+                onClose();
+              }}
+            >
+              <IcoCopy />
+              <span>Copy text</span>
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
@@ -292,11 +525,12 @@ const SlackMessageRow: React.FC<{
   msg: BoardMessage;
   principals: Record<string, Principal>;
   viewer: Principal;
+  isMobileMode: boolean;
   approvedBranches: Record<string, boolean>;
   onApproveFork: (branch: string, rootId: number) => void;
   onInspectDiff: (branch: string) => void;
   onToggleReaction: (messageId: number, emoji: string) => void;
-  onOpenActionSheet: (msg: BoardMessage) => void;
+  onOpenSheet: (msg: BoardMessage, mode: 'reactions' | 'actions') => void;
   onOpenThread?: (rootId: number) => void;
   inThread?: boolean;
   isOptimistic?: boolean;
@@ -304,11 +538,12 @@ const SlackMessageRow: React.FC<{
   msg,
   principals,
   viewer,
+  isMobileMode,
   approvedBranches,
   onApproveFork,
   onInspectDiff,
   onToggleReaction,
-  onOpenActionSheet,
+  onOpenSheet,
   onOpenThread,
   inThread = false,
   isOptimistic = false,
@@ -316,11 +551,22 @@ const SlackMessageRow: React.FC<{
   const author = principals[msg.author_id];
   const isGuestMsg = msg.author_role === 'guest';
   const isAgent = author?.kind === 'agent';
-  const [pickerOpen, setPickerOpen] = useState(false);
+  // Desktop-only floating popover (positioned absolute so it NEVER pushes content down!)
+  const [desktopPopover, setDesktopPopover] = useState(false);
   const [pressing, setPressing] = useState(false);
 
   const pressTimer = useRef<number | null>(null);
   const startCoord = useRef<{ x: number; y: number } | null>(null);
+  const suppressClickUntil = useRef<number>(0);
+
+  const openReactionPicker = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isMobileMode) {
+      onOpenSheet(msg, 'reactions');
+    } else {
+      setDesktopPopover((v) => !v);
+    }
+  };
 
   const onTouchStart = (e: React.TouchEvent) => {
     const t = e.touches[0];
@@ -329,11 +575,12 @@ const SlackMessageRow: React.FC<{
     pressTimer.current = window.setTimeout(() => {
       pressTimer.current = null;
       setPressing(false);
+      suppressClickUntil.current = performance.now() + 550;
       if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
         try { navigator.vibrate(14); } catch {}
       }
-      onOpenActionSheet(msg);
-    }, 320);
+      onOpenSheet(msg, 'actions');
+    }, 340);
     setPressing(true);
   };
 
@@ -341,7 +588,7 @@ const SlackMessageRow: React.FC<{
     if (!startCoord.current) return;
     const t = e.touches[0];
     if (!t) return;
-    if (Math.hypot(t.clientX - startCoord.current.x, t.clientY - startCoord.current.y) > 8) {
+    if (Math.hypot(t.clientX - startCoord.current.x, t.clientY - startCoord.current.y) > 9) {
       if (pressTimer.current) {
         clearTimeout(pressTimer.current);
         pressTimer.current = null;
@@ -358,19 +605,32 @@ const SlackMessageRow: React.FC<{
     setPressing(false);
   };
 
+  const handleRowClick = () => {
+    if (performance.now() < suppressClickUntil.current) return;
+    if (desktopPopover) {
+      setDesktopPopover(false);
+      return;
+    }
+    if (!inThread && onOpenThread) {
+      onOpenThread(msg.id);
+    }
+  };
+
   return (
     <div
-      className={`sl-msg ${isGuestMsg && viewer.role !== 'guest' ? 'sl-msg-guest' : ''} ${
-        pressing ? 'is-pressing' : ''
-      } ${isOptimistic ? 'msg-enter' : ''}`}
+      className={`sl-msg ${!inThread && onOpenThread ? 'is-tappable' : ''} ${
+        isGuestMsg && viewer.role !== 'guest' ? 'sl-msg-guest' : ''
+      } ${pressing ? 'is-pressing' : ''} ${isOptimistic ? 'msg-enter' : ''}`}
+      onClick={handleRowClick}
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={clearPress}
       onTouchCancel={clearPress}
       onContextMenu={(e) => {
-        if (window.innerWidth < 860) {
+        if (isMobileMode) {
           e.preventDefault();
-          onOpenActionSheet(msg);
+          suppressClickUntil.current = performance.now() + 550;
+          onOpenSheet(msg, 'actions');
         }
       }}
     >
@@ -393,9 +653,9 @@ const SlackMessageRow: React.FC<{
           onInspectDiff={onInspectDiff}
         />
 
-        {(msg.reactions.length > 0 || pickerOpen || (!inThread && msg.reply_count > 0 && onOpenThread)) && (
+        {(msg.reactions.length > 0 || (!inThread && msg.reply_count > 0 && onOpenThread)) && (
           <div className="sl-msg-below">
-            {(msg.reactions.length > 0 || pickerOpen) && (
+            {msg.reactions.length > 0 && (
               <div className="sl-reactions">
                 {msg.reactions.map((r) => {
                   const mine = (r.users || []).includes(viewer.id);
@@ -418,30 +678,10 @@ const SlackMessageRow: React.FC<{
                   type="button"
                   className="sl-rx sl-rx-add"
                   aria-label="Add reaction"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setPickerOpen((v) => !v);
-                  }}
+                  onClick={openReactionPicker}
                 >
-                  ☺+
+                  <IcoSmilePlus />
                 </button>
-              </div>
-            )}
-
-            {pickerOpen && (
-              <div className="sl-inline-picker" onClick={(e) => e.stopPropagation()}>
-                {QUICK_EMOJIS.map((em) => (
-                  <button
-                    key={em}
-                    type="button"
-                    onClick={() => {
-                      onToggleReaction(msg.id, em);
-                      setPickerOpen(false);
-                    }}
-                  >
-                    {em}
-                  </button>
-                ))}
               </div>
             )}
 
@@ -472,27 +712,31 @@ const SlackMessageRow: React.FC<{
         )}
       </div>
 
-      {/* Desktop Hover Pill — CSS strictly scopes hover to (hover: hover) and (pointer: fine)! */}
-      <div className="sl-hover-bar">
-        <button
-          type="button"
-          title="React"
-          onClick={(e) => {
-            e.stopPropagation();
-            setPickerOpen((v) => !v);
-          }}
-        >
-          ☺
+      {/* Desktop Floating Popover (position: absolute — NEVER shifts or pushes message rows!) */}
+      {desktopPopover && !isMobileMode && (
+        <div className="sl-floating-emoji-popover" onClick={(e) => e.stopPropagation()}>
+          {EMOJI_CATALOG.slice(0, 8).map((item) => (
+            <button
+              key={item.emoji}
+              type="button"
+              onClick={() => {
+                onToggleReaction(msg.id, item.emoji);
+                setDesktopPopover(false);
+              }}
+            >
+              {item.emoji}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Desktop Hover Pill */}
+      <div className="sl-hover-bar" onClick={(e) => e.stopPropagation()}>
+        <button type="button" title="Add reaction" onClick={openReactionPicker}>
+          <IcoSmilePlus />
         </button>
         {!inThread && onOpenThread && (
-          <button
-            type="button"
-            title="Reply in thread"
-            onClick={(e) => {
-              e.stopPropagation();
-              onOpenThread(msg.id);
-            }}
-          >
+          <button type="button" title="Open thread" onClick={() => onOpenThread(msg.id)}>
             <IcoThreads />
           </button>
         )}
@@ -519,14 +763,14 @@ export const App: React.FC = () => {
   });
 
   const [activeChannelId, setActiveChannelId] = useState<string>(
-    initialParams.get('channel') || (initialParams.get('viewer') === 'henry' ? 'fork-sync' : 'world-build')
+    initialParams.get('channel') ||
+      (initialParams.get('viewer') === 'henry' ? 'fork-sync' : 'world-build')
   );
   const [openThreadId, setOpenThreadId] = useState<number | null>(() => {
     const t = initialParams.get('thread');
     return t ? Number(t) : null;
   });
 
-  // Persistent 3-Layer Mobile Stack: depth 0 ('tab'), depth 1 ('channel' | 'threads-list' | 'all-channels'), depth 2 ('thread')
   const [mobileTab, setMobileTab] = useState<'home' | 'dms' | 'activity'>(() => {
     const mt = initialParams.get('mobileTab');
     if (mt === 'dms') return 'dms';
@@ -541,10 +785,10 @@ export const App: React.FC = () => {
     return 0;
   });
 
-  // Interactive 120fps Touch Swipe-Back State
+  // Interactive Full-Screen Horizontal Right-Swipe Back State
   const [swipeDx, setSwipeDx] = useState<number>(0);
   const [isSwiping, setIsSwiping] = useState<boolean>(false);
-  const swipeRef = useRef<{ startX: number; startY: number; startTime: number; active: boolean } | null>(null);
+  const swipeRef = useRef<{ startX: number; startY: number; startTime: number; mode: 'undecided' | 'swipe' | 'scroll' } | null>(null);
 
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
   const [activityFilter, setActivityFilter] = useState<'all' | 'dms' | 'mentions' | 'threads'>('all');
@@ -559,7 +803,8 @@ export const App: React.FC = () => {
   const [showSearchModal, setShowSearchModal] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
 
-  const [actionSheetMsg, setActionSheetMsg] = useState<BoardMessage | null>(null);
+  const [sheetState, setSheetState] = useState<{ msg: BoardMessage; mode: 'reactions' | 'actions' } | null>(null);
+  const [toastText, setToastText] = useState<string | null>(null);
   const [diffModalBranch, setDiffModalBranch] = useState<string | null>(null);
   const [approvedBranches, setApprovedBranches] = useState<Record<string, boolean>>({});
   const [copiedOnboarding, setCopiedOnboarding] = useState<boolean>(false);
@@ -581,6 +826,11 @@ export const App: React.FC = () => {
   const [newChName, setNewChName] = useState<string>('belmonte-art');
   const [newChKind, setNewChKind] = useState<'public' | 'private'>('public');
   const [newChTopic, setNewChTopic] = useState<string>('Tuscan stone shaders & station signage');
+
+  const showToast = useCallback((text: string) => {
+    setToastText(text);
+    window.setTimeout(() => setToastText(null), 1800);
+  }, []);
 
   /* Fix #31690: Exact iOS Safari visualViewport lock */
   useEffect(() => {
@@ -613,7 +863,6 @@ export const App: React.FC = () => {
     };
   }, []);
 
-  /* Global Cmd+K / Escape Keyboard Shortcuts */
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
@@ -621,7 +870,7 @@ export const App: React.FC = () => {
         setShowSearchModal((v) => !v);
       } else if (e.key === 'Escape') {
         setShowSearchModal(false);
-        setActionSheetMsg(null);
+        setSheetState(null);
         setShowAccessModal(false);
         setShowNewChannelModal(false);
         setDiffModalBranch(null);
@@ -653,7 +902,6 @@ export const App: React.FC = () => {
     }
   }, []);
 
-  /* Real-Time SSE Stream (/api/events) — opened after initial load so Safari's URL spinner finishes instantly */
   useEffect(() => {
     refreshBootstrap(viewerId);
     let es: EventSource | null = null;
@@ -669,7 +917,6 @@ export const App: React.FC = () => {
     };
   }, [viewerId, refreshBootstrap]);
 
-  /* 0ms Optimistic Reaction Toggle */
   const handleToggleReaction = useCallback(
     async (messageId: number, emoji: string) => {
       if (!boot) return;
@@ -721,7 +968,6 @@ export const App: React.FC = () => {
     }
   };
 
-  /* 0ms Channel Open + Optimistic Unread Clear */
   const openChannel = useCallback(
     (cid: string) => {
       setActiveChannelId(cid);
@@ -739,52 +985,56 @@ export const App: React.FC = () => {
           ),
         };
       });
+      requestAnimationFrame(() => {
+        if (feedRef.current) feedRef.current.scrollTop = feedRef.current.scrollHeight;
+      });
       fetch(`/api/channels/${encodeURIComponent(cid)}/read?viewer=${encodeURIComponent(viewerId)}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-Atelier-CSRF': boot?.csrf_token || '' },
         body: '{}',
       }).catch(() => {});
     },
-    [viewerId]
+    [viewerId, boot?.csrf_token]
   );
 
-  /* 0ms Single-Tap Thread Open */
   const openThread = useCallback((rootId: number) => {
     setOpenThreadId(rootId);
     setStackDepth(2);
+    requestAnimationFrame(() => {
+      if (threadFeedRef.current) threadFeedRef.current.scrollTop = 0;
+    });
   }, []);
 
-  /* Interactive iOS Touch Edge-Swipe Back Handlers */
+  const handleOpenSheet = useCallback((msg: BoardMessage, mode: 'reactions' | 'actions') => {
+    setSheetState({ msg, mode });
+  }, []);
+
+  /* Full-Screen Native Horizontal Right-Swipe Back Gesture (works anywhere on screen when swiping horizontally!) */
   const handleStackTouchStart = (e: React.TouchEvent) => {
-    if (stackDepth === 0) return;
+    if (stackDepth === 0 || sheetState) return;
     const t = e.touches[0];
     if (!t) return;
-    // Allow left-edge swipe (< 44px) or broad horizontal swipe
-    if (t.clientX <= 44) {
-      swipeRef.current = { startX: t.clientX, startY: t.clientY, startTime: performance.now(), active: false };
-    } else {
-      swipeRef.current = null;
-    }
+    swipeRef.current = { startX: t.clientX, startY: t.clientY, startTime: performance.now(), mode: 'undecided' };
   };
 
   const handleStackTouchMove = (e: React.TouchEvent) => {
     const s = swipeRef.current;
-    if (!s || stackDepth === 0) return;
+    if (!s || stackDepth === 0 || sheetState) return;
     const t = e.touches[0];
     if (!t) return;
     const dx = t.clientX - s.startX;
     const dy = t.clientY - s.startY;
-    if (!s.active) {
-      if (Math.abs(dy) > Math.abs(dx)) {
-        swipeRef.current = null;
+    if (s.mode === 'undecided') {
+      if (Math.abs(dy) > 10 && Math.abs(dy) >= Math.abs(dx) * 0.75) {
+        s.mode = 'scroll';
         return;
       }
-      if (dx > 8) {
-        s.active = true;
+      if (dx > 14 && dx > Math.abs(dy) * 1.5) {
+        s.mode = 'swipe';
         setIsSwiping(true);
       }
     }
-    if (s.active) {
+    if (s.mode === 'swipe') {
       setSwipeDx(Math.max(0, dx));
     }
   };
@@ -792,7 +1042,7 @@ export const App: React.FC = () => {
   const handleStackTouchEnd = () => {
     const s = swipeRef.current;
     swipeRef.current = null;
-    if (!s || !s.active) {
+    if (!s || s.mode !== 'swipe') {
       setIsSwiping(false);
       setSwipeDx(0);
       return;
@@ -800,9 +1050,13 @@ export const App: React.FC = () => {
     const elapsed = Math.max(1, performance.now() - s.startTime);
     const velocity = swipeDx / elapsed;
     const w = window.innerWidth || 393;
-    if (swipeDx > w * 0.3 || velocity > 0.5) {
-      setStackDepth((d) => (d === 2 ? 1 : 0));
-      if (stackDepth === 2) setOpenThreadId(null);
+    if (swipeDx > w * 0.28 || velocity > 0.45) {
+      if (stackDepth === 2) {
+        setStackDepth(1);
+        setOpenThreadId(null);
+      } else {
+        setStackDepth(0);
+      }
     }
     setIsSwiping(false);
     setSwipeDx(0);
@@ -810,6 +1064,7 @@ export const App: React.FC = () => {
 
   const handleApproveFork = async (branch: string, rootId: number) => {
     setApprovedBranches((prev) => ({ ...prev, [branch]: true }));
+    showToast(`Approved ${branch}`);
     await fetch(`/api/messages?viewer=${encodeURIComponent(viewerId)}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Atelier-CSRF': boot?.csrf_token || '' },
@@ -988,6 +1243,21 @@ export const App: React.FC = () => {
     return null;
   }, [openThreadId, boot]);
 
+  const activeSheetMsg: BoardMessage | null = useMemo(() => {
+    if (!sheetState || !boot) return null;
+    const targetId = sheetState.msg.id;
+    for (const list of Object.values(boot.channels_messages)) {
+      const hit = list.find((m) => m.id === targetId);
+      if (hit) return hit;
+    }
+    for (const td of Object.values(boot.threads_by_root)) {
+      if (td.root.id === targetId) return td.root;
+      const rhit = td.replies.find((m) => m.id === targetId);
+      if (rhit) return rhit;
+    }
+    return sheetState.msg;
+  }, [sheetState, boot]);
+
   if (!boot) return <div className="sl-boot" />;
 
   const { viewer, principals, channels, explorable_channels, notifications, subscribed_threads, security } = boot;
@@ -1023,7 +1293,6 @@ export const App: React.FC = () => {
     return true;
   });
 
-  // Instant Fuzzy Search Results (Cmd+K / Search Orb)
   const qNorm = searchQuery.trim().toLowerCase();
   const searchChannels = explorable_channels.filter(
     (c) => !qNorm || c.name.toLowerCase().includes(qNorm) || c.topic.toLowerCase().includes(qNorm)
@@ -1048,7 +1317,10 @@ export const App: React.FC = () => {
 
   const onboardingCommand = `uv run atelier board connect ${window.location.origin}`;
 
-  /* Shared Instant Quick Switcher / Search Modal (Cmd+K on Desktop, Search Orb on Mobile) */
+
+
+  const toastBanner = toastText && <div className="ios-toast">{toastText}</div>;
+
   const searchModal = showSearchModal && (
     <div className="sl-modal-veil" onClick={() => setShowSearchModal(false)}>
       <div className="sl-modal search-palette" onClick={(e) => e.stopPropagation()}>
@@ -1121,6 +1393,7 @@ export const App: React.FC = () => {
                     setShowSearchModal(false);
                     setSearchQuery('');
                     openChannel(m.channel_id);
+                    openThread(m.root_id || m.id);
                   }}
                 >
                   <span className="palette-hash">#{m.channel_id}</span>
@@ -1130,51 +1403,6 @@ export const App: React.FC = () => {
             </>
           )}
         </div>
-      </div>
-    </div>
-  );
-
-  const mobileActionSheet = actionSheetMsg && (
-    <div className="ios-sheet-backdrop" onClick={() => setActionSheetMsg(null)}>
-      <div className="ios-action-sheet" onClick={(e) => e.stopPropagation()}>
-        <div className="ios-sheet-grabber" />
-        <div className="ios-sheet-emojis">
-          {QUICK_EMOJIS.map((em) => (
-            <button
-              key={em}
-              type="button"
-              onClick={() => {
-                handleToggleReaction(actionSheetMsg.id, em);
-                setActionSheetMsg(null);
-              }}
-            >
-              {em}
-            </button>
-          ))}
-        </div>
-        <button
-          type="button"
-          className="ios-sheet-row"
-          onClick={() => {
-            const targetId = actionSheetMsg.root_id || actionSheetMsg.id;
-            setActionSheetMsg(null);
-            openThread(targetId);
-          }}
-        >
-          <IcoThreads />
-          <span>Reply in thread</span>
-        </button>
-        <button
-          type="button"
-          className="ios-sheet-row"
-          onClick={() => {
-            navigator.clipboard?.writeText(actionSheetMsg.body).catch(() => {});
-            setActionSheetMsg(null);
-          }}
-        >
-          <span>📋</span>
-          <span>Copy message text</span>
-        </button>
       </div>
     </div>
   );
@@ -1199,7 +1427,7 @@ export const App: React.FC = () => {
           <div className="sec-tier">
             <div className="sec-tier-title">2. Your Devices ({(security?.owner_nodes || []).join(', ')}) → Owner</div>
             <p>
-              Authenticated via <code>tailscale whois</code>. Full owner access on Mac & iPhone. Current session:{' '}
+              Authenticated via immutable Tailscale <code>Node.StableID</code>. Session:{' '}
               <code>{security?.detected_node || 'local'}</code>.
             </p>
           </div>
@@ -1260,7 +1488,6 @@ export const App: React.FC = () => {
     const wPx = window.innerWidth || 393;
     const swipeRatio = isSwiping ? Math.min(1, swipeDx / wPx) : 0;
 
-    // GPU UINavigationController Parallax Math across persistent layers 0, 1, and 2!
     const layer0Transform =
       stackDepth === 0
         ? 'translate3d(0px, 0, 0)'
@@ -1297,8 +1524,9 @@ export const App: React.FC = () => {
         onTouchCancel={handleStackTouchEnd}
       >
         <DitherBeam preset={beamPreset} />
+        {toastBanner}
 
-        {/* ========== LAYER 0: PERSISTENT ROOT TABS (Home · DMs · Activity — Preserves Scroll!) ========== */}
+        {/* ========== LAYER 0: PERSISTENT ROOT TABS ========== */}
         <div
           className={`nav-layer layer-0 ${stackDepth > 0 ? 'underneath' : ''}`}
           style={{ transform: layer0Transform }}
@@ -1560,7 +1788,7 @@ export const App: React.FC = () => {
             </div>
           )}
 
-          {/* Sliding Liquid-Glass Bottom Pill Dock + Circular Search Orb */}
+          <div className="ios-bottom-scrim" aria-hidden="true" />
           <div className="ios-dock-row">
             <nav
               className={`ios-pill-dock ${isGuest ? 'cols-2' : 'cols-3'}`}
@@ -1616,12 +1844,14 @@ export const App: React.FC = () => {
           </div>
         </div>
 
-        {/* ========== LAYER 1: CHANNEL / THREADS-LIST / ALL-CHANNELS (GPU Slide-Over!) ========== */}
+        {/* ========== LAYER 1: CHANNEL / THREADS-LIST / ALL-CHANNELS ========== */}
         <div
           className={`nav-layer layer-1 ${stackDepth === 2 ? 'underneath' : ''} ${stackDepth === 0 ? 'offscreen' : ''}`}
           style={{ transform: layer1Transform }}
         >
           <DitherBeam preset="floor" />
+          <div className="ios-top-scrim" aria-hidden="true" />
+
           <header className="ios-floating-header">
             <button type="button" className="ios-back-orb" aria-label="Back" onClick={() => setStackDepth(0)}>
               ‹
@@ -1644,7 +1874,7 @@ export const App: React.FC = () => {
                   ? `${explorable_channels.length} public channels`
                   : activeChannelMeta?.guest_allowed
                   ? 'External guest bridge · data only'
-                  : `${activeChannelMeta?.member_count || 2} members`}
+                  : `${activeChannelMeta?.member_count || 2} members · Tap any message to thread`}
               </div>
             </div>
           </header>
@@ -1659,11 +1889,12 @@ export const App: React.FC = () => {
                     msg={msg}
                     principals={principals}
                     viewer={viewer}
+                    isMobileMode={isMobileMode}
                     approvedBranches={approvedBranches}
                     onApproveFork={handleApproveFork}
                     onInspectDiff={setDiffModalBranch}
                     onToggleReaction={handleToggleReaction}
-                    onOpenActionSheet={setActionSheetMsg}
+                    onOpenSheet={handleOpenSheet}
                     onOpenThread={openThread}
                     isOptimistic={msg.id < 0}
                   />
@@ -1708,11 +1939,12 @@ export const App: React.FC = () => {
                         msg={th}
                         principals={principals}
                         viewer={viewer}
+                        isMobileMode={isMobileMode}
                         approvedBranches={approvedBranches}
                         onApproveFork={handleApproveFork}
                         onInspectDiff={setDiffModalBranch}
                         onToggleReaction={handleToggleReaction}
-                        onOpenActionSheet={setActionSheetMsg}
+                        onOpenSheet={handleOpenSheet}
                         inThread
                       />
                     </div>
@@ -1727,12 +1959,14 @@ export const App: React.FC = () => {
           )}
         </div>
 
-        {/* ========== LAYER 2: THREAD VIEW (GPU Slide-Over on 1 Single Tap!) ========== */}
+        {/* ========== LAYER 2: THREAD VIEW ========== */}
         <div
           className={`nav-layer layer-2 ${stackDepth < 2 ? 'offscreen' : ''}`}
           style={{ transform: layer2Transform }}
         >
           <DitherBeam preset="floor" />
+          <div className="ios-top-scrim" aria-hidden="true" />
+
           {threadDetail && (
             <>
               <header className="ios-floating-header">
@@ -1760,15 +1994,20 @@ export const App: React.FC = () => {
                   msg={threadDetail.root}
                   principals={principals}
                   viewer={viewer}
+                  isMobileMode={isMobileMode}
                   approvedBranches={approvedBranches}
                   onApproveFork={handleApproveFork}
                   onInspectDiff={setDiffModalBranch}
                   onToggleReaction={handleToggleReaction}
-                  onOpenActionSheet={setActionSheetMsg}
+                  onOpenSheet={handleOpenSheet}
                   inThread
                 />
                 <div className="ios-new-divider">
-                  <span>{threadDetail.replies.length} REPLIES</span>
+                  <span>
+                    {threadDetail.replies.length === 0
+                      ? 'START THREAD'
+                      : `${threadDetail.replies.length} ${threadDetail.replies.length === 1 ? 'REPLY' : 'REPLIES'}`}
+                  </span>
                 </div>
                 {threadDetail.replies.map((rep) => (
                   <SlackMessageRow
@@ -1776,11 +2015,12 @@ export const App: React.FC = () => {
                     msg={rep}
                     principals={principals}
                     viewer={viewer}
+                    isMobileMode={isMobileMode}
                     approvedBranches={approvedBranches}
                     onApproveFork={handleApproveFork}
                     onInspectDiff={setDiffModalBranch}
                     onToggleReaction={handleToggleReaction}
-                    onOpenActionSheet={setActionSheetMsg}
+                    onOpenSheet={handleOpenSheet}
                     inThread
                     isOptimistic={rep.id < 0}
                   />
@@ -1800,7 +2040,7 @@ export const App: React.FC = () => {
                     value={threadDraft}
                     onFocus={() => onInputFocus(true)}
                     onChange={(e) => setThreadDraft(e.target.value)}
-                    placeholder="Add a reply"
+                    placeholder="Add a reply…"
                   />
                   <button type="submit" className="ios-cap-send" aria-label="Reply">
                     <IcoSend />
@@ -1811,7 +2051,21 @@ export const App: React.FC = () => {
           )}
         </div>
 
-        {mobileActionSheet}
+        <NativeBottomSheet
+          msg={activeSheetMsg}
+          mode={sheetState?.mode || 'actions'}
+          viewerId={viewer.id}
+          principals={principals}
+          onSwitchMode={(m) => setSheetState((prev) => (prev ? { ...prev, mode: m } : null))}
+          onSelectEmoji={(em) => activeSheetMsg && handleToggleReaction(activeSheetMsg.id, em)}
+          onReplyThread={(rid) => openThread(rid)}
+          onCopyText={(txt) => {
+            navigator.clipboard?.writeText(txt).catch(() => {});
+            showToast('Copied to clipboard');
+          }}
+          onClose={() => setSheetState(null)}
+        />
+
         {searchModal}
         {accessModal}
         {diffModal}
@@ -1822,7 +2076,7 @@ export const App: React.FC = () => {
       return (
         <div className="sl-sim-stage">
           <div className="sl-sim-bar">
-            <span>Mobile Preview (393 × 852) · Swipe from left edge · Long-press messages</span>
+            <span>Mobile Preview (393 × 852) · Tap any message for Thread · ☺+ or Long-press for Sheet</span>
             <button type="button" className="sl-btn" onClick={() => setSimulateMobileOnDesktop(false)}>
               Back to Desktop
             </button>
@@ -1838,6 +2092,7 @@ export const App: React.FC = () => {
   return (
     <div className="sl-desktop">
       <DitherBeam preset={beamPreset} />
+      {toastBanner}
 
       <header className="sl-topbar">
         <div className="sl-topbar-left" />
@@ -2096,11 +2351,12 @@ export const App: React.FC = () => {
                     msg={msg}
                     principals={principals}
                     viewer={viewer}
+                    isMobileMode={isMobileMode}
                     approvedBranches={approvedBranches}
                     onApproveFork={handleApproveFork}
                     onInspectDiff={setDiffModalBranch}
                     onToggleReaction={handleToggleReaction}
-                    onOpenActionSheet={setActionSheetMsg}
+                    onOpenSheet={handleOpenSheet}
                     onOpenThread={openThread}
                     isOptimistic={msg.id < 0}
                   />
@@ -2154,11 +2410,12 @@ export const App: React.FC = () => {
                       msg={th}
                       principals={principals}
                       viewer={viewer}
+                      isMobileMode={isMobileMode}
                       approvedBranches={approvedBranches}
                       onApproveFork={handleApproveFork}
                       onInspectDiff={setDiffModalBranch}
                       onToggleReaction={handleToggleReaction}
-                      onOpenActionSheet={setActionSheetMsg}
+                      onOpenSheet={handleOpenSheet}
                       inThread
                     />
                     {(th.recent_replies || []).map((rep) => (
@@ -2167,11 +2424,12 @@ export const App: React.FC = () => {
                         msg={rep}
                         principals={principals}
                         viewer={viewer}
+                        isMobileMode={isMobileMode}
                         approvedBranches={approvedBranches}
                         onApproveFork={handleApproveFork}
                         onInspectDiff={setDiffModalBranch}
                         onToggleReaction={handleToggleReaction}
-                        onOpenActionSheet={setActionSheetMsg}
+                        onOpenSheet={handleOpenSheet}
                         inThread
                       />
                     ))}
@@ -2225,25 +2483,33 @@ export const App: React.FC = () => {
                   msg={threadDetail.root}
                   principals={principals}
                   viewer={viewer}
+                  isMobileMode={isMobileMode}
                   approvedBranches={approvedBranches}
                   onApproveFork={handleApproveFork}
                   onInspectDiff={setDiffModalBranch}
                   onToggleReaction={handleToggleReaction}
-                  onOpenActionSheet={setActionSheetMsg}
+                  onOpenSheet={handleOpenSheet}
                   inThread
                 />
-                <div className="ios-new-divider"><span>{threadDetail.replies.length} REPLIES</span></div>
+                <div className="ios-new-divider">
+                  <span>
+                    {threadDetail.replies.length === 0
+                      ? 'START THREAD'
+                      : `${threadDetail.replies.length} ${threadDetail.replies.length === 1 ? 'REPLY' : 'REPLIES'}`}
+                  </span>
+                </div>
                 {threadDetail.replies.map((rep) => (
                   <SlackMessageRow
                     key={rep.id}
                     msg={rep}
                     principals={principals}
                     viewer={viewer}
+                    isMobileMode={isMobileMode}
                     approvedBranches={approvedBranches}
                     onApproveFork={handleApproveFork}
                     onInspectDiff={setDiffModalBranch}
                     onToggleReaction={handleToggleReaction}
-                    onOpenActionSheet={setActionSheetMsg}
+                    onOpenSheet={handleOpenSheet}
                     inThread
                     isOptimistic={rep.id < 0}
                   />
