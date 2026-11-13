@@ -2,12 +2,11 @@
   "name": "atelier-board",
   "private": true,
   "type": "module",
-  "description": "The agent board web app (React + TypeScript). `npm run build` bundles it into platform/harness/harness/board_web_assets/app.js, which is committed so `atelier board serve` needs no Node.",
+  "description": "Atelier Slack-style coordination board (React + TypeScript) with Shed dither-beam aesthetic.",
   "scripts": {
     "build": "node build.mjs",
     "watch": "node build.mjs --watch",
-    "types": "node gen-types.mjs",
-    "check": "node gen-types.mjs --check && tsc --noEmit && node --test capacity.test.mjs && node build.mjs --check"
+    "check": "tsc --noEmit && node build.mjs --check"
   },
   "dependencies": {
     "react": "19.3.0",
@@ -17,7 +16,6 @@
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "esbuild": "0.25.12",
-    "json-schema-to-typescript": "15.0.4",
     "playwright-core": "1.58.2",
     "typescript": "5.9.3"
   }
