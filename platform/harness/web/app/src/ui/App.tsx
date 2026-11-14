@@ -1220,12 +1220,46 @@ export const App: React.FC = () => {
                   };
                 }
               }
+              let nextSubThreads = prev.subscribed_threads;
+              if (incoming.root_id !== null) {
+                const pRoot = parsed.parent_root || nextThreads[ridKey]?.root;
+                const involved =
+                  incoming.author_id === prev.viewer.id ||
+                  Boolean(pRoot?.subscribed_ids?.includes(prev.viewer.id)) ||
+                  prev.subscribed_threads.some((t) => t.id === incoming.root_id);
+                if (involved && pRoot) {
+                  const prevEntry = prev.subscribed_threads.find((t) => t.id === incoming.root_id);
+                  const cleanRecent = (prevEntry?.recent_replies || []).filter(
+                    (r) => !(r.id < 0 && r.author_id === incoming.author_id && r.body === incoming.body)
+                  );
+                  const nextRecent = cleanRecent.some((r) => r.id === incoming.id)
+                    ? cleanRecent.map((r) => (r.id === incoming.id ? incoming : r))
+                    : [...cleanRecent, incoming].slice(-3);
+                  nextSubThreads = [
+                    { ...pRoot, recent_replies: nextRecent },
+                    ...prev.subscribed_threads.filter((t) => t.id !== incoming.root_id),
+                  ];
+                }
+              }
               return {
                 ...prev,
                 channels_messages: { ...prev.channels_messages, [cid]: nextList },
                 threads_by_root: nextThreads,
+                subscribed_threads: nextSubThreads,
               };
             });
+            // If this message can create a notification, unread badge, or thread update for viewer, sync metadata quietly
+            const curV = viewerRef.current;
+            const mentionsMe =
+              curV && incoming.body.toLowerCase().includes(`@${curV.id.toLowerCase()}`);
+            if (
+              incoming.root_id !== null ||
+              parsed.channel_kind === 'dm' ||
+              mentionsMe ||
+              (curV && incoming.author_id !== curV.id)
+            ) {
+              window.setTimeout(() => refreshBootstrap(querySuffix), 150);
+            }
             return;
           }
         } catch {}
@@ -1637,6 +1671,13 @@ export const App: React.FC = () => {
             subscribers: curTd?.subscribers || [{ principal_id: boot.viewer.id, reason: 'replied' }],
           },
         },
+        subscribed_threads: [
+          {
+            ...updatedRoot,
+            recent_replies: [...(curTd?.replies || []), optimisticReply].slice(-3),
+          },
+          ...prev.subscribed_threads.filter((t) => t.id !== openThreadId),
+        ],
       };
     });
 
@@ -2449,17 +2490,25 @@ export const App: React.FC = () => {
             </>
           ) : (
             <div className="slm-scroll ios-padded-top">
-              {layer1Mode === 'threads-list'
-                ? subscribed_threads.map((th) => (
+              {layer1Mode === 'threads-list' ? (
+                subscribed_threads.length === 0 ? (
+                  <div className="sl-empty-state">
+                    Threads you start, reply to, or are @mentioned in appear here.
+                  </div>
+                ) : (
+                  subscribed_threads.map((th) => (
                     <div
                       key={th.id}
                       className="sl-thread-card"
                       onClick={() => {
                         setActiveChannelId(th.channel_id);
+                        setLayer1Mode('channel');
                         openThread(th.id);
                       }}
                     >
-                      <div className="sl-thread-card-ch">#{th.channel_id}</div>
+                      <div className="sl-thread-card-ch">
+                        #{th.channel_id} · {th.reply_count} {th.reply_count === 1 ? 'reply' : 'replies'}
+                      </div>
                       <SlackMessageRow
                         msg={th}
                         principals={principals}
@@ -2472,14 +2521,32 @@ export const App: React.FC = () => {
                         onOpenSheet={handleOpenSheet}
                         inThread
                       />
+                      {(th.recent_replies || []).map((rep) => (
+                        <SlackMessageRow
+                          key={rep.id}
+                          msg={rep}
+                          principals={principals}
+                          viewer={viewer}
+                          isMobileMode={isMobileMode}
+                          approvedBranches={approvedBranches}
+                          onApproveFork={handleApproveFork}
+                          onInspectDiff={setDiffModalBranch}
+                          onToggleReaction={handleToggleReaction}
+                          onOpenSheet={handleOpenSheet}
+                          inThread
+                        />
+                      ))}
                     </div>
                   ))
-                : explorable_channels.map((ch) => (
+                )
+              ) : (
+                explorable_channels.map((ch) => (
                     <button key={ch.id} type="button" className="slm-browse-row" onClick={() => openChannel(ch.id)}>
                       <div className="slm-browse-name">#{ch.name}</div>
                       <div className="slm-browse-sub">{ch.member_count} members · {ch.topic}</div>
                     </button>
-                  ))}
+                  ))
+              )}
             </div>
           )}
         </div>
