@@ -653,18 +653,21 @@ const SlackMessageRow: React.FC<{
 
   const handleRowClick = () => {
     if (performance.now() < suppressClickUntil.current) return;
+    if (typeof window !== 'undefined' && (window.getSelection()?.toString() || '').length > 0) {
+      return;
+    }
     if (desktopPopover) {
       setDesktopPopover(false);
       return;
     }
-    if (isMobileMode && !inThread && onOpenThread) {
+    if (!inThread && onOpenThread) {
       onOpenThread(msg.id);
     }
   };
 
   return (
     <div
-      className={`sl-msg ${isMobileMode && !inThread && onOpenThread ? 'is-tappable' : ''} ${
+      className={`sl-msg ${!inThread && onOpenThread ? 'is-tappable' : ''} ${
         isActiveThread ? 'is-active-thread' : ''
       } ${
         isGuestMsg && viewer.role !== 'guest' ? 'sl-msg-guest' : ''
@@ -703,7 +706,7 @@ const SlackMessageRow: React.FC<{
           onInspectDiff={onInspectDiff}
         />
 
-        {(msg.reactions.length > 0 || (!inThread && (msg.reply_count > 0 || isActiveThread) && onOpenThread)) && (
+        {(msg.reactions.length > 0 || (!inThread && msg.reply_count > 0 && onOpenThread)) && (
           <div className="sl-msg-below">
             {msg.reactions.length > 0 && (
               <div className="sl-reactions">
@@ -735,33 +738,25 @@ const SlackMessageRow: React.FC<{
               </div>
             )}
 
-            {!inThread && (msg.reply_count > 0 || isActiveThread) && onOpenThread && (
+            {!inThread && msg.reply_count > 0 && onOpenThread && (
               <button
                 type="button"
-                className={`sl-thread-summary ${isActiveThread ? 'is-open-in-pane' : ''}`}
+                className="sl-thread-summary"
                 onClick={(e) => {
                   e.stopPropagation();
                   onOpenThread(msg.id);
                 }}
               >
-                {msg.reply_count > 0 && (
-                  <span className="sl-thread-avs">
-                    {msg.reply_authors.slice(0, 3).map((aid) => (
-                      <Avatar key={aid} principal={principals[aid]} id={aid} size="xs" />
-                    ))}
-                  </span>
-                )}
-                <span className="sl-thread-replies">
-                  {msg.reply_count > 0
-                    ? `${msg.reply_count} ${msg.reply_count === 1 ? 'reply' : 'replies'}`
-                    : 'Open in thread'}
+                <span className="sl-thread-avs">
+                  {msg.reply_authors.slice(0, 3).map((aid) => (
+                    <Avatar key={aid} principal={principals[aid]} id={aid} size="xs" />
+                  ))}
                 </span>
-                {isActiveThread ? (
-                  <span className="sl-thread-open-pill">Viewing in side panel →</span>
-                ) : (
-                  msg.last_reply_at && (
-                    <span className="sl-thread-last">Last reply {formatRelative(msg.last_reply_at)}</span>
-                  )
+                <span className="sl-thread-replies">
+                  {msg.reply_count} {msg.reply_count === 1 ? 'reply' : 'replies'}
+                </span>
+                {msg.last_reply_at && (
+                  <span className="sl-thread-last">Last reply {formatRelative(msg.last_reply_at)}</span>
                 )}
                 <span className="sl-thread-chev">›</span>
               </button>

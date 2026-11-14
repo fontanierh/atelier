@@ -2369,29 +2369,15 @@ kbd {
   background: rgba(106, 166, 255, 0.92);
 }
 
-/* Active Thread Indicator in Middle Channel Feed */
+/* Subtle, Zero-Shift Active Thread Selection in Middle Channel Feed */
 .sl-msg.is-active-thread {
-  background: linear-gradient(90deg, rgba(56, 114, 224, 0.08) 0%, rgba(56, 114, 224, 0.16) 100%);
-  box-shadow: inset -3px 0 0 #6aa6ff, inset 0 1px 0 rgba(106, 166, 255, 0.2), inset 0 -1px 0 rgba(106, 166, 255, 0.2);
+  background: rgba(255, 255, 255, 0.038);
+  box-shadow: inset 2px 0 0 rgba(226, 232, 244, 0.78);
 }
 @media (hover: hover) and (pointer: fine) {
   .sl-msg.is-active-thread:hover {
-    background: linear-gradient(90deg, rgba(56, 114, 224, 0.11) 0%, rgba(56, 114, 224, 0.2) 100%);
+    background: rgba(255, 255, 255, 0.05);
   }
-}
-
-.sl-thread-summary.is-open-in-pane {
-  background: rgba(56, 114, 224, 0.18);
-  border-color: rgba(106, 166, 255, 0.48);
-}
-
-.sl-thread-open-pill {
-  padding: 1px 7px;
-  border-radius: 99px;
-  background: rgba(106, 166, 255, 0.2);
-  color: #dceaff;
-  font-size: 11.5px;
-  font-weight: 600;
 }
 
 /* Interactive @handle and #channel Link Chips (Zero Flash!) */
