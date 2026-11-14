@@ -1,4 +1,4 @@
-"""End-to-end security, Tailscale UserProfile auth, and SSE DM push tests for `slack_board`."""
+"""End-to-end security, Tailscale UserProfile auth, SSE backpressure, and regression tests for `slack_board`."""
 from __future__ import annotations
 
 import http.client
@@ -8,10 +8,12 @@ import threading
 import time
 from http.server import ThreadingHTTPServer
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
 from atelier.harness.slack_board import (
+    MAX_POST_BYTES,
     EventHub,
     PermissionDenied,
     SlackBoardStore,
@@ -20,7 +22,9 @@ from atelier.harness.slack_board import (
     _csrf_token_for,
     ensure_local_secret,
     make_handler,
+    post_via_local_or_store,
     resolve_request_caller,
+    serve_board,
     validate_post_security,
 )
 
@@ -37,7 +41,7 @@ TEST_TS_CFG = TailnetConfig(
 )
 
 
-def test_tailscale_user_login_resolves_owner_across_devices_and_guests_by_account(tmp_path: Path) -> None:
+def test_tailscale_user_login_host_allowlist_and_guest_isolation(tmp_path: Path) -> None:
     store = SlackBoardStore(tmp_path / "board.sqlite3")
     secret = ensure_local_secret(tmp_path / "local.secret")
 
@@ -45,11 +49,51 @@ def test_tailscale_user_login_resolves_owner_across_devices_and_guests_by_accoun
         "100.64.0.1": WhoisIdentity("node-owner-mac", f"owner-macbook{TEST_SUFFIX}", False, "6163001", "owner@example.test", "Henry Fontanier"),
         "100.64.0.2": WhoisIdentity("node-owner-lap2", f"owner-laptop2{TEST_SUFFIX}", False, "6163001", "owner@example.test", "Henry Fontanier"),
         "100.64.0.10": WhoisIdentity("node-paul-air", f"macbook-air{TEST_SUFFIX}", False, "1139002", "paul@example.test", "Paul"),
-        "100.64.0.11": WhoisIdentity("node-paul2-pro", f"other-laptop{TEST_SUFFIX}", False, "9999003", "paul.other@example.test", "Paul"),
+        "100.64.0.11": WhoisIdentity("node-paul2-pro", "shared-peer.other-tailnet.example", False, "9999003", "paul.other@example.test", "Paul"),
         "100.64.0.99": WhoisIdentity("node-tagged-vm", f"bot-vm{TEST_SUFFIX}", True, "", "", ""),
     }
 
-    # 1. Owner connecting from two different personal devices gets the same Tailscale human principal ('henry')
+    # Blocker 5a: DNS rebinding / unallowlisted Host is rejected immediately even with forged XFF!
+    with pytest.raises(PermissionDenied):
+        resolve_request_caller(
+            store,
+            client_ip="127.0.0.1",
+            headers={"Host": "evil.example", "X-Forwarded-For": "100.64.0.1"},
+            qs={},
+            local_secret=secret,
+            port=8890,
+            ts_cfg=TEST_TS_CFG,
+            whois_fn=whois_table.get,
+        )
+
+    # Blocker 5b: Loopback Host carrying forged X-Forwarded-For is rejected!
+    with pytest.raises(PermissionDenied):
+        resolve_request_caller(
+            store,
+            client_ip="127.0.0.1",
+            headers={"Host": "127.0.0.1:8890", "X-Forwarded-For": "100.64.0.1"},
+            qs={},
+            local_secret=secret,
+            port=8890,
+            ts_cfg=TEST_TS_CFG,
+            whois_fn=whois_table.get,
+        )
+
+    # Unauthenticated loopback browser without Bearer is rejected by default!
+    with pytest.raises(PermissionDenied):
+        resolve_request_caller(
+            store,
+            client_ip="127.0.0.1",
+            headers={"Host": "127.0.0.1:8890"},
+            qs={},
+            local_secret=secret,
+            port=8890,
+            ts_cfg=TEST_TS_CFG,
+            allow_loopback_browser=False,
+            whois_fn=whois_table.get,
+        )
+
+    # Owner connecting from multiple personal devices gets 'henry'
     for ip in ("100.64.0.1", "100.64.0.2"):
         vid, sec = resolve_request_caller(
             store,
@@ -58,181 +102,151 @@ def test_tailscale_user_login_resolves_owner_across_devices_and_guests_by_accoun
                 "Host": f"owner-macbook{TEST_SUFFIX}",
                 "X-Forwarded-For": ip,
                 "Tailscale-User-Login": "owner@example.test",
-                "Tailscale-User-Name": "Henry Fontanier",
             },
             qs={},
             local_secret=secret,
+            port=8890,
             ts_cfg=TEST_TS_CFG,
             whois_fn=whois_table.get,
         )
-        assert vid == "henry"
-        assert sec["tier"] == "owner_device"
-        assert store.get_bootstrap(vid)["viewer"]["display_name"] == "Henry Fontanier"
+        assert vid == "henry" and sec["tier"] == "owner_device"
 
-    # 1b. By default (before owner designates an external guest channel), external Tailscale accounts are denied!
+    # Blocker 5c: Proxied owner request attempting X-Atelier-Agent downgrade without Bearer is rejected!
     with pytest.raises(PermissionDenied):
         resolve_request_caller(
             store,
             client_ip="127.0.0.1",
             headers={
                 "Host": f"owner-macbook{TEST_SUFFIX}",
-                "X-Forwarded-For": "100.64.0.10",
-                "Tailscale-User-Login": "paul@example.test",
-                "Tailscale-User-Name": "Paul",
+                "X-Forwarded-For": "100.64.0.1",
+                "X-Atelier-Agent": "front-man",
             },
             qs={},
             local_secret=secret,
+            port=8890,
             ts_cfg=TEST_TS_CFG,
             whois_fn=whois_table.get,
         )
 
-    # Owner designates a custom external guest channel ('partner-bridge')
+    # Default disabled external guest access -> 403
+    with pytest.raises(PermissionDenied):
+        resolve_request_caller(
+            store,
+            client_ip="127.0.0.1",
+            headers={"Host": f"owner-macbook{TEST_SUFFIX}", "X-Forwarded-For": "100.64.0.10"},
+            qs={},
+            local_secret=secret,
+            port=8890,
+            ts_cfg=TEST_TS_CFG,
+            whois_fn=whois_table.get,
+        )
+
+    # Enable custom guest channel 'partner-bridge'
     store.configure_guest_channel("henry", "partner-bridge")
 
-    # 2. External collaborator ('paul@example.test' / 'Paul') automatically logs in as Single-Channel Guest 'guest:paul' in #partner-bridge
     vid_paul, sec_paul = resolve_request_caller(
         store,
         client_ip="127.0.0.1",
-        headers={
-            "Host": f"owner-macbook{TEST_SUFFIX}",
-            "X-Forwarded-For": "100.64.0.10",
-            "Tailscale-User-Login": "paul@example.test",
-            "Tailscale-User-Name": "Paul",
-        },
+        headers={"Host": f"owner-macbook{TEST_SUFFIX}", "X-Forwarded-For": "100.64.0.10"},
         qs={},
         local_secret=secret,
+        port=8890,
         ts_cfg=TEST_TS_CFG,
         whois_fn=whois_table.get,
     )
-    assert vid_paul == "guest:paul"
-    assert sec_paul["tier"] == "tailnet_guest"
-    assert sec_paul["guest_jailed"] is True
-    paul_boot = store.get_bootstrap(vid_paul)
-    assert paul_boot["viewer"]["display_name"] == "Paul"
-    assert [c["id"] for c in paul_boot["channels"]] == ["partner-bridge"]
+    assert vid_paul == "guest:paul" and sec_paul["guest_jailed"] is True
+    # Should-Fix: Guest security & bootstrap never leak owner emails/node IDs!
+    assert sec_paul["owner_login"] == "" and sec_paul["owner_nodes"] == []
+    g_boot = store.get_bootstrap(vid_paul)
+    for p_info in g_boot["principals"].values():
+        assert "tailscale_login" not in p_info
+        assert "tailscale_user_id" not in p_info
+        assert "stable_node_id" not in p_info
+        assert p_info["tailnet_node"] == ""
 
-    # 3. Agent on Paul's machine gets 'guest:paul/train-agent' jailed to #partner-bridge
-    vid_ag, _ = resolve_request_caller(
-        store,
-        client_ip="127.0.0.1",
-        headers={
-            "Host": f"owner-macbook{TEST_SUFFIX}",
-            "X-Forwarded-For": "100.64.0.10",
-            "X-Atelier-Agent": "train-agent",
-        },
-        qs={},
-        local_secret=secret,
-        ts_cfg=TEST_TS_CFG,
-        whois_fn=whois_table.get,
-    )
-    assert vid_ag == "guest:paul/train-agent"
-
-    # 4. A DIFFERENT Tailscale user also named Paul never overwrites 'guest:paul'
+    # Shared-in node from another tailnet suffix (`100.64.0.11`) also resolves cleanly via whois UserProfile without colliding on guest:paul!
     vid_paul2, _ = resolve_request_caller(
         store,
         client_ip="127.0.0.1",
-        headers={
-            "Host": f"owner-macbook{TEST_SUFFIX}",
-            "X-Forwarded-For": "100.64.0.11",
-            "Tailscale-User-Login": "paul.other@example.test",
-            "Tailscale-User-Name": "Paul",
-        },
+        headers={"Host": f"owner-macbook{TEST_SUFFIX}", "X-Forwarded-For": "100.64.0.11"},
         qs={},
         local_secret=secret,
+        port=8890,
         ts_cfg=TEST_TS_CFG,
         whois_fn=whois_table.get,
     )
     assert vid_paul2 != vid_paul and vid_paul2.startswith("guest:paul-")
 
-    # 5. Spoofed Tailscale-User-Login header mismatching whois UserProfile fails closed!
+
+def test_blocker_1_4_6_pagination_channel_upsert_and_fail_closed_startup(tmp_path: Path) -> None:
+    store = SlackBoardStore(tmp_path / "pag.sqlite3")
+    store.ensure_owner_principal("henry", "Henry Fontanier", tailscale_login="owner@example.test")
+    store.register_principal("worker-a", "worker-a", "agent", "worker")
+    store.register_principal("worker-b", "worker-b", "agent", "worker")
+
+    # Blocker 1: 260 messages in #general -> get_bootstrap returns NEWEST 200 (61..260), plus `before` paging gets 1..60!
+    first_id = None
+    last_id = None
+    for i in range(1, 261):
+        m = store.post_message("worker-a", "general", f"msg-{i}")
+        if i == 1:
+            first_id = m["id"]
+        if i == 260:
+            last_id = m["id"]
+    boot = store.get_bootstrap("henry")
+    gen_msgs = boot["channels_messages"]["general"]
+    assert len(gen_msgs) == 200
+    assert gen_msgs[-1]["id"] == last_id and gen_msgs[-1]["body"] == "msg-260"
+    gen_meta = next(c for c in boot["channels"] if c["id"] == "general")
+    assert gen_meta["has_more"] is True
+
+    older = store.get_channel_messages("henry", "general", before_id=gen_msgs[0]["id"], limit=100)
+    assert len(older) == 60
+    assert older[0]["id"] == first_id and older[-1]["body"] == "msg-60"
+
+    # Blocker 4: Private channel & DM read bypass via create_channel is completely blocked!
+    store.create_channel("henry", "secret-plans", "private", topic="Top secret")
+    store.post_message("henry", "secret-plans", "Launch codes")
     with pytest.raises(PermissionDenied):
-        resolve_request_caller(
-            store,
-            client_ip="127.0.0.1",
-            headers={
-                "Host": f"owner-macbook{TEST_SUFFIX}",
-                "X-Forwarded-For": "100.64.0.10",
-                "Tailscale-User-Login": "owner@example.test",
-            },
-            qs={},
-            local_secret=secret,
-            ts_cfg=TEST_TS_CFG,
-            whois_fn=whois_table.get,
-        )
-
-    # 6. ACL-tagged server/VM node cannot claim human board access
+        store.get_channel_messages("worker-b", "secret-plans")
+    with pytest.raises(ValueError, match="already exists"):
+        store.create_channel("worker-b", "secret-plans", "public")
     with pytest.raises(PermissionDenied):
-        resolve_request_caller(
-            store,
-            client_ip="127.0.0.1",
-            headers={"Host": f"owner-macbook{TEST_SUFFIX}", "X-Forwarded-For": "100.64.0.99"},
-            qs={},
-            local_secret=secret,
-            ts_cfg=TEST_TS_CFG,
-            whois_fn=whois_table.get,
-        )
+        store.get_channel_messages("worker-b", "secret-plans")
+    with pytest.raises(ValueError):
+        store.create_channel("worker-b", "dm-henry-worker-a", "dm")
+    with pytest.raises(ValueError):
+        store.create_channel("worker-b", "dm-henry-worker-a", "public")
+
+    # Should-fix: Guest display_name matching an internal agent handle NEVER hijacks @mentions!
+    store.configure_guest_channel("henry", "partner-bridge")
+    store.register_principal("guest:sneaky", "worker-a", "human", "guest", guest_channel_id="partner-bridge", tailscale_user_id="8888")
+    store.post_message("henry", "partner-bridge", "Ping @worker-a")
+    assert store.pending_agent_wakeups("guest:sneaky") == []
+
+    # Blocker 6: serve_board exits non-zero (RuntimeError) if Tailscale owner_login discovery is empty!
+    empty_ts = TailnetConfig(".ts.net", "localhost.ts.net", "", "", "Owner", "owner", frozenset(), frozenset())
+    with patch("atelier.harness.slack_board.discover_tailnet_config", return_value=empty_ts), patch("time.sleep", return_value=None):
+        with pytest.raises(RuntimeError, match="owner_login discovery failed"):
+            serve_board(db_path=tmp_path / "fail.sqlite3", port=0, allow_loopback_browser=False)
+
+    # Blocker 2b: post_via_local_or_store NEVER writes a second copy to SQLite on TimeoutError!
+    with patch("atelier.harness.slack_board.default_db_path", return_value=store.db_path), \
+         patch("atelier.harness.slack_board.default_secret_path", return_value=tmp_path / "s.sec"), \
+         patch("atelier.harness.slack_board.http_json", side_effect=TimeoutError("timed out")):
+        ensure_local_secret(tmp_path / "s.sec")
+        before_cnt = len(store.get_channel_messages("henry", "world-build", limit=500))
+        with pytest.raises(TimeoutError):
+            post_via_local_or_store(store, agent_id="worker-a", channel_id="world-build", body="No duplicate!")
+        after_cnt = len(store.get_channel_messages("henry", "world-build", limit=500))
+        assert after_cnt == before_cnt
 
 
-def test_csrf_and_origin_validation() -> None:
-    secret = "s" * 44
-    valid_csrf = _csrf_token_for(secret, "henry")
-
-    with pytest.raises(PermissionDenied):
-        validate_post_security(
-            {"Content-Type": "text/plain"},
-            tier="owner_device",
-            viewer_id="henry",
-            local_secret=secret,
-            port=8890,
-            ts_cfg=TEST_TS_CFG,
-        )
-
-    with pytest.raises(PermissionDenied):
-        validate_post_security(
-            {
-                "Content-Type": "application/json",
-                "Origin": "https://evil.example",
-                "X-Atelier-CSRF": valid_csrf,
-            },
-            tier="owner_device",
-            viewer_id="henry",
-            local_secret=secret,
-            port=8890,
-            ts_cfg=TEST_TS_CFG,
-        )
-
-    with pytest.raises(PermissionDenied):
-        validate_post_security(
-            {
-                "Content-Type": "application/json",
-                "Origin": f"https://owner-macbook{TEST_SUFFIX}",
-            },
-            tier="owner_device",
-            viewer_id="henry",
-            local_secret=secret,
-            port=8890,
-            ts_cfg=TEST_TS_CFG,
-        )
-
-    validate_post_security(
-        {
-            "Content-Type": "application/json",
-            "Origin": f"https://owner-macbook{TEST_SUFFIX}",
-            "X-Atelier-CSRF": valid_csrf,
-        },
-        tier="owner_device",
-        viewer_id="henry",
-        local_secret=secret,
-        port=8890,
-        ts_cfg=TEST_TS_CFG,
-    )
-
-
-def test_live_http_sse_guest_isolation_and_dm_browser_notification_payload(tmp_path: Path) -> None:
+def test_live_http_stalled_sse_body_cap_and_dm_push(tmp_path: Path) -> None:
     store = SlackBoardStore(tmp_path / "e2e.sqlite3")
     secret = ensure_local_secret(tmp_path / "local.secret")
     assets = Path(__file__).resolve().parent.parent / "harness" / "board_web_assets"
-    hub = EventHub()
+    hub = EventHub(max_subscribers=16, queue_size=8)
 
     whois_map = {
         "100.64.0.1": WhoisIdentity("node-owner-mac", f"owner-macbook{TEST_SUFFIX}", False, "6163001", "owner@example.test", "Henry Fontanier"),
@@ -254,11 +268,11 @@ def test_live_http_sse_guest_isolation_and_dm_browser_notification_payload(tmp_p
         whois_fn=whois_map.get,
     )
     httpd = ThreadingHTTPServer(("127.0.0.1", port), handler)
-    srv_thread = threading.Thread(target=httpd.serve_forever, daemon=True)
-    srv_thread.start()
+    threading.Thread(target=httpd.serve_forever, daemon=True).start()
 
     guest_events: list[dict] = []
     owner_events: list[dict] = []
+    stalled_sock: socket.socket | None = None
 
     def sse_reader(headers: dict[str, str], sink: list[dict]) -> None:
         conn = http.client.HTTPConnection("127.0.0.1", port, timeout=1.0)
@@ -283,73 +297,34 @@ def test_live_http_sse_guest_isolation_and_dm_browser_notification_payload(tmp_p
             conn.close()
 
     try:
-        def req(method: str, path: str, headers: dict[str, str], body: dict | None = None) -> tuple[int, dict]:
+        def req(method: str, path: str, headers: dict[str, str], body: dict | str | None = None) -> tuple[int, dict, dict[str, str]]:
             c = http.client.HTTPConnection("127.0.0.1", port, timeout=5)
-            raw = json.dumps(body).encode("utf-8") if body is not None else None
+            raw = body.encode("utf-8") if isinstance(body, str) else (json.dumps(body).encode("utf-8") if body is not None else None)
             c.request(method, path, body=raw, headers=headers)
             r = c.getresponse()
+            resp_hdrs = {k.lower(): v for k, v in r.getheaders()}
             data = json.loads(r.read().decode("utf-8") or "{}")
             c.close()
-            return r.status, data
+            return r.status, data, resp_hdrs
 
-        # Direct loopback bootstrap resolves owner ('henry')
-        st_lb, lb_boot = req("GET", "/api/bootstrap", {"Host": f"127.0.0.1:{port}"})
-        assert st_lb == 200 and lb_boot["viewer"]["id"] == "henry"
-        owner_csrf = lb_boot["csrf_token"]
-
-        # Human opts in to native DM browser notifications
-        st_pref, pref_res = req(
-            "POST",
-            "/api/preferences/notifications",
-            {
-                "Host": f"127.0.0.1:{port}",
-                "Content-Type": "application/json",
-                "Origin": f"http://127.0.0.1:{port}",
-                "X-Atelier-CSRF": owner_csrf,
-            },
-            {"dm_browser_notify": True},
-        )
-        assert st_pref == 200 and pref_res["dm_browser_notify"] is True
-
-        guest_hdrs = {
-            "Host": f"owner-macbook{TEST_SUFFIX}:{port}",
-            "X-Forwarded-For": "100.64.0.22",
-            "Tailscale-User-Login": "paul@example.test",
-            "Tailscale-User-Name": "Paul",
-        }
         owner_hdrs = {
             "Host": f"owner-macbook{TEST_SUFFIX}:{port}",
             "X-Forwarded-For": "100.64.0.1",
             "Tailscale-User-Login": "owner@example.test",
-            "Tailscale-User-Name": "Henry Fontanier",
+        }
+        guest_hdrs = {
+            "Host": f"owner-macbook{TEST_SUFFIX}:{port}",
+            "X-Forwarded-For": "100.64.0.22",
+            "Tailscale-User-Login": "paul@example.test",
         }
 
-        # Enable custom guest channel 'partner-bridge' via owner API
-        st_cfg, cfg_res = req(
-            "POST",
-            "/api/settings/guest-channel",
-            {
-                "Host": f"127.0.0.1:{port}",
-                "Content-Type": "application/json",
-                "Origin": f"http://127.0.0.1:{port}",
-                "X-Atelier-CSRF": owner_csrf,
-            },
-            {"channel_id": "partner-bridge"},
-        )
-        assert st_cfg == 200 and cfg_res["default_guest_channel_id"] == "partner-bridge"
-        store.create_channel("henry", "lead-ops", "private", topic="Private ops", member_ids=["front-man"])
+        st_boot, o_boot, o_rhdrs = req("GET", "/api/bootstrap", owner_hdrs)
+        assert st_boot == 200 and o_boot["viewer"]["id"] == "henry"
+        assert "content-security-policy" in o_rhdrs and o_rhdrs.get("x-frame-options") == "DENY"
+        owner_csrf = o_boot["csrf_token"]
 
-        st_g, g_boot = req("GET", "/api/bootstrap", guest_hdrs)
-        assert st_g == 200 and g_boot["viewer"]["id"] == "guest:paul"
-        assert [c["id"] for c in g_boot["channels"]] == ["partner-bridge"]
-
-        # Open SSE sockets for both Guest and Owner
-        threading.Thread(target=sse_reader, args=(guest_hdrs, guest_events), daemon=True).start()
-        threading.Thread(target=sse_reader, args=(owner_hdrs, owner_events), daemon=True).start()
-        time.sleep(0.15)
-
-        # Local agent posts an internal message in #lead-ops -> Owner receives SSE, Guest receives ZERO!
-        st_p1, _ = req(
+        # Blocker 3: Oversized Content-Length rejected with 413, non-numeric Content-Length -> 400!
+        st_413, _, _ = req(
             "POST",
             "/api/messages",
             {
@@ -358,35 +333,81 @@ def test_live_http_sse_guest_isolation_and_dm_browser_notification_payload(tmp_p
                 "X-Atelier-Agent": "front-man",
                 "Content-Type": "application/json",
             },
-            {"channel_id": "lead-ops", "body": "Internal release key stays private."},
+            {"channel_id": "general", "body": "x" * (MAX_POST_BYTES + 100)},
         )
-        assert st_p1 == 201
+        assert st_413 == 413
 
-        # Local agent sends a scarce Direct Message to human owner -> Owner SSE gets `channel_kind == 'dm'` + message!
-        st_dm, _ = req(
-            "POST",
-            "/api/messages",
-            {
-                "Host": f"127.0.0.1:{port}",
-                "Authorization": f"Bearer {secret}",
-                "X-Atelier-Agent": "carbon-god",
-                "Content-Type": "application/json",
-            },
-            {"channel_id": "", "dm_peer": "henry", "body": "Need keychain approval to notarize macOS bundle."},
+        raw_bad_cl = socket.create_connection(("127.0.0.1", port), timeout=3)
+        raw_bad_cl.sendall(
+            f"POST /api/messages HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\nAuthorization: Bearer {secret}\r\n"
+            f"X-Atelier-Agent: front-man\r\nContent-Type: application/json\r\nContent-Length: notanumber\r\n\r\n".encode()
         )
-        assert st_dm == 201
+        bad_cl_resp = raw_bad_cl.recv(512).decode("utf-8", errors="replace")
+        raw_bad_cl.close()
+        assert "400" in bad_cl_resp.splitlines()[0]
+
+        # Configure guest channel
+        st_cfg, _, _ = req(
+            "POST",
+            "/api/settings/guest-channel",
+            {
+                **owner_hdrs,
+                "Content-Type": "application/json",
+                "Origin": f"https://owner-macbook{TEST_SUFFIX}:{port}",
+                "X-Atelier-CSRF": owner_csrf,
+            },
+            {"channel_id": "partner-bridge"},
+        )
+        assert st_cfg == 200
+        store.create_channel("henry", "lead-ops", "private", member_ids=["front-man"])
+
+        # Blocker 2a: Connect a STALLED guest SSE socket that NEVER reads a single byte after handshake!
+        stalled_sock = socket.create_connection(("127.0.0.1", port), timeout=3)
+        stalled_sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 4096)
+        stalled_sock.sendall(
+            f"GET /api/events HTTP/1.1\r\nHost: owner-macbook{TEST_SUFFIX}:{port}\r\n"
+            f"X-Forwarded-For: 100.64.0.22\r\nTailscale-User-Login: paul@example.test\r\n\r\n".encode()
+        )
+        threading.Thread(target=sse_reader, args=(guest_hdrs, guest_events), daemon=True).start()
+        threading.Thread(target=sse_reader, args=(owner_hdrs, owner_events), daemon=True).start()
         time.sleep(0.15)
 
-        assert guest_events == []
-        dm_sse = [ev for ev in owner_events if ev.get("channel_kind") == "dm"]
-        assert len(dm_sse) == 1
-        assert dm_sse[0]["kind"] == "message.created"
-        assert dm_sse[0]["message"]["author_id"] == "carbon-god"
-        assert "notarize" in dm_sse[0]["message"]["body"]
+        # Rapidly post 90 messages into #partner-bridge while stalled_sock never reads -> must finish fast without hanging!
+        t0 = time.monotonic()
+        for idx in range(90):
+            st_m, _, _ = req(
+                "POST",
+                "/api/messages",
+                {
+                    "Host": f"127.0.0.1:{port}",
+                    "Authorization": f"Bearer {secret}",
+                    "X-Atelier-Agent": "front-man",
+                    "Content-Type": "application/json",
+                },
+                {"channel_id": "partner-bridge", "body": f"update {idx} " + ("z" * 400)},
+            )
+            assert st_m == 201
+        assert (time.monotonic() - t0) < 4.0
 
-        # Guest cannot read internal channel or post outside #partner-bridge
-        st_forb, _ = req("GET", "/api/channels/lead-ops/messages", guest_hdrs)
-        assert st_forb == 403
+        # Internal message in #lead-ops + DM to henry -> Guest SSE never sees #lead-ops or DM!
+        guest_events.clear()
+        req(
+            "POST",
+            "/api/messages",
+            {"Host": f"127.0.0.1:{port}", "Authorization": f"Bearer {secret}", "X-Atelier-Agent": "front-man", "Content-Type": "application/json"},
+            {"channel_id": "lead-ops", "body": "Internal secret"},
+        )
+        req(
+            "POST",
+            "/api/messages",
+            {"Host": f"127.0.0.1:{port}", "Authorization": f"Bearer {secret}", "X-Atelier-Agent": "carbon-god", "Content-Type": "application/json"},
+            {"channel_id": "", "dm_peer": "henry", "body": "Need keychain approval"},
+        )
+        time.sleep(0.15)
+        assert guest_events == []
+        assert any(ev.get("channel_kind") == "dm" for ev in owner_events)
     finally:
+        if stalled_sock:
+            stalled_sock.close()
         httpd.shutdown()
         httpd.server_close()

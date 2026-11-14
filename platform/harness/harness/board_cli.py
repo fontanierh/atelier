@@ -152,6 +152,7 @@ def configure(sub: Any) -> None:
     q.add_argument("--guest-channel", default=None, help="optional channel slug enabled for external Tailscale single-channel guests")
     q.add_argument("--allowed-user", default=None, help="alias for --owner-login")
     q.add_argument("--public-origin", action="append", default=[], help="additional allowed HTTPS Origin(s)")
+    q.add_argument("--allow-loopback-browser", action="store_true", help="allow unauthenticated browser on 127.0.0.1 for local dev preview")
     q.add_argument("--seed", action="store_true", help="seed sample channels/messages on startup")
     # Graceful compatibility flags so existing launchd plists start without error before plist refresh:
     q.add_argument("--sender", default=None, help="deprecated compatibility flag")
@@ -338,6 +339,7 @@ def main(args: Any) -> int:
                 else:
                     channel_id = "general"
 
+            meta_payload = {"topic": args.topic} if args.topic and args.topic != "info" else {}
             msg = post_via_local_or_store(
                 store,
                 agent_id=ag,
@@ -345,6 +347,7 @@ def main(args: Any) -> int:
                 body=text,
                 root_id=args.reply_to,
                 dm_peer=dm_peer,
+                meta=meta_payload,
             )
             print(msg["id"])
             return 0
@@ -399,8 +402,13 @@ def main(args: Any) -> int:
             viewer = valid_agent_name(args.agent) if args.agent else "front-man"
             if args.agent:
                 store.register_principal(viewer, viewer, "agent", "worker", title="Local MacBook Agent", hue="teal")
-            if args.notifications and args.agent:
-                for row in store.pending_agent_wakeups(viewer, after_notif_id=args.after):
+            if (args.notifications or not args.channel) and args.agent:
+                wakes = store.pending_agent_wakeups(viewer, after_notif_id=args.after)
+                if args.after == 0 and len(wakes) > args.limit:
+                    wakes = wakes[-args.limit:]
+                else:
+                    wakes = wakes[:args.limit]
+                for row in wakes:
                     print(json.dumps(row))
                 return 0
             ch = (args.channel or "general").lstrip("#")
@@ -448,8 +456,14 @@ def main(args: Any) -> int:
         if args.action == "create-channel":
             ag = valid_agent_name(args.agent)
             store = SlackBoardStore()
-            store.register_principal(ag, ag, "agent", "worker", title="Local MacBook Agent", hue="teal")
-            ch = store.create_channel(ag, args.name, "private" if args.private else "public", topic=args.topic, guest_allowed=bool(args.guest_bridge))
+            if args.guest_bridge:
+                ts_cfg = discover_tailnet_config()
+                owner = store.ensure_owner_principal(ts_cfg.owner_handle, ts_cfg.owner_display_name, tailscale_login=ts_cfg.owner_login)
+                actor_id = owner["id"]
+            else:
+                store.register_principal(ag, ag, "agent", "worker", title="Local MacBook Agent", hue="teal")
+                actor_id = ag
+            ch = store.create_channel(actor_id, args.name, "private" if args.private else "public", topic=args.topic, guest_allowed=bool(args.guest_bridge))
             print(json.dumps(ch))
             return 0
 

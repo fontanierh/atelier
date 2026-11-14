@@ -79,3 +79,12 @@ uv run atelier board claim "games/*/assets/belmonte/*" --agent <your-name> \
 uv run atelier board post --agent <your-name> --dm henry \
   "Blocked on Apple Developer notarization cert password to sign release build — ready whenever you can unlock keychain."
 ```
+
+## Legacy CLI Compatibility & Migration Notes
+
+- **`atelier board read --agent <name>`** (without `--channel`): Returns your agent's addressed wakeup feed (`@mentions`, Direct Messages, subscribed thread replies, and for `front-man` external guest triage items) with `notif_id > --after` (newest `--limit` when `--after 0`). Pass `--channel <slug>` to read the newest `--limit` messages of a specific channel (`--after <msg_id>` for forward cursor).
+- **`atelier board post --agent <A> --to <B> --topic <tag>`**:
+  - Preserves `--topic` (`request`, `ack`, `handoff`, `blocked`, `evidence`, `alert`) on the message's `topic` field for script compatibility.
+  - If `--to <channel>` matches a public channel name, posts to `#<channel>`; if `--to <agent>` names a peer, posts in `#general` with `@<agent>` so `<agent>` is woken and subscribed to that thread; `--to '*'` or `--all-agents` posts a quiet announcement in `#general`.
+- **`operator-task` replacement**: Replaced by scarce Direct Messages to the human owner (`atelier board post --agent <name> --dm <owner> "..."` or `--notify-operator`), which trigger opt-in native browser notifications and must be used **only** when human intervention is genuinely required.
+- **`atelier board create-channel <name> --agent <name> --guest-bridge`**: Designates `#<name>` as the workspace's single-channel external Tailscale guest bridge from a local CLI shell.

@@ -20,7 +20,9 @@ from __future__ import annotations
 
 import argparse
 import dataclasses
+import fcntl
 import gzip
+import queue
 import hashlib
 import hmac
 import json
@@ -42,6 +44,10 @@ from typing import Any
 
 TRIAGE_AGENT_ID = "front-man"
 DEFAULT_PORT = 8890
+MAX_POST_BYTES = 262_144
+MAX_SSE_SUBSCRIBERS = 64
+MAX_META_BYTES = 4096
+CSP_HEADER = "default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'"
 
 MENTION_RE = re.compile(r"(?<![A-Za-z0-9._/-])@([A-Za-z0-9][A-Za-z0-9._:/-]*)")
 HANDLE_SLUG_RE = re.compile(r"[^a-z0-9-]+")
@@ -112,7 +118,7 @@ def outbox_path() -> Path:
 
 def valid_agent_name(name: str) -> str:
     norm = (name or "").strip().lower()
-    if not AGENT_NAME_RE.match(norm) or norm in {"operator", "guest", "guest_preview", "all", "channel", "here"}:
+    if not AGENT_NAME_RE.match(norm) or norm in {"operator", "system", "owner", "admin", "guest", "guest_preview", "all", "channel", "here"}:
         raise ValueError(f"invalid agent name: {name!r}")
     return norm
 
@@ -645,6 +651,8 @@ class SlackBoardStore:
         channel_id: str | None = None,
         created_at: float | None = None,
     ) -> dict[str, Any]:
+        if kind not in ("public", "private"):
+            raise ValueError("Channel kind must be 'public' or 'private'")
         now = created_at if created_at is not None else time.time()
         with self._lock, self._connect() as conn:
             creator = self._require_principal(conn, creator_id)
@@ -652,22 +660,30 @@ class SlackBoardStore:
                 raise PermissionDenied("Single-channel guests cannot create channels or DMs")
             if guest_allowed and creator["role"] != "owner":
                 raise PermissionDenied("Only the workspace owner can enable external guest access on a channel")
-            cid = channel_id or (_slugify_channel(name) if kind != "dm" else name)
+            cid = _slugify_channel(channel_id or name)
+            if cid.startswith("dm-"):
+                raise ValueError("Channel slug cannot start with reserved 'dm-' prefix")
+            existing = conn.execute("SELECT 1 FROM channels WHERE id = ?", (cid,)).fetchone()
+            if existing is not None:
+                raise ValueError(f"Channel '#{cid}' already exists")
             conn.execute(
                 """
                 INSERT INTO channels (id, name, kind, topic, description, guest_allowed, created_by, created_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT(id) DO UPDATE SET
-                    topic = CASE WHEN excluded.topic != '' THEN excluded.topic ELSE channels.topic END,
-                    description = CASE WHEN excluded.description != '' THEN excluded.description ELSE channels.description END
                 """,
-                (cid, name, kind, topic, description, 1 if guest_allowed else 0, creator["id"], now),
+                (cid, name.strip()[:48], kind, topic.strip()[:240], description.strip()[:500], 1 if guest_allowed else 0, creator["id"], now),
             )
-            all_members = set(member_ids or [])
-            all_members.add(creator["id"])
+            all_members = {creator["id"]}
+            if creator["role"] == "owner":
+                all_members.update(member_ids or [])
+            elif member_ids:
+                for mid in member_ids:
+                    p = self._require_principal(conn, mid)
+                    if p["role"] != "guest":
+                        all_members.add(p["id"])
             for mid in all_members:
                 p = self._require_principal(conn, mid)
-                if p["role"] == "guest" and cid != p["guest_channel_id"]:
+                if p["role"] == "guest" and not guest_allowed:
                     raise PermissionDenied(f"Guest {mid} cannot be added to #{cid}")
                 conn.execute(
                     "INSERT OR IGNORE INTO channel_members (channel_id, principal_id, joined_at) VALUES (?, ?, ?)",
@@ -740,6 +756,27 @@ class SlackBoardStore:
                 actual_root_id = root_row["root_id"] or root_row["id"]
 
             is_guest = 1 if author["role"] == "guest" else 0
+            safe_meta: dict[str, Any] = {}
+            if meta and isinstance(meta, dict):
+                if is_guest:
+                    # Guests may only attach fork_submission metadata with bounded scalar strings
+                    if meta.get("card_type") == "fork_submission":
+                        safe_meta = {
+                            "card_type": "fork_submission",
+                            "fork_repo": str(meta.get("fork_repo", ""))[:80],
+                            "branch": str(meta.get("branch", ""))[:80],
+                            "head_sha": str(meta.get("head_sha", ""))[:40],
+                            "base_sha": str(meta.get("base_sha", ""))[:40],
+                            "up_to_date": bool(meta.get("up_to_date", False)),
+                            "files_changed": int(meta.get("files_changed", 0)) if isinstance(meta.get("files_changed"), int) else 0,
+                            "scopes": [str(s)[:80] for s in (meta.get("scopes") or [])[:12]],
+                        }
+                else:
+                    encoded_meta = json.dumps(meta, sort_keys=True)
+                    if len(encoded_meta) > MAX_META_BYTES:
+                        raise ValueError("Message metadata exceeds 4 KiB limit")
+                    safe_meta = meta
+            meta = safe_meta
             cur = conn.execute(
                 """
                 INSERT INTO messages
@@ -779,6 +816,10 @@ class SlackBoardStore:
             return self._format_message(conn, msg_id, viewer_id=author["id"])
 
     def toggle_reaction(self, principal_id: str, message_id: int, emoji: str) -> dict[str, Any]:
+        clean_em = (emoji or "").strip()
+        if not clean_em or len(clean_em) > 16 or any(c.isspace() or ord(c) < 32 for c in clean_em):
+            raise ValueError("Invalid reaction emoji")
+        emoji = clean_em
         now = time.time()
         with self._lock, self._connect() as conn:
             actor = self._require_principal(conn, principal_id)
@@ -997,7 +1038,23 @@ class SlackBoardStore:
                     "SELECT * FROM principals ORDER BY role ASC, kind DESC, display_name ASC"
                 ).fetchall()
 
-            principals_map = {r["id"]: dict(r) for r in visible_principals}
+            def _sanitize_principal(row_dict: dict[str, Any], for_guest: bool) -> dict[str, Any]:
+                if not for_guest:
+                    return row_dict
+                return {
+                    "id": row_dict["id"],
+                    "display_name": row_dict["display_name"],
+                    "kind": row_dict["kind"],
+                    "role": row_dict["role"],
+                    "title": row_dict.get("title", ""),
+                    "tailnet_node": "",
+                    "hue": row_dict.get("hue", "amber"),
+                    "guest_channel_id": row_dict.get("guest_channel_id"),
+                    "status": row_dict.get("status", "active"),
+                    "status_text": row_dict.get("status_text", ""),
+                }
+
+            principals_map = {r["id"]: _sanitize_principal(dict(r), is_guest) for r in visible_principals}
 
             notifs_rows = conn.execute(
                 """
@@ -1086,18 +1143,17 @@ class SlackBoardStore:
             threads_by_root: dict[str, dict[str, Any]] = {}
             for ch_item in channels_out:
                 cid = ch_item["id"]
-                msg_ids = [
-                    int(r["id"])
-                    for r in conn.execute(
-                        """
-                        SELECT id FROM messages
-                        WHERE channel_id = ? AND (root_id IS NULL OR also_channel = 1)
-                        ORDER BY id ASC
-                        LIMIT 200
-                        """,
-                        (cid,),
-                    ).fetchall()
-                ]
+                desc_rows = conn.execute(
+                    """
+                    SELECT id FROM messages
+                    WHERE channel_id = ? AND (root_id IS NULL OR also_channel = 1)
+                    ORDER BY id DESC
+                    LIMIT 201
+                    """,
+                    (cid,),
+                ).fetchall()
+                ch_item["has_more"] = len(desc_rows) > 200
+                msg_ids = [int(r["id"]) for r in reversed(desc_rows[:200])]
                 ch_msgs = [self._format_message(conn, mid, viewer_id=viewer["id"]) for mid in msg_ids]
                 channels_messages[cid] = ch_msgs
                 for m in ch_msgs:
@@ -1129,8 +1185,9 @@ class SlackBoardStore:
                             "subscribers": subs,
                         }
 
-            viewer_out = dict(viewer)
-            viewer_out["dm_browser_notify"] = bool(viewer["dm_browser_notify"])
+            viewer_out = _sanitize_principal(dict(viewer), is_guest)
+            if not is_guest:
+                viewer_out["dm_browser_notify"] = bool(viewer["dm_browser_notify"])
             return {
                 "viewer": viewer_out,
                 "principals": principals_map,
@@ -1145,22 +1202,47 @@ class SlackBoardStore:
             }
 
     def get_channel_messages(
-        self, viewer_id: str, channel_id: str, *, after_id: int = 0, limit: int = 120
+        self, viewer_id: str, channel_id: str, *, after_id: int = 0, before_id: int = 0, limit: int = 120
     ) -> list[dict[str, Any]]:
+        capped = max(1, min(limit, 500))
         with self._lock, self._connect() as conn:
             viewer = self._require_principal(conn, viewer_id)
             ch = self._require_channel(conn, channel_id)
             self._assert_can_access_channel(conn, viewer, ch, write=False)
-            rows = conn.execute(
-                """
-                SELECT id FROM messages
-                WHERE channel_id = ? AND (root_id IS NULL OR also_channel = 1) AND id > ?
-                ORDER BY id ASC
-                LIMIT ?
-                """,
-                (ch["id"], after_id, max(1, min(limit, 500))),
-            ).fetchall()
-            return [self._format_message(conn, int(r["id"]), viewer_id=viewer["id"]) for r in rows]
+            if before_id > 0:
+                rows = conn.execute(
+                    """
+                    SELECT id FROM messages
+                    WHERE channel_id = ? AND (root_id IS NULL OR also_channel = 1) AND id < ?
+                    ORDER BY id DESC
+                    LIMIT ?
+                    """,
+                    (ch["id"], before_id, capped),
+                ).fetchall()
+                msg_ids = [int(r["id"]) for r in reversed(rows)]
+            elif after_id > 0:
+                rows = conn.execute(
+                    """
+                    SELECT id FROM messages
+                    WHERE channel_id = ? AND (root_id IS NULL OR also_channel = 1) AND id > ?
+                    ORDER BY id ASC
+                    LIMIT ?
+                    """,
+                    (ch["id"], after_id, capped),
+                ).fetchall()
+                msg_ids = [int(r["id"]) for r in rows]
+            else:
+                rows = conn.execute(
+                    """
+                    SELECT id FROM messages
+                    WHERE channel_id = ? AND (root_id IS NULL OR also_channel = 1)
+                    ORDER BY id DESC
+                    LIMIT ?
+                    """,
+                    (ch["id"], capped),
+                ).fetchall()
+                msg_ids = [int(r["id"]) for r in reversed(rows)]
+            return [self._format_message(conn, mid, viewer_id=viewer["id"]) for mid in msg_ids]
 
     def get_thread(self, viewer_id: str, root_id: int) -> dict[str, Any]:
         with self._lock, self._connect() as conn:
@@ -1383,8 +1465,13 @@ class SlackBoardStore:
 
         for handle in mentions:
             target = conn.execute(
-                "SELECT * FROM principals WHERE id = ? OR LOWER(display_name) = ?",
-                (handle, handle),
+                """
+                SELECT * FROM principals
+                WHERE id = ? OR LOWER(display_name) = ?
+                ORDER BY CASE WHEN id = ? THEN 0 ELSE 1 END, CASE WHEN role != 'guest' THEN 0 ELSE 1 END
+                LIMIT 1
+                """,
+                (handle, handle, handle),
             ).fetchone()
             if not target or target["id"] in notified:
                 continue
@@ -1493,6 +1580,8 @@ class SlackBoardStore:
             "root_id": m["root_id"],
             "also_channel": bool(m["also_channel"]),
             "author_id": m["author_id"],
+            "sender": m["author_id"],
+            "topic": (json.loads(m["meta_json"] or "{}")).get("topic", "info"),
             "author_display_name": author_row["display_name"] if author_row else m["author_id"],
             "author_role": m["author_role"],
             "untrusted_guest": bool(m["untrusted_guest"]),
@@ -1675,13 +1764,44 @@ def _verify_csrf_token(secret: str, viewer_id: str, token: str) -> bool:
     return hmac.compare_digest(expected, token.strip())
 
 
+def _allowed_hosts_for(port: int, ts_cfg: TailnetConfig, extra_origins: list[str] | None = None) -> set[str]:
+    hosts = {
+        "127.0.0.1",
+        f"127.0.0.1:{port}",
+        "localhost",
+        f"localhost:{port}",
+        "[::1]",
+        f"[::1]:{port}",
+    }
+    if ts_cfg.host_dns and ts_cfg.host_dns != f"localhost{ts_cfg.suffix}":
+        hosts.add(ts_cfg.host_dns.lower())
+        hosts.add(f"{ts_cfg.host_dns.lower()}:{port}")
+    for n in ts_cfg.owner_nodes:
+        hosts.add(n.lower())
+        hosts.add(f"{n.lower()}:{port}")
+    for orig in extra_origins or []:
+        parsed = urllib.parse.urlparse(orig.strip().lower())
+        if parsed.netloc:
+            hosts.add(parsed.netloc)
+    return hosts
+
+
+def _is_loopback_host_header(host_hdr: str) -> bool:
+    h = (host_hdr or "").strip().lower()
+    if h.startswith("[::1]"):
+        return True
+    only = h.split(":", 1)[0]
+    return only in ("127.0.0.1", "localhost")
+
+
 def _allowed_origins_for(port: int, ts_cfg: TailnetConfig, extra_origins: list[str] | None = None) -> set[str]:
     base = {
         f"http://127.0.0.1:{port}",
         f"http://localhost:{port}",
-        f"https://{ts_cfg.host_dns}",
-        f"https://{ts_cfg.host_dns}:{port}",
     }
+    if ts_cfg.host_dns and ts_cfg.host_dns != f"localhost{ts_cfg.suffix}":
+        base.add(f"https://{ts_cfg.host_dns}")
+        base.add(f"https://{ts_cfg.host_dns}:{port}")
     for n in ts_cfg.owner_nodes:
         base.add(f"https://{n}")
         base.add(f"https://{n}:{port}")
@@ -1712,9 +1832,10 @@ def validate_post_security(
     origin = norm.get("origin", "").strip().rstrip("/").lower()
     allowed = _allowed_origins_for(port, ts_cfg, extra_origins)
     if origin and origin not in allowed:
-        raise PermissionDenied(f"Cross-origin POST rejected for Origin '{origin}'")
+        raise PermissionDenied("Cross-origin POST rejected")
 
-    if tier in ("owner_device", "tailnet_guest") and not norm.get("x-atelier-agent"):
+    # Browser requests (both owner_device and tailnet_guest without X-Atelier-Agent) require Origin or CSRF; CSRF is mandatory
+    if tier == "owner_device" or (tier == "tailnet_guest" and not norm.get("x-atelier-agent")):
         csrf = norm.get("x-atelier-csrf", "")
         if not _verify_csrf_token(local_secret, viewer_id, csrf):
             raise PermissionDenied("Missing or invalid X-Atelier-CSRF token")
@@ -1749,35 +1870,61 @@ def resolve_request_caller(
     headers: dict[str, str],
     qs: dict[str, list[str]],
     local_secret: str,
+    port: int = DEFAULT_PORT,
     ts_cfg: TailnetConfig | None = None,
+    extra_origins: list[str] | None = None,
+    allow_loopback_browser: bool = False,
     whois_fn=tailscale_whois_identity,
 ) -> tuple[str, dict[str, Any]]:
-    """Fail-closed 3-tier Tailscale UserProfile + local-secret caller resolution."""
+    """Fail-closed 3-tier Tailscale UserProfile + Host-validated caller resolution."""
     cfg = ts_cfg or discover_tailnet_config()
     if not _is_loopback_ip(client_ip):
         raise PermissionDenied(f"Refusing non-loopback socket peer {client_ip}; bind 127.0.0.1 behind tailscale serve")
 
     norm_headers = {k.lower(): v for k, v in headers.items()}
+    host_hdr = norm_headers.get("host", "").strip().lower()
+    if not host_hdr or host_hdr not in _allowed_hosts_for(port, cfg, extra_origins):
+        raise PermissionDenied("Host header is not permitted for this board")
+
     xff = norm_headers.get("x-forwarded-for", "").strip()
     ts_login_hdr = norm_headers.get("tailscale-user-login", "").strip().lower()
     ts_name_hdr = norm_headers.get("tailscale-user-name", "").strip()
-    host_hdr = norm_headers.get("host", "").strip().lower()
-    host_only = host_hdr.split(":", 1)[0]
-    has_proxy_markers = bool(
+    has_proxy_hdrs = bool(
         xff
         or ts_login_hdr
         or norm_headers.get("x-forwarded-proto")
         or norm_headers.get("x-forwarded-host")
-        or (host_only and host_only not in ("127.0.0.1", "localhost", "[::1]"))
     )
+    is_lb_host = _is_loopback_host_header(host_hdr)
+
+    # Never trust proxy headers sent alongside a loopback Host (blocks unproxied localhost fetch XFF spoofing)
+    if is_lb_host and has_proxy_hdrs:
+        raise PermissionDenied("Loopback Host cannot carry X-Forwarded-* or Tailscale-User-* proxy headers")
 
     auth_hdr = norm_headers.get("authorization", "").strip()
     agent_hdr = norm_headers.get("x-atelier-agent", "").strip().lower()
 
-    if not has_proxy_markers and auth_hdr.startswith("Bearer "):
+    # TIER 1: Unproxied local MacBook caller with Bearer ~/.cache/atelier/board/local.secret
+    if is_lb_host and auth_hdr.startswith("Bearer "):
         token = auth_hdr[7:].strip()
         if not hmac.compare_digest(token, local_secret):
             raise PermissionDenied("Invalid local board bearer secret")
+        if norm_headers.get("x-atelier-owner") == "1":
+            owner_row = store.ensure_owner_principal(
+                cfg.owner_handle,
+                cfg.owner_display_name,
+                tailscale_login=cfg.owner_login,
+                tailscale_user_id=cfg.owner_user_id,
+                tailnet_node="127.0.0.1 (local)",
+            )
+            return owner_row["id"], {
+                "tier": "local_agent",
+                "detected_node": "127.0.0.1 (local)",
+                "tailscale_login": cfg.owner_login,
+                "owner_login": cfg.owner_login,
+                "owner_nodes": sorted(cfg.owner_nodes),
+                "guest_jailed": False,
+            }
         raw_agent = agent_hdr or (qs.get("viewer", [""])[0] or "").strip().lower()
         if not raw_agent:
             raise PermissionDenied("Local agent must specify X-Atelier-Agent header")
@@ -1801,56 +1948,34 @@ def resolve_request_caller(
             "guest_jailed": False,
         }
 
-    if has_proxy_markers:
+    # TIER 2 & 3: Proxied through `tailscale serve` (non-loopback allowlisted Host)
+    if not is_lb_host:
         if not xff:
             raise PermissionDenied("Proxied request missing X-Forwarded-For; refusing unverified caller")
         peer_ip = [hop.strip() for hop in xff.split(",") if hop.strip()][-1]
         ident = whois_fn(peer_ip)
-        if not ident or not ident.node_dns.endswith(cfg.suffix) or not ident.stable_id:
+        if not ident or not ident.stable_id or not ident.node_dns:
             raise PermissionDenied(f"Unverified Tailscale peer IP '{peer_ip}'; failing closed")
-        if ident.is_tagged:
-            raise PermissionDenied(f"Tagged Tailscale node '{ident.node_dns}' cannot access human board")
-        if ts_login_hdr and ident.user_login and ts_login_hdr != ident.user_login:
+        if ident.is_tagged or not ident.user_login:
+            raise PermissionDenied(f"Tagged or userless Tailscale node '{ident.node_dns}' cannot access human board")
+        if ts_login_hdr and ts_login_hdr != ident.user_login:
             raise PermissionDenied("Tailscale-User-Login header does not match whois UserProfile.LoginName")
 
-        effective_login = ts_login_hdr or ident.user_login
-        effective_display = ts_name_hdr or ident.user_display_name or (effective_login.split("@", 1)[0] if effective_login else "")
+        # Always use whois UserProfile as the authoritative identity source
+        effective_login = ident.user_login
+        effective_display = ident.user_display_name or ts_name_hdr or effective_login.split("@", 1)[0]
 
-        if cfg.owner_login:
-            if not effective_login:
-                raise PermissionDenied("Missing Tailscale UserProfile.LoginName on proxied request")
-            is_owner_account = effective_login == cfg.owner_login and (
-                not cfg.owner_user_id or not ident.user_id or ident.user_id == cfg.owner_user_id
-            )
-        else:
-            is_owner_account = ident.stable_id in cfg.owner_stable_ids and ident.node_dns in cfg.owner_nodes
+        if not cfg.owner_login:
+            raise PermissionDenied("Server owner_login is unconfigured; refusing proxied access")
+
+        is_owner_account = effective_login == cfg.owner_login and (
+            not cfg.owner_user_id or not ident.user_id or ident.user_id == cfg.owner_user_id
+        )
 
         if is_owner_account:
+            # Never downgrade proxied owner requests to CSRF-exempt local_agent without Bearer local.secret!
             if agent_hdr:
-                agent_id = valid_agent_name(agent_hdr)
-                store.register_principal(
-                    agent_id,
-                    agent_id,
-                    "agent",
-                    "worker",
-                    title=f"Owner Agent ({ident.node_dns.split('.')[0]})",
-                    tailnet_node=ident.node_dns,
-                    stable_node_id=ident.stable_id,
-                    tailscale_user_id=ident.user_id,
-                    tailscale_login=effective_login,
-                    hue="teal",
-                    status="active",
-                )
-                return agent_id, {
-                    "tier": "local_agent",
-                    "detected_node": ident.node_dns,
-                    "stable_node_id": ident.stable_id,
-                    "tailscale_login": effective_login,
-                    "owner_login": cfg.owner_login,
-                    "owner_nodes": sorted(cfg.owner_nodes),
-                    "guest_jailed": False,
-                }
-
+                raise PermissionDenied("Owner Tailscale proxy requests cannot set X-Atelier-Agent without local Bearer token")
             owner_row = store.ensure_owner_principal(
                 cfg.owner_handle,
                 effective_display or cfg.owner_display_name,
@@ -1861,18 +1986,20 @@ def resolve_request_caller(
             )
             req_viewer = (qs.get("viewer", [""])[0] or "").strip().lower()
             viewer_id = (_ensure_guest_preview_principal(store) or owner_row["id"]) if req_viewer in ("guest_preview", "guest") else owner_row["id"]
+            is_jailed = viewer_id != owner_row["id"]
             return viewer_id, {
                 "tier": "owner_device",
                 "detected_node": ident.node_dns,
                 "stable_node_id": ident.stable_id,
                 "tailscale_login": effective_login,
-                "owner_login": cfg.owner_login,
-                "owner_id": owner_row["id"],
-                "owner_nodes": sorted(cfg.owner_nodes),
-                "guest_jailed": viewer_id != owner_row["id"],
+                "owner_login": "" if is_jailed else cfg.owner_login,
+                "owner_id": "" if is_jailed else owner_row["id"],
+                "owner_nodes": [] if is_jailed else sorted(cfg.owner_nodes),
+                "guest_jailed": is_jailed,
             }
 
-        node_short = ident.node_dns[: -len(cfg.suffix)].split(".")[0] or "guest"
+        # Tier 3: Verified external Tailscale human account (either same-tailnet member like Paul OR shared-in peer)
+        node_short = ident.node_dns.split(".")[0] or "guest"
         base_slug = slugify_human_handle(effective_display, effective_login, fallback=node_short)
         uid_anchor = ident.user_id or ident.stable_id
         candidate_human_id = f"guest:{base_slug}"
@@ -1883,7 +2010,7 @@ def resolve_request_caller(
                 disp_human,
                 "human",
                 "guest",
-                title="External Fork Collaborator",
+                title="External Collaborator",
                 tailnet_node=ident.node_dns,
                 stable_node_id=ident.stable_id,
                 tailscale_user_id=ident.user_id,
@@ -1892,7 +2019,9 @@ def resolve_request_caller(
                 status="active",
                 status_text="Single-Channel Guest",
             )
-        except PermissionDenied:
+        except PermissionDenied as exc:
+            if "disabled on this workspace" in str(exc):
+                raise
             short_tag = re.sub(r"[^a-z0-9]", "", uid_anchor.lower())[-6:] or "ext"
             base_slug = f"{base_slug}-{short_tag}"
             candidate_human_id = f"guest:{base_slug}"
@@ -1901,7 +2030,7 @@ def resolve_request_caller(
                 disp_human,
                 "human",
                 "guest",
-                title="External Fork Collaborator",
+                title="External Collaborator",
                 tailnet_node=ident.node_dns,
                 stable_node_id=ident.stable_id,
                 tailscale_user_id=ident.user_id,
@@ -1935,12 +2064,15 @@ def resolve_request_caller(
         return guest_id, {
             "tier": "tailnet_guest",
             "detected_node": ident.node_dns,
-            "stable_node_id": ident.stable_id,
             "tailscale_login": effective_login,
-            "owner_login": cfg.owner_login,
-            "owner_nodes": sorted(cfg.owner_nodes),
+            "owner_login": "",
+            "owner_nodes": [],
             "guest_jailed": True,
         }
+
+    # Unproxied loopback WITHOUT Bearer token: denied in production unless allow_loopback_browser=True!
+    if not allow_loopback_browser:
+        raise PermissionDenied("Unauthenticated loopback browser access is disabled; open the HTTPS Tailscale URL or pass Bearer local.secret")
 
     owner_row = store.ensure_owner_principal(
         cfg.owner_handle,
@@ -1963,41 +2095,52 @@ def resolve_request_caller(
 
 
 class EventHub:
-    """In-memory pub/sub hub pushing SSE events strictly to authorized channel viewers."""
+    """Non-blocking bounded-queue SSE pub/sub hub: slow/stalled readers are dropped without blocking posters."""
 
-    def __init__(self) -> None:
+    def __init__(self, max_subscribers: int = MAX_SSE_SUBSCRIBERS, queue_size: int = 64) -> None:
         self._lock = threading.Lock()
-        self._subs: list[tuple[str, Any]] = []
+        self._max_subscribers = max_subscribers
+        self._queue_size = queue_size
+        self._subs: list[tuple[str, queue.Queue[bytes | None]]] = []
 
-    def subscribe(self, viewer_id: str, wfile: Any) -> tuple[str, Any]:
-        entry = (viewer_id, wfile)
+    def subscribe(self, viewer_id: str) -> tuple[str, queue.Queue[bytes | None]] | None:
+        q: queue.Queue[bytes | None] = queue.Queue(maxsize=self._queue_size)
+        entry = (viewer_id, q)
         with self._lock:
+            if len(self._subs) >= self._max_subscribers:
+                return None
             self._subs.append(entry)
         return entry
 
-    def unsubscribe(self, entry: tuple[str, Any]) -> None:
+    def unsubscribe(self, entry: tuple[str, queue.Queue[bytes | None]] | None) -> None:
+        if entry is None:
+            return
         with self._lock:
             if entry in self._subs:
                 self._subs.remove(entry)
 
     def publish(self, store: SlackBoardStore, channel_id: str, event: str, payload: dict[str, Any]) -> None:
         frame = f"event: {event}\ndata: {json.dumps(payload)}\n\n".encode("utf-8")
-        dead: list[tuple[str, Any]] = []
         with self._lock:
             targets = list(self._subs)
-        for sub_viewer_id, wfile in targets:
+        slow: list[tuple[str, queue.Queue[bytes | None]]] = []
+        for sub_viewer_id, q in targets:
             if not store.can_viewer_access_channel(sub_viewer_id, channel_id):
                 continue
             try:
-                wfile.write(frame)
-                wfile.flush()
-            except Exception:
-                dead.append((sub_viewer_id, wfile))
-        if dead:
+                q.put_nowait(frame)
+            except queue.Full:
+                slow.append((sub_viewer_id, q))
+        if slow:
             with self._lock:
-                for d in dead:
-                    if d in self._subs:
-                        self._subs.remove(d)
+                for item in slow:
+                    if item in self._subs:
+                        self._subs.remove(item)
+                    try:
+                        item[1].get_nowait()
+                        item[1].put_nowait(None)
+                    except Exception:
+                        pass
 
 
 STATIC_ROUTES: dict[str, tuple[str, str]] = {
@@ -2021,6 +2164,7 @@ def make_handler(
     port: int = DEFAULT_PORT,
     ts_cfg: TailnetConfig | None = None,
     extra_origins: list[str] | None = None,
+    allow_loopback_browser: bool = False,
     whois_fn=tailscale_whois_identity,
 ):
     event_hub = hub or EventHub()
@@ -2035,7 +2179,10 @@ def make_handler(
             headers=hdrs,
             qs=qs,
             local_secret=secret,
+            port=port,
             ts_cfg=resolved_ts,
+            extra_origins=extra_origins,
+            allow_loopback_browser=allow_loopback_browser,
             whois_fn=whois_fn,
         )
 
@@ -2044,6 +2191,12 @@ def make_handler(
 
         def log_message(self, fmt: str, *args: Any) -> None:
             return
+
+        def _send_security_headers(self) -> None:
+            self.send_header("X-Content-Type-Options", "nosniff")
+            self.send_header("X-Frame-Options", "DENY")
+            self.send_header("Referrer-Policy", "no-referrer")
+            self.send_header("Content-Security-Policy", CSP_HEADER)
 
         def _send_json(self, payload: Any, status: int = 200) -> None:
             raw = json.dumps(payload).encode("utf-8")
@@ -2056,7 +2209,7 @@ def make_handler(
                 self.send_header("Content-Encoding", "gzip")
                 self.send_header("Vary", "Accept-Encoding")
             self.send_header("Cache-Control", "no-store")
-            self.send_header("X-Content-Type-Options", "nosniff")
+            self._send_security_headers()
             self.send_header("Content-Length", str(len(body)))
             self.end_headers()
             self.wfile.write(body)
@@ -2071,6 +2224,7 @@ def make_handler(
             if filename not in ("index.html", "sw.js") and self.headers.get("If-None-Match") == etag:
                 self.send_response(HTTPStatus.NOT_MODIFIED)
                 self.send_header("ETag", etag)
+                self._send_security_headers()
                 self.send_header("Content-Length", "0")
                 self.end_headers()
                 return
@@ -2085,7 +2239,7 @@ def make_handler(
                 self.send_header("Content-Encoding", "gzip")
                 self.send_header("Vary", "Accept-Encoding")
             self.send_header("Cache-Control", "no-store" if filename in ("index.html", "sw.js") else "no-cache")
-            self.send_header("X-Content-Type-Options", "nosniff")
+            self._send_security_headers()
             self.send_header("Content-Length", str(len(body)))
             self.end_headers()
             if not head_only:
@@ -2098,6 +2252,7 @@ def make_handler(
                 resolve_caller(self, qs)
             except PermissionDenied:
                 self.send_response(HTTPStatus.FORBIDDEN)
+                self._send_security_headers()
                 self.send_header("Content-Length", "0")
                 self.end_headers()
                 return
@@ -2106,6 +2261,7 @@ def make_handler(
                 self._send_file(route[0], route[1], head_only=True)
             else:
                 self.send_response(HTTPStatus.OK)
+                self._send_security_headers()
                 self.send_header("Content-Length", "0")
                 self.end_headers()
 
@@ -2125,19 +2281,32 @@ def make_handler(
                 return self._send_file(fname, mime)
 
             if path == "/api/events":
+                sub = event_hub.subscribe(viewer_id)
+                if sub is None:
+                    self._send_json({"error": "Too many SSE connections"}, status=429)
+                    return
+                self.connection.settimeout(5.0)
                 self.send_response(HTTPStatus.OK)
                 self.send_header("Content-Type", "text/event-stream; charset=utf-8")
                 self.send_header("Cache-Control", "no-cache, no-store")
                 self.send_header("Connection", "keep-alive")
                 self.send_header("X-Accel-Buffering", "no")
+                self._send_security_headers()
                 self.end_headers()
-                sub = event_hub.subscribe(viewer_id, self.wfile)
+                _, q = sub
                 try:
                     self.wfile.write(b": connected\n\n")
                     self.wfile.flush()
                     while True:
-                        time.sleep(15.0)
-                        self.wfile.write(b": keepalive\n\n")
+                        try:
+                            frame = q.get(timeout=15.0)
+                        except queue.Empty:
+                            self.wfile.write(b": keepalive\n\n")
+                            self.wfile.flush()
+                            continue
+                        if frame is None:
+                            break
+                        self.wfile.write(frame)
                         self.wfile.flush()
                 except Exception:
                     pass
@@ -2145,6 +2314,7 @@ def make_handler(
                     event_hub.unsubscribe(sub)
                 return
 
+            is_guest = bool(sec_info.get("guest_jailed"))
             try:
                 if path == "/api/whoami":
                     boot_v = store.get_bootstrap(viewer_id)["viewer"]
@@ -2157,25 +2327,29 @@ def make_handler(
                 if path.startswith("/api/channels/") and path.endswith("/messages"):
                     cid = urllib.parse.unquote(path[len("/api/channels/") : -len("/messages")].strip("/"))
                     after_id = int(qs.get("after", ["0"])[0] or 0)
+                    before_id = int(qs.get("before", ["0"])[0] or 0)
                     limit = int(qs.get("limit", ["120"])[0] or 120)
-                    return self._send_json({"messages": store.get_channel_messages(viewer_id, cid, after_id=after_id, limit=limit)})
+                    return self._send_json(
+                        {"messages": store.get_channel_messages(viewer_id, cid, after_id=after_id, before_id=before_id, limit=limit)}
+                    )
                 if path.startswith("/api/threads/"):
                     rid = int(path[len("/api/threads/") :].strip("/"))
                     return self._send_json(store.get_thread(viewer_id, rid))
-                self.send_error(HTTPStatus.NOT_FOUND, "Not found")
+                self._send_json({"error": "Not found"}, status=404)
             except PermissionDenied as exc:
-                self._send_json({"error": str(exc)}, status=403)
+                self._send_json({"error": "Access denied" if is_guest else str(exc)}, status=403)
             except Exception as exc:
-                self._send_json({"error": str(exc)}, status=400)
+                self._send_json({"error": "Invalid request" if is_guest else str(exc)}, status=400)
 
         def do_POST(self) -> None:
             parsed = urllib.parse.urlparse(self.path)
             path = parsed.path
             qs = urllib.parse.parse_qs(parsed.query)
-            length = int(self.headers.get("Content-Length", "0"))
-            raw = self.rfile.read(length) if length > 0 else b"{}"
+            is_guest = False
             try:
+                # 1. Authenticate & check headers BEFORE reading any request body bytes!
                 viewer_id, sec_info = resolve_caller(self, qs)
+                is_guest = bool(sec_info.get("guest_jailed"))
                 validate_post_security(
                     {k: v for k, v in self.headers.items()},
                     tier=sec_info["tier"],
@@ -2185,7 +2359,22 @@ def make_handler(
                     ts_cfg=resolved_ts,
                     extra_origins=extra_origins,
                 )
+                raw_len = self.headers.get("Content-Length", "0")
+                try:
+                    length = int(raw_len)
+                except ValueError:
+                    return self._send_json({"error": "Invalid Content-Length"}, status=400)
+                if length < 0:
+                    return self._send_json({"error": "Invalid Content-Length"}, status=400)
+                if length > MAX_POST_BYTES:
+                    return self._send_json({"error": f"Payload exceeds {MAX_POST_BYTES} byte limit"}, status=413)
+
+                self.connection.settimeout(5.0)
+                raw = self.rfile.read(length) if length > 0 else b"{}"
                 body = json.loads(raw.decode("utf-8") or "{}")
+                if not isinstance(body, dict):
+                    return self._send_json({"error": "JSON object required"}, status=400)
+
                 if path == "/api/settings/guest-channel":
                     configured = store.configure_guest_channel(viewer_id, body.get("channel_id"))
                     return self._send_json({"ok": True, "default_guest_channel_id": configured})
@@ -2199,10 +2388,10 @@ def make_handler(
                     msg = store.post_message(
                         author_id=viewer_id,
                         channel_id=channel_id,
-                        body=body["body"],
+                        body=str(body.get("body") or ""),
                         root_id=body.get("root_id"),
                         also_channel=bool(body.get("also_channel", False)),
-                        meta=body.get("meta") or {},
+                        meta=body.get("meta") if isinstance(body.get("meta"), dict) else {},
                     )
                     ch_kind = store.get_channel_kind(msg["channel_id"])
                     event_hub.publish(
@@ -2214,26 +2403,19 @@ def make_handler(
                             "kind": "message.created",
                             "channel_id": msg["channel_id"],
                             "channel_kind": ch_kind,
-                            "message": {
-                                "id": msg["id"],
-                                "root_id": msg["root_id"],
-                                "author_id": msg["author_id"],
-                                "author_display_name": msg["author_display_name"],
-                                "body": msg["body"],
-                                "created_at": msg["created_at"],
-                            },
+                            "message": msg,
                         },
                     )
                     return self._send_json({"message": msg}, status=201)
                 if path == "/api/channels":
                     ch = store.create_channel(
                         creator_id=viewer_id,
-                        name=body["name"],
-                        kind=body.get("kind", "public"),
-                        topic=body.get("topic", ""),
-                        description=body.get("description", ""),
+                        name=str(body.get("name") or ""),
+                        kind=str(body.get("kind") or "public"),
+                        topic=str(body.get("topic") or ""),
+                        description=str(body.get("description") or ""),
                         guest_allowed=bool(body.get("guest_allowed", False)),
-                        member_ids=body.get("member_ids") or [],
+                        member_ids=body.get("member_ids") if isinstance(body.get("member_ids"), list) else [],
                     )
                     event_hub.publish(store, ch["id"], "sync", {"ts": time.time(), "kind": "channel.created", "channel_id": ch["id"]})
                     return self._send_json({"channel": ch}, status=201)
@@ -2254,8 +2436,18 @@ def make_handler(
                     return self._send_json({"ok": True})
                 if path.startswith("/api/messages/") and path.endswith("/react"):
                     mid = int(path[len("/api/messages/") : -len("/react")].strip("/"))
-                    updated = store.toggle_reaction(viewer_id, mid, body["emoji"])
-                    event_hub.publish(store, updated["channel_id"], "sync", {"ts": time.time(), "kind": "reaction.toggled", "channel_id": updated["channel_id"]})
+                    updated = store.toggle_reaction(viewer_id, mid, str(body.get("emoji") or ""))
+                    event_hub.publish(
+                        store,
+                        updated["channel_id"],
+                        "sync",
+                        {
+                            "ts": time.time(),
+                            "kind": "reaction.toggled",
+                            "channel_id": updated["channel_id"],
+                            "message": updated,
+                        },
+                    )
                     return self._send_json({"message": updated})
                 if path == "/api/preferences/notifications":
                     enabled = store.set_dm_browser_notify(viewer_id, bool(body.get("dm_browser_notify", False)))
@@ -2263,11 +2455,11 @@ def make_handler(
                 if path == "/api/task":
                     task_txt = store.set_agent_task(viewer_id, str(body.get("status_text", "")))
                     return self._send_json({"ok": True, "status_text": task_txt})
-                self.send_error(HTTPStatus.NOT_FOUND, "Not found")
+                self._send_json({"error": "Not found"}, status=404)
             except PermissionDenied as exc:
-                self._send_json({"error": str(exc)}, status=403)
+                self._send_json({"error": "Access denied" if is_guest else str(exc)}, status=403)
             except Exception as exc:
-                self._send_json({"error": str(exc)}, status=400)
+                self._send_json({"error": "Invalid request" if is_guest else str(exc)}, status=400)
 
     return BoardHandler
 
@@ -2321,49 +2513,79 @@ def http_json(
         return err.code, err_json
 
 
+def _outbox_lock_path() -> Path:
+    return board_dir() / "outbox.lock"
+
+
+def _rejected_outbox_path() -> Path:
+    return board_dir() / "outbox.rejected.jsonl"
+
+
 def enqueue_outbox_item(item: dict[str, Any]) -> int:
     p = outbox_path()
     p.parent.mkdir(parents=True, exist_ok=True)
-    fd = os.open(str(p), os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600)
-    with os.fdopen(fd, "a") as f:
-        f.write(json.dumps(item) + "\n")
-    return sum(1 for ln in p.read_text().splitlines() if ln.strip())
+    with _outbox_lock_path().open("a") as lf:
+        fcntl.flock(lf, fcntl.LOCK_EX)
+        fd = os.open(str(p), os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600)
+        with os.fdopen(fd, "a") as f:
+            f.write(json.dumps(item) + "\n")
+        return sum(1 for ln in p.read_text().splitlines() if ln.strip())
 
 
 def flush_outbox(origin: str, *, agent: str | None = None) -> tuple[int, int]:
-    """Flush queued offline messages in FIFO order. Returns (sent_count, remaining_count)."""
+    """Flush queued offline messages under flock; persist progress before returning and quarantine permanent 4xx items."""
     p = outbox_path()
-    if not p.is_file():
-        return 0, 0
-    lines = [ln for ln in p.read_text().splitlines() if ln.strip()]
-    if not lines:
-        return 0, 0
-    sent = 0
-    remaining_lines: list[str] = []
-    for idx, ln in enumerate(lines):
-        item = json.loads(ln)
-        hdrs: dict[str, str] = {}
-        eff_agent = item.get("agent") or agent
-        if eff_agent:
-            hdrs["X-Atelier-Agent"] = eff_agent
-        try:
-            st, data = http_json(origin, "POST", "/api/messages", payload=item["payload"], headers=hdrs, timeout=5.0)
-            if st in (200, 201):
-                sent += 1
-            elif st in (408, 429, 500, 502, 503, 504):
+    with _outbox_lock_path().open("a") as lf:
+        fcntl.flock(lf, fcntl.LOCK_EX)
+        if not p.is_file():
+            return 0, 0
+        lines = [ln for ln in p.read_text().splitlines() if ln.strip()]
+        if not lines:
+            return 0, 0
+        sent = 0
+        remaining_lines: list[str] = []
+        rejected_errors: list[str] = []
+
+        for idx, ln in enumerate(lines):
+            item = json.loads(ln)
+            hdrs: dict[str, str] = {}
+            eff_agent = item.get("agent") or agent
+            if eff_agent:
+                hdrs["X-Atelier-Agent"] = eff_agent
+            try:
+                st, data = http_json(origin, "POST", "/api/messages", payload=item["payload"], headers=hdrs, timeout=5.0)
+                if st in (200, 201):
+                    sent += 1
+                elif st in (408, 429, 500, 502, 503, 504):
+                    remaining_lines.extend(lines[idx:])
+                    break
+                else:
+                    # Quarantine permanently rejected item so already-sent items never re-send and later items still drain!
+                    rej_p = _rejected_outbox_path()
+                    fd = os.open(str(rej_p), os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600)
+                    with os.fdopen(fd, "a") as rf:
+                        rf.write(json.dumps({**item, "status": st, "error": data.get("error", ""), "rejected_at": time.time()}) + "\n")
+                    rejected_errors.append(data.get("error") or f"HTTP {st}")
+            except (urllib.error.URLError, TimeoutError, socket.timeout, ConnectionError):
                 remaining_lines.extend(lines[idx:])
                 break
-            else:
-                raise PermissionDenied(data.get("error") or f"HTTP {st}")
-        except (urllib.error.URLError, TimeoutError, socket.timeout, ConnectionError):
-            remaining_lines.extend(lines[idx:])
-            break
 
-    if remaining_lines:
-        p.write_text("\n".join(remaining_lines) + "\n")
-    else:
-        p.unlink(missing_ok=True)
-    return sent, len(remaining_lines)
+        if remaining_lines:
+            p.write_text("\n".join(remaining_lines) + "\n")
+        else:
+            p.unlink(missing_ok=True)
+
+        if rejected_errors:
+            raise PermissionDenied(f"Quarantined {len(rejected_errors)} rejected outbox item(s): {rejected_errors[0]}")
+        return sent, len(remaining_lines)
+
+
+def _is_connection_refused(exc: BaseException) -> bool:
+    if isinstance(exc, ConnectionRefusedError):
+        return True
+    if isinstance(exc, urllib.error.URLError) and isinstance(exc.reason, ConnectionRefusedError):
+        return True
+    return False
 
 
 def post_via_local_or_store(
@@ -2377,6 +2599,7 @@ def post_via_local_or_store(
     meta: dict[str, Any] | None = None,
     local_port: int = DEFAULT_PORT,
 ) -> dict[str, Any]:
+    """Post through live loopback server for instant SSE delivery; fall back to SQLite ONLY on ConnectionRefusedError."""
     secret_file = default_secret_path()
     if store.db_path.resolve() == default_db_path().resolve() and secret_file.is_file():
         tok = ensure_local_secret(secret_file)
@@ -2393,12 +2616,15 @@ def post_via_local_or_store(
                     "meta": meta or {},
                 },
                 headers={"Authorization": f"Bearer {tok}", "X-Atelier-Agent": agent_id},
-                timeout=1.5,
+                timeout=5.0,
             )
             if st in (200, 201) and "message" in resp:
                 return resp["message"]
-        except Exception:
-            pass
+            raise PermissionDenied(resp.get("error") or f"Local board server returned HTTP {st}")
+        except Exception as exc:
+            # NEVER write a second copy directly to SQLite on timeout — only when no server is listening!
+            if not _is_connection_refused(exc):
+                raise
 
     store.register_principal(agent_id, agent_id, "agent", "worker", title="Local MacBook Agent", hue="teal")
     if dm_peer:
@@ -2443,12 +2669,27 @@ def serve_board(
     owner_login: str | None = None,
     guest_channel: str | None = None,
     public_origins: list[str] | None = None,
+    allow_loopback_browser: bool = False,
     seed: bool = False,
 ) -> int:
     if not _is_loopback_ip(host) and host != "localhost":
         raise ValueError(f"Refusing to bind non-loopback host {host!r}; bind 127.0.0.1 behind tailscale serve")
-    store = SlackBoardStore(db_path)
+
+    # Blocker 6: Retry Tailscale discovery against launchd RunAtLoad races; fail closed if owner_login is missing!
     ts_cfg = discover_tailnet_config(owner_login_override=owner_login)
+    if not allow_loopback_browser and not ts_cfg.owner_login:
+        for _ in range(5):
+            time.sleep(1.0)
+            ts_cfg = discover_tailnet_config(owner_login_override=owner_login)
+            if ts_cfg.owner_login:
+                break
+        if not ts_cfg.owner_login:
+            raise RuntimeError(
+                "Tailscale owner_login discovery failed (`tailscale status --json` unavailable and --owner-login not set); "
+                "exiting non-zero rather than serving with unverified identity."
+            )
+
+    store = SlackBoardStore(db_path)
     owner = store.ensure_owner_principal(
         ts_cfg.owner_handle,
         ts_cfg.owner_display_name,
@@ -2471,11 +2712,12 @@ def serve_board(
         port=port,
         ts_cfg=ts_cfg,
         extra_origins=public_origins,
+        allow_loopback_browser=allow_loopback_browser,
     )
     httpd = ThreadingHTTPServer((host, port), handler_cls)
     print(
         f"Atelier Slack Board listening on http://{host}:{port} "
-        f"(owner={ts_cfg.owner_display_name} <{ts_cfg.owner_login or 'local'}>, db={store.db_path})",
+        f"(owner={ts_cfg.owner_display_name} <{ts_cfg.owner_login or 'local-dev'}>, db={store.db_path})",
         flush=True,
     )
     try:
@@ -2494,6 +2736,7 @@ def main() -> None:
     parser.add_argument("--port", type=int, default=DEFAULT_PORT)
     parser.add_argument("--owner-login", default=None)
     parser.add_argument("--guest-channel", default=None)
+    parser.add_argument("--allow-loopback-browser", action="store_true")
     parser.add_argument("--seed", action="store_true")
     args = parser.parse_args()
     raise SystemExit(
@@ -2503,6 +2746,7 @@ def main() -> None:
             port=args.port,
             owner_login=args.owner_login,
             guest_channel=args.guest_channel,
+            allow_loopback_browser=args.allow_loopback_browser,
             seed=args.seed,
         )
     )

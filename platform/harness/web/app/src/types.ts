@@ -32,6 +32,7 @@ export interface ChannelSummary {
   mention_count: number;
   member_ids: string[];
   member_count: number;
+  has_more?: boolean;
 }
 
 export interface Reaction {
@@ -143,12 +144,5 @@ export interface SyncEventPayload {
   kind?: string;
   channel_id?: string;
   channel_kind?: 'public' | 'private' | 'dm';
-  message?: {
-    id: number;
-    root_id: number | null;
-    author_id: string;
-    author_display_name?: string;
-    body: string;
-    created_at: number;
-  };
+  message?: BoardMessage;
 }

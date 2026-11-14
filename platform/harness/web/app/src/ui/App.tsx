@@ -1164,6 +1164,66 @@ export const App: React.FC = () => {
         try {
           const parsed: SyncEventPayload = JSON.parse((rawEv as MessageEvent).data || '{}');
           fireNativeDmNotification(parsed);
+          if ((parsed.kind === 'message.created' || parsed.kind === 'reaction.toggled') && parsed.message && parsed.channel_id) {
+            const incoming = parsed.message;
+            const cid = parsed.channel_id;
+            setBoot((prev) => {
+              if (!prev) return prev;
+              const curList = prev.channels_messages[cid] || [];
+              let nextList = curList;
+              if (parsed.kind === 'reaction.toggled') {
+                nextList = curList.map((m) => (m.id === incoming.id ? incoming : m));
+              } else if (incoming.root_id === null || incoming.also_channel) {
+                // Replace matching optimistic message or append if new
+                const withoutOpt = curList.filter(
+                  (m) => !(m.id < 0 && m.author_id === incoming.author_id && m.body === incoming.body)
+                );
+                nextList = withoutOpt.some((m) => m.id === incoming.id)
+                  ? withoutOpt.map((m) => (m.id === incoming.id ? incoming : m))
+                  : [...withoutOpt, incoming];
+              } else {
+                // Thread reply: bump reply_count on root message in channel feed
+                nextList = curList.map((m) =>
+                  m.id === incoming.root_id
+                    ? {
+                        ...m,
+                        reply_count: m.reply_count + 1,
+                        last_reply_at: incoming.created_at,
+                        reply_authors: m.reply_authors.includes(incoming.author_id)
+                          ? m.reply_authors
+                          : [...m.reply_authors, incoming.author_id],
+                      }
+                    : m
+                );
+              }
+              const nextThreads = { ...prev.threads_by_root };
+              const ridKey = String(incoming.root_id || incoming.id);
+              if (nextThreads[ridKey]) {
+                const td = nextThreads[ridKey]!;
+                if (incoming.id === td.root.id) {
+                  nextThreads[ridKey] = { ...td, root: incoming };
+                } else if (parsed.kind === 'reaction.toggled') {
+                  nextThreads[ridKey] = {
+                    ...td,
+                    replies: td.replies.map((r) => (r.id === incoming.id ? incoming : r)),
+                  };
+                } else if (incoming.root_id === td.root.id) {
+                  const cleanReps = td.replies.filter(
+                    (r) => !(r.id < 0 && r.author_id === incoming.author_id && r.body === incoming.body)
+                  );
+                  if (!cleanReps.some((r) => r.id === incoming.id)) {
+                    nextThreads[ridKey] = { ...td, replies: [...cleanReps, incoming] };
+                  }
+                }
+              }
+              return {
+                ...prev,
+                channels_messages: { ...prev.channels_messages, [cid]: nextList },
+                threads_by_root: nextThreads,
+              };
+            });
+            return;
+          }
         } catch {}
         refreshBootstrap(querySuffix);
       });
@@ -1348,6 +1408,34 @@ export const App: React.FC = () => {
     }).catch(() => {});
     showToast('Marked all notifications as read');
   }, [querySuffix, boot?.csrf_token, showToast]);
+
+  const loadEarlierMessages = useCallback(async () => {
+    if (!boot) return;
+    const list = boot.channels_messages[activeChannelId] || [];
+    const oldest = list.find((m) => m.id > 0);
+    if (!oldest) return;
+    const res = await fetch(
+      `/api/channels/${encodeURIComponent(activeChannelId)}/messages?before=${oldest.id}&limit=100${
+        querySuffix ? `&${querySuffix.slice(1)}` : ''
+      }`
+    );
+    if (!res.ok) return;
+    const data = await res.json();
+    const older: BoardMessage[] = data.messages || [];
+    setBoot((prev) => {
+      if (!prev) return prev;
+      const existing = prev.channels_messages[activeChannelId] || [];
+      const seen = new Set(existing.map((m) => m.id));
+      const merged = [...older.filter((m) => !seen.has(m.id)), ...existing];
+      return {
+        ...prev,
+        channels: prev.channels.map((c) =>
+          c.id === activeChannelId ? { ...c, has_more: older.length >= 100 } : c
+        ),
+        channels_messages: { ...prev.channels_messages, [activeChannelId]: merged },
+      };
+    });
+  }, [boot, activeChannelId, querySuffix]);
 
   const configureGuestChannel = useCallback(
     async (nextChannelId: string) => {
@@ -2306,6 +2394,13 @@ export const App: React.FC = () => {
           {layer1Mode === 'channel' ? (
             <>
               <div className="slm-feed ios-padded-top" ref={feedRef}>
+                {activeChannelMeta?.has_more && (
+                  <div className="sl-date-divider">
+                    <button type="button" className="sl-btn" onClick={loadEarlierMessages}>
+                      Load earlier messages
+                    </button>
+                  </div>
+                )}
                 <div className="sl-date-divider"><span>Today</span></div>
                 {channelMessages.map((msg) => (
                   <SlackMessageRow
@@ -2902,6 +2997,13 @@ export const App: React.FC = () => {
               )}
 
               <div className="sl-feed" ref={feedRef}>
+                {activeChannelMeta?.has_more && (
+                  <div className="sl-date-divider">
+                    <button type="button" className="sl-btn" onClick={loadEarlierMessages}>
+                      Load earlier messages
+                    </button>
+                  </div>
+                )}
                 <div className="sl-date-divider"><span>Today</span></div>
                 {channelMessages.map((msg) => (
                   <SlackMessageRow
