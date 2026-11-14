@@ -42,8 +42,8 @@ const EMOJI_CATALOG: { emoji: string; keywords: string }[] = [
 
 function formatClock(unixSeconds: number): string {
   const d = new Date(unixSeconds * 1000);
-  const hh = d.getUTCHours();
-  const mm = String(d.getUTCMinutes()).padStart(2, '0');
+  const hh = d.getHours();
+  const mm = String(d.getMinutes()).padStart(2, '0');
   const ampm = hh >= 12 ? 'PM' : 'AM';
   const h12 = hh % 12 || 12;
   return `${h12}:${mm} ${ampm}`;
@@ -1182,19 +1182,18 @@ export const App: React.FC = () => {
                   ? withoutOpt.map((m) => (m.id === incoming.id ? incoming : m))
                   : [...withoutOpt, incoming];
               } else {
-                // Thread reply: bump reply_count on root message in channel feed
-                nextList = curList.map((m) =>
-                  m.id === incoming.root_id
-                    ? {
-                        ...m,
-                        reply_count: m.reply_count + 1,
-                        last_reply_at: incoming.created_at,
-                        reply_authors: m.reply_authors.includes(incoming.author_id)
-                          ? m.reply_authors
-                          : [...m.reply_authors, incoming.author_id],
-                      }
-                    : m
-                );
+                // Thread reply: use authoritative parent_root from SQLite so optimistic + SSE never double-counts!
+                nextList = curList.map((m) => {
+                  if (m.id !== incoming.root_id) return m;
+                  if (parsed.parent_root) return parsed.parent_root;
+                  return {
+                    ...m,
+                    last_reply_at: incoming.created_at,
+                    reply_authors: m.reply_authors.includes(incoming.author_id)
+                      ? m.reply_authors
+                      : [...m.reply_authors, incoming.author_id],
+                  };
+                });
               }
               const nextThreads = { ...prev.threads_by_root };
               const ridKey = String(incoming.root_id || incoming.id);
@@ -1211,9 +1210,14 @@ export const App: React.FC = () => {
                   const cleanReps = td.replies.filter(
                     (r) => !(r.id < 0 && r.author_id === incoming.author_id && r.body === incoming.body)
                   );
-                  if (!cleanReps.some((r) => r.id === incoming.id)) {
-                    nextThreads[ridKey] = { ...td, replies: [...cleanReps, incoming] };
-                  }
+                  const mergedReps = cleanReps.some((r) => r.id === incoming.id)
+                    ? cleanReps.map((r) => (r.id === incoming.id ? incoming : r))
+                    : [...cleanReps, incoming];
+                  nextThreads[ridKey] = {
+                    ...td,
+                    root: parsed.parent_root || { ...td.root, reply_count: mergedReps.length },
+                    replies: mergedReps,
+                  };
                 }
               }
               return {

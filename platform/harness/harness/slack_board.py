@@ -2411,6 +2411,11 @@ def make_handler(
                         meta=body.get("meta") if isinstance(body.get("meta"), dict) else {},
                     )
                     ch_kind = store.get_channel_kind(msg["channel_id"])
+                    parent_root = (
+                        store.get_thread(viewer_id, int(msg["root_id"]))["root"]
+                        if msg.get("root_id") is not None
+                        else None
+                    )
                     event_hub.publish(
                         store,
                         msg["channel_id"],
@@ -2421,6 +2426,7 @@ def make_handler(
                             "channel_id": msg["channel_id"],
                             "channel_kind": ch_kind,
                             "message": msg,
+                            "parent_root": parent_root,
                         },
                     )
                     return self._send_json({"message": msg}, status=201)
