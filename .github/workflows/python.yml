@@ -57,34 +57,7 @@ jobs:
           python-version: '3.12'
           enable-cache: false
       - run: uv sync --frozen --managed-python
-      - name: Identify Rust cache
-        id: rust
-        shell: bash
-        run: |
-          toolchain=$( { rustc --version --verbose; clang --version; printf '%s\n' "$ImageOS" "$ImageVersion"; } | shasum -a 256 | cut -d ' ' -f 1)
-          echo "prefix=board-v1-${RUNNER_OS}-${RUNNER_ARCH}-${toolchain}-${{ hashFiles('platform/harness/web/server/Cargo.lock', 'platform/harness/web/server/Cargo.toml', 'platform/harness/web/server/.cargo/config.toml') }}" >> "$GITHUB_OUTPUT"
-      - name: Restore Rust dependencies
-        id: rust-cache
-        continue-on-error: true
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0, Node 24
-        with:
-          path: |
-            build/board-server
-            ~/.cargo/registry/index
-            ~/.cargo/registry/cache
-            ~/.cargo/registry/src
-          key: ${{ steps.rust.outputs.prefix }}-${{ hashFiles('platform/harness/web/server/src/**') }}
-          restore-keys: ${{ steps.rust.outputs.prefix }}-
-      # Production can serve the last working binary after a failed build. CI must never do that:
-      # remove this crate's artifacts and require a successful compile, keeping dependency artifacts.
-      - name: Build the current board server
-        working-directory: platform/harness/web/server
-        run: |
-          cargo clean --release --locked --package atelier-board-server
-          cargo build --release --locked
-          cargo test --release --locked --bin atelier-board-server
-      # One worker: these tests start machine-wide board servers, so a serial roster keeps them
-      # isolated from each other on this runner.
+      # One worker: these tests start local HTTP/SSE board servers on loopback.
       - name: Run tests
         env:
           ATELIER_CI_WORKERS: 1
@@ -96,17 +69,6 @@ jobs:
           name: python-board
           path: build/ci/
           retention-days: 7
-      - name: Save Rust dependencies from main
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.rust-cache.outputs.cache-hit != 'true'
-        continue-on-error: true
-        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0, Node 24
-        with:
-          path: |
-            build/board-server
-            ~/.cargo/registry/index
-            ~/.cargo/registry/cache
-            ~/.cargo/registry/src
-          key: ${{ steps.rust.outputs.prefix }}-${{ hashFiles('platform/harness/web/server/src/**') }}
 
   tests:
     name: Python / ${{ matrix.label }}
