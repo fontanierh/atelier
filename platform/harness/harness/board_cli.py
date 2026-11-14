@@ -16,7 +16,6 @@ from typing import Any
 from atelier import paths
 from atelier.harness.slack_board import (
     DEFAULT_PORT,
-    GUEST_BRIDGE_CHANNEL,
     PermissionDenied,
     SlackBoardStore,
     cache_root,
@@ -45,13 +44,13 @@ def watch_options(parser: Any) -> None:
 
 
 def configure(sub: Any) -> None:
-    p = sub.add_parser("board", help="Slack-style workspace channels, threads, DMs, and #fork-sync guest bridge")
+    p = sub.add_parser("board", help="Slack-style workspace channels, threads, DMs, and #partner-channel guest bridge")
     actions = p.add_subparsers(dest="action", required=True)
 
     # post
-    q = actions.add_parser("post", help="post to a channel (#world-build, #fork-sync) or scarce DM (--dm <peer>)")
+    q = actions.add_parser("post", help="post to a channel (#world-build, #partner-channel) or scarce DM (--dm <peer>)")
     q.add_argument("--agent", required=True, help="caller agent handle")
-    q.add_argument("--channel", "-c", default=None, help="target channel name, e.g. world-build or #fork-sync")
+    q.add_argument("--channel", "-c", default=None, help="target channel name, e.g. world-build or #partner-channel")
     q.add_argument("--dm", default=None, help="Direct Message recipient (USE SCARCELY for humans — triggers browser alert!)")
     q.add_argument("--to", default=None, help="mention handle or channel compatibility target")
     q.add_argument("--all-agents", action="store_true", help="compat flag: post announcement to #general")
@@ -71,7 +70,7 @@ def configure(sub: Any) -> None:
 
     # read
     q = actions.add_parser("read", help="read messages in a channel or pending notifications for an agent")
-    q.add_argument("--channel", "-c", default=None, help="channel to read (default: #general locally, #fork-sync for guests)")
+    q.add_argument("--channel", "-c", default=None, help="channel to read (default: #general locally, #partner-channel for guests)")
     q.add_argument("--agent", default=None, help="agent identity")
     q.add_argument("--after", type=int, default=0, help="only messages with id > AFTER")
     q.add_argument("--limit", type=int, default=50, help="max messages (1..500)")
@@ -90,6 +89,7 @@ def configure(sub: Any) -> None:
     q.add_argument("name", help="channel slug, e.g. belmonte-art")
     q.add_argument("--agent", required=True)
     q.add_argument("--private", action="store_true", help="create a private invite-only channel")
+    q.add_argument("--guest-bridge", action="store_true", help="designate as the external Tailscale single-channel guest bridge")
     q.add_argument("--topic", default="", help="channel topic")
 
     # task
@@ -149,6 +149,7 @@ def configure(sub: Any) -> None:
     q.add_argument("--port", type=int, default=DEFAULT_PORT)
     q.add_argument("--db", type=Path, default=None)
     q.add_argument("--owner-login", default=None, help="Tailscale LoginName of workspace owner (auto-discovered if omitted)")
+    q.add_argument("--guest-channel", default=None, help="optional channel slug enabled for external Tailscale single-channel guests")
     q.add_argument("--allowed-user", default=None, help="alias for --owner-login")
     q.add_argument("--public-origin", action="append", default=[], help="additional allowed HTTPS Origin(s)")
     q.add_argument("--seed", action="store_true", help="seed sample channels/messages on startup")
@@ -238,6 +239,10 @@ def main(args: Any) -> int:
                 if st != 200:
                     raise PermissionDenied(info.get("error") or f"HTTP {st}")
                 v = info["viewer"]
+                if v.get("guest_channel_id"):
+                    cfg = save_remote_config(args.origin, args.agent)
+                    cfg["default_channel"] = v["guest_channel_id"]
+                    remote_config_path().write_text(json.dumps(cfg, indent=2))
                 print(
                     f"Connected to {cfg['origin']} as {v['display_name']} (id={v['id']}, role={v['role']}, "
                     f"channel=#{v.get('guest_channel_id') or 'workspace'})"
@@ -298,7 +303,7 @@ def main(args: Any) -> int:
                 raise ValueError("Message text cannot be empty")
 
             if remote:
-                ch = (args.channel or GUEST_BRIDGE_CHANNEL).lstrip("#")
+                ch = (args.channel or remote.get("default_channel") or "").lstrip("#")
                 return _remote_post_or_queue(
                     remote,
                     agent=ag,
@@ -348,7 +353,7 @@ def main(args: Any) -> int:
             ag = valid_agent_name(args.agent)
             text = _read_body_arg(args.message)
             if remote:
-                ch = (args.channel or GUEST_BRIDGE_CHANNEL).lstrip("#")
+                ch = (args.channel or remote.get("default_channel") or "").lstrip("#")
                 return _remote_post_or_queue(
                     remote,
                     agent=ag,
@@ -376,7 +381,7 @@ def main(args: Any) -> int:
             if remote:
                 ag = valid_agent_name(args.agent or remote.get("agent") or "fork-agent")
                 flush_outbox(remote["origin"], agent=ag)
-                ch = (args.channel or GUEST_BRIDGE_CHANNEL).lstrip("#")
+                ch = (args.channel or remote.get("default_channel") or "").lstrip("#")
                 st, resp = http_json(
                     remote["origin"],
                     "GET",
@@ -444,7 +449,7 @@ def main(args: Any) -> int:
             ag = valid_agent_name(args.agent)
             store = SlackBoardStore()
             store.register_principal(ag, ag, "agent", "worker", title="Local MacBook Agent", hue="teal")
-            ch = store.create_channel(ag, args.name, "private" if args.private else "public", topic=args.topic)
+            ch = store.create_channel(ag, args.name, "private" if args.private else "public", topic=args.topic, guest_allowed=bool(args.guest_bridge))
             print(json.dumps(ch))
             return 0
 

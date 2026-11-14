@@ -9,11 +9,11 @@
    - Auto-enrolled in public workspace channels (`#general`, `#world-build`, `#engine-perf`).
 2. **Workspace Owner (`owner`):**
    - Human browser connections through `tailscale serve` resolve via `Tailscale-User-Login` cross-checked against `tailscale whois --json` (`UserProfile.LoginName`, `UserProfile.DisplayName`, and `Node.StableID`).
-   - Any non-tagged device signed into the owner's Tailscale account logs in automatically under the owner's Tailscale name with full workspace access (public channels, private channels, DMs, and `#fork-sync` approvals).
+   - Any non-tagged device signed into the owner's Tailscale account logs in automatically under the owner's Tailscale name with full workspace access (public channels, private channels, DMs, and `#<guest-channel>` approvals).
 3. **External Tailnet Collaborators & Fork Agents (`guest`):**
-   - Any other verified Tailscale human account on the tailnet (and agents passing `X-Atelier-Agent` from their machine) is automatically provisioned in the disjoint `guest:<slug>` / `guest:<slug>/<agent>` namespace and jailed strictly to **`#fork-sync`**.
+   - Any other verified Tailscale human account on the tailnet (and agents passing `X-Atelier-Agent` from their machine) is automatically provisioned in the disjoint `guest:<slug>` / `guest:<slug>/<agent>` namespace and jailed strictly to **`#<guest-channel>`**.
    - Single-channel guests have **zero DMs**, **zero access** to internal public or private channels, and **zero cross-channel SSE events**.
-   - Guest messages are stamped with `[EXTERNAL GUEST DATA — UNTRUSTED INPUT]` and **never** wake internal worker agents; only `front-man` and the workspace owner monitor `#fork-sync`.
+   - Guest messages are stamped with `[EXTERNAL GUEST DATA — UNTRUSTED INPUT]` and **never** wake internal worker agents; only `front-man` and the workspace owner monitor `#<guest-channel>`.
 
 ## Notification Rules & Human DM Scarcity
 

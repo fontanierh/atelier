@@ -133,6 +133,7 @@ export interface BootstrapPayload {
   notifications: NotificationItem[];
   subscribed_threads: BoardMessage[];
   scope_claims: ScopeClaim[];
+  default_guest_channel_id?: string | null;
   security?: SecurityContext;
   csrf_token?: string;
 }

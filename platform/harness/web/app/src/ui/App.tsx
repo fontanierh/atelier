@@ -199,7 +199,12 @@ const Avatar: React.FC<{
   );
 };
 
-function renderSlackMarkdown(text: string, viewerId: string): React.ReactNode {
+function renderSlackMarkdown(
+  text: string,
+  viewerId: string,
+  onClickChannel?: (channelSlug: string) => void,
+  onClickMention?: (handle: string) => void
+): React.ReactNode {
   const clean = text.replace(/^📢\s*/, '');
   const lines = clean.split('\n');
   return lines.map((line, lineIdx) => {
@@ -216,10 +221,44 @@ function renderSlackMarkdown(text: string, viewerId: string): React.ReactNode {
             return <strong key={i}>{tok.slice(2, -2)}</strong>;
           }
           if (tok.startsWith('@') && tok.length > 1) {
-            const isMe = tok.slice(1).toLowerCase() === viewerId.toLowerCase();
+            const handle = tok.slice(1);
+            const isMe = handle.toLowerCase() === viewerId.toLowerCase();
+            if (onClickMention) {
+              return (
+                <button
+                  key={i}
+                  type="button"
+                  className={`sl-mention ${isMe ? 'is-me' : ''}`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onClickMention(handle);
+                  }}
+                >
+                  {tok}
+                </button>
+              );
+            }
             return <span key={i} className={`sl-mention ${isMe ? 'is-me' : ''}`}>{tok}</span>;
           }
           if (tok.startsWith('#') && tok.length > 2) {
+            const slug = tok.slice(1).toLowerCase();
+            if (onClickChannel) {
+              return (
+                <button
+                  key={i}
+                  type="button"
+                  className="sl-ch-ref"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onClickChannel(slug);
+                  }}
+                >
+                  {tok}
+                </button>
+              );
+            }
             return <span key={i} className="sl-ch-ref">{tok}</span>;
           }
           return <React.Fragment key={i}>{tok}</React.Fragment>;
@@ -532,8 +571,11 @@ const SlackMessageRow: React.FC<{
   onInspectDiff: (branch: string) => void;
   onToggleReaction: (messageId: number, emoji: string) => void;
   onOpenSheet: (msg: BoardMessage, mode: 'reactions' | 'actions') => void;
+  onSelectChannel?: (slug: string) => void;
+  onSelectMention?: (handle: string) => void;
   onOpenThread?: (rootId: number) => void;
   inThread?: boolean;
+  isActiveThread?: boolean;
   isOptimistic?: boolean;
 }> = ({
   msg,
@@ -545,8 +587,11 @@ const SlackMessageRow: React.FC<{
   onInspectDiff,
   onToggleReaction,
   onOpenSheet,
+  onSelectChannel,
+  onSelectMention,
   onOpenThread,
   inThread = false,
+  isActiveThread = false,
   isOptimistic = false,
 }) => {
   const author = principals[msg.author_id];
@@ -612,14 +657,16 @@ const SlackMessageRow: React.FC<{
       setDesktopPopover(false);
       return;
     }
-    if (!inThread && onOpenThread) {
+    if (isMobileMode && !inThread && onOpenThread) {
       onOpenThread(msg.id);
     }
   };
 
   return (
     <div
-      className={`sl-msg ${!inThread && onOpenThread ? 'is-tappable' : ''} ${
+      className={`sl-msg ${isMobileMode && !inThread && onOpenThread ? 'is-tappable' : ''} ${
+        isActiveThread ? 'is-active-thread' : ''
+      } ${
         isGuestMsg && viewer.role !== 'guest' ? 'sl-msg-guest' : ''
       } ${pressing ? 'is-pressing' : ''} ${isOptimistic ? 'msg-enter' : ''}`}
       onClick={handleRowClick}
@@ -644,7 +691,9 @@ const SlackMessageRow: React.FC<{
           <span className="sl-msg-time">{formatClock(msg.created_at)}</span>
         </div>
 
-        <div className="sl-msg-body">{renderSlackMarkdown(msg.body, viewer.id)}</div>
+        <div className="sl-msg-body">
+          {renderSlackMarkdown(msg.body, viewer.id, onSelectChannel, onSelectMention)}
+        </div>
 
         <SlackUnfurl
           msg={msg}
@@ -654,7 +703,7 @@ const SlackMessageRow: React.FC<{
           onInspectDiff={onInspectDiff}
         />
 
-        {(msg.reactions.length > 0 || (!inThread && msg.reply_count > 0 && onOpenThread)) && (
+        {(msg.reactions.length > 0 || (!inThread && (msg.reply_count > 0 || isActiveThread) && onOpenThread)) && (
           <div className="sl-msg-below">
             {msg.reactions.length > 0 && (
               <div className="sl-reactions">
@@ -686,25 +735,33 @@ const SlackMessageRow: React.FC<{
               </div>
             )}
 
-            {!inThread && msg.reply_count > 0 && onOpenThread && (
+            {!inThread && (msg.reply_count > 0 || isActiveThread) && onOpenThread && (
               <button
                 type="button"
-                className="sl-thread-summary"
+                className={`sl-thread-summary ${isActiveThread ? 'is-open-in-pane' : ''}`}
                 onClick={(e) => {
                   e.stopPropagation();
                   onOpenThread(msg.id);
                 }}
               >
-                <span className="sl-thread-avs">
-                  {msg.reply_authors.slice(0, 3).map((aid) => (
-                    <Avatar key={aid} principal={principals[aid]} id={aid} size="xs" />
-                  ))}
-                </span>
+                {msg.reply_count > 0 && (
+                  <span className="sl-thread-avs">
+                    {msg.reply_authors.slice(0, 3).map((aid) => (
+                      <Avatar key={aid} principal={principals[aid]} id={aid} size="xs" />
+                    ))}
+                  </span>
+                )}
                 <span className="sl-thread-replies">
-                  {msg.reply_count} {msg.reply_count === 1 ? 'reply' : 'replies'}
+                  {msg.reply_count > 0
+                    ? `${msg.reply_count} ${msg.reply_count === 1 ? 'reply' : 'replies'}`
+                    : 'Open in thread'}
                 </span>
-                {msg.last_reply_at && (
-                  <span className="sl-thread-last">Last reply {formatRelative(msg.last_reply_at)}</span>
+                {isActiveThread ? (
+                  <span className="sl-thread-open-pill">Viewing in side panel →</span>
+                ) : (
+                  msg.last_reply_at && (
+                    <span className="sl-thread-last">Last reply {formatRelative(msg.last_reply_at)}</span>
+                  )
                 )}
                 <span className="sl-thread-chev">›</span>
               </button>
@@ -764,8 +821,7 @@ export const App: React.FC = () => {
   });
 
   const [activeChannelId, setActiveChannelId] = useState<string>(
-    initialParams.get('channel') ||
-      (initialParams.get('viewer') === 'guest_preview' ? 'fork-sync' : 'world-build')
+    initialParams.get('channel') || 'world-build'
   );
   const [openThreadId, setOpenThreadId] = useState<number | null>(() => {
     const t = initialParams.get('thread');
@@ -791,8 +847,64 @@ export const App: React.FC = () => {
   const [isSwiping, setIsSwiping] = useState<boolean>(false);
   const swipeRef = useRef<{ startX: number; startY: number; startTime: number; mode: 'undecided' | 'swipe' | 'scroll' } | null>(null);
 
+  const [sidebarWidth, setSidebarWidth] = useState<number>(() => {
+    try {
+      const v = Number(localStorage.getItem('atelier.sidebar_width'));
+      return Number.isFinite(v) && v >= 180 && v <= 460 ? v : 244;
+    } catch {
+      return 244;
+    }
+  });
+  const [threadWidth, setThreadWidth] = useState<number>(() => {
+    try {
+      const v = Number(localStorage.getItem('atelier.thread_width'));
+      return Number.isFinite(v) && v >= 300 && v <= 720 ? v : 392;
+    } catch {
+      return 392;
+    }
+  });
+  const [resizingPane, setResizingPane] = useState<'sidebar' | 'thread' | null>(null);
+  const resizeDragRef = useRef<{ pane: 'sidebar' | 'thread'; startX: number; startW: number } | null>(null);
+
+  const beginPaneResize = (pane: 'sidebar' | 'thread', e: React.MouseEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const startX = e.clientX;
+    const startW = pane === 'sidebar' ? sidebarWidth : threadWidth;
+    resizeDragRef.current = { pane, startX, startW };
+    setResizingPane(pane);
+
+    let latestW = startW;
+    const onMove = (ev: MouseEvent) => {
+      const vw = window.innerWidth || 1440;
+      if (pane === 'sidebar') {
+        const maxSb = Math.max(240, Math.min(460, vw - (openThreadId !== null ? threadWidth : 0) - 420));
+        latestW = Math.round(Math.max(180, Math.min(maxSb, startW + (ev.clientX - startX))));
+        setSidebarWidth(latestW);
+      } else {
+        const maxTh = Math.max(320, Math.min(720, vw - sidebarWidth - 420));
+        latestW = Math.round(Math.max(300, Math.min(maxTh, startW - (ev.clientX - startX))));
+        setThreadWidth(latestW);
+      }
+    };
+    const onUp = () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+      resizeDragRef.current = null;
+      setResizingPane(null);
+      try {
+        localStorage.setItem(
+          pane === 'sidebar' ? 'atelier.sidebar_width' : 'atelier.thread_width',
+          String(latestW)
+        );
+      } catch {}
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  };
+
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
-  const [activityFilter, setActivityFilter] = useState<'all' | 'dms' | 'mentions' | 'threads'>('all');
+  const [activityFilter, setActivityFilter] = useState<'all' | 'unreads' | 'dms' | 'mentions' | 'threads'>('all');
   const [dmFilter, setDmFilter] = useState<'all' | 'agents' | 'unreads'>('all');
 
   const [showNewChannelModal, setShowNewChannelModal] = useState<boolean>(
@@ -826,6 +938,7 @@ export const App: React.FC = () => {
 
   const [newChName, setNewChName] = useState<string>('belmonte-art');
   const [newChKind, setNewChKind] = useState<'public' | 'private'>('public');
+  const [newChGuestAllowed, setNewChGuestAllowed] = useState<boolean>(false);
   const [newChTopic, setNewChTopic] = useState<string>('Tuscan stone shaders & station signage');
 
   const showToast = useCallback((text: string) => {
@@ -1106,12 +1219,18 @@ export const App: React.FC = () => {
   );
 
   const toggleGuestPreview = () => {
+    const gch = boot?.default_guest_channel_id;
+    if (!gch && viewerQuery !== 'guest_preview') {
+      setShowAccessModal(true);
+      showToast('Select an external guest channel first to preview guest mode');
+      return;
+    }
     const next = viewerQuery === 'guest_preview' ? '' : 'guest_preview';
     setViewerQuery(next);
-    if (next === 'guest_preview') {
+    if (next === 'guest_preview' && gch) {
       setRailTab('home');
       setCenterMode('channel');
-      setActiveChannelId('fork-sync');
+      setActiveChannelId(gch);
       setOpenThreadId(null);
       setMobileTab('home');
       setStackDepth(0);
@@ -1154,6 +1273,102 @@ export const App: React.FC = () => {
       if (threadFeedRef.current) threadFeedRef.current.scrollTop = 0;
     });
   }, []);
+
+  const handleSelectChannelLink = useCallback(
+    (slug: string) => {
+      if (!boot) return;
+      const clean = slug.replace(/^#/, '').toLowerCase();
+      const exists =
+        boot.channels.find((c) => c.id === clean || c.raw_name.toLowerCase() === clean) ||
+        boot.explorable_channels.find((c) => c.id === clean || c.raw_name.toLowerCase() === clean);
+      if (exists) {
+        openChannel(exists.id);
+      } else {
+        showToast(`#${clean} is not accessible`);
+      }
+    },
+    [boot, openChannel, showToast]
+  );
+
+  const handleSelectMentionLink = useCallback(
+    async (rawHandle: string) => {
+      if (!boot || boot.viewer.role === 'guest') return;
+      const clean = rawHandle.replace(/^@/, '').toLowerCase();
+      const target = Object.values(boot.principals).find(
+        (p) => p.id.toLowerCase() === clean || p.display_name.toLowerCase() === clean
+      );
+      if (!target) {
+        showToast(`@${rawHandle} is not in this workspace`);
+        return;
+      }
+      if (target.id === boot.viewer.id) return;
+      if (target.role === 'guest') {
+        if (target.guest_channel_id) openChannel(target.guest_channel_id);
+        return;
+      }
+      const existingDm = boot.channels.find(
+        (c) => c.kind === 'dm' && c.member_ids.includes(target.id) && c.member_ids.includes(boot.viewer.id)
+      );
+      if (existingDm) {
+        openChannel(existingDm.id);
+      }
+    },
+    [boot, openChannel, showToast]
+  );
+
+  const markNotificationRead = useCallback(
+    (notifId: number) => {
+      setBoot((prev) =>
+        prev
+          ? {
+              ...prev,
+              notifications: prev.notifications.map((n) =>
+                n.id === notifId ? { ...n, unread: false } : n
+              ),
+            }
+          : prev
+      );
+      fetch(`/api/notifications/${notifId}/read${querySuffix}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Atelier-CSRF': boot?.csrf_token || '' },
+        body: '{}',
+      }).catch(() => {});
+    },
+    [querySuffix, boot?.csrf_token]
+  );
+
+  const markAllNotificationsRead = useCallback(() => {
+    setBoot((prev) =>
+      prev
+        ? {
+            ...prev,
+            notifications: prev.notifications.map((n) => ({ ...n, unread: false })),
+          }
+        : prev
+    );
+    fetch(`/api/notifications/read-all${querySuffix}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Atelier-CSRF': boot?.csrf_token || '' },
+      body: '{}',
+    }).catch(() => {});
+    showToast('Marked all notifications as read');
+  }, [querySuffix, boot?.csrf_token, showToast]);
+
+  const configureGuestChannel = useCallback(
+    async (nextChannelId: string) => {
+      if (!boot) return;
+      const res = await fetch(`/api/settings/guest-channel${querySuffix}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Atelier-CSRF': boot.csrf_token || '' },
+        body: JSON.stringify({ channel_id: nextChannelId || null }),
+      });
+      if (res.ok) {
+        await refreshBootstrap(querySuffix);
+        showToast(nextChannelId ? `External guests scoped to #${nextChannelId}` : 'External guest access disabled');
+      }
+    },
+    [boot, querySuffix, refreshBootstrap, showToast]
+  );
 
   const handleOpenSheet = useCallback((msg: BoardMessage, mode: 'reactions' | 'actions') => {
     setSheetState({ msg, mode });
@@ -1220,7 +1435,7 @@ export const App: React.FC = () => {
       headers: { 'Content-Type': 'application/json', 'X-Atelier-CSRF': boot?.csrf_token || '' },
       body: JSON.stringify({
         author_id: boot?.viewer.id,
-        channel_id: 'fork-sync',
+        channel_id: boot?.default_guest_channel_id || activeChannelId,
         root_id: rootId,
         body: `@front-man Approved \`${branch}\` — run checks and merge into \`main\`.`,
       }),
@@ -1361,7 +1576,7 @@ export const App: React.FC = () => {
     const res = await fetch(`/api/channels${querySuffix}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Atelier-CSRF': boot?.csrf_token || '' },
-      body: JSON.stringify({ creator_id: boot.viewer.id, name: newChName, kind: newChKind, topic: newChTopic }),
+      body: JSON.stringify({ creator_id: boot.viewer.id, name: newChName, kind: newChKind, topic: newChTopic, guest_allowed: newChGuestAllowed }),
     });
     if (res.ok) {
       const data = await res.json();
@@ -1426,7 +1641,10 @@ export const App: React.FC = () => {
     (p) => p.kind === 'agent' && p.role !== 'guest' && p.status === 'active'
   ).length;
 
+  const guestBridgeChannelId = boot.default_guest_channel_id || null;
+
   const filteredNotifications = notifications.filter((n) => {
+    if (activityFilter === 'unreads') return n.unread;
     if (activityFilter === 'dms') return n.kind === 'dm';
     if (activityFilter === 'mentions') return n.kind === 'mention' || n.kind === 'guest_triage';
     if (activityFilter === 'threads') return n.kind === 'thread_reply';
@@ -1584,11 +1802,31 @@ export const App: React.FC = () => {
           </div>
 
           <div className="sec-tier amber">
-            <div className="sec-tier-title">3. Brother & His Agents on Tailnet → Auto Single-Channel Guest</div>
+            <div className="sec-tier-title">3. External Tailscale Collaborators → Optional Single-Channel Guest</div>
             <p>
-              Share your tailnet node with your brother in Tailscale. Any connection from his laptop is automatically
-              locked to <strong>#fork-sync</strong> (no DMs, no internal channels, cannot wake your worker agents).
+              External Tailscale accounts have <strong>no access by default</strong>. If you designate one guest bridge
+              channel below, external collaborators and their agents are automatically jailed strictly to that single
+              channel (no DMs, no internal channels, cannot wake worker agents).
             </p>
+            {viewer.role === 'owner' && (
+              <div className="sec-guest-select-row">
+                <label htmlFor="guest-ch-select">External guest channel:</label>
+                <select
+                  id="guest-ch-select"
+                  value={guestBridgeChannelId || ''}
+                  onChange={(e) => configureGuestChannel(e.target.value)}
+                >
+                  <option value="">Disabled (Deny external Tailscale accounts)</option>
+                  {sidebarChannels
+                    .filter((c) => c.kind === 'public')
+                    .map((c) => (
+                      <option key={c.id} value={c.id}>
+                        #{c.name}
+                      </option>
+                    ))}
+                </select>
+              </div>
+            )}
             <div className="sec-copy-box">
               <code>{onboardingCommand}</code>
               <button
@@ -1747,10 +1985,21 @@ export const App: React.FC = () => {
                     <strong>Threads</strong>
                     <span>{subscribed_threads.length} active</span>
                   </button>
-                  <button type="button" className="ios-tile" onClick={() => openChannel('fork-sync')}>
-                    <span className="ios-tile-ico has-dot"><IcoBranch /></span>
-                    <strong>Fork Sync</strong>
-                    <span>1 ready</span>
+                  <button
+                    type="button"
+                    className="ios-tile"
+                    onClick={() => {
+                      if (guestBridgeChannelId) {
+                        openChannel(guestBridgeChannelId);
+                      } else {
+                        setLayer1Mode('all-channels');
+                        setStackDepth(1);
+                      }
+                    }}
+                  >
+                    <span className="ios-tile-ico"><IcoBranch /></span>
+                    <strong>{guestBridgeChannelId ? `#${guestBridgeChannelId}` : 'Channels'}</strong>
+                    <span>{guestBridgeChannelId ? 'Guest bridge' : `${explorable_channels.length} public`}</span>
                   </button>
                   <button type="button" className="ios-tile" onClick={() => setMobileTab('dms')}>
                     <span className="ios-tile-ico"><IcoAgents /></span>
@@ -1762,7 +2011,7 @@ export const App: React.FC = () => {
 
               {isGuest && (
                 <div className="slm-guest-banner">
-                  Single-channel guest · Scoped strictly to <strong>#fork-sync</strong>
+                  Single-channel guest · Scoped strictly to <strong>#{viewer.guest_channel_id}</strong>
                 </div>
               )}
 
@@ -1900,12 +2149,25 @@ export const App: React.FC = () => {
 
           {mobileTab === 'activity' && (
             <div className="slm-scroll with-dock">
-              <div className="ios-chip-row four">
-                {(['all', 'dms', 'mentions', 'threads'] as const).map((f) => (
-                  <button key={f} type="button" className={activityFilter === f ? 'active' : ''} onClick={() => setActivityFilter(f)}>
-                    {f === 'all' ? 'All' : f === 'dms' ? 'DMs' : f === 'mentions' ? 'Mentions' : 'Threads'}
+              <div className="ios-act-toolbar">
+                <div className="ios-chip-row">
+                  {(['all', 'unreads', 'mentions', 'threads'] as const).map((f) => (
+                    <button key={f} type="button" className={activityFilter === f ? 'active' : ''} onClick={() => setActivityFilter(f)}>
+                      {f === 'all'
+                        ? 'All'
+                        : f === 'unreads'
+                        ? `Unreads (${unreadActivity})`
+                        : f === 'mentions'
+                        ? 'Mentions'
+                        : 'Threads'}
+                    </button>
+                  ))}
+                </div>
+                {unreadActivity > 0 && (
+                  <button type="button" className="sl-mark-read-btn" onClick={markAllNotificationsRead}>
+                    Mark all read
                   </button>
-                ))}
+                )}
               </div>
 
               <div className="ios-act-list">
@@ -1913,8 +2175,9 @@ export const App: React.FC = () => {
                   <button
                     key={n.id}
                     type="button"
-                    className="ios-act-item"
+                    className={`ios-act-item ${n.unread ? 'is-unread' : 'is-read'}`}
                     onClick={() => {
+                      if (n.unread) markNotificationRead(n.id);
                       setActiveChannelId(n.channel_id);
                       setLayer1Mode('channel');
                       openThread(n.root_id);
@@ -1928,14 +2191,15 @@ export const App: React.FC = () => {
                     />
                     <div className="ios-act-main">
                       <div className="ios-act-line1">
+                        {n.unread && <span className="sl-unread-dot" aria-label="Unread" />}
                         <strong>{principals[n.author_id]?.display_name || n.author_id}</strong>
+                        {n.unread && <span className="sl-new-pill">NEW</span>}
                         {principals[n.author_id]?.kind === 'agent' && !n.untrusted_envelope && (
                           <span className="sl-app-tag">AGENT</span>
                         )}
                         {n.untrusted_envelope && <span className="sl-app-tag tag-guest">GUEST</span>}
                         <span className="ios-act-right">
                           <time>{formatRelative(n.created_at)}</time>
-                          <span className="ios-reply-pill">💬 2</span>
                         </span>
                       </div>
                       <div className="ios-act-sub">
@@ -2060,6 +2324,8 @@ export const App: React.FC = () => {
                     onInspectDiff={setDiffModalBranch}
                     onToggleReaction={handleToggleReaction}
                     onOpenSheet={handleOpenSheet}
+                    onSelectChannel={handleSelectChannelLink}
+                    onSelectMention={handleSelectMentionLink}
                     onOpenThread={openThread}
                     isOptimistic={msg.id < 0}
                   />
@@ -2286,7 +2552,7 @@ export const App: React.FC = () => {
           </button>
           {(viewer.role === 'owner' || viewerQuery === 'guest_preview') ? (
             <button type="button" className="sl-top-chip" onClick={toggleGuestPreview}>
-              {isGuest ? 'Previewing: Guest (#fork-sync)' : `${viewer.display_name}`}
+              {isGuest ? `Previewing: Guest (#${viewer.guest_channel_id})` : `${viewer.display_name}`}
             </button>
           ) : (
             <span className="sl-top-chip">{viewer.display_name} (Guest)</span>
@@ -2294,7 +2560,10 @@ export const App: React.FC = () => {
         </div>
       </header>
 
-      <div className={`sl-body ${openThreadId !== null ? 'has-thread' : ''}`}>
+      <div
+        className={`sl-body ${openThreadId !== null ? 'has-thread' : ''} ${resizingPane ? 'is-resizing' : ''}`}
+        style={{ '--sb-w': `${sidebarWidth}px`, '--th-w': `${threadWidth}px` } as React.CSSProperties}
+      >
         <nav className="sl-rail">
           <div className="sl-ws-tile">A</div>
 
@@ -2349,31 +2618,46 @@ export const App: React.FC = () => {
           {railTab === 'activity' ? (
             <div className="sl-sb-scroll">
               <div className="sl-act-filters">
-                {(['all', 'mentions', 'threads'] as const).map((f) => (
+                {(['all', 'unreads', 'mentions', 'threads'] as const).map((f) => (
                   <button key={f} type="button" className={activityFilter === f ? 'active' : ''} onClick={() => setActivityFilter(f)}>
-                    {f === 'all' ? 'All' : f === 'mentions' ? '@Mentions' : 'Threads'}
+                    {f === 'all'
+                      ? 'All'
+                      : f === 'unreads'
+                      ? `Unreads (${unreadActivity})`
+                      : f === 'mentions'
+                      ? '@Mentions'
+                      : 'Threads'}
                   </button>
                 ))}
               </div>
+              {unreadActivity > 0 && (
+                <button type="button" className="sl-mark-read-btn sidebar" onClick={markAllNotificationsRead}>
+                  Mark all {unreadActivity} read
+                </button>
+              )}
               {filteredNotifications.map((n) => (
                 <button
                   key={n.id}
                   type="button"
-                  className={`sl-sb-act-item ${n.unread ? 'unread' : ''}`}
+                  className={`sl-sb-act-item ${n.unread ? 'unread' : 'is-read'} ${openThreadId === n.root_id ? 'selected' : ''}`}
                   onClick={() => {
+                    if (n.unread) markNotificationRead(n.id);
                     setActiveChannelId(n.channel_id);
-                    setCenterMode('channel');
                     openThread(n.root_id);
                   }}
                 >
                   <div className="sl-sb-act-meta">
-                    <span>#{n.channel_name}</span>
+                    <span className="sl-sb-act-ch">
+                      {n.unread && <i className="sl-unread-dot" />}
+                      {n.channel_kind === 'dm' ? 'Direct message' : `#${n.channel_name}`}
+                    </span>
                     <span>{formatClock(n.created_at)}</span>
                   </div>
                   <div className="sl-sb-act-who">
                     <strong>{principals[n.author_id]?.display_name || n.author_id}</strong>
+                    {n.unread && <span className="sl-new-pill">NEW</span>}
                   </div>
-                  <div className="sl-sb-act-preview">{n.body.slice(0, 72)}</div>
+                  <div className="sl-sb-act-preview">{n.body.slice(0, 80)}</div>
                 </button>
               ))}
             </div>
@@ -2486,15 +2770,116 @@ export const App: React.FC = () => {
 
               {isGuest && (
                 <div className="sl-sb-guest-footer">
-                  Single-channel guest on <strong>#fork-sync</strong>
+                  Single-channel guest on <strong>#{viewer.guest_channel_id}</strong>
                 </div>
               )}
             </div>
           )}
+          <div
+            role="separator"
+            aria-orientation="vertical"
+            aria-label="Resize sidebar"
+            title="Drag to resize · Double-click to reset"
+            className={`sl-resize-handle is-sidebar ${resizingPane === 'sidebar' ? 'is-active' : ''}`}
+            onMouseDown={(e) => beginPaneResize('sidebar', e)}
+            onDoubleClick={() => {
+              setSidebarWidth(244);
+              try { localStorage.setItem('atelier.sidebar_width', '244'); } catch {}
+            }}
+          />
         </aside>
 
         <main className="sl-main">
-          {centerMode === 'channel' && (
+          {railTab === 'activity' ? (
+            <>
+              <header className="sl-pane-header">
+                <div className="sl-pane-title-wrap">
+                  <h1 className="sl-pane-h1">Activity</h1>
+                  <span className="sl-pane-topic">
+                    {unreadActivity > 0 ? `${unreadActivity} unread notification${unreadActivity === 1 ? '' : 's'}` : 'All caught up'}
+                  </span>
+                </div>
+                <div className="sl-act-header-actions">
+                  <div className="sl-act-filters">
+                    {(['all', 'unreads', 'mentions', 'threads', 'dms'] as const).map((f) => (
+                      <button
+                        key={f}
+                        type="button"
+                        className={activityFilter === f ? 'active' : ''}
+                        onClick={() => setActivityFilter(f)}
+                      >
+                        {f === 'all'
+                          ? 'All'
+                          : f === 'unreads'
+                          ? `Unreads (${unreadActivity})`
+                          : f === 'mentions'
+                          ? '@Mentions'
+                          : f === 'threads'
+                          ? 'Threads'
+                          : 'DMs'}
+                      </button>
+                    ))}
+                  </div>
+                  {unreadActivity > 0 && (
+                    <button type="button" className="sl-btn" onClick={markAllNotificationsRead}>
+                      Mark all read
+                    </button>
+                  )}
+                </div>
+              </header>
+
+              <div className="sl-feed padded">
+                <div className="sl-act-feed-list">
+                  {filteredNotifications.length === 0 && (
+                    <div className="sl-empty-state">No notifications in this view.</div>
+                  )}
+                  {filteredNotifications.map((n) => (
+                    <div
+                      key={n.id}
+                      className={`sl-act-card ${n.unread ? 'is-unread' : 'is-read'} ${
+                        openThreadId === n.root_id ? 'is-active-thread' : ''
+                      }`}
+                      onClick={() => {
+                        if (n.unread) markNotificationRead(n.id);
+                        setActiveChannelId(n.channel_id);
+                        openThread(n.root_id);
+                      }}
+                    >
+                      <div className="sl-act-card-top">
+                        <span className="sl-act-card-context">
+                          {n.unread && <i className="sl-unread-dot" />}
+                          {n.kind === 'mention'
+                            ? `Mentioned you in #${n.channel_name}`
+                            : n.kind === 'dm'
+                            ? 'Direct message'
+                            : n.kind === 'guest_triage'
+                            ? `External guest submission in #${n.channel_name}`
+                            : `Replied to thread in #${n.channel_name}`}
+                        </span>
+                        <span className="sl-act-card-meta">
+                          {n.unread && <span className="sl-new-pill">UNREAD</span>}
+                          <time>{formatClock(n.created_at)}</time>
+                        </span>
+                      </div>
+                      <div className="sl-act-card-body">
+                        <Avatar principal={principals[n.author_id]} id={n.author_id} size="md" />
+                        <div className="sl-act-card-col">
+                          <div className="sl-msg-head">
+                            <span className="sl-msg-sender">{principals[n.author_id]?.display_name || n.author_id}</span>
+                            {principals[n.author_id]?.kind === 'agent' && !n.untrusted_envelope && (
+                              <span className="sl-app-tag">AGENT</span>
+                            )}
+                            {n.untrusted_envelope && <span className="sl-app-tag tag-guest">GUEST</span>}
+                          </div>
+                          <div className="sl-msg-body">{renderSlackMarkdown(n.body, viewer.id)}</div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          ) : centerMode === 'channel' && (
             <>
               <header className="sl-pane-header">
                 <div className="sl-pane-title-wrap">
@@ -2516,7 +2901,7 @@ export const App: React.FC = () => {
 
               {activeChannelMeta?.guest_allowed && (
                 <div className="sl-ext-bar">
-                  External single-channel guests are in <strong>#fork-sync</strong>
+                  External Tailscale single-channel guests are enabled in <strong>#{activeChannelMeta.name}</strong>
                   {!isGuest && ' · Guest messages are treated strictly as data and never wake worker agents'}
                 </div>
               )}
@@ -2535,7 +2920,10 @@ export const App: React.FC = () => {
                     onInspectDiff={setDiffModalBranch}
                     onToggleReaction={handleToggleReaction}
                     onOpenSheet={handleOpenSheet}
+                    onSelectChannel={handleSelectChannelLink}
+                    onSelectMention={handleSelectMentionLink}
                     onOpenThread={openThread}
+                    isActiveThread={openThreadId === msg.id}
                     isOptimistic={msg.id < 0}
                   />
                 ))}
@@ -2646,6 +3034,20 @@ export const App: React.FC = () => {
         </main>
 
         <aside className={`sl-thread-pane ${openThreadId !== null && threadDetail ? 'is-open' : ''}`}>
+          {openThreadId !== null && threadDetail && (
+            <div
+              role="separator"
+              aria-orientation="vertical"
+              aria-label="Resize thread panel"
+              title="Drag to resize · Double-click to reset"
+              className={`sl-resize-handle is-thread ${resizingPane === 'thread' ? 'is-active' : ''}`}
+              onMouseDown={(e) => beginPaneResize('thread', e)}
+              onDoubleClick={() => {
+                setThreadWidth(392);
+                try { localStorage.setItem('atelier.thread_width', '392'); } catch {}
+              }}
+            />
+          )}
           {threadDetail && (
             <>
               <header className="sl-pane-header">
@@ -2744,6 +3146,16 @@ export const App: React.FC = () => {
             </div>
             <input type="text" value={newChName} onChange={(e) => setNewChName(e.target.value)} placeholder="e.g. belmonte-art" />
             <input type="text" value={newChTopic} onChange={(e) => setNewChTopic(e.target.value)} placeholder="Description (optional)" />
+            {viewer.role === 'owner' && newChKind === 'public' && (
+              <label className="sl-also-send">
+                <input
+                  type="checkbox"
+                  checked={newChGuestAllowed}
+                  onChange={(e) => setNewChGuestAllowed(e.target.checked)}
+                />
+                <span>Allow external Tailscale Single-Channel Guests in this channel</span>
+              </label>
+            )}
             <div className="sl-modal-foot">
               <button type="button" className="sl-btn" onClick={() => setShowNewChannelModal(false)}>Cancel</button>
               <button type="submit" className="sl-btn sl-btn-primary">Create</button>

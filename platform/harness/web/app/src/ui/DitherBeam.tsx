@@ -1,4 +1,4 @@
-import { useEffect, useRef, type FC } from 'react';
+import { useMemo, type FC } from 'react';
 
 export type BeamPreset = 'sweep' | 'edge' | 'floor' | 'floor-mirrored';
 
@@ -55,14 +55,20 @@ function smoothstep(a: number, b: number, x: number): number {
 }
 
 const BASE = hexRgb(0x07090d);
-const CACHE = new Map<string, ImageData>();
+const URL_CACHE = new Map<string, string>();
 
-function buildImageData(w: number, h: number, preset: BeamPreset): ImageData {
+function buildDataUrl(w: number, h: number, preset: BeamPreset): string {
   const key = `${preset}:${w}x${h}`;
-  const hit = CACHE.get(key);
+  const hit = URL_CACHE.get(key);
   if (hit) return hit;
 
-  const img = new ImageData(w, h);
+  const offscreen = document.createElement('canvas');
+  offscreen.width = w;
+  offscreen.height = h;
+  const ctx = offscreen.getContext('2d');
+  if (!ctx) return '';
+
+  const img = ctx.createImageData(w, h);
   const pixels = img.data;
   const br = Math.round(BASE.r * 255);
   const bg = Math.round(BASE.g * 255);
@@ -142,34 +148,26 @@ function buildImageData(w: number, h: number, preset: BeamPreset): ImageData {
       }
     }
   }
-  CACHE.set(key, img);
-  return img;
+  ctx.putImageData(img, 0, 0);
+  const url = offscreen.toDataURL('image/png');
+  URL_CACHE.set(key, url);
+  return url;
 }
 
 export const DitherBeam: FC<{ preset: BeamPreset }> = ({ preset }) => {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const paint = () => {
-      // Bucket dimensions to 128px steps so keyboard open/close NEVER triggers a dither recomputation!
-      const rawW = window.innerWidth;
-      const rawH = Math.max(window.innerHeight, window.screen?.height ? Math.min(window.screen.height, 1080) : 900);
-      const w = Math.ceil(rawW / 128) * 128;
-      const h = Math.ceil(rawH / 128) * 128;
-      if (canvas.width !== w) canvas.width = w;
-      if (canvas.height !== h) canvas.height = h;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
-      ctx.putImageData(buildImageData(w, h, preset), 0, 0);
-    };
-
-    paint();
-    window.addEventListener('orientationchange', paint);
-    return () => window.removeEventListener('orientationchange', paint);
+  const bgUrl = useMemo(() => {
+    const rawW = typeof window !== 'undefined' ? window.innerWidth : 1440;
+    const rawH = typeof window !== 'undefined' ? Math.max(window.innerHeight, 900) : 900;
+    const w = Math.min(1664, Math.ceil(rawW / 256) * 256);
+    const h = Math.min(1152, Math.ceil(rawH / 256) * 256);
+    return buildDataUrl(w, h, preset);
   }, [preset]);
 
-  return <canvas ref={canvasRef} className="dither-beam-canvas" aria-hidden="true" />;
+  return (
+    <div
+      className="dither-beam-canvas"
+      aria-hidden="true"
+      style={bgUrl ? { backgroundImage: `url(${bgUrl})` } : undefined}
+    />
+  );
 };

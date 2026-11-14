@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import Iterator
 
 from atelier.harness.slack_board import (
-    GUEST_BRIDGE_CHANNEL,
     PermissionDenied,
     SlackBoardStore,
     cache_root,

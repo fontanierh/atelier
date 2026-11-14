@@ -69,7 +69,27 @@ def test_tailscale_user_login_resolves_owner_across_devices_and_guests_by_accoun
         assert sec["tier"] == "owner_device"
         assert store.get_bootstrap(vid)["viewer"]["display_name"] == "Henry Fontanier"
 
-    # 2. Brother ('paul@example.test' / 'Paul') automatically logs in as Single-Channel Guest 'guest:paul'
+    # 1b. By default (before owner designates an external guest channel), external Tailscale accounts are denied!
+    with pytest.raises(PermissionDenied):
+        resolve_request_caller(
+            store,
+            client_ip="127.0.0.1",
+            headers={
+                "Host": f"owner-macbook{TEST_SUFFIX}",
+                "X-Forwarded-For": "100.64.0.10",
+                "Tailscale-User-Login": "paul@example.test",
+                "Tailscale-User-Name": "Paul",
+            },
+            qs={},
+            local_secret=secret,
+            ts_cfg=TEST_TS_CFG,
+            whois_fn=whois_table.get,
+        )
+
+    # Owner designates a custom external guest channel ('partner-bridge')
+    store.configure_guest_channel("henry", "partner-bridge")
+
+    # 2. External collaborator ('paul@example.test' / 'Paul') automatically logs in as Single-Channel Guest 'guest:paul' in #partner-bridge
     vid_paul, sec_paul = resolve_request_caller(
         store,
         client_ip="127.0.0.1",
@@ -89,9 +109,9 @@ def test_tailscale_user_login_resolves_owner_across_devices_and_guests_by_accoun
     assert sec_paul["guest_jailed"] is True
     paul_boot = store.get_bootstrap(vid_paul)
     assert paul_boot["viewer"]["display_name"] == "Paul"
-    assert [c["id"] for c in paul_boot["channels"]] == ["fork-sync"]
+    assert [c["id"] for c in paul_boot["channels"]] == ["partner-bridge"]
 
-    # 3. Agent on Paul's machine gets 'guest:paul/train-agent' jailed to #fork-sync
+    # 3. Agent on Paul's machine gets 'guest:paul/train-agent' jailed to #partner-bridge
     vid_ag, _ = resolve_request_caller(
         store,
         client_ip="127.0.0.1",
@@ -304,9 +324,24 @@ def test_live_http_sse_guest_isolation_and_dm_browser_notification_payload(tmp_p
             "Tailscale-User-Name": "Henry Fontanier",
         }
 
+        # Enable custom guest channel 'partner-bridge' via owner API
+        st_cfg, cfg_res = req(
+            "POST",
+            "/api/settings/guest-channel",
+            {
+                "Host": f"127.0.0.1:{port}",
+                "Content-Type": "application/json",
+                "Origin": f"http://127.0.0.1:{port}",
+                "X-Atelier-CSRF": owner_csrf,
+            },
+            {"channel_id": "partner-bridge"},
+        )
+        assert st_cfg == 200 and cfg_res["default_guest_channel_id"] == "partner-bridge"
+        store.create_channel("henry", "lead-ops", "private", topic="Private ops", member_ids=["front-man"])
+
         st_g, g_boot = req("GET", "/api/bootstrap", guest_hdrs)
         assert st_g == 200 and g_boot["viewer"]["id"] == "guest:paul"
-        assert [c["id"] for c in g_boot["channels"]] == ["fork-sync"]
+        assert [c["id"] for c in g_boot["channels"]] == ["partner-bridge"]
 
         # Open SSE sockets for both Guest and Owner
         threading.Thread(target=sse_reader, args=(guest_hdrs, guest_events), daemon=True).start()
@@ -349,7 +384,7 @@ def test_live_http_sse_guest_isolation_and_dm_browser_notification_payload(tmp_p
         assert dm_sse[0]["message"]["author_id"] == "carbon-god"
         assert "notarize" in dm_sse[0]["message"]["body"]
 
-        # Guest cannot read internal channel or post outside #fork-sync
+        # Guest cannot read internal channel or post outside #partner-bridge
         st_forb, _ = req("GET", "/api/channels/lead-ops/messages", guest_hdrs)
         assert st_forb == 403
     finally:

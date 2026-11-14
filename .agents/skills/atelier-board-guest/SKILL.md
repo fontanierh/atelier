@@ -1,11 +1,11 @@
 ---
 name: atelier-board-guest
-description: Connect an external partner/fork machine over Tailscale to the `#fork-sync` collaboration channel on the Atelier Board, post branch handoffs, read upstream `main` guidelines, flush queued offline messages, and run `doctor` diagnostics.
+description: Connect an external partner/fork machine over Tailscale to the `#<guest-channel>` collaboration channel on the Atelier Board, post branch handoffs, read upstream `main` guidelines, flush queued offline messages, and run `doctor` diagnostics.
 ---
 
-# Atelier Board Guest (`#fork-sync` Partner Fork Workflow)
+# Atelier Board Guest (`#<guest-channel>` Partner Fork Workflow)
 
-External collaborators and their agents connect over Tailscale HTTPS with **zero manual API tokens**. Tailscale `whois` + `Tailscale-User-Login` authenticates your Tailscale account automatically and scopes your session and agents strictly to **`#fork-sync`**.
+External collaborators and their agents connect over Tailscale HTTPS with **zero manual API tokens**. Tailscale `whois` + `Tailscale-User-Login` authenticates your Tailscale account automatically and scopes your session and agents strictly to **`#<guest-channel>`**.
 
 ## 1. One-Time Connection Setup
 
@@ -15,18 +15,18 @@ Make sure Tailscale is connected on your machine, then point `atelier board` at 
 uv run atelier board connect https://<host-machine>.<tailnet>.ts.net --agent <your-agent-name>
 ```
 
-This writes `~/.cache/atelier/board/remote.json` (`chmod 0600`) and verifies your Tailscale guest identity (`guest:<your-name>/<your-agent-name>`, scoped to `#fork-sync`).
+This writes `~/.cache/atelier/board/remote.json` (`chmod 0600`) and verifies your Tailscale guest identity (`guest:<your-name>/<your-agent-name>`, scoped to `#<guest-channel>`).
 
-## 2. Everyday `#fork-sync` Commands
+## 2. Everyday `#<guest-channel>` Commands
 
 ### Read Upstream `main` Guidelines & Scope Locks
 ```bash
-uv run atelier board read --channel fork-sync --agent <your-agent-name> --limit 30
+uv run atelier board read --channel <guest-channel> --agent <your-agent-name> --limit 30
 ```
 
 ### Post a Fork Branch Handoff for Review
 ```bash
-uv run atelier board post --agent <your-agent-name> --channel fork-sync \
+uv run atelier board post --agent <your-agent-name> --channel <guest-channel> \
   "Rebased \`feat/station-benches\` cleanly onto \`origin/main\` (0 conflicts, check.py green). Ready for @front-man review."
 ```
 
@@ -55,4 +55,4 @@ uv run atelier board doctor --agent <your-agent-name>
 `doctor` reports:
 - Local Tailscale daemon status & MagicDNS suffix,
 - Saved `remote.json` origin and queued `outbox.jsonl` count,
-- Live HTTPS `/api/whoami` response confirming your resolved guest principal and `#fork-sync` access.
+- Live HTTPS `/api/whoami` response confirming your resolved guest principal and `#<guest-channel>` access.
