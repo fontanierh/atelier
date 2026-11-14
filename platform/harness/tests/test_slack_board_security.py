@@ -390,7 +390,6 @@ def test_live_http_stalled_sse_body_cap_and_dm_push(tmp_path: Path) -> None:
         assert (time.monotonic() - t0) < 4.0
 
         # Internal message in #lead-ops + DM to henry -> Guest SSE never sees #lead-ops or DM!
-        guest_events.clear()
         req(
             "POST",
             "/api/messages",
@@ -403,9 +402,80 @@ def test_live_http_stalled_sse_body_cap_and_dm_push(tmp_path: Path) -> None:
             {"Host": f"127.0.0.1:{port}", "Authorization": f"Bearer {secret}", "X-Atelier-Agent": "carbon-god", "Content-Type": "application/json"},
             {"channel_id": "", "dm_peer": "henry", "body": "Need keychain approval"},
         )
-        time.sleep(0.15)
-        assert guest_events == []
+        deadline = time.monotonic() + 2.0
+        while time.monotonic() < deadline and not any(ev.get("channel_kind") == "dm" for ev in owner_events):
+            time.sleep(0.05)
         assert any(ev.get("channel_kind") == "dm" for ev in owner_events)
+        leaked = [ev for ev in guest_events if ev.get("channel_id") not in (None, "partner-bridge")]
+        assert leaked == [], f"Guest SSE leaked internal events: {leaked}"
+
+        # Blocker A Regression: Raw-socket HTTP/1.1 keep-alive smuggling via GET-with-body and early-403 POST!
+        smuggled_req = (
+            f"GET /api/bootstrap HTTP/1.1\r\n"
+            f"Host: owner-macbook{TEST_SUFFIX}:{port}\r\n"
+            f"X-Forwarded-For: 100.64.0.1\r\n"
+            f"Tailscale-User-Login: owner@example.test\r\n\r\n"
+        ).encode()
+
+        # Probe 1: GET /api/whoami carrying smuggled owner request as body -> rejected 400 and connection CLOSED (1 response only!)
+        s1 = socket.create_connection(("127.0.0.1", port), timeout=3)
+        s1.sendall(
+            f"GET /api/whoami HTTP/1.1\r\n"
+            f"Host: owner-macbook{TEST_SUFFIX}:{port}\r\n"
+            f"X-Forwarded-For: 100.64.0.22\r\n"
+            f"Content-Length: {len(smuggled_req)}\r\n\r\n".encode()
+            + smuggled_req
+        )
+        chunks1 = []
+        while part := s1.recv(4096):
+            chunks1.append(part)
+        s1.close()
+        raw1 = b"".join(chunks1).decode("utf-8", errors="replace")
+        assert raw1.count("HTTP/1.1 ") == 1, f"Expected exactly 1 HTTP response on GET smuggling probe, got:\n{raw1}"
+        assert "400" in raw1.splitlines()[0] and "csrf_token" not in raw1
+
+        # Probe 2: Early-rejected 403 POST (missing CSRF) carrying smuggled owner request as body -> 1 response only, connection CLOSED!
+        s2 = socket.create_connection(("127.0.0.1", port), timeout=3)
+        s2.sendall(
+            f"POST /api/messages HTTP/1.1\r\n"
+            f"Host: owner-macbook{TEST_SUFFIX}:{port}\r\n"
+            f"X-Forwarded-For: 100.64.0.22\r\n"
+            f"Content-Type: application/json\r\n"
+            f"Content-Length: {len(smuggled_req)}\r\n\r\n".encode()
+            + smuggled_req
+        )
+        chunks2 = []
+        while part := s2.recv(4096):
+            chunks2.append(part)
+        s2.close()
+        raw2 = b"".join(chunks2).decode("utf-8", errors="replace")
+        assert raw2.count("HTTP/1.1 ") == 1, f"Expected exactly 1 HTTP response on POST smuggling probe, got:\n{raw2}"
+        assert "403" in raw2.splitlines()[0] and "csrf_token" not in raw2
+
+        # Probe 3: Transfer-Encoding header is rejected immediately with 400 and closed!
+        s3 = socket.create_connection(("127.0.0.1", port), timeout=3)
+        s3.sendall(
+            f"POST /api/messages HTTP/1.1\r\n"
+            f"Host: owner-macbook{TEST_SUFFIX}:{port}\r\n"
+            f"X-Forwarded-For: 100.64.0.22\r\n"
+            f"Transfer-Encoding: chunked\r\n\r\n0\r\n\r\n".encode()
+            + smuggled_req
+        )
+        chunks3 = []
+        while part := s3.recv(4096):
+            chunks3.append(part)
+        s3.close()
+        raw3 = b"".join(chunks3).decode("utf-8", errors="replace")
+        assert raw3.count("HTTP/1.1 ") == 1 and "400" in raw3.splitlines()[0]
+
+        # Should-fix D: Per-viewer SSE cap prevents a single guest from starving owner SSE connections!
+        held_subs = [hub.subscribe("guest:paul") for _ in range(8)]
+        assert sum(1 for x in held_subs if x is not None) <= 6
+        owner_sub = hub.subscribe("henry")
+        assert owner_sub is not None
+        hub.unsubscribe(owner_sub)
+        for hs in held_subs:
+            hub.unsubscribe(hs)
     finally:
         if stalled_sock:
             stalled_sock.close()

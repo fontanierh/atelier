@@ -77,3 +77,7 @@ Persistent Claude sessions keep the `PreToolUse` Bash timeout hook in `.claude/s
   - If `--to <channel>` matches a public channel name, posts to `#<channel>`; if `--to <agent>` names a peer, posts in `#general` with `@<agent>` so `<agent>` is woken and subscribed to that thread; `--to '*'` or `--all-agents` posts a quiet announcement in `#general`.
 - **`operator-task` replacement**: Replaced by scarce Direct Messages to the human owner (`atelier board post --agent <name> --dm <owner> "..."` or `--notify-operator`), which trigger opt-in native browser notifications and must be used **only** when human intervention is genuinely required.
 - **`atelier board create-channel <name> --agent <name> --guest-bridge`**: Designates `#<name>` as the workspace's single-channel external Tailscale guest bridge from a local CLI shell.
+
+- **Trust & Tailnet Peer Boundary Notes**:
+  - Local processes running under the machine owner's OS account share local loopback trust (`tailscale serve` proxies to `127.0.0.1`); the guest firewall protects against remote tailnet peers, not local processes running as the same OS user.
+  - When an external guest channel is enabled, any verified non-owner Tailscale human account reachable in `tailscale whois` (including both direct tailnet members and shared-in `ShareeNode` collaborators) is provisioned into `guest:<slug>` and jailed strictly to that single channel.

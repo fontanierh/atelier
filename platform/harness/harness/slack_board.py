@@ -1909,22 +1909,6 @@ def resolve_request_caller(
         token = auth_hdr[7:].strip()
         if not hmac.compare_digest(token, local_secret):
             raise PermissionDenied("Invalid local board bearer secret")
-        if norm_headers.get("x-atelier-owner") == "1":
-            owner_row = store.ensure_owner_principal(
-                cfg.owner_handle,
-                cfg.owner_display_name,
-                tailscale_login=cfg.owner_login,
-                tailscale_user_id=cfg.owner_user_id,
-                tailnet_node="127.0.0.1 (local)",
-            )
-            return owner_row["id"], {
-                "tier": "local_agent",
-                "detected_node": "127.0.0.1 (local)",
-                "tailscale_login": cfg.owner_login,
-                "owner_login": cfg.owner_login,
-                "owner_nodes": sorted(cfg.owner_nodes),
-                "guest_jailed": False,
-            }
         raw_agent = agent_hdr or (qs.get("viewer", [""])[0] or "").strip().lower()
         if not raw_agent:
             raise PermissionDenied("Local agent must specify X-Atelier-Agent header")
@@ -1975,7 +1959,7 @@ def resolve_request_caller(
         if is_owner_account:
             # Never downgrade proxied owner requests to CSRF-exempt local_agent without Bearer local.secret!
             if agent_hdr:
-                raise PermissionDenied("Owner Tailscale proxy requests cannot set X-Atelier-Agent without local Bearer token")
+                raise PermissionDenied("Owner Tailscale proxy requests cannot set X-Atelier-Agent; local agents connect via loopback")
             owner_row = store.ensure_owner_principal(
                 cfg.owner_handle,
                 effective_display or cfg.owner_display_name,
@@ -2097,9 +2081,15 @@ def resolve_request_caller(
 class EventHub:
     """Non-blocking bounded-queue SSE pub/sub hub: slow/stalled readers are dropped without blocking posters."""
 
-    def __init__(self, max_subscribers: int = MAX_SSE_SUBSCRIBERS, queue_size: int = 64) -> None:
+    def __init__(
+        self,
+        max_subscribers: int = MAX_SSE_SUBSCRIBERS,
+        max_per_viewer: int = 6,
+        queue_size: int = 64,
+    ) -> None:
         self._lock = threading.Lock()
         self._max_subscribers = max_subscribers
+        self._max_per_viewer = max_per_viewer
         self._queue_size = queue_size
         self._subs: list[tuple[str, queue.Queue[bytes | None]]] = []
 
@@ -2108,6 +2098,9 @@ class EventHub:
         entry = (viewer_id, q)
         with self._lock:
             if len(self._subs) >= self._max_subscribers:
+                return None
+            viewer_cnt = sum(1 for vid, _ in self._subs if vid == viewer_id)
+            if viewer_cnt >= self._max_per_viewer:
                 return None
             self._subs.append(entry)
         return entry
@@ -2192,11 +2185,27 @@ def make_handler(
         def log_message(self, fmt: str, *args: Any) -> None:
             return
 
-        def _send_security_headers(self) -> None:
+        def _send_security_headers(self, *, close_conn: bool = True) -> None:
+            if close_conn:
+                self.close_connection = True
+                self.send_header("Connection", "close")
             self.send_header("X-Content-Type-Options", "nosniff")
             self.send_header("X-Frame-Options", "DENY")
             self.send_header("Referrer-Policy", "no-referrer")
             self.send_header("Content-Security-Policy", CSP_HEADER)
+
+        def _reject_framing_smuggling(self, *, allow_body: bool) -> bool:
+            if self.headers.get("Transfer-Encoding") is not None:
+                self.close_connection = True
+                self._send_json({"error": "Transfer-Encoding is not supported"}, status=400)
+                return True
+            if not allow_body:
+                cl = self.headers.get("Content-Length")
+                if cl is not None and cl.strip() != "0":
+                    self.close_connection = True
+                    self._send_json({"error": "Request body not permitted on GET/HEAD"}, status=400)
+                    return True
+            return False
 
         def _send_json(self, payload: Any, status: int = 200) -> None:
             raw = json.dumps(payload).encode("utf-8")
@@ -2246,6 +2255,9 @@ def make_handler(
                 self.wfile.write(body)
 
         def do_HEAD(self) -> None:
+            self.close_connection = True
+            if self._reject_framing_smuggling(allow_body=False):
+                return
             parsed = urllib.parse.urlparse(self.path)
             qs = urllib.parse.parse_qs(parsed.query)
             try:
@@ -2266,6 +2278,8 @@ def make_handler(
                 self.end_headers()
 
         def do_GET(self) -> None:
+            if self._reject_framing_smuggling(allow_body=False):
+                return
             parsed = urllib.parse.urlparse(self.path)
             path = parsed.path
             qs = urllib.parse.parse_qs(parsed.query)
@@ -2291,7 +2305,7 @@ def make_handler(
                 self.send_header("Cache-Control", "no-cache, no-store")
                 self.send_header("Connection", "keep-alive")
                 self.send_header("X-Accel-Buffering", "no")
-                self._send_security_headers()
+                self._send_security_headers(close_conn=False)
                 self.end_headers()
                 _, q = sub
                 try:
@@ -2342,6 +2356,9 @@ def make_handler(
                 self._send_json({"error": "Invalid request" if is_guest else str(exc)}, status=400)
 
         def do_POST(self) -> None:
+            self.close_connection = True
+            if self._reject_framing_smuggling(allow_body=True):
+                return
             parsed = urllib.parse.urlparse(self.path)
             path = parsed.path
             qs = urllib.parse.parse_qs(parsed.query)
@@ -2677,13 +2694,16 @@ def serve_board(
 
     # Blocker 6: Retry Tailscale discovery against launchd RunAtLoad races; fail closed if owner_login is missing!
     ts_cfg = discover_tailnet_config(owner_login_override=owner_login)
-    if not allow_loopback_browser and not ts_cfg.owner_login:
+    def _ts_ready(c: TailnetConfig) -> bool:
+        return bool(c.owner_login and c.host_dns and not c.host_dns.startswith("localhost."))
+
+    if not allow_loopback_browser and not _ts_ready(ts_cfg):
         for _ in range(5):
             time.sleep(1.0)
             ts_cfg = discover_tailnet_config(owner_login_override=owner_login)
-            if ts_cfg.owner_login:
+            if _ts_ready(ts_cfg):
                 break
-        if not ts_cfg.owner_login:
+        if not _ts_ready(ts_cfg):
             raise RuntimeError(
                 "Tailscale owner_login discovery failed (`tailscale status --json` unavailable and --owner-login not set); "
                 "exiting non-zero rather than serving with unverified identity."
