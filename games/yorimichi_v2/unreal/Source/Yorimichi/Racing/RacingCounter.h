@@ -1,6 +1,7 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "RacingResults.h"
 #include "RacingCounter.generated.h"
 
 class AActor;
@@ -93,7 +94,8 @@ namespace RacingCounter
 }
 
 /**
- * A player's wallet, on each player controller. The host (ARacingService) fills it, replicated to its owner only. The owner
+ * A player's wallet, on each player controller, and the result of the last race they bet on. The host (ARacingService)
+ * fills both, replicated to their owner only. The owner
  * asks the host for a bet (ServerPlaceBet) and hears the answer (ClientBetReply); offline and on the host the same call
  * runs directly.
  */
@@ -107,6 +109,8 @@ public:
     static URacingWallet* Of(const AController* Controller);
 
     const FRacingWalletState& GetWallet() const { return Wallet; }
+    /** The result of the last race this player bet on (RacingResults::Build), empty until its winner is home. */
+    const FRacingResultState& GetResult() const { return Result; }
     /** The last answer: "Bet placed.", a refusal, or that a request is waiting. */
     const FString& GetReply() const { return Reply; }
     /** Owner: asks the host for a win bet on runner Runner (FRacingNetRace::Runners index) of the race RaceKey. */
@@ -118,6 +122,7 @@ public:
 
     // ------------------------------------------------------------------ host
     void HostSet(const FRacingWalletState& Next) { if (!(Next == Wallet)) Wallet = Next; }
+    void HostSetResult(const FRacingResultState& Next) { if (!(Next == Result)) Result = Next; }
     /** At most this many requests a second are looked at, with race keys of at most MaxRaceKeyChars. */
     static constexpr int32 MaxRequestsPerSecond = 5, MaxRaceKeyChars = 32;
 
@@ -126,6 +131,7 @@ public:
 
 private:
     UPROPERTY(Replicated) FRacingWalletState Wallet;
+    UPROPERTY(Replicated) FRacingResultState Result;
     FString Reply;
     double RequestWindow = -1.;
     int32 Requests = 0;

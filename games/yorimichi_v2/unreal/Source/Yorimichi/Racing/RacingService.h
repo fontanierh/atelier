@@ -193,6 +193,8 @@ public:
     /** A player's wallet at world second Now: a ticket's outcome and payout stay hidden until its race's winner is home.
      *  It carries today's newest FRacingWalletState::MaxTickets tickets, newest first, and counts the rest. */
     static FRacingWalletState BuildWallet(const FHRWorldState& S, const FString& PlayerId, double Now);
+    /** Every connected player's display name by player id (PlayerState: the rider's name, else the session name). */
+    TMap<FString, FString> PlayerNames() const;
     /** The world as it is saved: without the guests' session players and their tickets. */
     static FHRWorldState PersistentWorld(const FHRWorldState& S);
 

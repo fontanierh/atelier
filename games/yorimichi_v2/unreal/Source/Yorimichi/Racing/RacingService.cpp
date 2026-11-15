@@ -404,6 +404,7 @@ void ARacingService::BeginPlay()
 void ARacingService::EndPlay(const EEndPlayReason::Type Reason)
 {
     if (HasAuthority() && bHasWorld) SaveNow();
+    RacingResults::Close();
     ClearRunners();
     Super::EndPlay(Reason);
 }
@@ -586,6 +587,7 @@ void ARacingService::Tick(float DeltaSeconds)
     if (!bCoursesLoaded) LoadCourses();
     if (HasAuthority() && bHasWorld) TickHost(DeltaSeconds);
     TickPresentation(DeltaSeconds);
+    RacingResults::Tick(this);
     const double GameNow = ServerTimeOf(GetWorld());
     if (GameNow >= NextReport)
     {
@@ -796,13 +798,36 @@ FHRWorldState ARacingService::PersistentWorld(const FHRWorldState& S)
     return Out;
 }
 
+TMap<FString, FString> ARacingService::PlayerNames() const
+{
+    TMap<FString, FString> Names;
+    const AGameStateBase* GS = GetWorld() ? GetWorld()->GetGameState() : nullptr;
+    if (!GS) return Names;
+    for (const APlayerState* PS : GS->PlayerArray)
+    {
+        const FString Id = PS ? PlayerIdOf(Cast<AController>(PS->GetOwner())) : FString();
+        if (Id.IsEmpty()) continue;
+        // The rider's chosen name; else the player's name in the session (offline, the machine's network name).
+        const AJapanPlayerState* JPS = Cast<AJapanPlayerState>(PS);
+        const FString Name = JPS && !JPS->RiderName.IsEmpty() ? JPS->RiderName : PS->GetPlayerName();
+        if (!Name.IsEmpty()) Names.Add(Id, Name);
+    }
+    return Names;
+}
+
 void ARacingService::RefreshWallets()
 {
     UWorld* World = GetWorld();
     if (!World || !HasAuthority() || !bHasWorld) return;
     const double Now = HostWorldSeconds();
+    const TMap<FString, FString> Names = PlayerNames();
     for (FConstPlayerControllerIterator It = World->GetPlayerControllerIterator(); It; ++It)
-        if (URacingWallet* Wallet = URacingWallet::Of(It->Get())) Wallet->HostSet(BuildWallet(State, PlayerIdOf(It->Get()), Now));
+        if (URacingWallet* Wallet = URacingWallet::Of(It->Get()))
+        {
+            const FString Id = PlayerIdOf(It->Get());
+            Wallet->HostSet(BuildWallet(State, Id, Now));
+            Wallet->HostSetResult(RacingResults::Build(State, Id, Now, Names));
+        }
 }
 
 // ------------------------------------------------------------------------------------------------------------ courses

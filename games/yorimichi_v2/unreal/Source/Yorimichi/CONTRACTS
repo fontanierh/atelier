@@ -125,7 +125,7 @@ ARacingService MUST own FHRWorldState only on authority, persist world saves ato
 with unreadable/invalid save quarantine rather than silent overwrite, register the local
 host player persistently and a remote guest, only while guest bets are on, as a session player
 ("session:" id) whose record and tickets saves exclude (PersistentWorld), and replicate only the
-compact FRacingNetState snapshot (never FHRWorldState::Seed) and each player's own wallet.
+compact FRacingNetState snapshot (never FHRWorldState::Seed), each player's own wallet and race result.
 RacingMotion::Distance, RacingGround::Pick hit selection and RacingTv::Direct camera selection
 from the snapshot, shared clock and spectator positions MUST be deterministic, with zero per-frame network traffic and no silent breed/coat/clip
 stand-ins when required assets are missing. Runner gait thresholds, play rates and seat contacts
@@ -210,6 +210,12 @@ bet MUST republish the snapshot so the odds move for every player; the window's 
 odds with the stake in the pool (HRRules::RapportOf over the snapshot's pool shares). URacingWallet MUST replicate
 COND_OwnerOnly, MUST NOT carry another player's tickets and MUST carry at most FRacingWalletState::MaxTickets of today's
 tickets, newest first, counting the rest; a settled ticket MUST show its outcome and payout only once its race's winner
-is home. The
+is home. The race results list (RacingResults::Build, URacingWallet's Result) MUST be built on the host only once the
+race's winner is home and within FRacingResultState::Window after, MUST replicate COND_OwnerOnly to a player who holds a
+ticket on that race, MUST carry at most FRacingResultState::MaxTickets of the race's tickets (the player's own first, the
+others grouped by player) and count the rest ("+N more bets"), and MUST name other players only by display name (from
+PlayerState, else the rules' player name), never by player id; it adds no save field. Its panel MUST NOT open over
+another menu or while the player is on a vehicle, seated, aboard a train or travelling; it waits until the player is free
+and is dropped once the window has passed. The
 counter MUST derive from Belmonte's tv_spots salon_paris spot, with no hardcoded fallback. Guest betting MUST stay one
 switch (racing.GuestBets, on: session-only wallets never saved; off: guests refused in English).
