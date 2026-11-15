@@ -1158,8 +1158,15 @@ export const App: React.FC = () => {
   useEffect(() => {
     refreshBootstrap(querySuffix);
     let es: EventSource | null = null;
+    let connectedOnce = false;
     const timer = window.setTimeout(() => {
       es = new EventSource(`/api/events${querySuffix}`);
+      es.onopen = () => {
+        if (connectedOnce) {
+          refreshBootstrap(querySuffix);
+        }
+        connectedOnce = true;
+      };
       es.addEventListener('sync', (rawEv: Event) => {
         try {
           const parsed: SyncEventPayload = JSON.parse((rawEv as MessageEvent).data || '{}');
@@ -1197,7 +1204,19 @@ export const App: React.FC = () => {
               }
               const nextThreads = { ...prev.threads_by_root };
               const ridKey = String(incoming.root_id || incoming.id);
-              if (nextThreads[ridKey]) {
+              if (parsed.thread_detail && incoming.root_id !== null) {
+                // Authoritative full thread snapshot from SQLite — works even for the 1st reply to a 0-reply message!
+                const chMeta = prev.channels.find((c) => c.id === cid) || parsed.thread_detail.channel;
+                nextThreads[ridKey] = {
+                  ...parsed.thread_detail,
+                  channel: {
+                    id: chMeta.id,
+                    name: chMeta.name,
+                    kind: chMeta.kind,
+                    guest_allowed: chMeta.guest_allowed,
+                  },
+                };
+              } else if (nextThreads[ridKey]) {
                 const td = nextThreads[ridKey]!;
                 if (incoming.id === td.root.id) {
                   nextThreads[ridKey] = { ...td, root: incoming };
@@ -1219,13 +1238,52 @@ export const App: React.FC = () => {
                     replies: mergedReps,
                   };
                 }
+              } else if (incoming.root_id !== null) {
+                // Fallback if parent_root is present without thread_detail: synthesize ThreadDetail immediately!
+                const fallbackRoot = parsed.parent_root || nextList.find((m) => m.id === incoming.root_id);
+                const chObj = prev.channels.find((c) => c.id === cid) || prev.channels[0];
+                if (fallbackRoot && chObj) {
+                  nextThreads[ridKey] = {
+                    channel: { id: chObj.id, name: chObj.name, kind: chObj.kind, guest_allowed: chObj.guest_allowed },
+                    root: fallbackRoot,
+                    replies: [incoming],
+                    subscribers: [{ principal_id: fallbackRoot.author_id, reason: 'starter' }],
+                  };
+                }
               }
+
+              let nextSubThreads = prev.subscribed_threads;
+              if (incoming.root_id !== null) {
+                const pRoot = parsed.parent_root || nextThreads[ridKey]?.root;
+                const involved =
+                  incoming.author_id === prev.viewer.id ||
+                  Boolean(pRoot?.subscribed_ids?.includes(prev.viewer.id)) ||
+                  prev.subscribed_threads.some((t) => t.id === incoming.root_id);
+                if (involved && pRoot) {
+                  const fullReps = nextThreads[ridKey]?.replies;
+                  const recent = fullReps
+                    ? fullReps.slice(-3)
+                    : [...(prev.subscribed_threads.find((t) => t.id === incoming.root_id)?.recent_replies || []), incoming].slice(-3);
+                  nextSubThreads = [
+                    { ...pRoot, recent_replies: recent },
+                    ...prev.subscribed_threads.filter((t) => t.id !== incoming.root_id),
+                  ];
+                }
+              }
+
               return {
                 ...prev,
                 channels_messages: { ...prev.channels_messages, [cid]: nextList },
                 threads_by_root: nextThreads,
+                subscribed_threads: nextSubThreads,
               };
             });
+
+            // Sync notifications & unread badges quietly in background when relevant
+            const curV = viewerRef.current;
+            if (curV && (incoming.root_id !== null || parsed.channel_kind === 'dm' || incoming.author_id !== curV.id)) {
+              window.setTimeout(() => refreshBootstrap(querySuffix), 120);
+            }
             return;
           }
         } catch {}
@@ -1325,13 +1383,53 @@ export const App: React.FC = () => {
     [querySuffix, boot?.csrf_token]
   );
 
-  const openThread = useCallback((rootId: number) => {
-    setOpenThreadId(rootId);
-    setStackDepth(2);
-    requestAnimationFrame(() => {
-      if (threadFeedRef.current) threadFeedRef.current.scrollTop = 0;
-    });
-  }, []);
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') {
+        refreshBootstrap(querySuffix);
+      }
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [querySuffix, refreshBootstrap]);
+
+  const openThread = useCallback(
+    (rootId: number) => {
+      setOpenThreadId(rootId);
+      setStackDepth(2);
+      requestAnimationFrame(() => {
+        if (threadFeedRef.current) threadFeedRef.current.scrollTop = 0;
+      });
+      if (rootId > 0) {
+        fetch(`/api/threads/${rootId}${querySuffix}`)
+          .then((r) => (r.ok ? r.json() : null))
+          .then((td: ThreadDetail | null) => {
+            if (!td || !td.root) return;
+            setBoot((prev) => {
+              if (!prev) return prev;
+              const chMeta = prev.channels.find((c) => c.id === td.channel.id) || td.channel;
+              return {
+                ...prev,
+                threads_by_root: {
+                  ...prev.threads_by_root,
+                  [String(td.root.id)]: {
+                    ...td,
+                    channel: {
+                      id: chMeta.id,
+                      name: chMeta.name,
+                      kind: chMeta.kind,
+                      guest_allowed: chMeta.guest_allowed,
+                    },
+                  },
+                },
+              };
+            });
+          })
+          .catch(() => {});
+      }
+    },
+    [querySuffix]
+  );
 
   const handleSelectChannelLink = useCallback(
     (slug: string) => {
@@ -1637,6 +1735,13 @@ export const App: React.FC = () => {
             subscribers: curTd?.subscribers || [{ principal_id: boot.viewer.id, reason: 'replied' }],
           },
         },
+        subscribed_threads: [
+          {
+            ...updatedRoot,
+            recent_replies: [...(curTd?.replies || []), optimisticReply].slice(-3),
+          },
+          ...prev.subscribed_threads.filter((t) => t.id !== openThreadId),
+        ],
       };
     });
 
@@ -2449,17 +2554,25 @@ export const App: React.FC = () => {
             </>
           ) : (
             <div className="slm-scroll ios-padded-top">
-              {layer1Mode === 'threads-list'
-                ? subscribed_threads.map((th) => (
+              {layer1Mode === 'threads-list' ? (
+                subscribed_threads.length === 0 ? (
+                  <div className="sl-empty-state">
+                    Threads you start, reply to, or are @mentioned in appear here.
+                  </div>
+                ) : (
+                  subscribed_threads.map((th) => (
                     <div
                       key={th.id}
                       className="sl-thread-card"
                       onClick={() => {
                         setActiveChannelId(th.channel_id);
+                        setLayer1Mode('channel');
                         openThread(th.id);
                       }}
                     >
-                      <div className="sl-thread-card-ch">#{th.channel_id}</div>
+                      <div className="sl-thread-card-ch">
+                        #{th.channel_id} · {th.reply_count} {th.reply_count === 1 ? 'reply' : 'replies'}
+                      </div>
                       <SlackMessageRow
                         msg={th}
                         principals={principals}
@@ -2472,14 +2585,32 @@ export const App: React.FC = () => {
                         onOpenSheet={handleOpenSheet}
                         inThread
                       />
+                      {(th.recent_replies || []).map((rep) => (
+                        <SlackMessageRow
+                          key={rep.id}
+                          msg={rep}
+                          principals={principals}
+                          viewer={viewer}
+                          isMobileMode={isMobileMode}
+                          approvedBranches={approvedBranches}
+                          onApproveFork={handleApproveFork}
+                          onInspectDiff={setDiffModalBranch}
+                          onToggleReaction={handleToggleReaction}
+                          onOpenSheet={handleOpenSheet}
+                          inThread
+                        />
+                      ))}
                     </div>
                   ))
-                : explorable_channels.map((ch) => (
-                    <button key={ch.id} type="button" className="slm-browse-row" onClick={() => openChannel(ch.id)}>
-                      <div className="slm-browse-name">#{ch.name}</div>
-                      <div className="slm-browse-sub">{ch.member_count} members · {ch.topic}</div>
-                    </button>
-                  ))}
+                )
+              ) : (
+                explorable_channels.map((ch) => (
+                  <button key={ch.id} type="button" className="slm-browse-row" onClick={() => openChannel(ch.id)}>
+                    <div className="slm-browse-name">#{ch.name}</div>
+                    <div className="slm-browse-sub">{ch.member_count} members · {ch.topic}</div>
+                  </button>
+                ))
+              )}
             </div>
           )}
         </div>

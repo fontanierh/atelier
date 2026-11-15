@@ -146,4 +146,5 @@ export interface SyncEventPayload {
   channel_kind?: 'public' | 'private' | 'dm';
   message?: BoardMessage;
   parent_root?: BoardMessage | null;
+  thread_detail?: ThreadDetail | null;
 }
