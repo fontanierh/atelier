@@ -148,6 +148,64 @@ def test_darwin_identity_only_treats_missing_process_as_exited(monkeypatch, erro
         assert not isinstance(failure.value, ProcessLookupError)
 
 
+def test_darwin_pwexit_teardown_waits_for_zombie_or_esrch_and_never_certifies_stuck_pwexit(monkeypatch):
+    """During cold compiles, exiting clang/ld children set P_WEXIT and shed their Mach task (EPERM)
+    for >20 ms while XNU tears down vm_map before setting SZOMB. Only SZOMB or ESRCH certifies exit."""
+    import ctypes
+    monkeypatch.setattr(memory_guard, 'DARWIN', True)
+    sleeps = []
+    monkeypatch.setattr(memory_guard.time, 'sleep', lambda d: sleeps.append(d))
+
+    def make_lib(states):
+        seq = list(states)
+        last_errno = [errno.EPERM]
+
+        def fake_rusage(pid, flavor, buf):
+            last_errno[0] = errno.EPERM
+            return -1
+
+        def fake_pidinfo(pid, flavor, arg, buf, size):
+            st, fl, rc_err = seq.pop(0) if len(seq) > 1 else seq[0]
+            if rc_err is not None:
+                last_errno[0] = rc_err
+                return 0
+            info = memory_guard._BsdShortInfo.from_address(ctypes.cast(buf, ctypes.c_void_p).value)
+            info.pid = pid
+            info.status = st
+            info.flags = fl
+            return ctypes.sizeof(memory_guard._BsdShortInfo)
+
+        monkeypatch.setattr(memory_guard.ctypes, 'get_errno', lambda: last_errno[0])
+        return SimpleNamespace(proc_pid_rusage=fake_rusage, proc_pidinfo=fake_pidinfo)
+
+    # 1. 12 polls (120 ms) of SRUN + P_WEXIT followed by SZOMB -> certified exited (None)
+    monkeypatch.setattr(memory_guard, 'LIB', make_lib([(2, memory_guard.P_WEXIT, None)] * 12 + [(memory_guard.SZOMB, memory_guard.P_WEXIT, None)]))
+    sleeps.clear()
+    assert process_tree.started(95010) is None
+    assert len(sleeps) == 12
+
+    # 2. 8 polls (80 ms) of SRUN + P_WEXIT followed by ESRCH (reaped) -> certified exited (None)
+    monkeypatch.setattr(memory_guard, 'LIB', make_lib([(2, memory_guard.P_WEXIT, None)] * 8 + [(0, 0, errno.ESRCH)]))
+    sleeps.clear()
+    assert process_tree.started(95010) is None
+    assert len(sleeps) == 8
+
+    # 3. Stuck P_WEXIT that never reaches SZOMB or ESRCH within 100 attempts -> raises PermissionError fail-closed!
+    monkeypatch.setattr(memory_guard, 'LIB', make_lib([(2, memory_guard.P_WEXIT, None)]))
+    sleeps.clear()
+    with pytest.raises(PermissionError) as stuck_err:
+        process_tree.started(95010)
+    assert stuck_err.value.errno == errno.EPERM
+    assert len(sleeps) == 99
+
+    # 4. Live process (no P_WEXIT) returning EPERM -> stops after 2 retries and raises PermissionError!
+    monkeypatch.setattr(memory_guard, 'LIB', make_lib([(2, 0, None)]))
+    sleeps.clear()
+    with pytest.raises(PermissionError):
+        process_tree.started(95010)
+    assert len(sleeps) == 2
+
+
 def test_a_guard_is_not_attached_to_a_different_process_on_the_same_pid(tmp_path):
     import os
     from atelier.harness.safety.guard import attach
