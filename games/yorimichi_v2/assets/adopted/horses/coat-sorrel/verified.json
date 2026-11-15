@@ -1,9 +1,11 @@
 {
   "asset": "adopted/horses/coat-sorrel",
-  "dependencies": {},
+  "dependencies": {
+    "adopted/horses/generator": "88c4bb68251bd14191971a9a1bacb9aeed5b516cf931ce2a95ce9a7a1dadde20"
+  },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Horses/Coats/Variants/sorrel.uasset": "b7c627770addacc4ef26a400c6287b02628016f0b9f70181b5df42cde52b1138"
+    "unreal/Content/Horses/Coats/Variants/sorrel.uasset": "cdd19e462e373593b37f6c0c1e858a7514cc89f79cbf0c77041369e004253a2b"
   },
   "kind": "editor-saved",
   "schema": 1

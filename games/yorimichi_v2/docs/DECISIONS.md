@@ -79,43 +79,9 @@ records them later without another editor run. *Rejected: reserving actor paths 
 editor dry run to predict the hashed names and fails whenever the editor names a package differently; the
 created set measured from the disk is exact by construction.
 
-## D05 — Asset rights before public upload (§4, P0 pass/stop)
+## D05 — Public repository content (updated 2026-11-15)
 
-The repository is public and Git LFS is not private storage. At the initial baseline, source records did not establish editable-redistribution rights.
-A later source or package record must retain its actual provenance and approved route. The inventory (inventory/world.md §5) sorts V2 content into three groups:
-
-1. **Public LFS allowed, per source:** a package goes to public LFS only when its own source has a recorded
-   permission for redistributing it in editable form: owner-made, AI-generated with a provenance record, or a
-   third-party license that allows it (fonts under OFL). That a source is already published in this repository is
-   not that permission, since nobody recorded checking its terms. This covers terrain, houses, props, foliage, the
-   skate pier, effects and fonts. **Third-party animation is not cleared yet:** Mixamo's terms allow its clips in a
-   game but not distributing them as files, and an editable animation package is such a file. The characters and
-   skate rider (`/Game/Cairo`, `/Game/CairoAdventure`, `/Game/Modori`, `/Game/Nox`, `/Game/Paul`, `/Game/SkateRide`,
-   `/Game/SkateMotion`; their clips are Mixamo-derived or of
-   unrecorded origin) therefore take the group 2 route until each source's permission is recorded; then a root is
-   removed from `restricted.toml` and `.gitignore` in a reviewed commit. The full port (2026-11-07) adds the same
-   way the mounts and their riders (`/Game/Horses`, `/Game/{Cairo,Modori,Nox,Paul}{Bike,Horse}`), the combat
-   characters (`/Game/FoxHunter`, `/Game/SwordTrainer`, `/Game/Wanderer`), whose animation origin is not recorded, and
-   Crater Park (`/Game/CraterPark`, group 3 below) until its license is recorded.
-2. **Restricted, never public LFS:** sounds cut from the Sonniss GDC masters (and, until cleared, the group 1
-   animation roots). Their license forbids sharing them
-   as a sound pack of their own, and the masters are fetched, not committed. These SoundWave packages go to
-   authorized restricted storage, with pinned hashes and a documented fetch. The music library stays the
-   existing pinned external release (plan §14). Mechanism: `restricted.toml` declares the roots (`/Game/Audio`,
-   `/Game/Japan/Audio` and the group 1 animation roots, Git-ignored), `restricted.lock.json` pins each file, `tools/restricted/fetch.py` pins and
-   fetches, and the content check fails on a tracked or unpinned restricted file (README, "Restricted audio").
-3. **Blocked pending the owner (now empty).** **Super Ultra Mega Park** (`assets/megapark`, W11, F26, F31) was
-   held here because its data carries retail material identifiers, a decoded vertex codec and baked lightmaps, and
-   its provenance as "Atelier's own asset library" was unverified. **Cleared 2026-11-08:** the owner granted its
-   asset permissions in full ("Mega park asset permissions fully granted", relayed on the agent board, #31124). Mega
-   Park is therefore group 1: its packages (`/Game/MegaPark`) and runtime data (`Data/megapark`) go to public LFS
-   like any other adopted content, and the full port includes its standalone level and static dressing. The
-   clearance covers the park's assets only; go-kart driving (X02) and phone streaming stay excluded. Crater Park's
-   source (`fontanierh/crater-skate-park`) is very likely the owner's own, but V2 records its license before
-   upload; until then its packages are restricted (group 2 storage), so the port plays it without uploading it.
-
-Import metadata inside packages must not keep the donor's absolute paths. The staged-package lint scan and the
-content check enforce this.
+**Owner decision (2026-11-15):** all Yorimichi V2 game content is committed to the public repository in Git LFS so a plain clone and `git lfs pull` gives the complete game; there is no private content route (`restricted.toml`, `restricted.lock.json`, and `tools/restricted/fetch.py` are removed). Go-kart driving (X02) and phone streaming (X01) stay excluded, the optional soundtrack remains the pinned external release (plan §14), and committed packages must not carry absolute personal/donor paths (`atelier lint --staged`).
 
 ## D06 — Hidamari stable stays as at baseline
 
@@ -159,8 +125,7 @@ validation records the record's bytes. Adoption records package ownership; it do
 Source recovery can replace it with a generated record and its targeted import route (D11). A finer record (a prop, a region's map) may take packages over explicitly. Adoption refuses packages another
 record owns, reports every hard reference that resolves to nothing in V2, and reports packages whose bytes name
 a home folder or private host. Those need the editor scrub before commit. Runtime data (`Content/Data`) is
-copied from the donor's staged data and committed as runtime data. The rights groups of D05 decide which
-folders are adopted publicly.
+copied from the donor's staged data and committed as runtime data.
 
 ## D09 — The desktop look is the game's own, and the island backdrop stays loaded
 

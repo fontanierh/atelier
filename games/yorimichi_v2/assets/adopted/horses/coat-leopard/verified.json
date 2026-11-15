@@ -1,9 +1,11 @@
 {
   "asset": "adopted/horses/coat-leopard",
-  "dependencies": {},
+  "dependencies": {
+    "adopted/horses/generator": "88c4bb68251bd14191971a9a1bacb9aeed5b516cf931ce2a95ce9a7a1dadde20"
+  },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Horses/Coats/Variants/leopard.uasset": "7414b43621e4da9def337dcd01d8117e2622751ca105421a575d5f8aed5b1fd3"
+    "unreal/Content/Horses/Coats/Variants/leopard.uasset": "71683957668243b78feff145a7698670f226dec3a7e019cabc1674a02c402350"
   },
   "kind": "editor-saved",
   "schema": 1

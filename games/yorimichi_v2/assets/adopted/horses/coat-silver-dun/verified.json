@@ -1,9 +1,11 @@
 {
   "asset": "adopted/horses/coat-silver-dun",
-  "dependencies": {},
+  "dependencies": {
+    "adopted/horses/generator": "88c4bb68251bd14191971a9a1bacb9aeed5b516cf931ce2a95ce9a7a1dadde20"
+  },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Horses/Coats/Variants/silver-dun.uasset": "b60eed52bdc8d1ff5661ca5b72ab17c424ded469162a10fa8578230d51f1d66f"
+    "unreal/Content/Horses/Coats/Variants/silver-dun.uasset": "1fb5836800e36e2e0cab3ec453e8985205340ba1e78f54bac59249632d04fe26"
   },
   "kind": "editor-saved",
   "schema": 1

@@ -206,7 +206,7 @@ games/yorimichi_v2/
   tools/editor/             claimed editor saves and bounded warm sessions
   tools/migrate/            selected object/region authoring and retained migration helpers
   tools/package/            package configuration and acceptance
-  tools/restricted/         pinned private-source fetch and original validation
+  tools/restricted/         donor original-source link validation and fetch
   tools/parity/             revision-bound route and comparison tools
   tools/review/             authoring handoff reports
   tools/test/               focused native checks
@@ -761,7 +761,7 @@ A final clean package is still required to establish that a milestone ships.
 | --- | --- | --- |
 | Normal build/play | V2 recipes validate and compile committed content | No automatic preparation, import, resave or cook |
 | Persistent listeners, admission and guards | Shared board and per-machine broker | Advisory messages do not grant write or render admission |
-| Versioned editable content | Git LFS and portable asset/region records | Required restricted bytes use their pinned fetch route |
+| Versioned editable content | Git LFS and portable asset/region records | All game packages are committed in public Git LFS (DECISIONS D05) |
 | Asset validation | `tools/content/check.py`, save validation and recorded output hashes | A passed content check alone is not gameplay acceptance |
 | Targeted import | `tools/import/run.py`; warm `tools/editor/session.py` | Per-job authorization/checks, final acceptance after native exit |
 | Global ownership | Existing claims service and exact LFS lock binding | Fresh bases, complete touched sets and journal recovery remain required |

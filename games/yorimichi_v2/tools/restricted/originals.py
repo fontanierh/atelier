@@ -63,6 +63,12 @@ ROUTES = {'imported', 'keyed', 'embedded', 'authored', 'reported', 'scripted'}
 ADVENTURE = 'build/yorimichi/adventure'
 ADVENTURE_SCRIPTS = 'games/yorimichi/unreal/Scripts'
 OPEN_RECORDS = ('adopted/adventure/reference', 'adopted/adventure/loose_files', 'adopted/japan/animation')
+ORIGINALS_FOLDERS = (
+    'Audio', 'Japan/Audio', 'Cairo', 'CairoAdventure', 'Modori', 'Nox', 'Paul',
+    'SkateRide', 'SkateMotion', 'Horses', 'CairoBike', 'CairoHorse', 'ModoriBike',
+    'ModoriHorse', 'NoxBike', 'NoxHorse', 'PaulBike', 'PaulHorse', 'FoxHunter',
+    'SwordTrainer', 'Wanderer', 'CraterPark',
+)
 
 
 def import_sources(data: bytes) -> list[tuple[str, str]]:
@@ -94,10 +100,9 @@ def _digest(path: Path, cache: dict) -> tuple[str, str, int]:
 
 
 def scan(game: Path, donor: Path, classes: dict[str, str], content: Path | None = None) -> dict:
-    """The links of every pinned restricted package, from its fetched bytes (`content`, default this game's
-    unreal/Content) and the donor checkout."""
-    restricted = records.load_restricted(game)
-    pinned = [rel for rel in sorted(records.load_lock(restricted)) if rel.endswith(records.PACKAGE_EXTENSIONS)]
+    """The links of every package under ORIGINALS_FOLDERS recorded in `assets/**/verified.json`, from its package
+    bytes (`content`, default this game's unreal/Content) and the donor checkout."""
+    pinned = sorted(_originals_target_packages(game))
     content, cache, problems = content or game / 'unreal' / 'Content', {}, []
     state_file = donor / CLIP_STATE
     clip_state = json.loads(state_file.read_text()) if state_file.is_file() else {'clips': {}}
@@ -259,17 +264,37 @@ def link_open(game: Path, donor: Path, content: Path | None = None) -> dict:
             'originals': pins, 'problems': problems}
 
 
+def _originals_target_packages(game: Path) -> set[str]:
+    """Content-relative paths (`Audio/X.uasset`) under ORIGINALS_FOLDERS recorded in `assets/**/verified.json`."""
+    found: set[str] = set()
+    prefix = 'unreal/Content/'
+    open_set = set(OPEN_RECORDS)
+    for path in records.record_paths(game):
+        rel_id = path.parent.relative_to(game / 'assets').as_posix()
+        if rel_id in open_set:
+            continue
+        ver = path.parent / 'verified.json'
+        if not ver.is_file():
+            continue
+        for rel in records.load_verified(ver).get('files', {}):
+            if not (rel.startswith(prefix) and rel.endswith(records.PACKAGE_EXTENSIONS)):
+                continue
+            crel = rel[len(prefix):]
+            if any(crel.startswith(folder + '/') for folder in ORIGINALS_FOLDERS):
+                found.add(crel)
+    return found
+
+
 def check(game: Path) -> list[str]:
-    """Every pinned restricted package is linked, every link is a valid route, every linked original is pinned."""
-    restricted = records.load_restricted(game)
-    pinned = {rel for rel in records.load_lock(restricted) if rel.endswith(records.PACKAGE_EXTENSIONS)}
+    """Every target package is linked, every link is a valid route, every linked original is pinned."""
+    target = _originals_target_packages(game)
     path = game / LINKS
     if not path.is_file():
-        return [f'{LINKS} is missing'] if pinned else []
+        return [f'{LINKS} is missing'] if target else []
     data = json.loads(path.read_text())
     packages, originals = data.get('packages', {}), data.get('originals', {})
-    problems = [f'{rel}: pinned but not linked' for rel in sorted(pinned - set(packages))]
-    problems += [f'{rel}: linked but not pinned' for rel in sorted(set(packages) - pinned)]
+    problems = [f'{rel}: recorded but not linked' for rel in sorted(target - set(packages))]
+    problems += [f'{rel}: linked but not recorded' for rel in sorted(set(packages) - target)]
     used = set()
     for rel, entry in sorted(packages.items()):
         route = entry.get('route')

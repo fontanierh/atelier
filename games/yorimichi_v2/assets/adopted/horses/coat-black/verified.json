@@ -1,9 +1,11 @@
 {
   "asset": "adopted/horses/coat-black",
-  "dependencies": {},
+  "dependencies": {
+    "adopted/horses/generator": "88c4bb68251bd14191971a9a1bacb9aeed5b516cf931ce2a95ce9a7a1dadde20"
+  },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Horses/Coats/Variants/black.uasset": "81983d520d719f77fbee717da3f0fa7880f02e8c7a06dd8337a8ed10226aca04"
+    "unreal/Content/Horses/Coats/Variants/black.uasset": "c25cc8f02c0f448b4accc38f2de4bfc89688f2725fc7b536e55f196cf67d4e78"
   },
   "kind": "editor-saved",
   "schema": 1

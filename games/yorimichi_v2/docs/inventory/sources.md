@@ -59,10 +59,9 @@ ownership map alone does not establish the original of an imported asset.
 
 ## Supported routes
 
-Fetch restricted packages and originals through their pinned stores; their bytes remain outside public Git:
+All Unreal game packages are committed in public Git LFS (DECISIONS D05, 2026-11-15). Donor originals remain linked in `restricted.originals.json`:
 
 ```sh
-V2_RESTRICTED_SOURCE=DIR uv run python games/yorimichi_v2/tools/restricted/fetch.py fetch
 V2_RESTRICTED_ORIGINALS=DIR uv run python games/yorimichi_v2/tools/restricted/originals.py fetch
 uv run python games/yorimichi_v2/tools/restricted/originals.py check
 ```

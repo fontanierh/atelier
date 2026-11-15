@@ -1,9 +1,11 @@
 {
   "asset": "adopted/horses/coat-seal-brown",
-  "dependencies": {},
+  "dependencies": {
+    "adopted/horses/generator": "88c4bb68251bd14191971a9a1bacb9aeed5b516cf931ce2a95ce9a7a1dadde20"
+  },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Horses/Coats/Variants/seal-brown.uasset": "98dc464ffba884b9f2e64113a8ef6f87bf6b8100eb501def5473daa6493ea56a"
+    "unreal/Content/Horses/Coats/Variants/seal-brown.uasset": "dee68f65cd04e93688e8d04851ac14eb7cd78556e768827ad67bd013fe3a0068"
   },
   "kind": "editor-saved",
   "schema": 1

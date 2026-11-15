@@ -1,5 +1,5 @@
-"""Every restricted package is linked to what it was made from: an MD5-checked imported file, the skate bundle its clip
-was keyed from, its character's mesh import, or an editor-made class; the originals are pinned and fetched verified."""
+"""Every package in the originals manifest is linked to what it was made from: an MD5-checked imported file, the skate
+bundle its clip was keyed from, its character's mesh import, or an editor-made class; the originals are pinned and fetched verified."""
 import hashlib
 import importlib.util
 import json
@@ -40,7 +40,6 @@ def tag(recorded: str, data: bytes) -> bytes:
 def world(tmp_path):
     game, donor = tmp_path / 'game', tmp_path / 'donor'
     game.mkdir()
-    shutil.copy(ROOT / 'restricted.toml', game / 'restricted.toml')
     content = game / 'unreal/Content'
     # Unreal records the source relative to the package, through whatever checkout imported it.
     write(content / ROLL, tag('../../../../../me/dev/donor/build/yorimichi/audio/skate/roll.wav', WAV))
@@ -56,9 +55,16 @@ def world(tmp_path):
         write(donor / rel, b'# importer code')
     write(donor / originals.CLIP_STATE, json.dumps({'fingerprint': 'f' * 64, 'clips': {
         'OLLIE': {'asset': '/Game/SkateRide/Clips/B0/OLLIE'}}}).encode())
-    files = {rel: {'sha256': records.sha256_file(content / rel), 'size': (content / rel).stat().st_size}
-             for rel in (ROLL, MESH, CLIP, MAT, TEX)}
-    records.write_json(game / 'restricted.lock.json', {'schema': 1, 'files': files})
+    all_five = (ROLL, MESH, CLIP, MAT, TEX)
+    outputs = ''.join(f'[[outputs]]\npackage = "/Game/{r[:-len(".uasset")]}"\n' for r in all_five)
+    write(game / 'assets/adopted/world/asset.toml', (
+        'schema = 1\nid = "adopted/world"\nkind = "adopted"\nauthority = "editor"\n'
+        f'owner = "shared/world"\n{outputs}'
+    ).encode())
+    records.write_json(game / 'assets/adopted/world/verified.json', {
+        'schema': 1, 'kind': 'editor-saved', 'asset': 'adopted/world', 'engine': '5.8.2-test',
+        'files': {f'unreal/Content/{rel}': records.sha256_file(content / rel) for rel in all_five},
+    })
     classes = {'/Game/Audio/Skate/A_Roll': 'SoundWave', '/Game/Paul/SK_Paul': 'SkeletalMesh',
                '/Game/SkateRide/Clips/B0/OLLIE': 'AnimSequence', '/Game/Paul/Materials/M_Skin': 'Material',
                '/Game/Paul/Textures/T_Paul_0': 'Texture2D'}
@@ -99,11 +105,13 @@ def test_scan_reports_an_imported_class_with_no_record_and_check_fails_on_gaps(w
     data = originals.scan(game, donor, classes)
     assert any('not editor-made' in p for p in data['problems'])
     del data['packages'][ROLL]
+    data['packages']['Audio/Skate/A_Unrecorded.uasset'] = {'route': 'authored', 'class': 'SoundCue'}
     data['problems'] = []
     data['originals']['build/yorimichi/stray.wav'] = {'sha256': '0' * 64, 'size': 1}
     records.write_json(game / originals.LINKS, data)
     problems = originals.check(game)
-    assert f'{ROLL}: pinned but not linked' in problems
+    assert f'{ROLL}: recorded but not linked' in problems
+    assert 'Audio/Skate/A_Unrecorded.uasset: linked but not recorded' in problems
     assert any('unexplained' in p for p in problems)
     assert 'build/yorimichi/stray.wav: pinned but linked by no package' in problems
 
@@ -122,8 +130,8 @@ def test_fetch_copies_each_original_only_as_its_pinned_bytes(world, tmp_path):
     assert not (game / originals.DEST / 'build/yorimichi/audio/skate/roll.wav').exists()
 
 
-def test_the_committed_links_cover_every_pinned_restricted_package():
-    # The contract on the real game: CI holds the lock and the links, never the bytes.
+def test_the_committed_links_cover_every_recorded_originals_package():
+    # The contract on the real game: CI holds the verified records and the links, never the bytes.
     assert originals.check(ROOT) == []
 
 
@@ -172,7 +180,7 @@ def test_open_adventure_packages_link_to_the_glb_report_or_script_that_makes_the
     game, donor = adventure
     found = originals.link_open(game, donor)
     packages = found['open_packages']
-    route = lambda rel: (packages[rel]['route'], packages[rel]['class'])
+    route = lambda rel: (packages[rel]['route'], packages[rel]['class'])  # noqa: E731
     assert route('Adventure/Reference/A_Reference_Idle.uasset') == ('reported', 'AnimSequence')
     assert route('Adventure/Reference/SK_Reference.uasset') == ('reported', 'SkeletalMesh')
     assert route('Adventure/Reference/Glider/SKEL_ReferenceGlider.uasset') == ('embedded', 'Skeleton')
@@ -193,9 +201,6 @@ def test_open_links_are_checked_against_their_records_and_pins(adventure):
     found = originals.link_open(game, donor)
     records.write_json(game / originals.LINKS, {'schema': 1, 'packages': {}, 'originals': found['originals'],
                                                 'open_packages': found['open_packages'], 'problems': []})
-    restricted = game / 'restricted.toml'
-    shutil.copy(ROOT / 'restricted.toml', restricted)
-    records.write_json(game / 'restricted.lock.json', {'schema': 1, 'files': {}})
     problems = originals.check(game)
     assert problems == ['Adventure/Reference/Mystery.uasset: owned by an open record but not linked']
     del found['originals']['build/yorimichi/adventure/unreal_import.json']
@@ -246,7 +251,7 @@ package = "/Game/Adventure/Reference/A_Reference_Idle"
     # The collector's mismatch check is covered above; exercise its persisted CLI result across commands here.
     monkeypatch.setattr(originals, 'link_open', lambda *args: result)
     assert originals.main(link) == 1
-    assert originals.main(scan) == 0             # this command only rescans the restricted packages
+    assert originals.main(scan) == 0             # this command only rescans the non-open packages
     saved = json.loads((game / originals.LINKS).read_text())
     assert saved['open_packages'] == opened and saved['open_problems'] == [problem]
     assert f'scan problem: {problem}' in originals.check(game)

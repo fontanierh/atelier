@@ -1,11 +1,13 @@
 {
   "asset": "adopted/craterpark/shared-textures-stone",
-  "dependencies": {},
+  "dependencies": {
+    "adopted/craterpark/materials-base": "52045b47f77a52d8afdbfa317f3edb07dde95b233c6f5af1c1a34106a26dee3e"
+  },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/CraterPark/Textures/T_CP_bowl.uasset": "f83e8b262baa113c80da6be040a0dcc6cdd87cda14a5a0f8f30e94793b496376",
-    "unreal/Content/CraterPark/Textures/T_CP_flagstone.uasset": "697e4b31f91f002552ce9fec6e4c4560a53bd59ebf306fe99fda15c5f980c6b6",
-    "unreal/Content/CraterPark/Textures/T_CP_retaining_wall.uasset": "36a72257f9854647451916528b0a843070a50f53bb48f066a22ff406f55a2806"
+    "unreal/Content/CraterPark/Textures/T_CP_bowl.uasset": "62048826a64a622a9b4620c5cdc4361377ee44f95e52fd2ed649b9732ebf6482",
+    "unreal/Content/CraterPark/Textures/T_CP_flagstone.uasset": "cbf51bfb6e5e68118b8369a192fe32194cdf12911c2e0e96b0fb1cb3dac13e97",
+    "unreal/Content/CraterPark/Textures/T_CP_retaining_wall.uasset": "af168e4b8ee8637fc6d7947fd0a5b177534f50b05a44931755c1852466af2f0b"
   },
   "kind": "editor-saved",
   "schema": 1

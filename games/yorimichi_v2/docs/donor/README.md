@@ -1,7 +1,7 @@
 # The donor V2 adopted from
 
 This is historical provenance and a recovery reference for the completed donor build. Normal V2 build/play
-uses committed packages and the pinned restricted fetch; it does not rebuild the retired original or run its
+uses committed Git LFS packages; it does not rebuild the retired original or run its
 disabled tests. Recovered sources are tracked by the V2 asset records and `restricted.originals.json`; see
 [the inventory](../INVENTORY.md) for remaining source and object work.
 

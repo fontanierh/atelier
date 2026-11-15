@@ -1,11 +1,13 @@
 {
   "asset": "adopted/craterpark/shared-textures-lacquer",
-  "dependencies": {},
+  "dependencies": {
+    "adopted/craterpark/materials-base": "52045b47f77a52d8afdbfa317f3edb07dde95b233c6f5af1c1a34106a26dee3e"
+  },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/CraterPark/Textures/T_CP_boost_magenta.uasset": "577d631dfd2ba4058bdf9aaa4d89059dce99156336b2e84009bf1126c0b3b785",
-    "unreal/Content/CraterPark/Textures/T_CP_boost_sun.uasset": "2f58f5e8276944eb9f58a95c3f70b895b3e71661659953ff4c3c8e240a36f281",
-    "unreal/Content/CraterPark/Textures/T_CP_boost_yellow.uasset": "01f2ec0c7130e47cffa3e5f6df55adb83f678d331c53213f2fcfa66c07430fbf"
+    "unreal/Content/CraterPark/Textures/T_CP_boost_magenta.uasset": "44a372b85605a938e98c55c8cc85ef60f20efdf2ae348ff7e0cc792e6838aca8",
+    "unreal/Content/CraterPark/Textures/T_CP_boost_sun.uasset": "d01469ffd3440963d78e399388b750bb3d93b02140ace64e94bd9d233d7b95b0",
+    "unreal/Content/CraterPark/Textures/T_CP_boost_yellow.uasset": "5c1112b0743ec649413822e963fce9e98b4cd068cc10b0b25ddb0a7d1915951d"
   },
   "kind": "editor-saved",
   "schema": 1

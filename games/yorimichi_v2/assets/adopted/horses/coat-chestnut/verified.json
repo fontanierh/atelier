@@ -1,9 +1,11 @@
 {
   "asset": "adopted/horses/coat-chestnut",
-  "dependencies": {},
+  "dependencies": {
+    "adopted/horses/generator": "88c4bb68251bd14191971a9a1bacb9aeed5b516cf931ce2a95ce9a7a1dadde20"
+  },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Horses/Coats/Variants/chestnut.uasset": "eca04be3e687b18c0587f2cde5f1043c377a4f44c6f4f5d492da1edef7b928b7"
+    "unreal/Content/Horses/Coats/Variants/chestnut.uasset": "a1db57ce89927eead3411be4133aa9a1fd7da4810d447606eaa9140f0430e63e"
   },
   "kind": "editor-saved",
   "schema": 1

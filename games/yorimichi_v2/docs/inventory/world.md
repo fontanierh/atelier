@@ -595,12 +595,7 @@ the Sea and SkyDome, and `InstallPark` (`JapanWorld.cpp:842-846`); or a slice-on
    license.
 3. **Suno music.** Ownership depends on the Suno plan held at generation time. The release is already public.
    Record the plan/terms or keep it in authorized storage.
-4. **Sonniss-derived one-shots** (footsteps, combat, transport and skate cues are cut from masters). Shipping
-   them inside a build is allowed. Committing standalone WAV/uasset banks to a public repo looks close to
-   "selling/sharing as they come". Keep them in restricted storage or get a ruling.
-5. **Mixamo rigs/animations** (`assets/characters/*`, `docs/MIXAMO_WORKFLOW.md`, sword-trainer manifest). Adobe
-   terms allow use in projects, not redistribution of the raw files. Public LFS of the raw FBX/GLB clips is a risk
-   (affects F01/F02 more than the world).
+4. **Audio, character, mount, skate and Crater Park packages (resolved 2026-11-15, DECISIONS D05):** committed to public Git LFS by owner decision; there is no private package route.
 6. **AI-generated meshes and textures** (Tripo, MeshAxiom, TRELLIS, gpt-image). Provenance exists. Add the
    tool-terms basis per generator, especially Tripo's output license tier.
 7. **Binary metadata.** No `/Game` packages are committed now. Any adopted donor `.uasset` will embed absolute

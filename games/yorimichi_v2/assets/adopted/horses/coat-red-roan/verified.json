@@ -1,9 +1,11 @@
 {
   "asset": "adopted/horses/coat-red-roan",
-  "dependencies": {},
+  "dependencies": {
+    "adopted/horses/generator": "88c4bb68251bd14191971a9a1bacb9aeed5b516cf931ce2a95ce9a7a1dadde20"
+  },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Horses/Coats/Variants/red-roan.uasset": "647dba5f5bbed658f53fe7e5e92731aa6638abbe16436a3a8f38515da21e8ebc"
+    "unreal/Content/Horses/Coats/Variants/red-roan.uasset": "9fa0a5dcdb8e145efe93251b5c3120e1906d3c90bd7ed057bc33d5d0dea9129d"
   },
   "kind": "editor-saved",
   "schema": 1

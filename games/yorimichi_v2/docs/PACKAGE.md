@@ -65,7 +65,7 @@ The migration is complete by owner decision; testing now checks the delivered ga
 [current inventory](INVENTORY.md), which separates implemented features, known baseline gaps and unverified playtests.
 
 1. Use an owned checkout containing `1abaab9d70` or a later main revision. Record the exact revision and any local
-   changes. Hydrate its LFS content and pinned restricted inputs through the [setup guide](../README.md#restricted-content-and-recoverable-originals).
+   changes. Hydrate its committed Git LFS content through the [setup guide](../README.md#setup).
 2. For current source testing, use normal guarded `atelier build yorimichi_v2` and `atelier play yorimichi_v2`
    from that checkout. A normal build validates and compiles; it does not regenerate the world. Follow the
    [collaboration checks](COLLABORATION_TESTS.md) only for the editing workflow being exercised.
@@ -148,20 +148,17 @@ request-timeout control.
 
 ## Prepare and build
 
-Hydrate the committed Git LFS content and fetch the pinned restricted roots first; see
-[the README](../README.md#restricted-content-and-recoverable-originals). Public Git LFS does not contain those
-private packages. The build refuses missing, stale or changed inputs rather than regenerating them.
+Hydrate the committed Git LFS content first (`git lfs install --local && git lfs pull`); see
+[the README](../README.md#setup). All game packages are committed in Git LFS. The build refuses missing, stale or changed inputs rather than regenerating them.
 
 ```sh
-V2_RESTRICTED_SOURCE=DIR uv run python games/yorimichi_v2/tools/restricted/fetch.py fetch
 uv run python games/yorimichi_v2/tools/content/check.py --full
 uv run python games/yorimichi_v2/tools/package/cook_config.py
 ATELIER_AGENT=OWNER nice -n 10 uv run atelier build yorimichi_v2 unreal.package --cook-memory-gib 20
 ```
 
 The package step repeats the full content check, validates cook configuration, and invokes UAT
-`BuildCookRun -cookall -stage -pak -package -archive`. `-cookall` includes committed content and the fetched
-restricted packages. `DirectoriesToAlwaysCook` must cover string-loaded roots; the configuration check also
+`BuildCookRun -cookall -stage -pak -package -archive`. `DirectoriesToAlwaysCook` must cover string-loaded roots; the configuration check also
 rejects missing maps, excluded feature content and a template bundle identifier. Phone booths are scenery.
 
 The Mac bundle identifier is configured in `unreal/Config/Mac/MacEngine.ini`; it is verified in the built app's

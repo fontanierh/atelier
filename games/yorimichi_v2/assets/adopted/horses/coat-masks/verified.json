@@ -1,13 +1,15 @@
 {
   "asset": "adopted/horses/coat-masks",
-  "dependencies": {},
+  "dependencies": {
+    "adopted/horses/generator": "88c4bb68251bd14191971a9a1bacb9aeed5b516cf931ce2a95ce9a7a1dadde20"
+  },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Horses/Coats/Masks/T_Coat_Overo_Mask.uasset": "b5461cf12cc43cb4f589a6d0d1998db9a1844bf6437e4f7f5cea7f689bf9e360",
-    "unreal/Content/Horses/Coats/Masks/T_Coat_Pangare_Mask.uasset": "b8ac5df1ddbce60f60006f91e7550b08a696e3ea921e6709232872b5ade7cf15",
-    "unreal/Content/Horses/Coats/Masks/T_Coat_Solid_Mask.uasset": "026680459ac1ec604ebe4d65f8a527076824b97fc78a9b687cbe9a4196730d02",
-    "unreal/Content/Horses/Coats/Masks/T_Coat_Spots_Mask.uasset": "30b67c8f8587a4003be2d3267c18a9420496f7731a0e4f4307419077c2091c49",
-    "unreal/Content/Horses/Coats/Masks/T_Coat_Tobiano_Mask.uasset": "12babd3918e854088b43eb085338b7063d5525937ef57f95474fd321c9710590"
+    "unreal/Content/Horses/Coats/Masks/T_Coat_Overo_Mask.uasset": "f1e181b47190727d041691d8ca251d5b90426f990620b8f62e4512fab03b44d7",
+    "unreal/Content/Horses/Coats/Masks/T_Coat_Pangare_Mask.uasset": "4f59a62f5dbf06dcc295bf9442b80417380515fb45f378060d609ec882e06d35",
+    "unreal/Content/Horses/Coats/Masks/T_Coat_Solid_Mask.uasset": "0e0404234c11d1e69e16af56a49bc18be27d612083116eaee1c5400f7c78ace5",
+    "unreal/Content/Horses/Coats/Masks/T_Coat_Spots_Mask.uasset": "1b4752b269e0bca0145a3f185b8a94966c2d020fa5f1df94b31e0179f9139a77",
+    "unreal/Content/Horses/Coats/Masks/T_Coat_Tobiano_Mask.uasset": "72d7e3387dd9eecd70e036f4d5f7c492dfebb8bd28dfeb6e601b3f739f3b3282"
   },
   "kind": "editor-saved",
   "schema": 1

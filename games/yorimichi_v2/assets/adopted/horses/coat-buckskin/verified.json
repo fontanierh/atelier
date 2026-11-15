@@ -1,9 +1,11 @@
 {
   "asset": "adopted/horses/coat-buckskin",
-  "dependencies": {},
+  "dependencies": {
+    "adopted/horses/generator": "88c4bb68251bd14191971a9a1bacb9aeed5b516cf931ce2a95ce9a7a1dadde20"
+  },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Horses/Coats/Variants/buckskin.uasset": "77ceb6a758703ad096049554720af8ae3edf5e64a401b54712cf481a77b3964b"
+    "unreal/Content/Horses/Coats/Variants/buckskin.uasset": "01402bff23c03afd672e9a82d11d6f01949e3939e2c2af7e2c745ae5d823b25d"
   },
   "kind": "editor-saved",
   "schema": 1

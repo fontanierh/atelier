@@ -26,6 +26,12 @@ def attrs(path: str) -> dict:
     f'{V2}/unreal/Content/__ExternalActors__/Japan/Maps/Island/0/AB/C5UDZYKFL5M0YW62JXMPIZ.uasset',
     f'{V2}/unreal/Content/Japan/Props/SM_Bench.uasset',
     f'{V2}/unreal/Content/Japan/Props/SM_Bench.ubulk',
+    f'{V2}/unreal/Content/Audio/Bike/bell_01.uasset',
+    f'{V2}/unreal/Content/Japan/Audio/Footsteps/Grass/footstep_grass_01.uasset',
+    f'{V2}/unreal/Content/SkateRide/Clips/B0/OLLIE.uasset',
+    f'{V2}/unreal/Content/CraterPark/Textures/T_CP_aggregate.uasset',
+    f'{V2}/unreal/Content/Horses/Coats/Variants/bay.uasset',
+    f'{V2}/unreal/Content/Paul/BP_Paul.uasset',
     f'{V2}/unreal/Config/DefaultEngine.ini',
     f'{V2}/assets/props/bench/asset.toml',
 ])
@@ -55,3 +61,17 @@ def test_binaries_are_lockable_lfs(suffix):
 def test_text_stays_mergeable_text(name):
     found = attrs(f'{V2}/{name}')
     assert found['filter'] == 'unspecified' and found['lockable'] == 'unspecified'
+
+
+def test_no_private_package_route_remains_and_all_22_former_roots_are_tracked():
+    v2_root = REPO / V2
+    for removed in ('restricted.toml', 'restricted.lock.json', 'tools/restricted/fetch.py'):
+        assert not (v2_root / removed).exists(), removed
+    for folder in ('Audio', 'Japan/Audio', 'Cairo', 'CairoAdventure', 'Modori', 'Nox', 'Paul',
+                   'SkateRide', 'SkateMotion', 'Horses', 'CairoBike', 'CairoHorse', 'ModoriBike',
+                   'ModoriHorse', 'NoxBike', 'NoxHorse', 'PaulBike', 'PaulHorse', 'FoxHunter',
+                   'SwordTrainer', 'Wanderer', 'CraterPark'):
+        probe = f'{V2}/unreal/Content/{folder}/Probe/A_Probe.uasset'
+        assert not ignored(probe), probe
+        found = attrs(probe)
+        assert found['filter'] == 'lfs' and found['lockable'] == 'set'
