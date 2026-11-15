@@ -44,8 +44,8 @@
 static TAutoConsoleVariable<float> CVarRacingTimeScale(TEXT("racing.TimeScale"), 1.f,
     TEXT("Racing world clock speed (1 = real time; dev only, set on the host)."));
 
-// The one switch for guests' bets (the owner has not decided): on, a guest bets from a session-only wallet of FHRPlayer's
-// starting coins that is never saved; off, only the host bets and a guest is refused.
+// The one switch for guests' bets (decided: on): a guest bets from a session-only wallet of FHRPlayer's starting coins
+// that is never saved; off, only the host bets and a guest is refused.
 static TAutoConsoleVariable<bool> CVarRacingGuestBets(TEXT("racing.GuestBets"), true,
     TEXT("Guests bet from a session-only wallet (1, default) or only the host bets (0). Read on the host."));
 
@@ -543,7 +543,9 @@ bool ARacingService::SaveNow()
     // Guests' session players and their tickets stay out of the file: they have no identity to come back with.
     bool bGuests = false;
     for (const TPair<FString, FHRPlayer>& Player : State.Players) bGuests |= RacingBets::IsSessionPlayer(Player.Key);
-    const bool bSaved = SaveWorldFile(bGuests ? PersistentWorld(State) : State, SavePath, Error);
+    bool bSaved;
+    if (bGuests) bSaved = SaveWorldFile(PersistentWorld(State), SavePath, Error);
+    else bSaved = SaveWorldFile(State, SavePath, Error);
     LastSave = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.;
     if (bSaved)
     {
