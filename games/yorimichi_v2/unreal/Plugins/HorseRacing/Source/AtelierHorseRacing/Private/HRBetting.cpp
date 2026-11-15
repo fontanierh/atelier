@@ -1,6 +1,12 @@
 #include "HRRules.h"
 
 #include "HRRandom.h"
+#include "HRSave.h"
+
+// A full book must still save and load: under HRSave's ticket bound, with room in its JSON size bound (about 200
+// characters a ticket).
+static_assert(HRRules::MaxBookTickets <= HRSave::MaxTickets && int64(HRRules::MaxBookTickets) * 200 < HRSave::MaxJsonChars / 2,
+	"the betting book must fit a saved world");
 
 // Win bets in a pari-mutuel pool per race. A simulated crowd stakes on public replays of the field (never the day's form
 // draw); every player's ticket on the race joins the same pool, so the odds move as players bet.
@@ -87,6 +93,7 @@ namespace HRRules
 			return TEXT("This horse is not declared to run.");
 		if (Stake < FBetLimits::MinStake) return FString::Printf(TEXT("Stake at least %d coin."), FBetLimits::MinStake);
 		if (Stake > P->Coins) return FString::Printf(TEXT("You have only %d coins."), P->Coins);
+		if (S.Tickets.Num() >= MaxBookTickets) return TEXT("The betting book is full for this season.");
 		return FString();
 	}
 

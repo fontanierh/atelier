@@ -284,6 +284,9 @@ namespace HRRules
 	{
 		static constexpr int32 MinStake = 1;
 	};
+	/** Tickets the world's book holds at most (tickets are kept a season): a new ticket is refused once it is full, so a
+	 *  saved world always stays within HRSave's admission (its ticket count and its JSON size). Stakes stay unlimited. */
+	inline constexpr int32 MaxBookTickets = 100000;
 	/** The pool's take, the lowest odds paid, and the share of the crowd betting at random (it keeps long shots finite). */
 	inline constexpr double Take = 0.15;
 	inline constexpr double MinRapport = 1.05;

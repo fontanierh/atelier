@@ -361,6 +361,36 @@ bool FHRBettingTest::RunTest(const FString&)
 		TestTrue(TEXT("a huge ticket still saves and loads"), HRSave::FromJson(HRTest::ToJson(W), Loaded));
 	}
 
+	// A full book: a new ticket is refused, stakes stay unlimited, and the world at the limit still saves and loads.
+	{
+		FHRWorldState W = HRRules::CreateWorld(TEXT("bet-full-book"));
+		// A host's real id is this long ("local:" and 32 hex digits): the size bound is tested with it.
+		const FString Host = TEXT("local:0123456789abcdef0123456789abcdef");
+		HRRules::AddPlayer(W, Host, TEXT("Ada"));
+		const FHRRace& R = W.Meeting.Races[0];
+		TestTrue(TEXT("a first ticket"), HRRules::PlaceBet(W, Host, R.Key, R.Entries[0].HorseId, 5).IsEmpty());
+		const FHRTicket Model = W.Tickets.Last();
+		W.Tickets.Reserve(HRRules::MaxBookTickets);
+		while (W.Tickets.Num() < HRRules::MaxBookTickets)
+		{
+			FHRTicket T = Model;
+			T.Id = FString::Printf(TEXT("bet:%d:%d"), W.T, W.Serial++);
+			W.Tickets.Add(MoveTemp(T));
+		}
+		const int32 CoinsBefore = W.Players[Host].Coins;
+		TestEqual(TEXT("a full book refuses a new ticket"), HRRules::PlaceBet(W, Host, R.Key, R.Entries[0].HorseId, 1),
+			FString(TEXT("The betting book is full for this season.")));
+		TestEqual(TEXT("a refused ticket takes no coins"), W.Players[Host].Coins, CoinsBefore);
+		TestEqual(TEXT("the book stays at its limit"), W.Tickets.Num(), HRRules::MaxBookTickets);
+		FHRWorldState Loaded;
+		FString Error;
+		const FString Json = HRTest::ToJson(W);
+		TestTrue(FString::Printf(TEXT("a world with a full book saves within the JSON bound (%d chars)"), Json.Len()), Json.Len() <= HRSave::MaxJsonChars);
+		const bool bLoaded = HRSave::FromJson(Json, Loaded, Error);
+		TestTrue(TEXT("a world with a full book loads: ") + Error, bLoaded);
+		TestEqual(TEXT("every ticket reloaded"), Loaded.Tickets.Num(), HRRules::MaxBookTickets);
+	}
+
 	// Return per coin of simple strategies over many race days (no player tickets in the pools).
 	int32 Favourite = 0, RacesSeen = 0;
 	double Staked = 0, ReturnFav = 0, ReturnSecond = 0, ReturnOutsider = 0;
