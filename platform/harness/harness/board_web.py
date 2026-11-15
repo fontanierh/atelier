@@ -16,6 +16,7 @@ def serve(args: Any) -> int:
     host = str(getattr(args, "host", "127.0.0.1") or "127.0.0.1")
     owner_login = getattr(args, "owner_login", None) or getattr(args, "allowed_user", None)
     guest_channel = getattr(args, "guest_channel", None)
+    guest_coordinators = list(getattr(args, "guest_coordinator", None) or [])
     public_origins = list(getattr(args, "public_origin", None) or [])
     db_path = getattr(args, "db", None)
     allow_loopback_browser = bool(getattr(args, "allow_loopback_browser", False))
@@ -26,6 +27,7 @@ def serve(args: Any) -> int:
         port=port,
         owner_login=owner_login,
         guest_channel=guest_channel,
+        guest_coordinators=guest_coordinators or None,
         public_origins=public_origins,
         allow_loopback_browser=allow_loopback_browser,
         seed=seed,

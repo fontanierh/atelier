@@ -222,7 +222,8 @@ def test_blocker_1_4_6_pagination_channel_upsert_and_fail_closed_startup(tmp_pat
     store.configure_guest_channel("henry", "partner-bridge")
     store.register_principal("guest:sneaky", "worker-a", "human", "guest", guest_channel_id="partner-bridge", tailscale_user_id="8888")
     store.post_message("henry", "partner-bridge", "Ping @worker-a")
-    assert store.pending_agent_wakeups("guest:sneaky") == []
+    assert store.pending_agent_wakeups("guest:sneaky", addressed_only=True) == []
+    assert [w["kind"] for w in store.pending_agent_wakeups("guest:sneaky")] == ["channel_post"]
 
     # Blocker 6: serve_board exits non-zero (RuntimeError) if Tailscale owner_login discovery is empty!
     empty_ts = TailnetConfig(".ts.net", "localhost.ts.net", "", "", "Owner", "owner", frozenset(), frozenset())
@@ -479,5 +480,167 @@ def test_live_http_stalled_sse_body_cap_and_dm_push(tmp_path: Path) -> None:
     finally:
         if stalled_sock:
             stalled_sock.close()
+        httpd.shutdown()
+        httpd.server_close()
+
+
+def test_guest_wakeups_principal_isolation_framing_and_coordinators(tmp_path: Path) -> None:
+    # 0. Verify pre-existing legacy notifications CHECK schema upgrades cleanly to allow 'channel_post'
+    import sqlite3 as _sq
+    legacy_db = tmp_path / "legacy_check.sqlite3"
+    with _sq.connect(str(legacy_db)) as raw_c:
+        raw_c.executescript(
+            """
+            CREATE TABLE principals (id TEXT PRIMARY KEY, display_name TEXT NOT NULL, kind TEXT NOT NULL, role TEXT NOT NULL, title TEXT NOT NULL DEFAULT '', tailnet_node TEXT NOT NULL DEFAULT '', stable_node_id TEXT NOT NULL DEFAULT '', tailscale_user_id TEXT NOT NULL DEFAULT '', tailscale_login TEXT NOT NULL DEFAULT '', hue TEXT NOT NULL DEFAULT 'amber', guest_channel_id TEXT, status TEXT NOT NULL DEFAULT 'active', status_text TEXT NOT NULL DEFAULT 'idle', dm_browser_notify INTEGER NOT NULL DEFAULT 0, created_at REAL NOT NULL, updated_at REAL NOT NULL);
+            CREATE TABLE channels (id TEXT PRIMARY KEY, name TEXT NOT NULL, kind TEXT NOT NULL, topic TEXT NOT NULL DEFAULT '', description TEXT NOT NULL DEFAULT '', guest_allowed INTEGER NOT NULL DEFAULT 0, archived INTEGER NOT NULL DEFAULT 0, created_by TEXT NOT NULL, created_at REAL NOT NULL);
+            CREATE TABLE notifications (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                recipient_id TEXT NOT NULL,
+                message_id INTEGER NOT NULL,
+                channel_id TEXT NOT NULL,
+                root_id INTEGER NOT NULL,
+                kind TEXT NOT NULL CHECK (kind IN ('mention', 'dm', 'thread_reply', 'guest_triage')),
+                untrusted_envelope INTEGER NOT NULL DEFAULT 0,
+                created_at REAL NOT NULL,
+                read_at REAL,
+                delivered_at REAL
+            );
+            """
+        )
+    store = SlackBoardStore(legacy_db)
+    secret = ensure_local_secret(tmp_path / "local.secret")
+
+    # 1. Default coordinators list is ['front-man'] only!
+    assert store.get_guest_coordinators() == ["front-man"]
+
+    owner = store.ensure_owner_principal("henry", "Henry Fontanier", tailscale_login="owner@example.test")
+    store.register_principal("front-man", "front-man", "agent", "worker")
+    store.register_principal("jim-macbook-1", "jim-macbook-1", "agent", "worker")
+    store.register_principal("carbon-god", "carbon-god", "agent", "worker")
+    store.configure_guest_channel(owner["id"], "fork-sync")
+
+    # Non-owner worker cannot change guest_coordinators
+    with pytest.raises(PermissionDenied):
+        store.configure_guest_coordinators("carbon-god", ["carbon-god"])
+
+    # Owner configures ['front-man', 'jim-macbook-1']
+    coords = store.configure_guest_coordinators("henry", ["front-man", "jim-macbook-1"])
+    assert coords == ["front-man", "jim-macbook-1"]
+
+    # Register two guest agents on Paul's account
+    store.register_principal("guest:paul/agent-a", "paul/agent-a", "agent", "guest", guest_channel_id="fork-sync", tailscale_user_id="1139")
+    store.register_principal("guest:paul/agent-b", "paul/agent-b", "agent", "guest", guest_channel_id="fork-sync", tailscale_user_id="1139")
+
+    # 2. Guest posts attempting to wake @carbon-god, @jim-macbook-1, and @front-man:
+    #    - front-man and jim-macbook-1 BOTH wake with untrusted_envelope == 1
+    #    - non-listed worker carbon-god gets ZERO wakeups!
+    #    - guest:paul/agent-a does NOT wake on its own post, while guest:paul/agent-b wakes via 'channel_post'!
+    g_msg = store.post_message("guest:paul/agent-a", "fork-sync", "@carbon-god @jim-macbook-1 @front-man branch ready")
+    assert store.pending_agent_wakeups("carbon-god") == []
+    fm_w = store.pending_agent_wakeups("front-man")
+    jm1_w = store.pending_agent_wakeups("jim-macbook-1")
+    assert len(fm_w) == 1 and fm_w[0]["kind"] == "guest_triage" and fm_w[0]["untrusted_envelope"] == 1
+    assert len(jm1_w) == 1 and jm1_w[0]["kind"] == "guest_triage" and jm1_w[0]["untrusted_envelope"] == 1
+    assert store.pending_agent_wakeups("guest:paul/agent-a") == []
+    ab_w = store.pending_agent_wakeups("guest:paul/agent-b")
+    assert len(ab_w) == 1 and ab_w[0]["kind"] == "channel_post"
+    assert store.pending_agent_wakeups("guest:paul/agent-b", addressed_only=True) == []
+
+    # 2b. Regression (#1 & #4): After 65 plain `channel_post` messages (exceeding LIMIT 50!) and a wildcard `@ag_nt-b` non-match,
+    #     a subsequent `@agent-b` mention MUST still be delivered immediately when `addressed_only=True`!
+    cursor_before_flood = ab_w[-1]["notif_id"]
+    for idx in range(65):
+        store.post_message("front-man", "fork-sync", f"Plain update #{idx} (note @ag_nt-b underscore must not match agent-b)")
+    assert store.pending_agent_wakeups("guest:paul/agent-b", after_notif_id=cursor_before_flood, addressed_only=True) == []
+
+    # 3. Coordinator replies in guest's thread -> guest:paul/agent-a wakes with 'thread_reply',
+    #    and @mentioning `@agent-b` by short handle wakes guest:paul/agent-b with 'mention'!
+    store.post_message("jim-macbook-1", "fork-sync", "Reviewed — @agent-b please check LODs too", root_id=g_msg["id"])
+    aa_w = store.pending_agent_wakeups("guest:paul/agent-a", addressed_only=True)
+    assert len(aa_w) == 1 and aa_w[0]["kind"] == "thread_reply"
+    ab_w2 = store.pending_agent_wakeups("guest:paul/agent-b", after_notif_id=cursor_before_flood, addressed_only=True)
+    assert len(ab_w2) == 1 and ab_w2[0]["kind"] == "mention"
+
+    # 4. Live HTTP check: a guest CANNOT read another principal's wakeups via /api/wakeups,
+    #    framing smuggling on /api/wakeups gets 400 + close, and long-poll stream cap returns 429!
+    # Also create an internal mention for front-man in #general
+    store.post_message("henry", "general", "Secret internal ping @front-man")
+
+    whois_map = {
+        "100.64.0.1": WhoisIdentity("node-owner-mac", f"owner-macbook{TEST_SUFFIX}", False, "6163001", "owner@example.test", "Henry Fontanier"),
+        "100.64.0.22": WhoisIdentity("node-paul-air", f"macbook-air{TEST_SUFFIX}", False, "1139", "paul@example.test", "Paul"),
+    }
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.bind(("127.0.0.1", 0))
+    port = sock.getsockname()[1]
+    sock.close()
+
+    hub = EventHub(max_subscribers=16, max_per_viewer=2, queue_size=8)
+    handler = make_handler(store, Path(__file__).resolve().parent.parent / "harness" / "board_web_assets", hub, local_secret=secret, port=port, ts_cfg=TEST_TS_CFG, whois_fn=whois_map.get)
+    httpd = ThreadingHTTPServer(("127.0.0.1", port), handler)
+    threading.Thread(target=httpd.serve_forever, daemon=True).start()
+    try:
+        # Guest agent-a tries ?viewer=front-man&recipient=henry -> STILL only gets guest:paul/agent-a's own wakeups!
+        c = http.client.HTTPConnection("127.0.0.1", port, timeout=5)
+        c.request(
+            "GET",
+            "/api/wakeups?after=0&timeout=0&viewer=front-man&recipient=henry",
+            headers={
+                "Host": f"owner-macbook{TEST_SUFFIX}:{port}",
+                "X-Forwarded-For": "100.64.0.22",
+                "X-Atelier-Agent": "agent-a",
+            },
+        )
+        r = c.getresponse()
+        body = json.loads(r.read().decode("utf-8"))
+        c.close()
+        assert r.status == 200
+        assert body["viewer_id"] == "guest:paul/agent-a"
+        assert "db_epoch" in body and "server_max_id" not in body
+        assert all(w["channel_id"] == "fork-sync" for w in body["wakeups"])
+        assert not any("Secret internal ping" in w["body"] for w in body["wakeups"])
+
+        # GET /api/wakeups with a body is rejected with 400 and Connection: close (1 response only!)
+        s_smug = socket.create_connection(("127.0.0.1", port), timeout=3)
+        s_smug.sendall(
+            f"GET /api/wakeups?after=0 HTTP/1.1\r\nHost: owner-macbook{TEST_SUFFIX}:{port}\r\n"
+            f"X-Forwarded-For: 100.64.0.22\r\nContent-Length: 4\r\n\r\ntest".encode()
+        )
+        raw_smug = s_smug.recv(2048).decode("utf-8", errors="replace")
+        s_smug.close()
+        assert raw_smug.count("HTTP/1.1 ") == 1 and "400" in raw_smug.splitlines()[0]
+
+        # Exceeding max_per_viewer=2 concurrent blocking long-polls returns 429 for guest while owner still gets 200!
+        assert hub.acquire_longpoll("guest:paul/agent-a") is True
+        assert hub.acquire_longpoll("guest:paul/agent-a") is True
+        c429 = http.client.HTTPConnection("127.0.0.1", port, timeout=5)
+        c429.request(
+            "GET",
+            "/api/wakeups?after=9999&timeout=1",
+            headers={
+                "Host": f"owner-macbook{TEST_SUFFIX}:{port}",
+                "X-Forwarded-For": "100.64.0.22",
+                "X-Atelier-Agent": "agent-a",
+            },
+        )
+        r429 = c429.getresponse()
+        r429.read()
+        c429.close()
+        assert r429.status == 429
+        hub.release_longpoll("guest:paul/agent-a")
+        hub.release_longpoll("guest:paul/agent-a")
+
+        # Regression (#2): One guest human spawning 14 distinct agent names is capped by max_per_guest_account and owner reserved slots!
+        hub_acct = EventHub(max_subscribers=16, max_per_viewer=6, max_per_guest_account=8, owner_reserved_slots=4, queue_size=8)
+        admitted = 0
+        for g_idx in range(14):
+            for _ in range(2):
+                if hub_acct.acquire_longpoll(f"guest:paul/bot-{g_idx}"):
+                    admitted += 1
+        assert admitted == 8
+        owner_sse = hub_acct.subscribe("henry")
+        assert owner_sse is not None
+        hub_acct.unsubscribe(owner_sse)
+    finally:
         httpd.shutdown()
         httpd.server_close()
