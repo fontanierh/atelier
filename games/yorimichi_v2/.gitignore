@@ -11,29 +11,5 @@ unreal/*_????????.uproject
 *.tmp
 # The multiplayer content manifest, written by unreal.package for the tree it cooks (tools/package/network_identity.py).
 unreal/Content/Data/Network/
-# Restricted content (restricted.toml, DECISIONS D05 group 2): never staged; pinned in restricted.lock.json and fetched.
-# A nested .gitignore takes precedence, so these win over the root re-include of unreal/Content.
-unreal/Content/Audio/
-unreal/Content/Japan/Audio/
-unreal/Content/Cairo/
-unreal/Content/CairoAdventure/
-unreal/Content/Modori/
-unreal/Content/Nox/
-unreal/Content/Paul/
-unreal/Content/SkateRide/
-unreal/Content/SkateMotion/
-unreal/Content/Horses/
-unreal/Content/CairoBike/
-unreal/Content/CairoHorse/
-unreal/Content/ModoriBike/
-unreal/Content/ModoriHorse/
-unreal/Content/NoxBike/
-unreal/Content/NoxHorse/
-unreal/Content/PaulBike/
-unreal/Content/PaulHorse/
-unreal/Content/FoxHunter/
-unreal/Content/SwordTrainer/
-unreal/Content/Wanderer/
-unreal/Content/CraterPark/
 # Restricted originals (tools/restricted/originals.py): pinned in restricted.originals.json, fetched, never staged.
 restricted-originals/

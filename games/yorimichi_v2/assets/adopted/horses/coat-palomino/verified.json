@@ -1,9 +1,11 @@
 {
   "asset": "adopted/horses/coat-palomino",
-  "dependencies": {},
+  "dependencies": {
+    "adopted/horses/generator": "88c4bb68251bd14191971a9a1bacb9aeed5b516cf931ce2a95ce9a7a1dadde20"
+  },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Horses/Coats/Variants/palomino.uasset": "521cf6d3a861967bd1fff2489777de790a5f453a81311f5e8fe4346e21ddc3fb"
+    "unreal/Content/Horses/Coats/Variants/palomino.uasset": "627ad1ea97dac5ca78c1c8dee24dc21764688ea7e8cd1241febd8a8475a8a5c1"
   },
   "kind": "editor-saved",
   "schema": 1

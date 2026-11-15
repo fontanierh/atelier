@@ -1,15 +1,17 @@
 {
   "asset": "adopted/craterpark/shared-textures-concrete",
-  "dependencies": {},
+  "dependencies": {
+    "adopted/craterpark/materials-base": "52045b47f77a52d8afdbfa317f3edb07dde95b233c6f5af1c1a34106a26dee3e"
+  },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/CraterPark/Textures/T_CP_concrete_deck.uasset": "57ccdbe16fa9faf407ff3e3b7df759d24c5dc8a1ad7887981eb101852faae211",
-    "unreal/Content/CraterPark/Textures/T_CP_concrete_edge.uasset": "8cefa5d171abd4901b86d7160ccc79761cb532ce3e3be08475ce1626a9c446a2",
-    "unreal/Content/CraterPark/Textures/T_CP_ledge.uasset": "cd16426d513bb8f55afaa26438f8017e5829dacf344a6f2e3166f19f7f5f0cea",
-    "unreal/Content/CraterPark/Textures/T_CP_planter.uasset": "e371736ca4631e63253d71d0ff161a09a842cc373d7600b99ba788150e740ce3",
-    "unreal/Content/CraterPark/Textures/T_CP_pool.uasset": "95fbb93bb68f87d1e05745047ffd99a3046c9bb3563338f2c289264123d860b1",
-    "unreal/Content/CraterPark/Textures/T_CP_side_bank.uasset": "57bf5d768927c2ff886af27316aa34e54b690713298c2ce5dfc00a3852b3d342",
-    "unreal/Content/CraterPark/Textures/T_CP_stamped.uasset": "18894414fcbfc6dce2a93c7fd6855e00d71bc7a9c3e8b0b845a0d263adcecd64"
+    "unreal/Content/CraterPark/Textures/T_CP_concrete_deck.uasset": "a688222f7644e024e727ffee27208bd7431d930a69dba3a3137ba384859819c7",
+    "unreal/Content/CraterPark/Textures/T_CP_concrete_edge.uasset": "08ab7339eb1e8c14c04b3ac56086c090a1ecf3acd6ec92a487add66c73d5fa2d",
+    "unreal/Content/CraterPark/Textures/T_CP_ledge.uasset": "fb5292358289c13d136d790e8ee1ccf3b4c3497e701628f1cc809e754cc881f2",
+    "unreal/Content/CraterPark/Textures/T_CP_planter.uasset": "37ff47919bc773cc8087ed400ac003c72ca93325a0b49685f3a6a54d6f6041c4",
+    "unreal/Content/CraterPark/Textures/T_CP_pool.uasset": "1c7b5b5c88e38840a5bdd7b2756190adecea83ff4fcac26fb36a2a83d5d4c2d6",
+    "unreal/Content/CraterPark/Textures/T_CP_side_bank.uasset": "0cea101472b480e533f87a34eaa4203766a42f6c864afc9962cb58bdf0714866",
+    "unreal/Content/CraterPark/Textures/T_CP_stamped.uasset": "84c77be354f796b0dbb7a89f18929342e66c136601b2e8e5fa223e98bfd3177a"
   },
   "kind": "editor-saved",
   "schema": 1

@@ -13,7 +13,7 @@ Writes assets/adopted/japan/{materials,textures,foliagelods,audio}/units.json.
 - FoliageLODs: one unit per tree or plant family with its LODs and crown material; sources are the family's
   generator settings (assets/foliage, assets/forest/export-parameters).
 - Audio: one unit per footstep surface bank, plus `generator` for the two loose assets. The banks are cut from licensed
-  Sonniss masters that are not in the repository (restricted route, restricted.toml): no audio is copied; the bank
+  Sonniss masters that are not in the repository (documented in restricted.originals.json): no audio is copied; the bank
   record is the pinned copy, and `generator` lists the bank, fetch and slice scripts and the licence text.
 """
 from __future__ import annotations

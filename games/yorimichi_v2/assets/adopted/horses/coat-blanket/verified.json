@@ -1,9 +1,11 @@
 {
   "asset": "adopted/horses/coat-blanket",
-  "dependencies": {},
+  "dependencies": {
+    "adopted/horses/generator": "88c4bb68251bd14191971a9a1bacb9aeed5b516cf931ce2a95ce9a7a1dadde20"
+  },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Horses/Coats/Variants/blanket.uasset": "e4add774fece1ee22e3efab4dc44868363a24a6ed52106263b916f9f8b374d44"
+    "unreal/Content/Horses/Coats/Variants/blanket.uasset": "4e2b717cb289cad1efa796e45896c807f061fd898d4661e9f2fe595401746368"
   },
   "kind": "editor-saved",
   "schema": 1

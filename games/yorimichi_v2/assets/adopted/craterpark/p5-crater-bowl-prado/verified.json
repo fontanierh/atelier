@@ -1,6 +1,8 @@
 {
   "asset": "adopted/craterpark/p5-crater-bowl-prado",
-  "dependencies": {},
+  "dependencies": {
+    "adopted/craterpark/materials-base": "52045b47f77a52d8afdbfa317f3edb07dde95b233c6f5af1c1a34106a26dee3e"
+  },
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/CraterPark/Materials/MI_CP_material_010.uasset": "e46b2e4ee17a130695be3ba40b8b5d7f5830758ca89646c31afdbd1eb906f754",
@@ -81,15 +83,15 @@
     "unreal/Content/CraterPark/Meshes/UC_CP_original_0_Piece005.uasset": "1dcb960fbc4167efe80565000a4af72b78fc368c878f913ce4c861ce74cbe42b",
     "unreal/Content/CraterPark/Meshes/UC_CP_original_1_Piece002.uasset": "36be12590f613549fe07293437295ef6aad60827d2fd44bda66b22a6168f78df",
     "unreal/Content/CraterPark/Meshes/UC_CP_original_1_Piece003.uasset": "78911940f9e50d7b6b963fdc651d2a4226161dc4ef6d4bfdbd6f1cbf5aababd8",
-    "unreal/Content/CraterPark/Textures/T_CP_concrete.uasset": "719e2e1dfe4124743ca19ac83bad9752db8dfd0ff43d9f61c36f0d2517511f81",
-    "unreal/Content/CraterPark/Textures/T_CP_material_023.uasset": "9e10ebcc91fec4b6d72fe77670c322047525beb16a4e8690783d3b912c3df5f0",
-    "unreal/Content/CraterPark/Textures/T_CP_prado_letters.uasset": "07eac862c2192f6631a8d033de1a379471a5115d54e10053549a349b42b49394",
-    "unreal/Content/CraterPark/Textures/T_CP_prado_magenta.uasset": "7a77391b2fbc718b7ba989a55004d24a5699ed15bd2a42766f8cc5c96055fbc1",
-    "unreal/Content/CraterPark/Textures/T_CP_prado_navy.uasset": "6d2dd83f586d4202d03f73e686574e946dbf81845a421e2cd6107c46fc445e0e",
-    "unreal/Content/CraterPark/Textures/T_CP_prado_orange.uasset": "df376e1cf4cd1b0d673c7ea69064abc03bbc6669a5ac16f339787f955cd69a9a",
-    "unreal/Content/CraterPark/Textures/T_CP_prado_sun.uasset": "0fc1be41b2536728ae6a9c30e400382a576cc4059f0d1de84053cb9f11ef1792",
-    "unreal/Content/CraterPark/Textures/T_CP_prado_teal.uasset": "3a4fbdd0e8a174ea5338d15a7285412a4e41c305cb7baf193d6e65f192496ef7",
-    "unreal/Content/CraterPark/Textures/T_CP_prado_yellow.uasset": "33c285331fdbc9caf8f2a768519af5ba138199b483595ea582730ca10e86646f"
+    "unreal/Content/CraterPark/Textures/T_CP_concrete.uasset": "67044215ceff52c6d1e127a7fe495f0cf7de35dd2d14ff812cc65ba811073194",
+    "unreal/Content/CraterPark/Textures/T_CP_material_023.uasset": "9a93e26cd931d650623e3aae10865fd020dbd9922ad8fcd1259bef726ecdc2b2",
+    "unreal/Content/CraterPark/Textures/T_CP_prado_letters.uasset": "a256f7d4336d4bbc96dafc642e939a24eb2200541387f37e15127545a396a60b",
+    "unreal/Content/CraterPark/Textures/T_CP_prado_magenta.uasset": "833a7ebacc15494ef6ebdcbf8b24e26b7e24530828245c5fec29752196e6f4c9",
+    "unreal/Content/CraterPark/Textures/T_CP_prado_navy.uasset": "018140482a90ef7c91223e4535e628201aa8bf74aa4f5fe7e4b9315ba90264e2",
+    "unreal/Content/CraterPark/Textures/T_CP_prado_orange.uasset": "19e043962a2412fc3b2ce309dfa1f26f8c5d7a9699bafff7769a46df55eef629",
+    "unreal/Content/CraterPark/Textures/T_CP_prado_sun.uasset": "8b7e74297ae5730a17ec4d1c7798926598904050719d7a8f555911f1e5d22688",
+    "unreal/Content/CraterPark/Textures/T_CP_prado_teal.uasset": "ccb64e6b56bd600b5cde27f0d2f196a65e134f311227069e279179290d2da306",
+    "unreal/Content/CraterPark/Textures/T_CP_prado_yellow.uasset": "01898f675ecb0778a530a974fe0b1afa6f383bc59655cb5cf885184b9a1642fb"
   },
   "kind": "editor-saved",
   "schema": 1

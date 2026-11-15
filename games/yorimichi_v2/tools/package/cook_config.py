@@ -3,8 +3,8 @@
 The packaged build cooks with `-cookall` (platform/studio/atelier/build.py, UnrealPackage), so every package under
 `unreal/Content` is cooked. That makes DirectoriesToAlwaysCook a second guarantee for assets loaded by string or path
 at run time, and this check keeps it honest against the code: every top-level `/Game` folder that a literal path in
-the source, scripts, config, live, tools or runtime data names must be covered by an always-cook entry, unless it is
-a restricted root (fetched, pinned, and checked by check.py). It also refuses an excluded feature's content (X01 phone
+the source, scripts, config, live, tools or runtime data names must be covered by an always-cook entry when present in
+`unreal/Content`. It also refuses an excluded feature's content (X01 phone
 streaming, X02 kart driving: DECISIONS and INVENTORY) anywhere in Content, names a map the game starts or travels to
 that is not committed, and a Mac bundle identifier left at the template value.
 
@@ -27,7 +27,6 @@ CONTENT = GAME / 'unreal/Content'
 DEFAULT_GAME_INI = GAME / 'unreal/Config/DefaultGame.ini'
 ENGINE_INI = GAME / 'unreal/Config/DefaultEngine.ini'
 MAC_INI = GAME / 'unreal/Config/Mac/MacEngine.ini'
-RESTRICTED = GAME / 'restricted.toml'
 BUNDLE_SECTION = '[/Script/MacTargetPlatform.XcodeProjectSettings]'   # what the Xcode build writes to Info.plist
 TEMPLATE_BUNDLE_PREFIX = 'com.YourCompany.'
 # Folders that scan for string paths must ignore: fixtures, caches and the editor's own saved state.
@@ -96,11 +95,6 @@ def content_roots(game: Path = GAME) -> set[str]:
     return {p.name for p in base.iterdir() if p.is_dir() and not p.name.startswith('__')} if base.is_dir() else set()
 
 
-def restricted_roots(game: Path = GAME) -> set[str]:
-    data = tomllib.loads((game / 'restricted.toml').read_text())
-    return {r.removeprefix('/Game/').split('/')[0] for r in data.get('roots', [])}
-
-
 def always_cook(game: Path = GAME) -> list[str]:
     return ALWAYS.findall((game / 'unreal/Config/DefaultGame.ini').read_text())
 
@@ -155,17 +149,16 @@ def problems(game: Path = GAME) -> list[Problem]:
     out: list[Problem] = []
     entries = always_cook(game)
     content = content_roots(game)
-    restricted = restricted_roots(game)
     for root, count in sorted(string_roots(game).items()):
-        if root not in content and root not in restricted:
-            out.append(Problem('WARN', 'UNKNOWN_ROOT', f'/Game/{root}', f'named {count}x but not in Content or restricted.toml'))
+        if root not in content:
+            out.append(Problem('WARN', 'UNKNOWN_ROOT', f'/Game/{root}', f'named {count}x but not in Content'))
             continue
         if not covered(root, entries):
             out.append(Problem('FAIL', 'NOT_ALWAYS_COOK', f'/Game/{root}',
                                f'loaded by path ({count}x) and not in DirectoriesToAlwaysCook; run cook_config.py --write'))
     for entry in entries:
         rel = entry.removeprefix('/Game/')
-        if not (game / 'unreal/Content' / rel).exists() and rel.split('/')[0] not in restricted:
+        if not (game / 'unreal/Content' / rel).exists():
             out.append(Problem('WARN', 'STALE_ALWAYS_COOK', entry, 'no such folder in Content'))
     for hit in excluded_hits(game):
         out.append(Problem('FAIL', 'EXCLUDED_CONTENT', f'Content/{hit}', 'excluded feature content must not be in the package'))
@@ -184,10 +177,9 @@ def render_missing(game: Path = GAME) -> list[str]:
     """DirectoriesToAlwaysCook lines for the top-level roots that are named but not covered."""
     entries = always_cook(game)
     content = content_roots(game)
-    restricted = restricted_roots(game)
     missing = []
     for root in sorted(string_roots(game)):
-        if (root in content or root in restricted) and not covered(root, entries):
+        if root in content and not covered(root, entries):
             missing.append(f'+DirectoriesToAlwaysCook=(Path="/Game/{root}")')
     return missing
 

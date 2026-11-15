@@ -1,9 +1,11 @@
 {
   "asset": "adopted/horses/coat-blue-roan",
-  "dependencies": {},
+  "dependencies": {
+    "adopted/horses/generator": "88c4bb68251bd14191971a9a1bacb9aeed5b516cf931ce2a95ce9a7a1dadde20"
+  },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Horses/Coats/Variants/blue-roan.uasset": "9a524f5e8d5b69b63830739c9d740984e369e0a2324480ec7b5505343c660ffb"
+    "unreal/Content/Horses/Coats/Variants/blue-roan.uasset": "09c5aaa495f9a2e651ea1521a3ea9db61d93705f0711c6c9b18ce7320ae83e98"
   },
   "kind": "editor-saved",
   "schema": 1

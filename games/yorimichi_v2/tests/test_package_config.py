@@ -10,7 +10,7 @@ sys.path.insert(0, str(ROOT / 'tools' / 'package'))
 import cook_config  # noqa: E402
 
 
-def make_game(tmp: Path, *, ini_entries=(), content=(), literals=(), restricted=(), maps=(), bundle='com.atelier.v2'):
+def make_game(tmp: Path, *, ini_entries=(), content=(), literals=(), maps=(), bundle='com.atelier.v2'):
     (tmp / 'unreal/Config/Mac').mkdir(parents=True)
     (tmp / 'unreal/Source').mkdir(parents=True)
     (tmp / 'unreal/Content').mkdir(parents=True)
@@ -25,7 +25,6 @@ def make_game(tmp: Path, *, ini_entries=(), content=(), literals=(), restricted=
     (tmp / 'unreal/Config/DefaultEngine.ini').write_text(
         '[/Script/EngineSettings.GameMapsSettings]\n' + ''.join(f'GameDefaultMap={m}\n' for m in maps[:1]))
     (tmp / 'game.toml').write_text('[play.play]\nargs = [' + ', '.join(f'"{m}"' for m in maps) + ']\n')
-    (tmp / 'restricted.toml').write_text('schema = 1\nroots = [' + ', '.join(f'"{r}"' for r in restricted) + ']\n')
     if bundle is not None:
         (tmp / 'unreal/Config/Mac/MacEngine.ini').write_text(
             f'[/Script/MacTargetPlatform.XcodeProjectSettings]\nBundleIdentifier={bundle}\n')
@@ -58,12 +57,6 @@ def test_string_loaded_root_must_be_always_cook(tmp_path):
     assert cook_config.render_missing(game) == ['+DirectoriesToAlwaysCook=(Path="/Game/FX")',
                                                 '+DirectoriesToAlwaysCook=(Path="/Game/Japan")',
                                                 '+DirectoriesToAlwaysCook=(Path="/Game/V2")']
-
-
-def test_restricted_root_counts_as_content_when_absent(tmp_path):
-    game = make_game(tmp_path / 'g', literals=['/Game/Audio/Combat/x.x'], restricted=['/Game/Audio'],
-                     ini_entries=['/Game/Audio'], maps=[])
-    assert not [p for p in cook_config.problems(game) if p.level == 'FAIL']
 
 
 def test_write_missing_appends_once_and_keeps_existing(tmp_path):

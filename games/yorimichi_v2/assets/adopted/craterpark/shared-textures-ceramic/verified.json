@@ -1,12 +1,14 @@
 {
   "asset": "adopted/craterpark/shared-textures-ceramic",
-  "dependencies": {},
+  "dependencies": {
+    "adopted/craterpark/materials-base": "52045b47f77a52d8afdbfa317f3edb07dde95b233c6f5af1c1a34106a26dee3e"
+  },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/CraterPark/Textures/T_CP_coping_frieze.uasset": "d9d646e8408dd1a3d259fefd68ca87fdd90e1a2bd305eb6564fe95c5a62fe353",
-    "unreal/Content/CraterPark/Textures/T_CP_coping_tile.uasset": "200b4ec1b4d450411b55e74a714b7ee32a58d07b1a99d726dc153911b8fc629c",
-    "unreal/Content/CraterPark/Textures/T_CP_tile_edge.uasset": "72aa36aec73666f19cabc8ac93b0949b8cda8fbfd2c2b76f3eb4e81b9bf497b2",
-    "unreal/Content/CraterPark/Textures/T_CP_turtle.uasset": "6761eca4485fffc89af1fb844e41e32d4f299b95a44ef60dc8b58fd7fb6a4874"
+    "unreal/Content/CraterPark/Textures/T_CP_coping_frieze.uasset": "18584c90c8e20c0f09b8a80b10cb56dafcbeeceae3aa79dcdf530158e3721949",
+    "unreal/Content/CraterPark/Textures/T_CP_coping_tile.uasset": "7e7732a280ad12422d97eaad0cd0004e562e3cb8a581beefb2c0deee4e2f150f",
+    "unreal/Content/CraterPark/Textures/T_CP_tile_edge.uasset": "f538ac0a64a7f91b2bb00d3c473ff3c384297926c7ef77f7e26b1b918d56b31f",
+    "unreal/Content/CraterPark/Textures/T_CP_turtle.uasset": "0461d08135711f46df3deac26c79ca18b15e75afbbb005b350eb70072bd25db1"
   },
   "kind": "editor-saved",
   "schema": 1

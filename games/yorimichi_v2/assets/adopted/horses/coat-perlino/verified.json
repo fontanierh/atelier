@@ -1,9 +1,11 @@
 {
   "asset": "adopted/horses/coat-perlino",
-  "dependencies": {},
+  "dependencies": {
+    "adopted/horses/generator": "88c4bb68251bd14191971a9a1bacb9aeed5b516cf931ce2a95ce9a7a1dadde20"
+  },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Horses/Coats/Variants/perlino.uasset": "5561d0f021efdc8e2bd65731ea15016d48cc5d6787e98291f6f1f369435b5d2a"
+    "unreal/Content/Horses/Coats/Variants/perlino.uasset": "b249bfb9b6baa3f8918a97e729290430e158405cc9077d28d19c6f7b2a2e02d7"
   },
   "kind": "editor-saved",
   "schema": 1

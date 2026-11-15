@@ -28,8 +28,7 @@ accepted package bytes. Neither by itself proves gameplay or that every useful i
   `tools/migrate/object_models.py` reconciles model references without re-saving unchanged actors.
 - Region claims and shared scopes still protect writes. One active claim must cover a route's complete touched
   set, including its environment companions. Keep one controller per mutable editor checkout.
-- Restricted storage is a supported editable route. `restricted.originals.json` on main links 6,768 restricted
-  packages and 124 Adventure/animation packages; do not revive the old request to locate every clip library.
+- All 6,768 formerly restricted packages are committed in public Git LFS (DECISIONS D05, 2026-11-15). `restricted.originals.json` links those 6,768 packages and 124 Adventure/animation packages to their donor inputs; do not revive the old request to locate every clip library.
 - Rendering batches may remain. Since the owner's 2026-11-10 migration closure, create a bundled object's editing
   boundary on demand for the selected edit. Before changing generated geometry, first make its generator select
   that model before unrelated construction. Terrain and scatter counts are not counts of missing objects.

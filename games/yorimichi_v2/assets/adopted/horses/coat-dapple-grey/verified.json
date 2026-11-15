@@ -1,9 +1,11 @@
 {
   "asset": "adopted/horses/coat-dapple-grey",
-  "dependencies": {},
+  "dependencies": {
+    "adopted/horses/generator": "88c4bb68251bd14191971a9a1bacb9aeed5b516cf931ce2a95ce9a7a1dadde20"
+  },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Horses/Coats/Variants/dapple-grey.uasset": "7dc623132a8cbd471a513dedcb08ea1cf19ff24a011613fad54210147f6cb61b"
+    "unreal/Content/Horses/Coats/Variants/dapple-grey.uasset": "7b7591300c5d8e75209fc13a0a0f6e47968c3642965e6278deee6d9eab78a053"
   },
   "kind": "editor-saved",
   "schema": 1

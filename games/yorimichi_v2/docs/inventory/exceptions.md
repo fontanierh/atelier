@@ -15,7 +15,7 @@ For imported content, an editor-saved package is not a substitute for the import
 
 | Earlier group | Current evidence |
 |---|---|
-| G1: restricted originals missing | Closed for the manifest's 6,768 restricted package entries: original routes and pins are merged in PRs #782/#783. Private storage remains the required route |
+| G1: restricted originals missing | Closed for the manifest's 6,768 package entries: original routes and pins are merged in PRs #782/#783, and all 6,768 packages are committed in public Git LFS (DECISIONS D05, 2026-11-15) |
 | G2: 124 Adventure/animation originals missing | Closed by PR #785: 124 `open_packages` entries, with no `open_problems` on main |
 | G4c: broad Japan model records | The 100-model Japan recovery is merged in PR #786; do not reuse the old 16-record / 52-package model backlog |
 | G5: shared map packages | A map is a legitimate editing scope. Region actors and map-level edits have different ownership; sharing one map does not make every region unfinished |

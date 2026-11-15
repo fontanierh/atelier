@@ -1,15 +1,17 @@
 {
   "asset": "adopted/craterpark/shared-textures-world",
-  "dependencies": {},
+  "dependencies": {
+    "adopted/craterpark/materials-base": "52045b47f77a52d8afdbfa317f3edb07dde95b233c6f5af1c1a34106a26dee3e"
+  },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/CraterPark/Textures/T_CP_material_024.uasset": "b96aa520311398853511c0f8fcc7969b813b1044524d02f88cab85eef2d67a00",
-    "unreal/Content/CraterPark/Textures/T_CP_material_025.uasset": "878b38bd3d4c1723552254ec0958943c3f6c6e0ee17e418b4eac5a6611b8a104",
-    "unreal/Content/CraterPark/Textures/T_CP_material_026.uasset": "5f07bebbfb2605d17d4f41de69c38e894dee36d354e8a1872f1811165608cf3c",
-    "unreal/Content/CraterPark/Textures/T_CP_material_027.uasset": "fe46ffb5923f7b8e06dd0d8502d9d41792d783708635aea1a1dee5592d24bbe6",
-    "unreal/Content/CraterPark/Textures/T_CP_material_028.uasset": "4329d4e9e6c0c0d8a67bf4cd1fa5dbfcf8e10e8952b42e95d6f60252b6fdcfd0",
-    "unreal/Content/CraterPark/Textures/T_CP_material_029.uasset": "0bc9e8c4f8eaeeb1bc32d696e82e852c79db1b44083181b77100781539ba5e7e",
-    "unreal/Content/CraterPark/Textures/T_CP_material_045.uasset": "54b7bd5b65d64a92fed9d431d6b46bebead24ce6017a22e962fd1f1b56a6cf6a"
+    "unreal/Content/CraterPark/Textures/T_CP_material_024.uasset": "aef12611dfe904bb5f6fa771548c5505c3d1aff73c419ade7fa27c640aef5440",
+    "unreal/Content/CraterPark/Textures/T_CP_material_025.uasset": "776ac7787db4b0248ec2c2853366921b6060246a037abb927aa3d17f4f0d869a",
+    "unreal/Content/CraterPark/Textures/T_CP_material_026.uasset": "bf79ac44b4c7bb3c190c7181736d67c0c5a8218405accfa8ed4dd95e5a663d69",
+    "unreal/Content/CraterPark/Textures/T_CP_material_027.uasset": "c1b6b340185c56c8ef3bf3d00bdd722e1a71bfc5965e78e59177b9141a665ba4",
+    "unreal/Content/CraterPark/Textures/T_CP_material_028.uasset": "15e01655ed24b05423aedd1eb00f42c08edfab9c8696a681dd429820481bebb1",
+    "unreal/Content/CraterPark/Textures/T_CP_material_029.uasset": "907a1cbe39d48e6fad21beba9aacb6c916bd2ba42a52b1886ba4465c83bdfbf9",
+    "unreal/Content/CraterPark/Textures/T_CP_material_045.uasset": "e38eda5fe1827df0b24490761a4a3fc72085e9fbbcacfa00f34bf243494df2cd"
   },
   "kind": "editor-saved",
   "schema": 1

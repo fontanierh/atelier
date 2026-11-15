@@ -1,6 +1,8 @@
 {
   "asset": "adopted/craterpark/p183-orange-tower-ladder-from-the-tower-deck",
-  "dependencies": {},
+  "dependencies": {
+    "adopted/craterpark/materials-base": "52045b47f77a52d8afdbfa317f3edb07dde95b233c6f5af1c1a34106a26dee3e"
+  },
   "engine": "5.8.2-56702186",
   "files": {
     "unreal/Content/CraterPark/Materials/MI_CP_material_038.uasset": "6fd28e3f59fb71ca1014ebb1344c58dd3e5f5d73fde326c5e5c56e4349aacbed",
@@ -24,10 +26,10 @@
     "unreal/Content/CraterPark/Meshes/SM_CP_original_material_041_13_16.uasset": "84128a806699a32a0f1fdee17b9edfa074e5b2a55e4cef0e7dcfe048d117f2c4",
     "unreal/Content/CraterPark/Meshes/SM_CP_original_material_045_12_16.uasset": "eee634ee25d0702672eafa7e3e2d860aff63e01a19ccecebff08e816714153da",
     "unreal/Content/CraterPark/Meshes/SM_CP_original_material_045_13_16.uasset": "96c3e7bcda3917dddb9d20df22cefcba4349e2c1f4963201e7d4cf9b749e190a",
-    "unreal/Content/CraterPark/Textures/T_CP_shrine_bell_pavilion.uasset": "dfcadd0ee881c2bf3c82731b448713dbc3521a7f1ca4c64f90422bf3e6438b5e",
-    "unreal/Content/CraterPark/Textures/T_CP_shrine_nobori.uasset": "6d7ec655308dae062d0238b1aab72830cd266dd58a06517eb676828748b00d82",
-    "unreal/Content/CraterPark/Textures/T_CP_shrine_stone_lantern.uasset": "dbc9490cf788afff0e1901e0a7a35a1d605e5d4d1348e30bbb195765311b4933",
-    "unreal/Content/CraterPark/Textures/T_CP_shrine_torii.uasset": "9e149c57650339d00569cad4bcb3334c02bfea66e48cc2d2fa771e5c2ae5178b"
+    "unreal/Content/CraterPark/Textures/T_CP_shrine_bell_pavilion.uasset": "d5ef14cbff093fcd39374d6768e04449d876497507c92b3bccb45bf89ece04f1",
+    "unreal/Content/CraterPark/Textures/T_CP_shrine_nobori.uasset": "e7ba4889f242fa83a6350e0a07bf685fbd6e4eadb0e454682922758fc0772c40",
+    "unreal/Content/CraterPark/Textures/T_CP_shrine_stone_lantern.uasset": "67debb9b97530788f6fee8301862032f600adf622e705a472b1b77ad0c520ca2",
+    "unreal/Content/CraterPark/Textures/T_CP_shrine_torii.uasset": "a180ab6184d4abc5f86d807ce12384be6ea4a4384611ffc9d35a842ad4c266eb"
   },
   "kind": "editor-saved",
   "schema": 1

@@ -1,9 +1,11 @@
 {
   "asset": "adopted/horses/coat-bay-tobiano",
-  "dependencies": {},
+  "dependencies": {
+    "adopted/horses/generator": "88c4bb68251bd14191971a9a1bacb9aeed5b516cf931ce2a95ce9a7a1dadde20"
+  },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Horses/Coats/Variants/bay-tobiano.uasset": "03534dbe5b9f88b4427c9381952ce92380d86d811f539b495f998f68a853a352"
+    "unreal/Content/Horses/Coats/Variants/bay-tobiano.uasset": "a5f101927000ec70abdf193b6525bbd370c4d0b12506f8f68e2aeedcf0d72def"
   },
   "kind": "editor-saved",
   "schema": 1

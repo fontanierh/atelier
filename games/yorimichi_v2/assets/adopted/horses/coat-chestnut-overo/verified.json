@@ -1,9 +1,11 @@
 {
   "asset": "adopted/horses/coat-chestnut-overo",
-  "dependencies": {},
+  "dependencies": {
+    "adopted/horses/generator": "88c4bb68251bd14191971a9a1bacb9aeed5b516cf931ce2a95ce9a7a1dadde20"
+  },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/Horses/Coats/Variants/chestnut-overo.uasset": "7462b78823d5bb7df64a69b81ca70b2f01b6c57dbe1bebb3878ac51af3dc19c7"
+    "unreal/Content/Horses/Coats/Variants/chestnut-overo.uasset": "e628b5c03ccbcf176176f3c7befdd649d155a8e3a76896772f28386255f69fc6"
   },
   "kind": "editor-saved",
   "schema": 1

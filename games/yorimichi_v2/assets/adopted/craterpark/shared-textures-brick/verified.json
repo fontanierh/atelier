@@ -1,12 +1,14 @@
 {
   "asset": "adopted/craterpark/shared-textures-brick",
-  "dependencies": {},
+  "dependencies": {
+    "adopted/craterpark/materials-base": "52045b47f77a52d8afdbfa317f3edb07dde95b233c6f5af1c1a34106a26dee3e"
+  },
   "engine": "5.8.2-56702186",
   "files": {
-    "unreal/Content/CraterPark/Textures/T_CP_brick_coping.uasset": "a362bd0d9f2e3022ac1f539dd3823330970ff6c16dd87c87e5156db4ad5df816",
-    "unreal/Content/CraterPark/Textures/T_CP_herringbone.uasset": "e0e510bfb254df7d65baed1207572d05f756147bb750dd2f2a484eb6593dddb3",
-    "unreal/Content/CraterPark/Textures/T_CP_paving.uasset": "3ebf52ce49af7e821983aec3a99bf77e20ae8ade195c5436438da0b4b0933e86",
-    "unreal/Content/CraterPark/Textures/T_CP_stair_brick.uasset": "3360b99467bee66f79a9e519f0f0a844e57f495c6c01162e57605d95164f8286"
+    "unreal/Content/CraterPark/Textures/T_CP_brick_coping.uasset": "4e733f449f16b2521cc0b31ba5717f6ab2c1131cd6de2e26f0f86b56d8fd7f0a",
+    "unreal/Content/CraterPark/Textures/T_CP_herringbone.uasset": "a82c60079bdaedddcde2f7b9e97882775b6c631087daefed5639f45faae70f92",
+    "unreal/Content/CraterPark/Textures/T_CP_paving.uasset": "2748d451bf30cc226ed8d9d412d08dbb4aab29d7847e33f6aa0ed0c0877e3c8d",
+    "unreal/Content/CraterPark/Textures/T_CP_stair_brick.uasset": "e1b107d1cf36e851169604f5e53c2e254246a7076da879ee74c0628f6c524bd2"
   },
   "kind": "editor-saved",
   "schema": 1

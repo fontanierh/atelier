@@ -1,8 +1,7 @@
 # Yorimichi V2
 
 The original Yorimichi island, rebuilt as an Unreal 5.8 project whose **editable content is committed** to Git LFS.
-After hydrating Git LFS and fetching the pinned restricted content, a checkout opens the game without Blender
-or a world-generation/import job. Work is split into
+After hydrating Git LFS, a checkout opens the full game without Blender, private storage, or a world-generation/import job. Work is split into
 small owned parts, so several people and agents can change different things at once. The migration design is in
 [the V2 plan](../../docs/YORIMICHI_V2_PLAN.md). Status is in [docs/INVENTORY.md](docs/INVENTORY.md), choices are in
 [docs/DECISIONS.md](docs/DECISIONS.md), and the pinned engine and tools are in [docs/TOOLCHAIN.md](docs/TOOLCHAIN.md).
@@ -39,7 +38,7 @@ This describes the existing implementation; human verification on the current pa
 | `tools/content/` | records library and the read-only content check |
 | `tools/import/` | the targeted importer |
 | `tools/review/` | the change-set report for reviews |
-| `restricted.toml`, `restricted.lock.json`, `restricted.originals.json`, `tools/restricted/` | restricted packages and recoverable originals: declared roots, pinned hashes, links and verified fetch |
+| `restricted.originals.json`, `tools/restricted/` | donor original provenance links and verified original-source fetch |
 | `tools/test/` | the native automation test runner |
 | `tools/migrate/` | selected object/region authoring, retained donor adoption and migration recovery tools |
 | `tools/editor/`, `tools/package/` | claimed editor saves and warm batches; explicit packaging and acceptance checks |
@@ -59,31 +58,18 @@ git lfs pull --include="games/yorimichi_v2/**"        # the committed content
 uv run python games/yorimichi_v2/tools/content/check.py   # is every package present, current and owned?
 ```
 
-### Restricted content and recoverable originals
+### Recoverable originals
 
-Licensed audio and the restricted animation/character/mount/Crater Park roots take the private route in
-DECISIONS D05. `restricted.toml` is the current root list; Git ignores their packages, and
-`restricted.lock.json` pins each file's SHA-256 and size. With access to the authorized restricted storage (a directory laid out like `unreal/Content`):
+All Unreal game packages under `unreal/Content` are committed directly in Git LFS (DECISIONS D05); no separate package fetch is needed after `git lfs pull`.
 
-```sh
-V2_RESTRICTED_SOURCE=DIR uv run python games/yorimichi_v2/tools/restricted/fetch.py fetch   # copy in, verified
-uv run python games/yorimichi_v2/tools/restricted/fetch.py pin   # after adoption or a claimed edit; then upload the same bytes
-```
-
-Without it these packages are absent locally, and the content check (so every build, play and package) fails with
-"fetch required". `--allow-restricted-absent` only notes it, for checkouts without restricted access that do not
-build or play. A fetch never overwrites a local file that differs from its pin.
-
-`restricted.originals.json` separately links the restricted packages and Adventure assets to recoverable
-models, textures, animation inputs and importer code. Fetch originals when editing their sources:
+`restricted.originals.json` links adopted audio, character, mount, skate and Adventure packages to their donor models, textures, animation inputs and importer code:
 
 ```sh
 uv run python games/yorimichi_v2/tools/restricted/originals.py fetch --source DIR
 uv run python games/yorimichi_v2/tools/restricted/originals.py check
 ```
 
-The package store and original-source store are different inputs. A package alone is an original only when
-it was genuinely authored in Unreal; adoption does not establish that provenance.
+A package alone is an original only when it was genuinely authored in Unreal; adoption does not establish that provenance.
 
 ### Optional music
 
