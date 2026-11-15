@@ -207,10 +207,12 @@ def remote_subscribe(
 
         existing = read_remote_cursor_state(origin, norm_agent) or {}
         cursor: int | None = existing.get("cursor") if isinstance(existing.get("cursor"), int) else None
+        db_epoch: str = str(existing.get("db_epoch") or "")
         state: dict[str, Any] = {
             "origin": origin,
             "agent": norm_agent,
             "cursor": cursor,
+            "db_epoch": db_epoch,
             "pid": os.getpid(),
             "heartbeat": time.time(),
             "stop": False,
@@ -295,19 +297,27 @@ def remote_subscribe(
                 if data.get("viewer_id"):
                     state["viewer_id"] = data["viewer_id"]
 
-                server_max = data.get("server_max_id")
+                resp_epoch = str(data.get("db_epoch") or "")
                 if cursor is None:
                     cursor = int(data.get("cursor", 0))
+                    db_epoch = resp_epoch
                     state["cursor"] = cursor
+                    state["db_epoch"] = db_epoch
                     state["heartbeat"] = time.time()
                     write_remote_cursor_state(origin, norm_agent, state)
                     continue
 
-                # If host DB was completely recreated with lower notification IDs, re-anchor safely
-                if isinstance(server_max, int) and cursor > server_max:
-                    cursor = server_max
-                    state["cursor"] = cursor
+                # If host DB was recreated from scratch (`db_epoch` changed), re-anchor cleanly via `after=-1`
+                if resp_epoch and db_epoch and resp_epoch != db_epoch:
+                    cursor = None
+                    db_epoch = resp_epoch
+                    state["cursor"] = None
+                    state["db_epoch"] = db_epoch
                     write_remote_cursor_state(origin, norm_agent, state)
+                    continue
+                if resp_epoch and not db_epoch:
+                    db_epoch = resp_epoch
+                    state["db_epoch"] = db_epoch
 
                 wakeups = data.get("wakeups") or []
                 if wakeups:

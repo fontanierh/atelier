@@ -342,33 +342,51 @@ class SlackBoardStore:
                         "INSERT OR IGNORE INTO channel_members (channel_id, principal_id, joined_at) VALUES (?, 'front-man', ?)",
                         (cid, now),
                     )
-            # Upgrade pre-existing notifications CHECK constraint to allow 'channel_post' if needed
+            # Ensure persistent random db_epoch so remote waiters detect DB resets without leaking global notification IDs
+            conn.execute(
+                "INSERT INTO workspace_settings (key, value) VALUES ('db_epoch', ?) ON CONFLICT(key) DO NOTHING",
+                (secrets.token_hex(12),),
+            )
+            # Recover any interrupted legacy table and atomically upgrade notifications CHECK constraint inside one transaction
+            has_leftover = conn.execute(
+                "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = '_notifications_legacy_check'"
+            ).fetchone()
             notif_sql_row = conn.execute(
                 "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'notifications'"
             ).fetchone()
-            if notif_sql_row and notif_sql_row["sql"] and "channel_post" not in notif_sql_row["sql"]:
-                conn.executescript(
-                    """
-                    ALTER TABLE notifications RENAME TO _notifications_legacy_check;
-                    CREATE TABLE notifications (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        recipient_id TEXT NOT NULL REFERENCES principals(id) ON DELETE CASCADE,
-                        message_id INTEGER NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
-                        channel_id TEXT NOT NULL REFERENCES channels(id) ON DELETE CASCADE,
-                        root_id INTEGER NOT NULL,
-                        kind TEXT NOT NULL CHECK (kind IN ('mention', 'dm', 'thread_reply', 'guest_triage', 'channel_post')),
-                        untrusted_envelope INTEGER NOT NULL DEFAULT 0,
-                        created_at REAL NOT NULL,
-                        read_at REAL,
-                        delivered_at REAL
-                    );
-                    INSERT INTO notifications (id, recipient_id, message_id, channel_id, root_id, kind, untrusted_envelope, created_at, read_at, delivered_at)
-                    SELECT id, recipient_id, message_id, channel_id, root_id, kind, untrusted_envelope, created_at, read_at, delivered_at
-                    FROM _notifications_legacy_check;
-                    DROP TABLE _notifications_legacy_check;
-                    CREATE INDEX IF NOT EXISTS idx_notifications_recipient ON notifications(recipient_id, id DESC);
-                    """
-                )
+            needs_check_upgrade = bool(
+                notif_sql_row and notif_sql_row["sql"] and "channel_post" not in notif_sql_row["sql"]
+            )
+            if has_leftover or needs_check_upgrade:
+                with conn:
+                    if needs_check_upgrade and not has_leftover:
+                        conn.execute("ALTER TABLE notifications RENAME TO _notifications_legacy_check")
+                    conn.execute(
+                        """
+                        CREATE TABLE IF NOT EXISTS notifications (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            recipient_id TEXT NOT NULL REFERENCES principals(id) ON DELETE CASCADE,
+                            message_id INTEGER NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+                            channel_id TEXT NOT NULL REFERENCES channels(id) ON DELETE CASCADE,
+                            root_id INTEGER NOT NULL,
+                            kind TEXT NOT NULL CHECK (kind IN ('mention', 'dm', 'thread_reply', 'guest_triage', 'channel_post')),
+                            untrusted_envelope INTEGER NOT NULL DEFAULT 0,
+                            created_at REAL NOT NULL,
+                            read_at REAL,
+                            delivered_at REAL
+                        )
+                        """
+                    )
+                    conn.execute(
+                        """
+                        INSERT OR IGNORE INTO notifications
+                        (id, recipient_id, message_id, channel_id, root_id, kind, untrusted_envelope, created_at, read_at, delivered_at)
+                        SELECT id, recipient_id, message_id, channel_id, root_id, kind, untrusted_envelope, created_at, read_at, delivered_at
+                        FROM _notifications_legacy_check
+                        """
+                    )
+                    conn.execute("DROP TABLE _notifications_legacy_check")
+                    conn.execute("CREATE INDEX IF NOT EXISTS idx_notifications_recipient ON notifications(recipient_id, id DESC)")
         try:
             os.chmod(self.db_path, 0o600)
         except OSError:
@@ -1374,6 +1392,8 @@ class SlackBoardStore:
             rec_row = conn.execute("SELECT role FROM principals WHERE id = ?", (norm_recipient,)).fetchone()
             recipient_role = str(rec_row["role"]) if rec_row else "worker"
             coordinators = set(self._get_guest_coordinators_locked(conn))
+            allow_guest_author = 1 if (recipient_role != "worker" or norm_recipient in coordinators) else 0
+            addr_flag = 1 if addressed_only else 0
             rows = conn.execute(
                 """
                 SELECT n.id AS notif_id, n.kind, n.channel_id, n.root_id, n.message_id,
@@ -1382,36 +1402,34 @@ class SlackBoardStore:
                 FROM notifications n
                 JOIN messages m ON m.id = n.message_id
                 JOIN channels c ON c.id = n.channel_id
-                WHERE n.recipient_id = ? AND n.id > ?
+                WHERE n.recipient_id = ?
+                  AND n.id > ?
+                  AND (? = 0 OR n.kind != 'channel_post')
+                  AND (? = 1 OR m.author_role != 'guest')
                 ORDER BY n.id ASC
                 LIMIT 50
                 """,
-                (norm_recipient, after_notif_id),
+                (norm_recipient, after_notif_id, addr_flag, allow_guest_author),
             ).fetchall()
             out = []
             for r in rows:
-                if addressed_only and r["kind"] == "channel_post":
-                    continue
-                if r["author_role"] == "guest":
-                    if recipient_role == "worker" and norm_recipient not in coordinators:
-                        continue
-                    item = dict(r)
-                    if recipient_role != "guest":
-                        item["untrusted_envelope"] = 1
-                    out.append(item)
-                else:
-                    out.append(dict(r))
+                item = dict(r)
+                if item["author_role"] == "guest" and recipient_role != "guest":
+                    item["untrusted_envelope"] = 1
+                out.append(item)
             return out
 
-    def max_notification_id(self, recipient_id: str | None = None) -> int:
+    def get_db_epoch(self) -> str:
         with self._lock, self._connect() as conn:
-            if recipient_id is not None:
-                row = conn.execute(
-                    "SELECT COALESCE(MAX(id), 0) AS m FROM notifications WHERE recipient_id = ?",
-                    (recipient_id.strip().lower(),),
-                ).fetchone()
-            else:
-                row = conn.execute("SELECT COALESCE(MAX(id), 0) AS m FROM notifications").fetchone()
+            row = conn.execute("SELECT value FROM workspace_settings WHERE key = 'db_epoch'").fetchone()
+            return str(row["value"]) if row else ""
+
+    def max_notification_id(self, recipient_id: str) -> int:
+        with self._lock, self._connect() as conn:
+            row = conn.execute(
+                "SELECT COALESCE(MAX(id), 0) AS m FROM notifications WHERE recipient_id = ?",
+                (recipient_id.strip().lower(),),
+            ).fetchone()
             return int(row["m"]) if row else 0
 
     def wait_for_wakeups(
@@ -1422,25 +1440,26 @@ class SlackBoardStore:
         timeout_s: float = 0.0,
         addressed_only: bool = False,
     ) -> dict[str, Any]:
+        import math as _math
         norm_viewer = viewer_id.strip().lower()
-        hold = max(0.0, min(float(timeout_s), MAX_WAKEUP_HOLD_SECONDS))
-        global_max = self.max_notification_id()
+        safe_timeout = float(timeout_s) if _math.isfinite(float(timeout_s)) else 0.0
+        hold = max(0.0, min(safe_timeout, MAX_WAKEUP_HOLD_SECONDS))
+        epoch = self.get_db_epoch()
 
-        # Initial cursor handshake (`after < 0`) -> return current max notification ID without replaying old history
+        # Initial cursor handshake (`after < 0`) -> return caller's own max notification ID & db_epoch
         if after_notif_id < 0:
             cur = self.max_notification_id(norm_viewer)
-            return {"viewer_id": norm_viewer, "cursor": cur, "server_max_id": global_max, "wakeups": []}
+            return {"viewer_id": norm_viewer, "cursor": cur, "db_epoch": epoch, "wakeups": []}
 
         deadline = time.monotonic() + hold
         while True:
             items = self.pending_agent_wakeups(norm_viewer, after_notif_id=after_notif_id, addressed_only=addressed_only)
-            global_max = self.max_notification_id()
             if items:
                 new_cur = int(items[-1]["notif_id"])
-                return {"viewer_id": norm_viewer, "cursor": new_cur, "server_max_id": global_max, "wakeups": items}
+                return {"viewer_id": norm_viewer, "cursor": new_cur, "db_epoch": epoch, "wakeups": items}
             remaining = deadline - time.monotonic()
             if remaining <= 0:
-                return {"viewer_id": norm_viewer, "cursor": after_notif_id, "server_max_id": global_max, "wakeups": []}
+                return {"viewer_id": norm_viewer, "cursor": after_notif_id, "db_epoch": epoch, "wakeups": []}
             with self._wakeup_cond:
                 self._wakeup_cond.wait(timeout=min(remaining, 2.0))
 
@@ -1537,7 +1556,7 @@ class SlackBoardStore:
             SELECT * FROM principals
             WHERE id = ?
                OR LOWER(display_name) = ?
-               OR (role = 'guest' AND guest_channel_id = ? AND id LIKE '%/' || ?)
+               OR (role = 'guest' AND guest_channel_id = ? AND INSTR(id, '/') > 0 AND SUBSTR(id, INSTR(id, '/') + 1) = ?)
             ORDER BY
                 CASE WHEN id = ? THEN 0 ELSE 1 END,
                 CASE WHEN role != 'guest' THEN 0 ELSE 1 END
@@ -2314,14 +2333,22 @@ class EventHub:
         self,
         max_subscribers: int = MAX_SSE_SUBSCRIBERS,
         max_per_viewer: int = 6,
+        max_per_guest_account: int = 12,
+        owner_reserved_slots: int = 8,
         queue_size: int = 64,
     ) -> None:
         self._lock = threading.Lock()
         self._max_subscribers = max_subscribers
         self._max_per_viewer = max_per_viewer
+        self._max_per_guest_account = max_per_guest_account
+        self._owner_reserved_slots = min(owner_reserved_slots, max(0, max_subscribers // 2))
         self._queue_size = queue_size
         self._subs: list[tuple[str, queue.Queue[bytes | None]]] = []
         self._longpolls: dict[str, int] = {}
+
+    @staticmethod
+    def _account_bucket(viewer_id: str) -> str:
+        return viewer_id.split("/", 1)[0] if viewer_id.startswith("guest:") else viewer_id
 
     def _total_active_locked(self) -> int:
         return len(self._subs) + sum(self._longpolls.values())
@@ -2329,11 +2356,27 @@ class EventHub:
     def _viewer_active_locked(self, viewer_id: str) -> int:
         return sum(1 for vid, _ in self._subs if vid == viewer_id) + self._longpolls.get(viewer_id, 0)
 
+    def _bucket_active_locked(self, bucket: str) -> int:
+        return (
+            sum(1 for vid, _ in self._subs if self._account_bucket(vid) == bucket)
+            + sum(cnt for vid, cnt in self._longpolls.items() if self._account_bucket(vid) == bucket)
+        )
+
+    def _can_admit_locked(self, viewer_id: str) -> bool:
+        total = self._total_active_locked()
+        is_guest = viewer_id.startswith("guest:")
+        global_cap = max(1, self._max_subscribers - self._owner_reserved_slots) if is_guest else self._max_subscribers
+        if total >= global_cap:
+            return False
+        if self._viewer_active_locked(viewer_id) >= self._max_per_viewer:
+            return False
+        if is_guest and self._bucket_active_locked(self._account_bucket(viewer_id)) >= self._max_per_guest_account:
+            return False
+        return True
+
     def acquire_longpoll(self, viewer_id: str) -> bool:
         with self._lock:
-            if self._total_active_locked() >= self._max_subscribers:
-                return False
-            if self._viewer_active_locked(viewer_id) >= self._max_per_viewer:
+            if not self._can_admit_locked(viewer_id):
                 return False
             self._longpolls[viewer_id] = self._longpolls.get(viewer_id, 0) + 1
             return True
@@ -2350,9 +2393,7 @@ class EventHub:
         q: queue.Queue[bytes | None] = queue.Queue(maxsize=self._queue_size)
         entry = (viewer_id, q)
         with self._lock:
-            if self._total_active_locked() >= self._max_subscribers:
-                return None
-            if self._viewer_active_locked(viewer_id) >= self._max_per_viewer:
+            if not self._can_admit_locked(viewer_id):
                 return None
             self._subs.append(entry)
         return entry

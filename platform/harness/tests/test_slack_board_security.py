@@ -546,12 +546,19 @@ def test_guest_wakeups_principal_isolation_framing_and_coordinators(tmp_path: Pa
     assert len(ab_w) == 1 and ab_w[0]["kind"] == "channel_post"
     assert store.pending_agent_wakeups("guest:paul/agent-b", addressed_only=True) == []
 
+    # 2b. Regression (#1 & #4): After 65 plain `channel_post` messages (exceeding LIMIT 50!) and a wildcard `@ag_nt-b` non-match,
+    #     a subsequent `@agent-b` mention MUST still be delivered immediately when `addressed_only=True`!
+    cursor_before_flood = ab_w[-1]["notif_id"]
+    for idx in range(65):
+        store.post_message("front-man", "fork-sync", f"Plain update #{idx} (note @ag_nt-b underscore must not match agent-b)")
+    assert store.pending_agent_wakeups("guest:paul/agent-b", after_notif_id=cursor_before_flood, addressed_only=True) == []
+
     # 3. Coordinator replies in guest's thread -> guest:paul/agent-a wakes with 'thread_reply',
     #    and @mentioning `@agent-b` by short handle wakes guest:paul/agent-b with 'mention'!
     store.post_message("jim-macbook-1", "fork-sync", "Reviewed — @agent-b please check LODs too", root_id=g_msg["id"])
-    aa_w = store.pending_agent_wakeups("guest:paul/agent-a")
+    aa_w = store.pending_agent_wakeups("guest:paul/agent-a", addressed_only=True)
     assert len(aa_w) == 1 and aa_w[0]["kind"] == "thread_reply"
-    ab_w2 = store.pending_agent_wakeups("guest:paul/agent-b", after_notif_id=ab_w[-1]["notif_id"], addressed_only=True)
+    ab_w2 = store.pending_agent_wakeups("guest:paul/agent-b", after_notif_id=cursor_before_flood, addressed_only=True)
     assert len(ab_w2) == 1 and ab_w2[0]["kind"] == "mention"
 
     # 4. Live HTTP check: a guest CANNOT read another principal's wakeups via /api/wakeups,
@@ -589,6 +596,7 @@ def test_guest_wakeups_principal_isolation_framing_and_coordinators(tmp_path: Pa
         c.close()
         assert r.status == 200
         assert body["viewer_id"] == "guest:paul/agent-a"
+        assert "db_epoch" in body and "server_max_id" not in body
         assert all(w["channel_id"] == "fork-sync" for w in body["wakeups"])
         assert not any("Secret internal ping" in w["body"] for w in body["wakeups"])
 
@@ -621,6 +629,18 @@ def test_guest_wakeups_principal_isolation_framing_and_coordinators(tmp_path: Pa
         assert r429.status == 429
         hub.release_longpoll("guest:paul/agent-a")
         hub.release_longpoll("guest:paul/agent-a")
+
+        # Regression (#2): One guest human spawning 14 distinct agent names is capped by max_per_guest_account and owner reserved slots!
+        hub_acct = EventHub(max_subscribers=16, max_per_viewer=6, max_per_guest_account=8, owner_reserved_slots=4, queue_size=8)
+        admitted = 0
+        for g_idx in range(14):
+            for _ in range(2):
+                if hub_acct.acquire_longpoll(f"guest:paul/bot-{g_idx}"):
+                    admitted += 1
+        assert admitted == 8
+        owner_sse = hub_acct.subscribe("henry")
+        assert owner_sse is not None
+        hub_acct.unsubscribe(owner_sse)
     finally:
         httpd.shutdown()
         httpd.server_close()
