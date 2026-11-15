@@ -43,6 +43,13 @@ fails and must rerun; it never receives a successful build stamp. Full admission
 that lack independent guard sessions and controller-loss monitoring; update the launching checkout. Losing the independent guard itself
 can still require the explicit administrative recovery described in the operator guide.
 
+For an aggregate-monitor exception, preserve the report-adjacent `memory-health-tree.errors.log`
+(or `<report stem>.errors.log` for a custom report name). It appends the original traceback, timestamp
+and owner/monitor identity before cleanup and keeps earlier failures across reruns, even when the current
+JSON receipt or command stdout is replaced. Logging is best effort; an absent log does not establish
+success or process exit. Include this log, the guard receipts and the launching checkout revision in
+an incident report. Frame locals are not captured; review diagnostic files before sharing them publicly.
+
 A selected request that loses its turn before execution may requeue at most twice within that same deadline.
 The launcher first proves its gate child exited, the guarded tree is empty and the request is uncharged.
 It never replays a start or treats missing timing data as proof that a child did not execute.
