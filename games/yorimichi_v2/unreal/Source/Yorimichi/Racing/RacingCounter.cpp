@@ -121,13 +121,15 @@ namespace RacingCounterUi
         const FString Result = T.Status == TEXT("won") ? FString::Printf(TEXT("won %d coins"), T.Payout)
             : T.Status == TEXT("lost") ? FString(TEXT("lost"))
             : T.Status == TEXT("refunded") ? FString::Printf(TEXT("refunded %d coins"), T.Payout)
-            : FString(TEXT("running"));
+            : FString(TEXT("pending"));
         return FString::Printf(TEXT("%s  ·  %s  ·  %d coins  ·  %s"), *T.Horse, *T.Race, T.Stake, *Result);
     }
 
-    TSharedRef<STextBlock> Text(TAttribute<FText> Value, int32 Size, const FLinearColor& Color, const char* Weight = "Regular")
+    TSharedRef<STextBlock> Text(TAttribute<FText> Value, int32 Size, const FLinearColor& Color, const char* Weight = "Regular",
+        ETextJustify::Type Justify = ETextJustify::Left)
     {
-        return SNew(STextBlock).Text(Value).Font(FCoreStyle::GetDefaultFontStyle(Weight, Size)).ColorAndOpacity(Color).AutoWrapText(true);
+        return SNew(STextBlock).Text(Value).Font(FCoreStyle::GetDefaultFontStyle(Weight, Size)).ColorAndOpacity(Color).AutoWrapText(true)
+            .Justification(Justify);
     }
 
     /** The window: the race in focus with each runner's odds, the stake (1 to 10), the bet, the wallet and the host's
@@ -167,10 +169,9 @@ namespace RacingCounterUi
         for (int32 Coins = HRRules::FBetLimits::MinStake; Coins <= HRRules::FBetLimits::MaxStake; ++Coins)
             Stakes->AddSlot().FillWidth(1.f).Padding(0, 0, 4, 0)[SNew(SButton).HAlign(HAlign_Center)
                 .OnClicked_Lambda([Choice, Coins] { Choice->Stake = Coins; return FReply::Handled(); })
-                [Text(TAttribute<FText>::CreateLambda([Choice, Coins]
-                {
-                    return FText::FromString(Choice->Stake == Coins ? FString::Printf(TEXT("[%d]"), Coins) : FString::FromInt(Coins));
-                }), 13, FLinearColor::White, "Bold")]];
+                // The picked stake is drawn in the accent colour: a bracketed "[10]" is clipped by the narrow button.
+                [SNew(STextBlock).Text(FText::AsNumber(Coins)).Font(FCoreStyle::GetDefaultFontStyle("Bold", 13))
+                    .ColorAndOpacity_Lambda([Choice, Coins, Accent] { return FSlateColor(Choice->Stake == Coins ? Accent : FLinearColor::White); })]];
         Rows->AddSlot().AutoHeight().Padding(0, 0, 0, 10)[Stakes];
         Rows->AddSlot().AutoHeight().Padding(0, 0, 0, 10)[SNew(SButton).HAlign(HAlign_Center)
             .IsEnabled_Lambda([Service, Choice] { const FRacingNetRace* Race = OpenRace(Service.Get()); return Race && Race->Runners.IsValidIndex(Choice->Runner); })
@@ -185,7 +186,7 @@ namespace RacingCounterUi
                 const FRacingNetRace* Race = OpenRace(Service.Get());
                 if (!Race || !Race->Runners.IsValidIndex(Choice->Runner)) return FText::FromString(TEXT("Place the bet"));
                 return FText::FromString(FString::Printf(TEXT("Bet %d coins on %s"), Choice->Stake, *Race->Runners[Choice->Runner].Horse));
-            }), 14, FLinearColor::White, "Bold")]];
+            }), 14, FLinearColor::White, "Bold", ETextJustify::Center)]];
         Rows->AddSlot().AutoHeight().Padding(0, 0, 0, 6)[Text(TAttribute<FText>::CreateLambda([Wallet]
         {
             if (!Wallet.IsValid()) return FText::GetEmpty();
