@@ -140,3 +140,109 @@ def test_partner_outbox_quarantines_bad_item_without_resending_prior_items(monke
     finally:
         httpd.shutdown()
         httpd.server_close()
+
+
+def test_remote_guest_board_wait_survives_host_restart(monkeypatch, tmp_path: Path) -> None:
+    import io
+    import time
+    from contextlib import redirect_stdout
+
+    host_cache = tmp_path / "host_cache"
+    guest_cache = tmp_path / "guest_cache"
+    host_cache.mkdir()
+    guest_cache.mkdir()
+
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.bind(("127.0.0.1", 0))
+    port = sock.getsockname()[1]
+    sock.close()
+    ts_host = f"host.example.test:{port}"
+
+    store = SlackBoardStore(host_cache / "slack-board.sqlite3")
+    owner_p = store.ensure_owner_principal("henry", "Henry", tailscale_login="owner@example.test")
+    store.configure_guest_channel(owner_p["id"], "fork-sync")
+    store.register_principal("jim-macbook-1", "jim-macbook-1", "agent", "worker")
+    store.configure_guest_coordinators(owner_p["id"], ["front-man", "jim-macbook-1"])
+    secret = ensure_local_secret(host_cache / "local.secret")
+    assets = Path(__file__).resolve().parent.parent / "harness" / "board_web_assets"
+    ts_cfg = TailnetConfig(
+        suffix=".example.test",
+        host_dns="host.example.test",
+        owner_user_id="6163",
+        owner_login="owner@example.test",
+        owner_display_name="Henry",
+        owner_handle="henry",
+        owner_nodes=frozenset({"host.example.test"}),
+        owner_stable_ids=frozenset({"node-host"}),
+    )
+
+    def start_host_server() -> ThreadingHTTPServer:
+        st_local = SlackBoardStore(host_cache / "slack-board.sqlite3")
+        base_h = make_handler(
+            st_local,
+            assets,
+            EventHub(),
+            local_secret=secret,
+            port=port,
+            ts_cfg=ts_cfg,
+            whois_fn=lambda ip: WhoisIdentity("node-paul", "air.example.test", False, "1139", "paul@example.test", "Paul"),
+        )
+
+        class ReuseHTTPServer(ThreadingHTTPServer):
+            allow_reuse_address = True
+
+        class ProxiedGuestHandler(base_h):
+            def parse_request(self) -> bool:
+                ok = super().parse_request()
+                if ok:
+                    self.headers.replace_header("Host", ts_host)
+                    self.headers.add_header("X-Forwarded-For", "100.64.0.55")
+                return ok
+
+        srv = ReuseHTTPServer(("127.0.0.1", port), ProxiedGuestHandler)
+        threading.Thread(target=srv.serve_forever, daemon=True).start()
+        return srv, st_local
+
+    # 1. Start host #1, connect guest, and initialize cursor via quick timeout=0.05 wait
+    monkeypatch.setenv("ATELIER_CACHE", str(guest_cache))
+    srv1, _ = start_host_server()
+    buf_c = io.StringIO()
+    with redirect_stdout(buf_c):
+        assert int(studio_cli.main(["board", "connect", f"http://127.0.0.1:{port}", "--agent", "train-agent"]) or 0) == 0
+        # Anchor initial cursor (returns 3 on immediate 0.05s timeout with no pending wakeups)
+        assert int(studio_cli.main(["board", "wait", "--agent", "train-agent", "--timeout", "0.05"]) or 0) == 3
+
+    # 2. SHUT DOWN host #1 completely (simulating host MacBook going to sleep / restarting!)
+    srv1.shutdown()
+    srv1.server_close()
+
+    wait_result: dict[str, object] = {}
+
+    def run_guest_wait() -> None:
+        out_buf = io.StringIO()
+        with redirect_stdout(out_buf):
+            rc = int(studio_cli.main(["board", "wait", "--agent", "train-agent", "--timeout", "10"]) or 0)
+        wait_result["rc"] = rc
+        wait_result["out"] = out_buf.getvalue()
+
+    wait_thread = threading.Thread(target=run_guest_wait, daemon=True)
+    wait_thread.start()
+
+    # Let guest `board wait` hit ConnectionRefusedError while host is down!
+    time.sleep(0.7)
+    assert wait_thread.is_alive(), "Guest wait should keep retrying cleanly while host is asleep/down!"
+
+    # 3. Restart host #2 on the SAME port & DB, and post a message in #fork-sync!
+    srv2, store2 = start_host_server()
+    try:
+        time.sleep(0.3)
+        store2.post_message("jim-macbook-1", "fork-sync", "Main updated to 4d827bc014 — safe to rebase your fork!")
+        wait_thread.join(timeout=8.0)
+        assert not wait_thread.is_alive(), "Guest wait did not return after host restarted and posted!"
+        assert wait_result.get("rc") == 0
+        out_str = str(wait_result.get("out") or "")
+        assert "Main updated to 4d827bc014" in out_str
+        assert "@jim-macbook-1" in out_str
+    finally:
+        srv2.shutdown()
+        srv2.server_close()

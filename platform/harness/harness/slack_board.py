@@ -43,7 +43,9 @@ from pathlib import Path
 from typing import Any
 
 TRIAGE_AGENT_ID = "front-man"
+DEFAULT_GUEST_COORDINATORS: tuple[str, ...] = (TRIAGE_AGENT_ID,)
 DEFAULT_PORT = 8890
+MAX_WAKEUP_HOLD_SECONDS = 25.0
 MAX_POST_BYTES = 262_144
 MAX_SSE_SUBSCRIBERS = 64
 MAX_META_BYTES = 4096
@@ -240,7 +242,7 @@ CREATE TABLE IF NOT EXISTS notifications (
     message_id INTEGER NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
     channel_id TEXT NOT NULL REFERENCES channels(id) ON DELETE CASCADE,
     root_id INTEGER NOT NULL,
-    kind TEXT NOT NULL CHECK (kind IN ('mention', 'dm', 'thread_reply', 'guest_triage')),
+    kind TEXT NOT NULL CHECK (kind IN ('mention', 'dm', 'thread_reply', 'guest_triage', 'channel_post')),
     untrusted_envelope INTEGER NOT NULL DEFAULT 0,
     created_at REAL NOT NULL,
     read_at REAL,
@@ -298,6 +300,7 @@ class SlackBoardStore:
         self.db_path = Path(db_path) if db_path is not None else default_db_path()
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self._lock = threading.RLock()
+        self._wakeup_cond = threading.Condition()
         self._init_db()
 
     def _connect(self) -> sqlite3.Connection:
@@ -339,6 +342,33 @@ class SlackBoardStore:
                         "INSERT OR IGNORE INTO channel_members (channel_id, principal_id, joined_at) VALUES (?, 'front-man', ?)",
                         (cid, now),
                     )
+            # Upgrade pre-existing notifications CHECK constraint to allow 'channel_post' if needed
+            notif_sql_row = conn.execute(
+                "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'notifications'"
+            ).fetchone()
+            if notif_sql_row and notif_sql_row["sql"] and "channel_post" not in notif_sql_row["sql"]:
+                conn.executescript(
+                    """
+                    ALTER TABLE notifications RENAME TO _notifications_legacy_check;
+                    CREATE TABLE notifications (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        recipient_id TEXT NOT NULL REFERENCES principals(id) ON DELETE CASCADE,
+                        message_id INTEGER NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+                        channel_id TEXT NOT NULL REFERENCES channels(id) ON DELETE CASCADE,
+                        root_id INTEGER NOT NULL,
+                        kind TEXT NOT NULL CHECK (kind IN ('mention', 'dm', 'thread_reply', 'guest_triage', 'channel_post')),
+                        untrusted_envelope INTEGER NOT NULL DEFAULT 0,
+                        created_at REAL NOT NULL,
+                        read_at REAL,
+                        delivered_at REAL
+                    );
+                    INSERT INTO notifications (id, recipient_id, message_id, channel_id, root_id, kind, untrusted_envelope, created_at, read_at, delivered_at)
+                    SELECT id, recipient_id, message_id, channel_id, root_id, kind, untrusted_envelope, created_at, read_at, delivered_at
+                    FROM _notifications_legacy_check;
+                    DROP TABLE _notifications_legacy_check;
+                    CREATE INDEX IF NOT EXISTS idx_notifications_recipient ON notifications(recipient_id, id DESC);
+                    """
+                )
         try:
             os.chmod(self.db_path, 0o600)
         except OSError:
@@ -523,11 +553,12 @@ class SlackBoardStore:
                     (guest_channel_id, norm_id, now),
                 )
             else:
+                coordinators = set(self._get_guest_coordinators_locked(conn))
                 pub_rows = conn.execute(
                     "SELECT id, guest_allowed FROM channels WHERE kind = 'public' AND archived = 0"
                 ).fetchall()
                 for ch in pub_rows:
-                    if not ch["guest_allowed"] or norm_id == TRIAGE_AGENT_ID or role == "owner":
+                    if not ch["guest_allowed"] or norm_id in coordinators or role == "owner":
                         conn.execute(
                             "INSERT OR IGNORE INTO channel_members (channel_id, principal_id, joined_at) VALUES (?, ?, ?)",
                             (ch["id"], norm_id, now),
@@ -570,6 +601,59 @@ class SlackBoardStore:
                 (val, time.time(), p["id"]),
             )
             return bool(val)
+
+    def _get_guest_coordinators_locked(self, conn: sqlite3.Connection) -> list[str]:
+        row = conn.execute(
+            "SELECT value FROM workspace_settings WHERE key = 'guest_coordinators'"
+        ).fetchone()
+        if not row or not row["value"].strip():
+            return list(DEFAULT_GUEST_COORDINATORS)
+        try:
+            parsed = json.loads(row["value"])
+            if isinstance(parsed, list):
+                cleaned = [valid_agent_name(str(x)) for x in parsed if str(x).strip()]
+                return cleaned or list(DEFAULT_GUEST_COORDINATORS)
+        except Exception:
+            pass
+        return list(DEFAULT_GUEST_COORDINATORS)
+
+    def get_guest_coordinators(self) -> list[str]:
+        with self._lock, self._connect() as conn:
+            return self._get_guest_coordinators_locked(conn)
+
+    def configure_guest_coordinators(self, actor_id: str, coordinator_ids: list[str]) -> list[str]:
+        now = time.time()
+        with self._lock, self._connect() as conn:
+            actor = self._require_principal(conn, actor_id)
+            if actor["role"] != "owner":
+                raise PermissionDenied("Only the workspace owner can configure guest channel coordinators")
+            deduped: list[str] = []
+            for raw in coordinator_ids:
+                norm = valid_agent_name(str(raw))
+                existing_p = conn.execute("SELECT role FROM principals WHERE id = ?", (norm,)).fetchone()
+                if existing_p and existing_p["role"] == "guest":
+                    raise PermissionDenied(f"Guest principal '{norm}' cannot be a workspace coordinator")
+                if norm not in deduped:
+                    deduped.append(norm)
+            if not deduped:
+                deduped = list(DEFAULT_GUEST_COORDINATORS)
+            conn.execute(
+                "INSERT INTO workspace_settings (key, value) VALUES ('guest_coordinators', ?) "
+                "ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+                (json.dumps(deduped),),
+            )
+            # Enroll any registered coordinators in the active guest channel
+            gch_rows = conn.execute(
+                "SELECT id FROM channels WHERE guest_allowed = 1 AND archived = 0"
+            ).fetchall()
+            for gch in gch_rows:
+                for cid_ag in deduped:
+                    if conn.execute("SELECT 1 FROM principals WHERE id = ?", (cid_ag,)).fetchone():
+                        conn.execute(
+                            "INSERT OR IGNORE INTO channel_members (channel_id, principal_id, joined_at) VALUES (?, ?, ?)",
+                            (gch["id"], cid_ag, now),
+                        )
+            return deduped
 
     def get_default_guest_channel_id(self) -> str | None:
         with self._lock, self._connect() as conn:
@@ -617,7 +701,7 @@ class SlackBoardStore:
                 if ch["kind"] == "dm":
                     raise PermissionDenied("Direct Messages cannot be configured as an external guest channel")
                 conn.execute("UPDATE channels SET guest_allowed = 1 WHERE id = ?", (clean,))
-            for pid in (actor["id"], TRIAGE_AGENT_ID):
+            for pid in (actor["id"], *self._get_guest_coordinators_locked(conn)):
                 p_exists = conn.execute("SELECT 1 FROM principals WHERE id = ?", (pid,)).fetchone()
                 if p_exists:
                     conn.execute(
@@ -690,10 +774,12 @@ class SlackBoardStore:
                     (cid, p["id"], now),
                 )
             if guest_allowed:
-                conn.execute(
-                    "INSERT OR IGNORE INTO channel_members (channel_id, principal_id, joined_at) VALUES (?, ?, ?)",
-                    (cid, TRIAGE_AGENT_ID, now),
-                )
+                for coord_id in self._get_guest_coordinators_locked(conn):
+                    if conn.execute("SELECT 1 FROM principals WHERE id = ?", (coord_id,)).fetchone():
+                        conn.execute(
+                            "INSERT OR IGNORE INTO channel_members (channel_id, principal_id, joined_at) VALUES (?, ?, ?)",
+                            (cid, coord_id, now),
+                        )
                 conn.execute(
                     "INSERT INTO workspace_settings (key, value) VALUES ('default_guest_channel_id', ?) "
                     "ON CONFLICT(key) DO UPDATE SET value = excluded.value",
@@ -813,7 +899,10 @@ class SlackBoardStore:
             )
 
             self._dispatch_notifications(conn, author, ch, msg_id, thread_key, actual_root_id is not None, clean_body, now)
-            return self._format_message(conn, msg_id, viewer_id=author["id"])
+            formatted = self._format_message(conn, msg_id, viewer_id=author["id"])
+        with self._wakeup_cond:
+            self._wakeup_cond.notify_all()
+        return formatted
 
     def toggle_reaction(self, principal_id: str, message_id: int, emoji: str) -> dict[str, Any]:
         clean_em = (emoji or "").strip()
@@ -1199,6 +1288,7 @@ class SlackBoardStore:
                 "subscribed_threads": threads_out,
                 "scope_claims": claims_out,
                 "default_guest_channel_id": self.get_default_guest_channel_id(),
+                "guest_coordinators": [] if is_guest else self.get_guest_coordinators(),
             }
 
     def get_channel_messages(
@@ -1272,8 +1362,18 @@ class SlackBoardStore:
                 "subscribers": subs,
             }
 
-    def pending_agent_wakeups(self, agent_id: str, after_notif_id: int = 0) -> list[dict[str, Any]]:
+    def pending_agent_wakeups(
+        self,
+        agent_id: str,
+        after_notif_id: int = 0,
+        *,
+        addressed_only: bool = False,
+    ) -> list[dict[str, Any]]:
+        norm_recipient = agent_id.strip().lower()
         with self._lock, self._connect() as conn:
+            rec_row = conn.execute("SELECT role FROM principals WHERE id = ?", (norm_recipient,)).fetchone()
+            recipient_role = str(rec_row["role"]) if rec_row else "worker"
+            coordinators = set(self._get_guest_coordinators_locked(conn))
             rows = conn.execute(
                 """
                 SELECT n.id AS notif_id, n.kind, n.channel_id, n.root_id, n.message_id,
@@ -1286,14 +1386,63 @@ class SlackBoardStore:
                 ORDER BY n.id ASC
                 LIMIT 50
                 """,
-                (agent_id, after_notif_id),
+                (norm_recipient, after_notif_id),
             ).fetchall()
             out = []
             for r in rows:
-                if r["author_role"] == "guest" and agent_id != TRIAGE_AGENT_ID:
+                if addressed_only and r["kind"] == "channel_post":
                     continue
-                out.append(dict(r))
+                if r["author_role"] == "guest":
+                    if recipient_role == "worker" and norm_recipient not in coordinators:
+                        continue
+                    item = dict(r)
+                    if recipient_role != "guest":
+                        item["untrusted_envelope"] = 1
+                    out.append(item)
+                else:
+                    out.append(dict(r))
             return out
+
+    def max_notification_id(self, recipient_id: str | None = None) -> int:
+        with self._lock, self._connect() as conn:
+            if recipient_id is not None:
+                row = conn.execute(
+                    "SELECT COALESCE(MAX(id), 0) AS m FROM notifications WHERE recipient_id = ?",
+                    (recipient_id.strip().lower(),),
+                ).fetchone()
+            else:
+                row = conn.execute("SELECT COALESCE(MAX(id), 0) AS m FROM notifications").fetchone()
+            return int(row["m"]) if row else 0
+
+    def wait_for_wakeups(
+        self,
+        viewer_id: str,
+        after_notif_id: int,
+        *,
+        timeout_s: float = 0.0,
+        addressed_only: bool = False,
+    ) -> dict[str, Any]:
+        norm_viewer = viewer_id.strip().lower()
+        hold = max(0.0, min(float(timeout_s), MAX_WAKEUP_HOLD_SECONDS))
+        global_max = self.max_notification_id()
+
+        # Initial cursor handshake (`after < 0`) -> return current max notification ID without replaying old history
+        if after_notif_id < 0:
+            cur = self.max_notification_id(norm_viewer)
+            return {"viewer_id": norm_viewer, "cursor": cur, "server_max_id": global_max, "wakeups": []}
+
+        deadline = time.monotonic() + hold
+        while True:
+            items = self.pending_agent_wakeups(norm_viewer, after_notif_id=after_notif_id, addressed_only=addressed_only)
+            global_max = self.max_notification_id()
+            if items:
+                new_cur = int(items[-1]["notif_id"])
+                return {"viewer_id": norm_viewer, "cursor": new_cur, "server_max_id": global_max, "wakeups": items}
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                return {"viewer_id": norm_viewer, "cursor": after_notif_id, "server_max_id": global_max, "wakeups": []}
+            with self._wakeup_cond:
+                self._wakeup_cond.wait(timeout=min(remaining, 2.0))
 
     def subscriber_cursor(self, agent_id: str) -> int:
         with self._lock, self._connect() as conn:
@@ -1380,6 +1529,23 @@ class SlackBoardStore:
             if not member:
                 raise PermissionDenied(f"Principal '{principal['id']}' is not a member of {channel['id']}")
 
+    def _resolve_mention_target(
+        self, conn: sqlite3.Connection, handle: str, channel: sqlite3.Row
+    ) -> sqlite3.Row | None:
+        return conn.execute(
+            """
+            SELECT * FROM principals
+            WHERE id = ?
+               OR LOWER(display_name) = ?
+               OR (role = 'guest' AND guest_channel_id = ? AND id LIKE '%/' || ?)
+            ORDER BY
+                CASE WHEN id = ? THEN 0 ELSE 1 END,
+                CASE WHEN role != 'guest' THEN 0 ELSE 1 END
+            LIMIT 1
+            """,
+            (handle, handle, channel["id"], handle, handle),
+        ).fetchone()
+
     def _dispatch_notifications(
         self,
         conn: sqlite3.Connection,
@@ -1395,11 +1561,13 @@ class SlackBoardStore:
         notified: set[str] = {author["id"]}
 
         if author["role"] == "guest":
+            coordinators = self._get_guest_coordinators_locked(conn)
+            placeholders = ",".join("?" for _ in coordinators)
             triage_targets = [
                 r["id"]
                 for r in conn.execute(
-                    "SELECT id FROM principals WHERE role = 'owner' OR id = ?",
-                    (TRIAGE_AGENT_ID,),
+                    f"SELECT id FROM principals WHERE role = 'owner' OR id IN ({placeholders})",
+                    tuple(coordinators),
                 ).fetchall()
             ]
             for tid in triage_targets:
@@ -1418,12 +1586,11 @@ class SlackBoardStore:
                             (tid, msg_id, channel["id"], thread_key, now),
                         )
                         notified.add(tid)
+
+            # Fellow guests explicitly @mentioned in the guest channel
             for handle in mentions:
-                target = conn.execute(
-                    "SELECT * FROM principals WHERE id = ? OR LOWER(display_name) = ?",
-                    (handle, handle),
-                ).fetchone()
-                if target and target["role"] == "guest" and target["id"] not in notified:
+                target = self._resolve_mention_target(conn, handle, channel)
+                if target and target["role"] == "guest" and target["guest_channel_id"] == channel["id"] and target["id"] not in notified:
                     conn.execute(
                         """
                         INSERT INTO thread_subscriptions (root_message_id, principal_id, reason, subscribed_at)
@@ -1441,6 +1608,53 @@ class SlackBoardStore:
                         (target["id"], msg_id, channel["id"], thread_key, now),
                     )
                     notified.add(target["id"])
+
+            # Fellow guests subscribed to this thread
+            if is_reply:
+                subs = [
+                    r["principal_id"]
+                    for r in conn.execute(
+                        "SELECT principal_id FROM thread_subscriptions WHERE root_message_id = ?",
+                        (thread_key,),
+                    ).fetchall()
+                ]
+                for sid in subs:
+                    if sid in notified:
+                        continue
+                    target = conn.execute("SELECT * FROM principals WHERE id = ?", (sid,)).fetchone()
+                    if target and target["role"] == "guest" and target["guest_channel_id"] == channel["id"]:
+                        conn.execute(
+                            """
+                            INSERT INTO notifications
+                            (recipient_id, message_id, channel_id, root_id, kind, untrusted_envelope, created_at)
+                            VALUES (?, ?, ?, ?, 'thread_reply', 0, ?)
+                            """,
+                            (sid, msg_id, channel["id"], thread_key, now),
+                        )
+                        notified.add(sid)
+
+            # Single-channel guests also wake on any other new post in their guest channel not authored by them
+            if channel["guest_allowed"]:
+                guest_members = conn.execute(
+                    """
+                    SELECT p.id FROM principals p
+                    JOIN channel_members cm ON cm.principal_id = p.id
+                    WHERE cm.channel_id = ? AND p.role = 'guest'
+                    """,
+                    (channel["id"],),
+                ).fetchall()
+                for gm in guest_members:
+                    gid = gm["id"]
+                    if gid not in notified:
+                        conn.execute(
+                            """
+                            INSERT INTO notifications
+                            (recipient_id, message_id, channel_id, root_id, kind, untrusted_envelope, created_at)
+                            VALUES (?, ?, ?, ?, 'channel_post', 0, ?)
+                            """,
+                            (gid, msg_id, channel["id"], thread_key, now),
+                        )
+                        notified.add(gid)
             return
 
         if channel["kind"] == "dm":
@@ -1464,15 +1678,7 @@ class SlackBoardStore:
                     notified.add(pid)
 
         for handle in mentions:
-            target = conn.execute(
-                """
-                SELECT * FROM principals
-                WHERE id = ? OR LOWER(display_name) = ?
-                ORDER BY CASE WHEN id = ? THEN 0 ELSE 1 END, CASE WHEN role != 'guest' THEN 0 ELSE 1 END
-                LIMIT 1
-                """,
-                (handle, handle, handle),
-            ).fetchone()
+            target = self._resolve_mention_target(conn, handle, channel)
             if not target or target["id"] in notified:
                 continue
             try:
@@ -1529,6 +1735,29 @@ class SlackBoardStore:
                     (sid, msg_id, channel["id"], thread_key, now),
                 )
                 notified.add(sid)
+
+        # Single-channel guests wake on every new message in their single guest channel that is not their own
+        if channel["guest_allowed"]:
+            guest_members = conn.execute(
+                """
+                SELECT p.id FROM principals p
+                JOIN channel_members cm ON cm.principal_id = p.id
+                WHERE cm.channel_id = ? AND p.role = 'guest'
+                """,
+                (channel["id"],),
+            ).fetchall()
+            for gm in guest_members:
+                gid = gm["id"]
+                if gid not in notified:
+                    conn.execute(
+                        """
+                        INSERT INTO notifications
+                        (recipient_id, message_id, channel_id, root_id, kind, untrusted_envelope, created_at)
+                        VALUES (?, ?, ?, ?, 'channel_post', 0, ?)
+                        """,
+                        (gid, msg_id, channel["id"], thread_key, now),
+                    )
+                    notified.add(gid)
 
     def _format_message(self, conn: sqlite3.Connection, message_id: int, *, viewer_id: str) -> dict[str, Any]:
         m = conn.execute("SELECT * FROM messages WHERE id = ?", (message_id,)).fetchone()
@@ -2092,15 +2321,38 @@ class EventHub:
         self._max_per_viewer = max_per_viewer
         self._queue_size = queue_size
         self._subs: list[tuple[str, queue.Queue[bytes | None]]] = []
+        self._longpolls: dict[str, int] = {}
+
+    def _total_active_locked(self) -> int:
+        return len(self._subs) + sum(self._longpolls.values())
+
+    def _viewer_active_locked(self, viewer_id: str) -> int:
+        return sum(1 for vid, _ in self._subs if vid == viewer_id) + self._longpolls.get(viewer_id, 0)
+
+    def acquire_longpoll(self, viewer_id: str) -> bool:
+        with self._lock:
+            if self._total_active_locked() >= self._max_subscribers:
+                return False
+            if self._viewer_active_locked(viewer_id) >= self._max_per_viewer:
+                return False
+            self._longpolls[viewer_id] = self._longpolls.get(viewer_id, 0) + 1
+            return True
+
+    def release_longpoll(self, viewer_id: str) -> None:
+        with self._lock:
+            cur = self._longpolls.get(viewer_id, 0)
+            if cur <= 1:
+                self._longpolls.pop(viewer_id, None)
+            else:
+                self._longpolls[viewer_id] = cur - 1
 
     def subscribe(self, viewer_id: str) -> tuple[str, queue.Queue[bytes | None]] | None:
         q: queue.Queue[bytes | None] = queue.Queue(maxsize=self._queue_size)
         entry = (viewer_id, q)
         with self._lock:
-            if len(self._subs) >= self._max_subscribers:
+            if self._total_active_locked() >= self._max_subscribers:
                 return None
-            viewer_cnt = sum(1 for vid, _ in self._subs if vid == viewer_id)
-            if viewer_cnt >= self._max_per_viewer:
+            if self._viewer_active_locked(viewer_id) >= self._max_per_viewer:
                 return None
             self._subs.append(entry)
         return entry
@@ -2333,6 +2585,24 @@ def make_handler(
                 if path == "/api/whoami":
                     boot_v = store.get_bootstrap(viewer_id)["viewer"]
                     return self._send_json({"viewer": boot_v, "security": sec_info})
+                if path == "/api/wakeups":
+                    after_id = int(qs.get("after", ["0"])[0] or 0)
+                    hold_s = float(qs.get("timeout", ["0"])[0] or 0.0)
+                    addr_only = (qs.get("addressed_only", ["0"])[0] or "0").strip().lower() in ("1", "true", "yes")
+                    blocking = hold_s > 0.0 and after_id >= 0
+                    if blocking and not event_hub.acquire_longpoll(viewer_id):
+                        return self._send_json({"error": "Too many concurrent wakeup streams"}, status=429)
+                    try:
+                        res = store.wait_for_wakeups(
+                            viewer_id,
+                            after_id,
+                            timeout_s=hold_s,
+                            addressed_only=addr_only,
+                        )
+                        return self._send_json(res)
+                    finally:
+                        if blocking:
+                            event_hub.release_longpoll(viewer_id)
                 if path == "/api/bootstrap":
                     boot = store.get_bootstrap(viewer_id)
                     boot["security"] = sec_info
@@ -2395,6 +2665,12 @@ def make_handler(
                 if path == "/api/settings/guest-channel":
                     configured = store.configure_guest_channel(viewer_id, body.get("channel_id"))
                     return self._send_json({"ok": True, "default_guest_channel_id": configured})
+                if path == "/api/settings/guest-coordinators":
+                    raw_coords = body.get("coordinators")
+                    if not isinstance(raw_coords, list):
+                        return self._send_json({"error": "coordinators array required"}, status=400)
+                    configured_coords = store.configure_guest_coordinators(viewer_id, [str(x) for x in raw_coords])
+                    return self._send_json({"ok": True, "guest_coordinators": configured_coords})
                 if path == "/api/messages":
                     channel_id = str(body.get("channel_id") or "").lstrip("#")
                     if body.get("dm_peer"):
@@ -2693,6 +2969,7 @@ def serve_board(
     port: int = DEFAULT_PORT,
     owner_login: str | None = None,
     guest_channel: str | None = None,
+    guest_coordinators: list[str] | None = None,
     public_origins: list[str] | None = None,
     allow_loopback_browser: bool = False,
     seed: bool = False,
@@ -2725,6 +3002,8 @@ def serve_board(
         tailscale_user_id=ts_cfg.owner_user_id,
         tailnet_node=ts_cfg.host_dns,
     )
+    if guest_coordinators:
+        store.configure_guest_coordinators(owner["id"], guest_coordinators)
     if guest_channel:
         store.configure_guest_channel(owner["id"], guest_channel)
     if seed:
@@ -2764,6 +3043,7 @@ def main() -> None:
     parser.add_argument("--port", type=int, default=DEFAULT_PORT)
     parser.add_argument("--owner-login", default=None)
     parser.add_argument("--guest-channel", default=None)
+    parser.add_argument("--guest-coordinator", action="append", default=None)
     parser.add_argument("--allow-loopback-browser", action="store_true")
     parser.add_argument("--seed", action="store_true")
     args = parser.parse_args()
@@ -2774,6 +3054,7 @@ def main() -> None:
             port=args.port,
             owner_login=args.owner_login,
             guest_channel=args.guest_channel,
+            guest_coordinators=args.guest_coordinator,
             allow_loopback_browser=args.allow_loopback_browser,
             seed=args.seed,
         )

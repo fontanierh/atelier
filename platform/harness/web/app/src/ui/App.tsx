@@ -1539,6 +1539,13 @@ export const App: React.FC = () => {
     });
   }, [boot, activeChannelId, querySuffix]);
 
+  const [coordDraft, setCoordDraft] = useState<string>('');
+  useEffect(() => {
+    if (boot?.guest_coordinators?.length) {
+      setCoordDraft(boot.guest_coordinators.join(', '));
+    }
+  }, [boot?.guest_coordinators]);
+
   const configureGuestChannel = useCallback(
     async (nextChannelId: string) => {
       if (!boot) return;
@@ -1553,6 +1560,30 @@ export const App: React.FC = () => {
       }
     },
     [boot, querySuffix, refreshBootstrap, showToast]
+  );
+
+  const saveGuestCoordinators = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!boot) return;
+      const list = coordDraft
+        .split(/[\s,]+/)
+        .map((s) => s.replace(/^@/, '').trim().toLowerCase())
+        .filter(Boolean);
+      const res = await fetch(`/api/settings/guest-coordinators${querySuffix}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Atelier-CSRF': boot.csrf_token || '' },
+        body: JSON.stringify({ coordinators: list }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        await refreshBootstrap(querySuffix);
+        showToast(`Guest coordinators: ${(data.guest_coordinators || []).join(', ')}`);
+      } else {
+        showToast('Could not update guest coordinators');
+      }
+    },
+    [boot, coordDraft, querySuffix, refreshBootstrap, showToast]
   );
 
   const handleOpenSheet = useCallback((msg: BoardMessage, mode: 'reactions' | 'actions') => {
@@ -2018,6 +2049,20 @@ export const App: React.FC = () => {
                     ))}
                 </select>
               </div>
+            )}
+            {viewer.role === 'owner' && (
+              <form className="sec-guest-select-row" onSubmit={saveGuestCoordinators}>
+                <label htmlFor="guest-coord-input">Coordinators woken:</label>
+                <input
+                  id="guest-coord-input"
+                  type="text"
+                  value={coordDraft}
+                  onChange={(e) => setCoordDraft(e.target.value)}
+                  placeholder="front-man, jim-macbook-1"
+                  style={{ flex: 1, height: '34px', padding: '0 10px', borderRadius: '8px', border: '1px solid var(--line-strong)', background: '#0b0f18', color: 'var(--fg)', fontSize: '13px' }}
+                />
+                <button type="submit" className="sl-btn">Save</button>
+              </form>
             )}
             <div className="sec-copy-box">
               <code>{onboardingCommand}</code>

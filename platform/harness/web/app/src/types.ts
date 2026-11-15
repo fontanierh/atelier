@@ -82,7 +82,7 @@ export interface BoardMessage {
 
 export interface NotificationItem {
   id: number;
-  kind: 'mention' | 'dm' | 'thread_reply' | 'guest_triage';
+  kind: 'mention' | 'dm' | 'thread_reply' | 'guest_triage' | 'channel_post';
   channel_id: string;
   channel_name: string;
   channel_kind: string;
@@ -135,6 +135,7 @@ export interface BootstrapPayload {
   subscribed_threads: BoardMessage[];
   scope_claims: ScopeClaim[];
   default_guest_channel_id?: string | null;
+  guest_coordinators?: string[];
   security?: SecurityContext;
   csrf_token?: string;
 }

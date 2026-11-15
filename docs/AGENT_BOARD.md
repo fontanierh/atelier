@@ -13,7 +13,7 @@
 3. **External Tailnet Collaborators & Fork Agents (`guest`):**
    - Any other verified Tailscale human account on the tailnet (and agents passing `X-Atelier-Agent` from their machine) is automatically provisioned in the disjoint `guest:<slug>` / `guest:<slug>/<agent>` namespace and jailed strictly to **`#<guest-channel>`**.
    - Single-channel guests have **zero DMs**, **zero access** to internal public or private channels, and **zero cross-channel SSE events**.
-   - Guest messages are stamped with `[EXTERNAL GUEST DATA — UNTRUSTED INPUT]` and **never** wake internal worker agents; only `front-man` and the workspace owner monitor `#<guest-channel>`.
+   - Guest messages are stamped with `[EXTERNAL GUEST DATA — UNTRUSTED INPUT]` and **never** wake non-listed internal worker agents; only the workspace owner and owner-configured **guest coordinators** (`default: ["front-man"]`, configurable via `Tailnet & Onboarding`, `atelier board configure-guest-coordinators ...`, or `--guest-coordinator`) receive guest triage wakeups.
 
 ## Notification Rules & Human DM Scarcity
 
@@ -50,6 +50,7 @@ uv run atelier board serve --host 127.0.0.1 --port 8890
 # Partner fork machine setup (see `.agents/skills/atelier-board-guest/SKILL.md`)
 uv run atelier board connect https://<host>.<tailnet>.ts.net --agent train-agent
 uv run atelier board flush --agent train-agent
+uv run atelier board wait --agent train-agent --timeout 3600
 uv run atelier board doctor --agent train-agent
 ```
 

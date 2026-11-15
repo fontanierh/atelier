@@ -98,6 +98,9 @@ def configure(sub: Any) -> None:
     q.add_argument("text", help="status text (or 'idle')")
 
     # claim
+    q = actions.add_parser("configure-guest-coordinators", help="set internal coordinator agents woken by external guest posts")
+    q.add_argument("coordinators", nargs="+", help="internal agent handle(s), e.g. front-man jim-macbook-1")
+
     q = actions.add_parser("claim", help="record an advisory scope claim on the board")
     q.add_argument("scope", help="file/path glob")
     q.add_argument("--agent", required=True)
@@ -150,6 +153,7 @@ def configure(sub: Any) -> None:
     q.add_argument("--db", type=Path, default=None)
     q.add_argument("--owner-login", default=None, help="Tailscale LoginName of workspace owner (auto-discovered if omitted)")
     q.add_argument("--guest-channel", default=None, help="optional channel slug enabled for external Tailscale single-channel guests")
+    q.add_argument("--guest-coordinator", action="append", default=[], help="internal coordinator agent woken by guest posts (repeatable; default: front-man)")
     q.add_argument("--allowed-user", default=None, help="alias for --owner-login")
     q.add_argument("--public-origin", action="append", default=[], help="additional allowed HTTPS Origin(s)")
     q.add_argument("--allow-loopback-browser", action="store_true", help="allow unauthenticated browser on 127.0.0.1 for local dev preview")
@@ -226,7 +230,7 @@ def _remote_post_or_queue(
 
 
 def main(args: Any) -> int:
-    from atelier.harness.board import background, notify_command, subscribe
+    from atelier.harness.board import background, list_remote_subscribers, notify_command, remote_subscribe, request_remote_unsubscribe, subscribe
     from atelier.harness.board_store import database
 
     try:
@@ -384,6 +388,19 @@ def main(args: Any) -> int:
             if remote:
                 ag = valid_agent_name(args.agent or remote.get("agent") or "fork-agent")
                 flush_outbox(remote["origin"], agent=ag)
+                if args.notifications:
+                    st, resp = http_json(
+                        remote["origin"],
+                        "GET",
+                        f"/api/wakeups?after={args.after}&timeout=0",
+                        headers={"X-Atelier-Agent": ag},
+                        timeout=6.0,
+                    )
+                    if st != 200:
+                        raise PermissionDenied(resp.get("error") or f"HTTP {st}")
+                    for row in (resp.get("wakeups") or [])[: args.limit]:
+                        print(json.dumps(row))
+                    return 0
                 ch = (args.channel or remote.get("default_channel") or "").lstrip("#")
                 st, resp = http_json(
                     remote["origin"],
@@ -482,15 +499,51 @@ def main(args: Any) -> int:
             print(json.dumps(row))
             return 0
 
+        if args.action == "configure-guest-coordinators":
+            store = SlackBoardStore()
+            ts_cfg = discover_tailnet_config()
+            owner = store.ensure_owner_principal(ts_cfg.owner_handle, ts_cfg.owner_display_name, tailscale_login=ts_cfg.owner_login)
+            configured = store.configure_guest_coordinators(owner["id"], args.coordinators)
+            print(json.dumps({"guest_coordinators": configured}))
+            return 0
+
         if args.action in ("subscribe", "wait"):
             ag = valid_agent_name(args.agent)
+            if not (0.25 <= args.interval <= 60) or not math.isfinite(args.stall_after) or args.stall_after < 60:
+                raise ValueError("--interval must be 0.25..60 seconds; --stall-after must be at least 60")
+            if remote:
+                if args.action == "wait":
+                    if not math.isfinite(args.timeout) or args.timeout < 0:
+                        raise ValueError("--timeout must be finite and nonnegative")
+                    return remote_subscribe(
+                        remote,
+                        ag,
+                        None,
+                        args.interval,
+                        timeout=args.timeout,
+                        addressed_only=args.addressed_only,
+                    )
+                command = notify_command(args.notify) if args.notify else None
+                if args.managed and command is None:
+                    raise ValueError("managed listeners require an existing-session notification transport")
+                if args.managed and args.background:
+                    raise ValueError("managed listeners are started by the service manager, without --background")
+                if args.background:
+                    return background(args)
+                return remote_subscribe(
+                    remote,
+                    ag,
+                    command,
+                    args.interval,
+                    addressed_only=args.addressed_only,
+                    managed=args.managed,
+                )
+
             if not getattr(args, "managed", False):
                 with database() as db:
                     row = db.execute("SELECT supervised FROM subscribers WHERE agent=?", (ag,)).fetchone()
                     if row and row["supervised"]:
                         raise ValueError("This owner already has a persistent listener; do not re-arm a fallback wait")
-            if not (0.25 <= args.interval <= 60) or not math.isfinite(args.stall_after) or args.stall_after < 60:
-                raise ValueError("--interval must be 0.25..60 seconds; --stall-after must be at least 60")
             if args.action == "wait":
                 if not math.isfinite(args.timeout) or args.timeout < 0:
                     raise ValueError("--timeout must be finite and nonnegative")
@@ -526,6 +579,10 @@ def main(args: Any) -> int:
 
         if args.action == "unsubscribe":
             ag = valid_agent_name(args.agent)
+            if remote:
+                request_remote_unsubscribe(remote["origin"], ag)
+                print("stop requested; remote subscriber exits after its current poll")
+                return 0
             with database() as db:
                 row = db.execute("SELECT supervised FROM subscribers WHERE agent=?", (ag,)).fetchone()
                 if row and row["supervised"]:
@@ -536,6 +593,10 @@ def main(args: Any) -> int:
             return 0
 
         if args.action == "status":
+            if remote:
+                for item in list_remote_subscribers(remote["origin"]):
+                    print(json.dumps(item))
+                return 0
             store = SlackBoardStore()
             for item in store.list_subscribers():
                 print(json.dumps(item))
