@@ -32,22 +32,41 @@ namespace HRRules
 		return (1 - Longshot) * Chance + Longshot / FMath::Max(1, N);
 	}
 
-	double Rapport(const FHRWorldState& S, const FHRRace& Race, const FString& HorseId, int32 ExtraStake)
+	void PoolShares(const FHRWorldState& S, const FHRRace& Race, const FString& HorseId, double& OutPool, double& OutOnHorse)
 	{
 		const int64 Pool = CrowdPool(S);
-		// Pools are summed in int64: any number of tickets keeps the odds finite and exact.
-		int64 PlayerPool = FMath::Max(ExtraStake, 0);
-		int64 OnHorse = PlayerPool;
+		// Pools are summed in int64: any number of tickets of any size keeps the odds finite and exact.
+		int64 PlayerPool = 0, OnHorse = 0;
 		for (const FHRTicket& T : S.Tickets)
 		{
 			if (T.T != S.T || T.RaceKey != Race.Key || T.Status == TEXT("refunded")) continue;
 			PlayerPool += T.Stake;
 			if (T.HorseId == HorseId) OnHorse += T.Stake;
 		}
-		const double OnOutcome = (double)Pool * WinChance(Race, HorseId) + (double)OnHorse;
-		if (OnOutcome <= 0) return MinRapport;
-		const double Value = ((double)(Pool + PlayerPool) * (1 - Take)) / OnOutcome;
+		OutPool = (double)(Pool + PlayerPool);
+		OutOnHorse = (double)Pool * WinChance(Race, HorseId) + (double)OnHorse;
+	}
+
+	double RapportOf(double Pool, double OnHorse, int32 ExtraStake)
+	{
+		const double Extra = FMath::Max(ExtraStake, 0);
+		const double OnOutcome = OnHorse + Extra;
+		if (!(OnOutcome > 0)) return MinRapport;
+		const double Value = ((Pool + Extra) * (1 - Take)) / OnOutcome;
 		return FMath::Max(MinRapport, FMath::FloorToDouble(Value * 100) / 100);
+	}
+
+	double Rapport(const FHRWorldState& S, const FHRRace& Race, const FString& HorseId, int32 ExtraStake)
+	{
+		double Pool = 0, OnHorse = 0;
+		PoolShares(S, Race, HorseId, Pool, OnHorse);
+		return RapportOf(Pool, OnHorse, ExtraStake);
+	}
+
+	int32 Payout(int32 Stake, double Rapport)
+	{
+		const double Value = FMath::FloorToDouble((double)FMath::Max(Stake, 0) * Rapport);
+		return FMath::IsFinite(Value) ? (int32)FMath::Clamp<double>(Value, 0., (double)MaxCoins) : 0;
 	}
 
 	int32 DayStake(const FHRWorldState& S, const FString& PlayerId)
@@ -66,16 +85,8 @@ namespace HRRules
 		if (Race.Entries.Num() < 2) return TEXT("Not enough runners to bet.");
 		if (!Race.Entries.ContainsByPredicate([&HorseId](const FHRRunner& R) { return R.HorseId == HorseId; }))
 			return TEXT("This horse is not declared to run.");
-		if (Stake < FBetLimits::MinStake || Stake > FBetLimits::MaxStake)
-			return FString::Printf(TEXT("Stake between %d and %d coins."), FBetLimits::MinStake, FBetLimits::MaxStake);
-		if ((int64)DayStake(S, PlayerId) + Stake > FBetLimits::PerDay)
-			return FString::Printf(TEXT("No more than %d coins of bets a day."), FBetLimits::PerDay);
-		if (P->Coins < Stake) return FString::Printf(TEXT("It takes %d coins."), Stake);
-		int32 OnRace = 0;
-		for (const FHRTicket& T : S.Tickets)
-			if (T.T == S.T && T.RaceKey == Race.Key && T.PlayerId == PlayerId) OnRace++;
-		if (OnRace >= FBetLimits::TicketsPerRace)
-			return FString::Printf(TEXT("No more than %d tickets per race."), FBetLimits::TicketsPerRace);
+		if (Stake < FBetLimits::MinStake) return FString::Printf(TEXT("Stake at least %d coin."), FBetLimits::MinStake);
+		if (Stake > P->Coins) return FString::Printf(TEXT("You have only %d coins."), P->Coins);
 		return FString();
 	}
 
@@ -129,7 +140,7 @@ namespace HRRules
 			}
 			// The odds are fixed by the frozen field and every non-refunded player ticket in this pool.
 			T.Rapport = Rapport(S, Race, Winner);
-			T.Payout = (int32)FMath::Clamp<double>(FMath::FloorToDouble(T.Stake * T.Rapport), 0., (double)MaxCoins);
+			T.Payout = Payout(T.Stake, T.Rapport);
 			T.Status = TEXT("won");
 			if (FHRPlayer* P = FindPlayer(S, T.PlayerId))
 			{

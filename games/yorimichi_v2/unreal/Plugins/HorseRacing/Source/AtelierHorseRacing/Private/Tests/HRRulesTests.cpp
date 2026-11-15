@@ -275,7 +275,7 @@ bool FHRWorldRulesTest::RunTest(const FString&)
 	return true;
 }
 
-// Win bets: limits, refunds, settlement, a pool shared by every player, and no simple strategy wins on average.
+// Win bets: stakes up to the player's coins, refunds, settlement, a pool shared by every player, and no simple strategy wins on average.
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FHRBettingTest, "Atelier.HorseRacing.Betting", EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
 bool FHRBettingTest::RunTest(const FString&)
 {
@@ -286,23 +286,32 @@ bool FHRBettingTest::RunTest(const FString&)
 	const FHRRace& First = S.Meeting.Races[0];
 	const FString One = First.Entries[0].HorseId;
 	TestFalse(TEXT("unknown player refused"), HRRules::PlaceBet(S, TEXT("nobody"), First.Key, One, 2).IsEmpty());
-	TestFalse(TEXT("stake above 10 refused"), HRRules::PlaceBet(S, P1, First.Key, One, 11).IsEmpty());
+	TestFalse(TEXT("a stake of 0 refused"), HRRules::PlaceBet(S, P1, First.Key, One, 0).IsEmpty());
+	TestFalse(TEXT("a stake above the player's coins refused"), HRRules::PlaceBet(S, P1, First.Key, One, 161).IsEmpty());
 	TestFalse(TEXT("a horse not declared is refused"), HRRules::PlaceBet(S, P1, First.Key, TEXT("not-a-horse"), 2).IsEmpty());
+	TestTrue(TEXT("a quote for a large stake returns less per coin than for a small one"),
+		HRRules::Rapport(S, First, One, 150) < HRRules::Rapport(S, First, One, 1));
 	const double Before = HRRules::Rapport(S, First, One);
-	TestTrue(TEXT("valid ticket"), HRRules::PlaceBet(S, P1, First.Key, One, 10).IsEmpty());
+	TestTrue(TEXT("a stake past the old cap of 10"), HRRules::PlaceBet(S, P1, First.Key, One, 20).IsEmpty());
 	TestTrue(TEXT("a stake on a horse shortens its odds for everyone"), HRRules::Rapport(S, First, One) < Before);
-	TestTrue(TEXT("second ticket"), HRRules::PlaceBet(S, P1, First.Key, First.Entries.Last().HorseId, 10).IsEmpty());
-	TestTrue(TEXT("third ticket"), HRRules::PlaceBet(S, P1, First.Key, First.Entries[1].HorseId, 5).IsEmpty());
-	TestFalse(TEXT("fourth ticket on a race refused"), HRRules::PlaceBet(S, P1, First.Key, One, 1).IsEmpty());
+	{
+		double Pool = 0, OnHorse = 0;
+		HRRules::PoolShares(S, First, One, Pool, OnHorse);
+		TestEqual(TEXT("the shares quote the rules' odds"), HRRules::RapportOf(Pool, OnHorse, 7), HRRules::Rapport(S, First, One, 7));
+	}
+	for (int32 I = 0; I < 4; ++I)
+		TestTrue(TEXT("several tickets on one race"), HRRules::PlaceBet(S, P1, First.Key, First.Entries[I % First.Entries.Num()].HorseId, 5).IsEmpty());
 	TestTrue(TEXT("another player bets on the same race"), HRRules::PlaceBet(S, P2, First.Key, One, 4).IsEmpty());
-	TestEqual(TEXT("coins debited"), S.Players[P1].Coins, 160 - 25);
-	TestEqual(TEXT("each player has a daily cap"), HRRules::DayStake(S, P2), 4);
-	TestFalse(TEXT("daily cap"), HRRules::PlaceBet(S, P1, S.Meeting.Races.Last().Key, S.Meeting.Races.Last().Entries[0].HorseId, 6).IsEmpty());
+	TestEqual(TEXT("coins debited"), S.Players[P1].Coins, 160 - 40);
+	TestEqual(TEXT("stakes are counted per player"), HRRules::DayStake(S, P2), 4);
+	TestTrue(TEXT("stakes past the old daily 30"), HRRules::PlaceBet(S, P1, S.Meeting.Races.Last().Key, S.Meeting.Races.Last().Entries[0].HorseId, 6).IsEmpty());
+	TestEqual(TEXT("staked today"), HRRules::DayStake(S, P1), 46);
 	const int32 Coins1 = S.Players[P1].Coins, Coins2 = S.Players[P2].Coins;
 	HRRules::RunNextRace(S);
 	int32 Paid1 = 0, Paid2 = 0;
 	for (const FHRTicket& T : S.Tickets)
 	{
+		if (T.RaceKey != First.Key) continue;
 		TestTrue(TEXT("settled after the race"), T.Status != TEXT("open"));
 		(T.PlayerId == P1 ? Paid1 : Paid2) += T.Payout;
 	}
@@ -320,6 +329,36 @@ bool FHRBettingTest::RunTest(const FString&)
 		HRRules::RunNextRace(W);
 		TestEqual(TEXT("non-runner refunded"), W.Tickets.Last().Status, FString(TEXT("refunded")));
 		TestEqual(TEXT("stake back"), W.Players[P1].Coins, 160);
+	}
+
+	// All coins on the winner, with coins near MaxCoins: the pool and the payout neither overflow nor go negative.
+	{
+		FHRWorldState W = HRRules::CreateWorld(TEXT("bet-all-in"));
+		HRRules::AddPlayer(W, P1, TEXT("Ada"));
+		W.Players[P1].Coins = HRRules::MaxCoins - 1;
+		const int32 All = W.Players[P1].Coins;
+		const FString Key = W.Meeting.Races[0].Key;
+		// The same world with the same ticket on another horse tells which horse wins: tickets never change a result.
+		FString Winner;
+		{
+			FHRWorldState Probe = W;
+			HRRules::PlaceBet(Probe, P1, Key, Probe.Meeting.Races[0].Entries[0].HorseId, All);
+			HRRules::RunNextRace(Probe);
+			const FHRRace* Done = HRRules::FindRace(Probe, Key);
+			if (Done && Done->Finishes.Num()) Winner = Done->Finishes[0].HorseId;
+		}
+		TestTrue(TEXT("all coins on one horse"), HRRules::PlaceBet(W, P1, Key, Winner, All).IsEmpty());
+		TestEqual(TEXT("no coins left"), W.Players[P1].Coins, 0);
+		TestFalse(TEXT("nothing left to stake"), HRRules::PlaceBet(W, P1, Key, Winner, 1).IsEmpty());
+		HRRules::RunNextRace(W);
+		const FHRTicket& T = W.Tickets.Last();
+		TestEqual(TEXT("the ticket wins"), T.Status, FString(TEXT("won")));
+		TestTrue(TEXT("finite odds"), FMath::IsFinite(T.Rapport) && T.Rapport >= HRRules::MinRapport);
+		TestEqual(TEXT("the payout saturates at MaxCoins"), T.Payout, HRRules::MaxCoins);
+		TestEqual(TEXT("coins saturate at MaxCoins"), W.Players[P1].Coins, HRRules::MaxCoins);
+		TestEqual(TEXT("no payout from absurd odds"), HRRules::Payout(All, FMath::Sqrt(-1.)), 0);
+		FHRWorldState Loaded;
+		TestTrue(TEXT("a huge ticket still saves and loads"), HRSave::FromJson(HRTest::ToJson(W), Loaded));
 	}
 
 	// Return per coin of simple strategies over many race days (no player tickets in the pools).
