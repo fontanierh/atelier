@@ -14,6 +14,7 @@ import signal
 import stat
 import sys
 import time
+import traceback
 
 SHARED = frozenset({'zenserver', 'UnrealTraceServer'})
 
@@ -208,6 +209,22 @@ def _text(value):
 
 def _log(message):
     _quietly(lambda: print(message, file=sys.stderr, flush=True))
+
+
+def record_error(report, pid, started, error):
+    """@cc [owner:fontanierh,label:safety] monitor-error-diagnostics
+    Monitor exceptions MUST attempt to append their traceback and owner/monitor identity before
+    cleanup, preserving earlier runs. Diagnostic failures MUST NOT replace the original failure,
+    skip pinned cleanup or release custody. Diagnostics MUST NOT capture frame locals.
+    """
+    def append():
+        path = Path(report).with_suffix('.errors.log')
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open('a') as log:
+            print(f'\nMonitor failure at {time.time():.6f}: monitor={os.getpid()} '
+                  f'owner={pid} owner_started={started}', file=log)
+            traceback.print_exception(type(error), error, error.__traceback__, file=log)
+    _quietly(append)
 
 
 def _write_quietly(report, value):
@@ -444,6 +461,7 @@ def run_child(pid, started, report, duration=None, limit_gib=10., controller=Non
                 return keep_custody(tree, report, value, custody, code) if custody else code
             time.sleep(.25)
     except BaseException as error:
+        record_error(report, pid, started, error)
         lost_controller = False
         if service_control is not None and controller is not None:
             try:
@@ -565,7 +583,8 @@ def run(pid, started, report, duration, stop_file, limit_gib=10., launch_nonce=N
                 return 1
             write_report(report, value)
             time.sleep(.25)
-    except BaseException:
+    except BaseException as error:
+        record_error(report, pid, started, error)
         # Losing telemetry must stop the owned job, even if Unreal or the harness stalls.
         drain_owned(tree, exclude_pid=os.getpid())
         raise
