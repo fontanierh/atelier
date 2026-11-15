@@ -245,3 +245,90 @@ def test_a_recorded_shell_that_execs_a_shared_service_keeps_itself_and_its_child
     world(monkeypatch, starts={10: 100, 11: 110, 12: 120}, kids={10: [11], 11: [12]}, names={11: 'zenserver', 12: 'worker'})
     tree.unwind(grace=0)
     assert sent == [], 'neither the service nor anything under it is signalled'
+
+
+def test_darwin_inexit_teardown_waits_for_zombie_or_esrch_and_never_certifies_stuck_inexit(monkeypatch):
+    """During cold compiles, exiting clang/ld children expose PROC_FLAG_INEXIT (4) in pbsi_flags and shed
+    their Mach task (EPERM) for >20 ms while XNU tears down vm_map before setting SZOMB. Only SZOMB or ESRCH certifies exit."""
+    import ctypes
+    assert memory_guard.PROC_FLAG_INEXIT == 4
+    monkeypatch.setattr(memory_guard, 'DARWIN', True)
+    sleeps = []
+    monkeypatch.setattr(memory_guard.time, 'sleep', lambda d: sleeps.append(d))
+
+    def make_lib(states):
+        seq = list(states)
+        last_errno = [errno.EPERM]
+
+        def fake_rusage(pid, flavor, buf):
+            last_errno[0] = errno.EPERM
+            return -1
+
+        def fake_pidinfo(pid, flavor, arg, buf, size):
+            st, fl, rc_err = seq.pop(0) if len(seq) > 1 else seq[0]
+            if rc_err is not None:
+                last_errno[0] = rc_err
+                return 0
+            info = memory_guard._BsdShortInfo.from_address(ctypes.cast(buf, ctypes.c_void_p).value)
+            info.pid = pid
+            info.status = st
+            info.flags = fl
+            return ctypes.sizeof(memory_guard._BsdShortInfo)
+
+        monkeypatch.setattr(memory_guard.ctypes, 'get_errno', lambda: last_errno[0])
+        return SimpleNamespace(proc_pid_rusage=fake_rusage, proc_pidinfo=fake_pidinfo)
+
+    # 1. 12 polls (120 ms) of SRUN + PROC_FLAG_INEXIT followed by SZOMB -> certified exited (None)
+    monkeypatch.setattr(memory_guard, 'LIB', make_lib([(2, memory_guard.PROC_FLAG_INEXIT, None)] * 12 + [(memory_guard.SZOMB, memory_guard.PROC_FLAG_INEXIT, None)]))
+    sleeps.clear()
+    assert process_tree.started(95010) is None
+    assert len(sleeps) == 12
+
+    # 2. 8 polls (80 ms) of SRUN + PROC_FLAG_INEXIT followed by ESRCH (reaped) -> certified exited (None)
+    monkeypatch.setattr(memory_guard, 'LIB', make_lib([(2, memory_guard.PROC_FLAG_INEXIT, None)] * 8 + [(0, 0, errno.ESRCH)]))
+    sleeps.clear()
+    assert process_tree.started(95010) is None
+    assert len(sleeps) == 8
+
+    # 3. Stuck PROC_FLAG_INEXIT that never reaches SZOMB or ESRCH within 100 attempts -> raises PermissionError fail-closed!
+    monkeypatch.setattr(memory_guard, 'LIB', make_lib([(2, memory_guard.PROC_FLAG_INEXIT, None)]))
+    sleeps.clear()
+    with pytest.raises(PermissionError) as stuck_err:
+        process_tree.started(95010)
+    assert stuck_err.value.errno == errno.EPERM
+    assert len(sleeps) == 99
+
+    # 4. Live process (no PROC_FLAG_INEXIT, e.g. PROC_FLAG_PSUGID = 0x2000) returning EPERM -> stops after 2 retries!
+    monkeypatch.setattr(memory_guard, 'LIB', make_lib([(2, 0x2000, None)]))
+    sleeps.clear()
+    with pytest.raises(PermissionError):
+        process_tree.started(95010)
+    assert len(sleeps) == 2
+
+
+@pytest.mark.skipif(not memory_guard.DARWIN, reason='macOS libproc integration check')
+def test_real_darwin_bsd_shortinfo_live_zombie_and_reaped():
+    """Unmocked check against macOS libproc and SDK header value of PROC_FLAG_INEXIT."""
+    import ctypes, os, subprocess, time
+    info = memory_guard._BsdShortInfo()
+    self_pid = os.getpid()
+    cnt = memory_guard.LIB.proc_pidinfo(
+        self_pid, memory_guard.PROC_PIDT_SHORTBSDINFO, 0, ctypes.byref(info), ctypes.sizeof(info)
+    )
+    assert cnt == ctypes.sizeof(info) and info.pid == self_pid
+    assert (info.flags & memory_guard.PROC_FLAG_INEXIT) == 0
+    assert memory_guard._darwin_bsd_state(self_pid) == 'unknown'
+
+    # Spawn a short-lived child; before wait() reaps it (unreaped zombie: SZOMB or proc_find ESRCH) and after wait(),
+    # _darwin_bsd_state must report 'exited' and process_tree.started must return None.
+    child = subprocess.Popen(['/usr/bin/true'])
+    try:
+        deadline = time.monotonic() + 5.0
+        while time.monotonic() < deadline and memory_guard._darwin_bsd_state(child.pid) != 'exited':
+            time.sleep(0.005)
+        assert memory_guard._darwin_bsd_state(child.pid) == 'exited'
+        assert process_tree.started(child.pid) is None
+    finally:
+        assert child.wait(timeout=5) == 0
+    assert memory_guard._darwin_bsd_state(child.pid) == 'exited'
+    assert process_tree.started(child.pid) is None
