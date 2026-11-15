@@ -5,6 +5,7 @@
 #include "DevNotes.h"
 #include "AtelierSettings.h"
 #include "JapanHUD.h"
+#include "MenuStyle.h"
 #include "JapanNetwork.h"
 #include "CraterParkTower.h"
 #include "CraterCloud.h"
@@ -922,12 +923,12 @@ public:
                 + SScrollBox::Slot()[Rows];
         TSharedRef<SVerticalBox> Frame = SNew(SVerticalBox);
         if (In._Scrolls) Frame->AddSlot().FillHeight(1.f)[Page]; else Frame->AddSlot().AutoHeight()[Page];
-        Frame->AddSlot().AutoHeight().Padding(0,14,0,8)[SNew(SBox).HeightOverride(1)[SNew(SBorder).BorderImage(White()).BorderBackgroundColor(FLinearColor(1,1,1,.12f))]];
+        Frame->AddSlot().AutoHeight().Padding(0,14,0,8)[YorimichiMenu::Divider()];
         Frame->AddSlot().AutoHeight()[SNew(SBox).MinDesiredHeight(40)[SNew(STextBlock).AutoWrapText(true)
             .Font(FCoreStyle::GetDefaultFontStyle("Regular",13)).ColorAndOpacity(FLinearColor(.8f,.84f,.82f))
             .Text_Lambda([this] { const FEntry* E = Focused(); return FText::FromString(E ? E->Hint : FString()); })]];
         Frame->AddSlot().AutoHeight().Padding(0,6,0,0)[SNew(STextBlock).AutoWrapText(true)
-            .Font(FCoreStyle::GetDefaultFontStyle("Regular",14)).ColorAndOpacity(FLinearColor(1,.9f,.6f,1))
+            .Font(FCoreStyle::GetDefaultFontStyle("Regular",14)).ColorAndOpacity(YorimichiMenu::LegendColor)
             .Text_Lambda([this] { return FText::FromString(Legend()); })];
         ChildSlot[SNew(SBorder).HAlign(HAlign_Center).VAlign(VAlign_Center).BorderImage(White()).BorderBackgroundColor(FLinearColor(0,0,0,.55f))
             [SNew(SBox).WidthOverride(660).MaxDesiredHeight(In._Scrolls ? FOptionalSize(860.f) : FOptionalSize())
@@ -939,12 +940,7 @@ public:
     {
         Entries.Add({Control, Key, Hint, bNextSection}); bNextSection = false;
         const TWeakPtr<SWidget> Weak = Control;
-        return SNew(SBorder).Padding(FMargin(0,3,8,3)).BorderImage(White())
-            .BorderBackgroundColor_Lambda([this,Weak] { return FSlateColor(Lit(Weak) ? FLinearColor(.95f,.72f,.3f,.2f) : FLinearColor::Transparent); })
-            [SNew(SHorizontalBox)
-                + SHorizontalBox::Slot().AutoWidth()[SNew(SBox).WidthOverride(4)[SNew(SBorder).BorderImage(White())
-                    .BorderBackgroundColor_Lambda([this,Weak] { return FSlateColor(Lit(Weak) ? FLinearColor(1,.78f,.35f,1) : FLinearColor::Transparent); })]]
-                + SHorizontalBox::Slot().FillWidth(1.f).Padding(8,0,0,0)[Row ? Row.ToSharedRef() : Control]];
+        return YorimichiMenu::LitRow([this,Weak] { return Lit(Weak); }, Row ? Row.ToSharedRef() : Control);
     }
     /** The keys of the controls on this page, in order. */
     TArray<FString> Keys() const { TArray<FString> Out; for (const FEntry& E : Entries) Out.Add(E.Key); return Out; }
@@ -1052,15 +1048,8 @@ private:
     FString Legend() const
     {
         if (!bPad) return TEXT("Arrows choose and change  ·  Enter select  ·  Page Up / Down section  ·  Esc close");
-        const TCHAR *Accept, *Cancel, *Shoulders;
-        switch (PadStyle)
-        {
-            case 1: Accept = TEXT("A"); Cancel = TEXT("B"); Shoulders = TEXT("LB / RB"); break;
-            case 2: Accept = TEXT("Cross"); Cancel = TEXT("Circle"); Shoulders = TEXT("L1 / R1"); break;
-            case 3: Accept = TEXT("B"); Cancel = TEXT("A"); Shoulders = TEXT("L / R"); break;
-            default: Accept = TEXT("Bottom button"); Cancel = TEXT("Right button"); Shoulders = TEXT("Shoulders"); break;
-        }
-        return FString::Printf(TEXT("D-pad choose, Left / Right change  ·  %s select  ·  %s section  ·  %s %s"), Accept, Shoulders, Cancel,
+        const YorimichiMenu::FPadNames Pad = YorimichiMenu::PadNames(PadStyle);
+        return FString::Printf(TEXT("D-pad choose, Left / Right change  ·  %s select  ·  %s section  ·  %s %s"), Pad.Accept, Pad.Shoulders, Pad.Cancel,
             bBackCloses ? TEXT("close") : TEXT("back"));
     }
 };

@@ -1,6 +1,8 @@
 #include "RacingCounter.h"
 #include "BelmonteRegion.h"
 #include "HRRules.h"
+#include "JapanHUD.h"
+#include "MenuStyle.h"
 #include "RacingBroadcast.h"
 #include "RacingService.h"
 #include "SkateComponent.h"
@@ -16,6 +18,7 @@
 #include "Widgets/Input/SButton.h"
 #include "Widgets/Layout/SBorder.h"
 #include "Widgets/Layout/SBox.h"
+#include "Widgets/Layout/SScrollBox.h"
 #include "Widgets/SBoxPanel.h"
 #include "Widgets/SCompoundWidget.h"
 #include "Widgets/Text/STextBlock.h"
@@ -117,8 +120,24 @@ namespace RacingCounterUi
         }
     };
 
-    /** The window's frame: LB / Q step the stake down and RB / E up from whichever button has focus. The keys are taken
-     *  here, so neither the game (wave, interact) nor the window's focus moves on them. */
+    /** The input in use (a pad, and which, or the keys), for the legend: it follows the last key or click as the settings
+     *  menu's does. */
+    struct FInputKind
+    {
+        int32 PadStyle = AJapanHUD::CurrentControllerStyle();
+        bool bPad = PadStyle != 0;
+
+        FString Legend() const
+        {
+            if (!bPad) return TEXT("Arrows choose  ·  Enter select  ·  Q / E stake  ·  Esc close");
+            const YorimichiMenu::FPadNames Pad = YorimichiMenu::PadNames(PadStyle);
+            return FString::Printf(TEXT("D-pad choose  ·  %s select  ·  %s stake  ·  %s close"), Pad.Accept, Pad.Shoulders, Pad.Cancel);
+        }
+    };
+
+    /** The window's frame: LB / Q step the stake down and RB / E up from whichever button has focus, and the right face
+     *  button (B on an Xbox pad) or Escape closes the window. The keys are taken here, so neither the game (wave, interact,
+     *  dodge, the settings menu) nor the window's focus moves on them. */
     class SStakeKeys : public SCompoundWidget
     {
     public:
@@ -126,14 +145,30 @@ namespace RacingCounterUi
             SLATE_DEFAULT_SLOT(FArguments, Content)
         SLATE_END_ARGS()
 
-        void Construct(const FArguments& Args, TFunction<void(int32)> InStep)
+        void Construct(const FArguments& Args, TFunction<void(int32)> InStep, TSharedRef<FInputKind> InInput)
         {
             Step = MoveTemp(InStep);
+            Input = InInput;
             ChildSlot[Args._Content.Widget];
+        }
+        virtual FReply OnPreviewKeyDown(const FGeometry&, const FKeyEvent& E) override
+        {
+            Input->bPad = E.GetKey().IsGamepadKey();
+            return FReply::Unhandled();
+        }
+        virtual FReply OnPreviewMouseButtonDown(const FGeometry&, const FPointerEvent&) override
+        {
+            Input->bPad = false;
+            return FReply::Unhandled();
         }
         virtual FReply OnKeyDown(const FGeometry&, const FKeyEvent& E) override
         {
             const FKey K = E.GetKey();
+            if (IsClose(K))
+            {
+                if (!E.IsRepeat()) RacingCounter::Close();
+                return FReply::Handled();
+            }
             const int32 Direction = K == EKeys::Gamepad_LeftShoulder || K == EKeys::Q ? -1 : K == EKeys::Gamepad_RightShoulder || K == EKeys::E ? 1 : 0;
             if (!Direction) return FReply::Unhandled();
             if (!E.IsRepeat()) Step(Direction);
@@ -142,10 +177,13 @@ namespace RacingCounterUi
         virtual FReply OnKeyUp(const FGeometry&, const FKeyEvent& E) override
         {
             const FKey K = E.GetKey();
-            return K == EKeys::Gamepad_LeftShoulder || K == EKeys::Q || K == EKeys::Gamepad_RightShoulder || K == EKeys::E ? FReply::Handled() : FReply::Unhandled();
+            return IsClose(K) || K == EKeys::Gamepad_LeftShoulder || K == EKeys::Q || K == EKeys::Gamepad_RightShoulder || K == EKeys::E
+                ? FReply::Handled() : FReply::Unhandled();
         }
     private:
+        static bool IsClose(const FKey& K) { return K == EKeys::Gamepad_FaceButton_Right || K == EKeys::Escape; }
         TFunction<void(int32)> Step;
+        TSharedPtr<FInputKind> Input;
     };
 
     int32 WalletCoins(const TWeakObjectPtr<URacingWallet>& Wallet) { return Wallet.IsValid() ? Wallet->GetWallet().Coins : 0; }
@@ -160,13 +198,19 @@ namespace RacingCounterUi
 
     FString Odds(int32 Tenths) { return FString::Printf(TEXT("%d.%d"), Tenths / 10, Tenths % 10); }
 
-    FString Ticket(const FRacingWalletTicket& T)
+    /** The wallet's ticket at Index (newest first), else nullptr. */
+    const FRacingWalletTicket* TicketAt(const TWeakObjectPtr<URacingWallet>& Wallet, int32 Index)
     {
-        const FString Result = T.Status == TEXT("won") ? FString::Printf(TEXT("won %d coins"), T.Payout)
+        return Wallet.IsValid() && Wallet->GetWallet().Tickets.IsValidIndex(Index) ? &Wallet->GetWallet().Tickets[Index] : nullptr;
+    }
+
+    /** A ticket's outcome, shown at the right of its line. */
+    FString TicketStatus(const FRacingWalletTicket& T)
+    {
+        return T.Status == TEXT("won") ? FString::Printf(TEXT("won +%d"), T.Payout)
             : T.Status == TEXT("lost") ? FString(TEXT("lost"))
-            : T.Status == TEXT("refunded") ? FString::Printf(TEXT("refunded %d coins"), T.Payout)
+            : T.Status == TEXT("refunded") ? FString::Printf(TEXT("refunded +%d"), T.Payout)
             : FString(TEXT("pending"));
-        return FString::Printf(TEXT("%s  ·  %s  ·  %d coins  ·  %s"), *T.Horse, *T.Race, T.Stake, *Result);
     }
 
     TSharedRef<STextBlock> Text(TAttribute<FText> Value, int32 Size, const FLinearColor& Color, const char* Weight = "Regular",
@@ -176,17 +220,27 @@ namespace RacingCounterUi
             .Justification(Justify);
     }
 
-    /** The window: the race in focus with each runner's odds, the stake stepper with its estimated return, the bet, the
-     *  wallet (its newest tickets) and the host's answer. Buttons only, so the D-pad or the stick moves between them and the
-     *  bottom face button presses them; LB / RB (Q / E) step the stake from anywhere in it. */
+    /** A button drawn as a menu row: no button chrome of its own, the row lit (YorimichiMenu::LitRow) while it has focus. */
+    TSharedRef<SWidget> LitButton(const TSharedRef<SButton>& Button)
+    {
+        const TWeakPtr<SWidget> Weak = Button;
+        return YorimichiMenu::LitRow([Weak] { const TSharedPtr<SWidget> W = Weak.Pin(); return W && W->HasAnyUserFocus().IsSet(); }, Button);
+    }
+    const FButtonStyle* Plain() { return &FCoreStyle::Get().GetWidgetStyle<FButtonStyle>("NoBorder"); }
+
+    /** The window, in the game's menu style: the race in focus with each runner's odds, the stake stepper with its steps and
+     *  estimated return, the bet and the host's answer, today's tickets and the wallet, then the legend. Buttons only, so the
+     *  D-pad or the stick moves between them and the bottom face button presses them; LB / RB (Q / E) step the stake from
+     *  anywhere in it and B (Escape) closes it. */
     TSharedRef<SWidget> Build(TWeakObjectPtr<ARacingService> Service, TWeakObjectPtr<URacingWallet> Wallet, TSharedPtr<SButton>& OutFirst)
     {
         const TSharedRef<FChoice> Choice = MakeShared<FChoice>();
-        const FLinearColor Accent(.95f, .72f, .5f);
+        const TSharedRef<FInputKind> Input = MakeShared<FInputKind>();
+        const FLinearColor Accent(.95f, .72f, .5f), Dim(1.f, 1.f, 1.f, .6f), Faint(1.f, 1.f, 1.f, .45f);
         TSharedRef<SVerticalBox> Rows = SNew(SVerticalBox);
-        Rows->AddSlot().AutoHeight().Padding(0, 0, 0, 6)[Text(FText::FromString(TEXT("Salon des Paris")), 24, FLinearColor::White, "Bold")];
-        Rows->AddSlot().AutoHeight().Padding(0, 0, 0, 12)[Text(FText::FromString(TEXT("Win bets on the next race")), 11, Accent)];
-        Rows->AddSlot().AutoHeight().Padding(0, 0, 0, 10)[Text(TAttribute<FText>::CreateLambda([Service]
+        Rows->AddSlot().AutoHeight().Padding(0, 0, 0, 4)[Text(FText::FromString(TEXT("Salon des Paris")), 24, FLinearColor::White, "Bold")];
+        Rows->AddSlot().AutoHeight().Padding(0, 0, 0, 10)[Text(FText::FromString(TEXT("Win bets on the next race")), 11, Accent)];
+        Rows->AddSlot().AutoHeight().Padding(0, 0, 0, 12)[Text(TAttribute<FText>::CreateLambda([Service]
         {
             const ARacingService* S = Service.Get();
             const FRacingNetRace* Race = OpenRace(S);
@@ -194,37 +248,76 @@ namespace RacingCounterUi
             const int32 Left = FMath::Max(0, FMath::CeilToInt(Race->Start - S->WorldNow()));
             return FText::FromString(FString::Printf(TEXT("%s  ·  %d m  ·  starts in %d:%02d"), *Race->Name, Race->Distance, Left / 60, Left % 60));
         }), 14, FLinearColor::White, "Bold")];
+
+        // Runners: a row each, ● the one chosen, its odds at the right.
+        Rows->AddSlot().AutoHeight().Padding(0, 0, 0, 4)[SNew(SBox).Visibility_Lambda([Service] { return OpenRace(Service.Get()) ? EVisibility::Visible : EVisibility::Collapsed; })
+            [Text(FText::FromString(TEXT("Runners")), 16, FLinearColor::White, "Bold")]];
         for (int32 I = 0; I < HRRules::MaxRunners; ++I)
         {
-            TSharedRef<SButton> Runner = SNew(SButton)
-                .Visibility_Lambda([Service, I] { const FRacingNetRace* Race = OpenRace(Service.Get()); return Race && Race->Runners.IsValidIndex(I) ? EVisibility::Visible : EVisibility::Collapsed; })
+            const auto Runner = [Service, I]() -> const FRacingNetRunner*
+            {
+                const FRacingNetRace* Race = OpenRace(Service.Get());
+                return Race && Race->Runners.IsValidIndex(I) ? &Race->Runners[I] : nullptr;
+            };
+            TSharedRef<SButton> Row = SNew(SButton).ButtonStyle(Plain()).ContentPadding(FMargin(0, 5))
                 .OnClicked_Lambda([Choice, I] { Choice->Runner = I; return FReply::Handled(); })
-                [Text(TAttribute<FText>::CreateLambda([Service, Choice, I]
-                {
-                    const FRacingNetRace* Race = OpenRace(Service.Get());
-                    if (!Race || !Race->Runners.IsValidIndex(I)) return FText::GetEmpty();
-                    const FRacingNetRunner& R = Race->Runners[I];
-                    return FText::FromString(FString::Printf(TEXT("%s %s  ·  %s  ·  odds %s"), Choice->Runner == I ? TEXT("●") : TEXT("○"), *R.Horse, *R.Stable, *Odds(R.OddsTenths)));
-                }), 13, FLinearColor::White)];
-            if (I == 0) OutFirst = Runner;
-            Rows->AddSlot().AutoHeight().Padding(0, 0, 0, 4)[Runner];
+                [SNew(SHorizontalBox)
+                    + SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center).Padding(0, 0, 8, 0)[SNew(SBox).WidthOverride(16)[SNew(STextBlock)
+                        .Font(FCoreStyle::GetDefaultFontStyle("Regular", 14))
+                        .Text_Lambda([Choice, I] { return FText::FromString(Choice->Runner == I ? TEXT("●") : TEXT("○")); })
+                        .ColorAndOpacity_Lambda([Choice, I, Accent, Dim] { return FSlateColor(Choice->Runner == I ? Accent : Dim); })]]
+                    + SHorizontalBox::Slot().FillWidth(1.f).VAlign(VAlign_Center)[SNew(STextBlock).ColorAndOpacity(FLinearColor::White)
+                        .OverflowPolicy(ETextOverflowPolicy::Ellipsis)
+                        .Font_Lambda([Choice, I] { return FCoreStyle::GetDefaultFontStyle(Choice->Runner == I ? "Bold" : "Regular", 14); })
+                        .Text_Lambda([Runner, I]
+                        {
+                            const FRacingNetRunner* R = Runner();
+                            return R ? FText::FromString(FString::Printf(TEXT("%d. %s"), I + 1, *R->Horse)) : FText::GetEmpty();
+                        })]
+                    + SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center).Padding(12, 0, 0, 0)[SNew(STextBlock).ColorAndOpacity(FLinearColor::White)
+                        .Font(FCoreStyle::GetDefaultFontStyle("Regular", 14)).Justification(ETextJustify::Right)
+                        .Text_Lambda([Runner] { const FRacingNetRunner* R = Runner(); return R ? FText::FromString(Odds(R->OddsTenths)) : FText::GetEmpty(); })]];
+            if (I == 0) OutFirst = Row;
+            Rows->AddSlot().AutoHeight()[SNew(SBox).Visibility_Lambda([Runner] { return Runner() ? EVisibility::Visible : EVisibility::Collapsed; })[LitButton(Row)]];
         }
-        Rows->AddSlot().AutoHeight().Padding(0, 10, 0, 6)[Text(FText::FromString(TEXT("Stake")), 16, FLinearColor::White, "Bold")];
+        Rows->AddSlot().AutoHeight().Padding(0, 10)[YorimichiMenu::Divider()];
+
+        // The stake: the stepper, its steps (the current one lit) and the estimated return.
+        Rows->AddSlot().AutoHeight().Padding(0, 0, 0, 6)[Text(FText::FromString(TEXT("Stake")), 16, FLinearColor::White, "Bold")];
         auto StepButton = [Wallet, Choice](const TCHAR* Label, int32 Direction)
         {
             return SNew(SButton).HAlign(HAlign_Center).VAlign(VAlign_Center)
                 .OnClicked_Lambda([Wallet, Choice, Direction] { Choice->Step(WalletCoins(Wallet), Direction); return FReply::Handled(); })
                 [SNew(STextBlock).Text(FText::FromString(Label)).Font(FCoreStyle::GetDefaultFontStyle("Bold", 13))];
         };
-        Rows->AddSlot().AutoHeight().Padding(0, 0, 0, 6)[SNew(SHorizontalBox)
-            + SHorizontalBox::Slot().FillWidth(1.f)[StepButton(TEXT("LB / Q  −"), -1)]
+        Rows->AddSlot().AutoHeight()[SNew(SHorizontalBox)
+            + SHorizontalBox::Slot().FillWidth(1.f).VAlign(VAlign_Center)[StepButton(TEXT("LB / Q  −"), -1)]
             + SHorizontalBox::Slot().FillWidth(1.4f).VAlign(VAlign_Center)[Text(TAttribute<FText>::CreateLambda([Wallet, Choice]
             {
                 const int32 Coins = WalletCoins(Wallet), Stake = Choice->Coins(Coins);
-                return FText::FromString(Stake > 0 && Stake == Coins ? FString::Printf(TEXT("%d  (All)"), Stake) : FString::FromInt(Stake));
+                return FText::FromString(Stake > 0 && Stake == Coins ? FString::Printf(TEXT("All %d"), Stake) : FString::FromInt(Stake));
             }), 28, Accent, "Bold", ETextJustify::Center)]
-            + SHorizontalBox::Slot().FillWidth(1.f)[StepButton(TEXT("RB / E  +"), 1)]];
-        Rows->AddSlot().AutoHeight().Padding(0, 0, 0, 10)[Text(TAttribute<FText>::CreateLambda([Service, Wallet, Choice]
+            + SHorizontalBox::Slot().FillWidth(1.f).VAlign(VAlign_Center)[StepButton(TEXT("RB / E  +"), 1)]];
+        TSharedRef<SHorizontalBox> Steps = SNew(SHorizontalBox);
+        for (int32 S = 0; S < 7; ++S)   // 1, 5, 10, 25, 50, 100 and All at most (RacingCounter::StakeSteps)
+        {
+            const auto Current = [Wallet, Choice, S]
+            {
+                const int32 Coins = WalletCoins(Wallet);
+                return RacingCounter::StakeSteps(Coins).IndexOfByKey(Choice->Coins(Coins)) == S;
+            };
+            Steps->AddSlot().AutoWidth().Padding(S ? 14 : 0, 0, 0, 0)[SNew(STextBlock)
+                .Visibility_Lambda([Wallet, S] { return RacingCounter::StakeSteps(WalletCoins(Wallet)).IsValidIndex(S) ? EVisibility::Visible : EVisibility::Collapsed; })
+                .Text_Lambda([Wallet, S]
+                {
+                    const TArray<int32> All = RacingCounter::StakeSteps(WalletCoins(Wallet));
+                    return !All.IsValidIndex(S) ? FText::GetEmpty() : S == All.Num() - 1 ? FText::FromString(TEXT("All")) : FText::AsNumber(All[S]);
+                })
+                .Font_Lambda([Current] { return FCoreStyle::GetDefaultFontStyle(Current() ? "Bold" : "Regular", 12); })
+                .ColorAndOpacity_Lambda([Current, Accent, Faint] { return FSlateColor(Current() ? Accent : Faint); })];
+        }
+        Rows->AddSlot().AutoHeight().HAlign(HAlign_Center).Padding(0, 6, 0, 0)[Steps];
+        Rows->AddSlot().AutoHeight().Padding(0, 8, 0, 8)[Text(TAttribute<FText>::CreateLambda([Service, Wallet, Choice]
         {
             const FRacingNetRace* Race = OpenRace(Service.Get());
             const int32 Stake = Choice->Coins(WalletCoins(Wallet));
@@ -235,7 +328,9 @@ namespace RacingCounterUi
             const int32 Returns = HRRules::Payout(Stake, HRRules::RapportOf(Race->Pool, R.Backing, Stake));
             return FText::FromString(FString::Printf(TEXT("Returns about %d coins if %s wins (odds move as others bet)"), Returns, *R.Horse));
         }), 12, FLinearColor::White, "Regular", ETextJustify::Center)];
-        Rows->AddSlot().AutoHeight().Padding(0, 0, 0, 10)[SNew(SButton).HAlign(HAlign_Center)
+
+        // The bet, lit like a runner while focused, and the host's answer under it.
+        TSharedRef<SButton> Bet = SNew(SButton).ButtonStyle(Plain()).ContentPadding(FMargin(0, 7)).HAlign(HAlign_Center)
             .IsEnabled_Lambda([Service, Wallet, Choice]
             {
                 const FRacingNetRace* Race = OpenRace(Service.Get());
@@ -252,33 +347,64 @@ namespace RacingCounterUi
                 const FRacingNetRace* Race = OpenRace(Service.Get());
                 if (!Race || !Race->Runners.IsValidIndex(Choice->Runner)) return FText::FromString(TEXT("Place the bet"));
                 return FText::FromString(FString::Printf(TEXT("Bet %d coins on %s"), Choice->Coins(WalletCoins(Wallet)), *Race->Runners[Choice->Runner].Horse));
-            }), 14, FLinearColor::White, "Bold", ETextJustify::Center)]];
-        Rows->AddSlot().AutoHeight().Padding(0, 0, 0, 6)[Text(TAttribute<FText>::CreateLambda([Wallet]
-        {
-            if (!Wallet.IsValid()) return FText::GetEmpty();
-            const FRacingWalletState& W = Wallet->GetWallet();
-            return FText::FromString(FString::Printf(TEXT("Coins: %d   ·   Staked today: %d"), W.Coins, W.DayStaked));
-        }), 13, Accent, "Bold")];
-        Rows->AddSlot().AutoHeight().Padding(0, 0, 0, 10)[Text(TAttribute<FText>::CreateLambda([Wallet]
-        {
-            if (!Wallet.IsValid() || Wallet->GetWallet().Tickets.IsEmpty()) return FText::FromString(TEXT("No tickets today."));
-            const FRacingWalletState& W = Wallet->GetWallet();
-            TArray<FString> Lines;
-            for (const FRacingWalletTicket& T : W.Tickets) Lines.Add(Ticket(T));
-            if (W.EarlierTickets > 0) Lines.Add(FString::Printf(TEXT("+%d earlier tickets"), W.EarlierTickets));
-            return FText::FromString(FString::Join(Lines, TEXT("\n")));
-        }), 11, FLinearColor::White)];
-        Rows->AddSlot().AutoHeight().Padding(0, 0, 0, 12)[Text(TAttribute<FText>::CreateLambda([Wallet]
+            }), 14, FLinearColor::White, "Bold", ETextJustify::Center)];
+        Rows->AddSlot().AutoHeight()[LitButton(Bet)];
+        Rows->AddSlot().AutoHeight().Padding(0, 6, 0, 0)[Text(TAttribute<FText>::CreateLambda([Wallet]
         {
             return Wallet.IsValid() ? FText::FromString(Wallet->GetReply()) : FText::GetEmpty();
-        }), 13, Accent)];
-        TSharedRef<SButton> Leave = SNew(SButton).HAlign(HAlign_Center).Text(FText::FromString(TEXT("Leave the counter")))
-            .OnClicked_Lambda([] { RacingCounter::Close(); return FReply::Handled(); });
-        Rows->AddSlot().AutoHeight()[Leave];
+        }), 13, Accent, "Regular", ETextJustify::Center)];
+        Rows->AddSlot().AutoHeight().Padding(0, 10)[YorimichiMenu::Divider()];
+
+        // Today's tickets, newest first, each with its outcome at the right; then the wallet.
+        Rows->AddSlot().AutoHeight().Padding(0, 0, 0, 4)[Text(FText::FromString(TEXT("Your tickets")), 16, FLinearColor::White, "Bold")];
+        Rows->AddSlot().AutoHeight()[SNew(SBox).Visibility_Lambda([Wallet] { return TicketAt(Wallet, 0) ? EVisibility::Collapsed : EVisibility::Visible; })
+            [Text(FText::FromString(TEXT("No tickets today.")), 13, Dim)]];
+        for (int32 I = 0; I < FRacingWalletState::MaxTickets; ++I)
+        {
+            Rows->AddSlot().AutoHeight().Padding(0, 1)[SNew(SHorizontalBox)
+                .Visibility_Lambda([Wallet, I] { return TicketAt(Wallet, I) ? EVisibility::Visible : EVisibility::Collapsed; })
+                + SHorizontalBox::Slot().FillWidth(1.f)[SNew(STextBlock).Font(FCoreStyle::GetDefaultFontStyle("Regular", 13)).ColorAndOpacity(FLinearColor::White)
+                    .OverflowPolicy(ETextOverflowPolicy::Ellipsis)
+                    .Text_Lambda([Wallet, I]
+                    {
+                        const FRacingWalletTicket* T = TicketAt(Wallet, I);
+                        return T ? FText::FromString(FString::Printf(TEXT("%s  ·  %d coins"), *T->Horse, T->Stake)) : FText::GetEmpty();
+                    })]
+                + SHorizontalBox::Slot().AutoWidth().Padding(12, 0, 0, 0)[SNew(STextBlock).Justification(ETextJustify::Right)
+                    .Text_Lambda([Wallet, I] { const FRacingWalletTicket* T = TicketAt(Wallet, I); return T ? FText::FromString(TicketStatus(*T)) : FText::GetEmpty(); })
+                    .Font_Lambda([Wallet, I] { const FRacingWalletTicket* T = TicketAt(Wallet, I); return FCoreStyle::GetDefaultFontStyle(T && T->Status == TEXT("won") ? "Bold" : "Regular", 13); })
+                    .ColorAndOpacity_Lambda([Wallet, I, Accent, Dim] { const FRacingWalletTicket* T = TicketAt(Wallet, I); return FSlateColor(T && T->Status == TEXT("won") ? Accent : Dim); })]];
+        }
+        Rows->AddSlot().AutoHeight()[SNew(SBox).Visibility_Lambda([Wallet] { return Wallet.IsValid() && Wallet->GetWallet().EarlierTickets > 0 ? EVisibility::Visible : EVisibility::Collapsed; })
+            [Text(TAttribute<FText>::CreateLambda([Wallet]
+            {
+                return FText::FromString(FString::Printf(TEXT("+%d earlier tickets"), Wallet.IsValid() ? Wallet->GetWallet().EarlierTickets : 0));
+            }), 13, Dim)]];
+        Rows->AddSlot().AutoHeight().Padding(0, 8, 0, 0)[SNew(SHorizontalBox)
+            + SHorizontalBox::Slot().FillWidth(1.f)[Text(TAttribute<FText>::CreateLambda([Wallet]
+            {
+                return FText::FromString(FString::Printf(TEXT("Coins: %d"), WalletCoins(Wallet)));
+            }), 13, FLinearColor::White)]
+            + SHorizontalBox::Slot().AutoWidth()[SNew(STextBlock).Font(FCoreStyle::GetDefaultFontStyle("Regular", 13)).ColorAndOpacity(FLinearColor::White)
+                .Text_Lambda([Wallet] { return FText::FromString(FString::Printf(TEXT("Staked today: %d"), Wallet.IsValid() ? Wallet->GetWallet().DayStaked : 0)); })]];
+        TSharedRef<SButton> Leave = SNew(SButton).ButtonStyle(Plain()).ContentPadding(FMargin(0, 5)).HAlign(HAlign_Center)
+            .OnClicked_Lambda([] { RacingCounter::Close(); return FReply::Handled(); })
+            [Text(FText::FromString(TEXT("Leave the counter")), 13, FLinearColor::White, "Regular", ETextJustify::Center)];
+        Rows->AddSlot().AutoHeight().Padding(0, 8, 0, 0)[LitButton(Leave)];
         if (!OpenRace(Service.Get())) OutFirst = Leave;
-        return SNew(SStakeKeys, [Wallet, Choice](int32 Direction) { Choice->Step(WalletCoins(Wallet), Direction); })[SNew(SBorder).HAlign(HAlign_Center).VAlign(VAlign_Center).BorderImage(FCoreStyle::Get().GetBrush("WhiteBrush")).BorderBackgroundColor(FLinearColor(0, 0, 0, .35f))
-            [SNew(SBox).WidthOverride(640)
-                [SNew(SBorder).Padding(28).BorderImage(FCoreStyle::Get().GetBrush("WhiteBrush")).BorderBackgroundColor(FLinearColor(.05f, .03f, .025f, .96f))[Rows]]]];
+
+        // The page scrolls to follow focus when today's tickets make it taller than the screen allows; the legend stays.
+        TSharedRef<SVerticalBox> Frame = SNew(SVerticalBox);
+        Frame->AddSlot().FillHeight(1.f)[SNew(SScrollBox).NavigationScrollPadding(96.f).ScrollWhenFocusChanges(EScrollWhenFocusChanges::AnimatedScroll)
+            + SScrollBox::Slot()[Rows]];
+        Frame->AddSlot().AutoHeight().Padding(0, 14, 0, 8)[YorimichiMenu::Divider()];
+        Frame->AddSlot().AutoHeight()[SNew(STextBlock).AutoWrapText(true).Justification(ETextJustify::Center)
+            .Font(FCoreStyle::GetDefaultFontStyle("Regular", 14)).ColorAndOpacity(YorimichiMenu::LegendColor)
+            .Text_Lambda([Input] { return FText::FromString(Input->Legend()); })];
+        return SNew(SStakeKeys, [Wallet, Choice](int32 Direction) { Choice->Step(WalletCoins(Wallet), Direction); }, Input)
+            [SNew(SBorder).HAlign(HAlign_Center).VAlign(VAlign_Center).BorderImage(YorimichiMenu::White()).BorderBackgroundColor(FLinearColor(0, 0, 0, .35f))
+                [SNew(SBox).WidthOverride(640).MaxDesiredHeight(860.f)
+                    [SNew(SBorder).Padding(28).BorderImage(YorimichiMenu::White()).BorderBackgroundColor(FLinearColor(.05f, .03f, .025f, .96f))[Frame]]]];
     }
 }
 
