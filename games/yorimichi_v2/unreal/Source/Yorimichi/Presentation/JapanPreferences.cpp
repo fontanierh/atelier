@@ -323,8 +323,12 @@ TMap<FString,FString> JapanValuesToSave(const TMap<FString,FString>& Saved, cons
 
 static bool ShouldAutoDefaultLaptopMode()
 {
+#if WITH_EDITOR
+    // Uncooked editor-binary -game launches carry Editor, AssetRegistry and GenerateStreaming overhead; the cooked
+    // package stays near ~7 GiB on Slice, so 16-18 GB Pro/Max machines keep desktop visuals in packaged builds.
     if (FPlatformMemory::GetConstants().TotalPhysicalGB > 0 && FPlatformMemory::GetConstants().TotalPhysicalGB <= 18)
         return true;
+#endif
     // Base Apple Silicon GPUs (M1/M2/M3/M4/M5 without Pro/Max/Ultra) have <= 10 GPU cores.
     FString Adapter = !GRHIAdapterName.IsEmpty() ? GRHIAdapterName : FPlatformMisc::GetPrimaryGPUBrand();
     Adapter.TrimStartAndEndInline();
@@ -392,10 +396,17 @@ float UJapanPreferences::Saved(const FString& Key, float Default)
     if (const FString* Text = Read.Find(Key); Text && LexTryParseString(Number,**Text) && FMath::IsFinite(Number)) return Number;
     return Default;
 }
+bool JapanLaptopModeFromSaved(const TMap<FString,FString>& Saved, bool bAutoDefault)
+{
+    float Number = -1.f;
+    if (const FString* Text = Saved.Find(TEXT("laptop"));
+        Text && LexTryParseString(Number, **Text) && FMath::IsFinite(Number) && Number >= 0.f)
+        return Number > .5f;
+    return bAutoDefault;
+}
 bool UJapanPreferences::IsLaptopModeConfigured()
 {
-    const float Explicit = Saved(TEXT("laptop"), -1.f);
-    return Explicit >= 0.f ? Explicit > .5f : ShouldAutoDefaultLaptopMode();
+    return JapanLaptopModeFromSaved(ReadSaved(), ShouldAutoDefaultLaptopMode());
 }
 bool UJapanPreferences::MusicReady() const
 {

@@ -44,6 +44,18 @@ Use [measurement guidance](BUDGETS.md#recording-a-current-performance-run) for n
 | [#854](https://github.com/fontanierh/atelier/pull/854), `bb803a4c9f` | Default rider board scale uses the Adventure `BodyScale` leg ratio relative to Cairo, with a capsule fallback; explicit non-default scales are retained. | Compilation and content checks are reported in the PR. The later receipt below records live deck scales; final appearance/gameplay acceptance remains separate, and the earlier package cannot validate this change. |
 | [#856](https://github.com/fontanierh/atelier/pull/856), `a3b145ff2b` | Race fields rotate through playable jockey rigs with complete horse clips; repeated riders in larger fields use stable-colour outer garments. | The PR reports 12 racing automation checks. Saved runtime component/material receipts show varied rigs in five- and six-rider fields; this is not a new package or performance result. |
 
+### Uncooked laptop-mode memory measurement ([#869](https://github.com/fontanierh/atelier/pull/869), pending 16 GB laptop run)
+
+Unmerged branch `perf/yv2-16gb-laptop-play` ([#869](https://github.com/fontanierh/atelier/pull/869)) applies `UJapanPreferences`'s `laptop` `MainPartition` loading-range override during `UJapanGameInstance::Init` and `OnWorldPartitionSubsystemInitialized` (before `Slice.umap` streams initial cells), triggers end-of-frame `ForceGarbageCollection(true)` `0.75 s` after offline teleports `> 300 m` when `laptop=1`, lowers `LaptopLoadingRangeCm` from `896 m` (#851) to `640 m`, and auto-enables `laptop=1` on `<= 18 GB` machines in `WITH_EDITOR` builds only (leaving cooked packaged builds on 16–18 GB Pro/Max machines at desktop defaults).
+
+**Important measurement limit:** All numbers below were measured on a **32 GiB Apple M1 Max machine with `laptop=1` forced** (`--profile slice --set "laptop=1;performance=1"` across Hidamari spawn + a 5-stop travel route: `belmonte_course -> belmonte -> belmonte_salon -> belmonte_training -> belmonte_osteria`), **not yet on the target 16 GB MacBook Air**. Verification on the 16 GB laptop is required before treating 16 GB playtest headroom or `640 m` visual acceptability as confirmed.
+
+| Configuration (32 GiB M1 Max, `Slice` uncooked `-game`) | Launch peak (GiB) | Spawn steady (GiB) | 5-stop route peak (GiB) | End at Osteria (GiB) | Notes |
+| --- | ---: | ---: | ---: | ---: | --- |
+| `main` (`laptop=1;performance=1` forced) | 12.041 | 11.650 | 13.315 | 12.801 | Late `BeginPlay` override streams whole island first (`2,763` `StaticMesh`, `3,072 MB` `MTLHeap`). |
+| Early override + post-travel GC at `896 m` | 10.013 | 10.388 | 10.678 | 9.774 | Isolates early override + post-travel `ForceGarbageCollection(true)` (`-2.637 GiB` route peak). |
+| Early override + post-travel GC at `640 m` (#869) | 8.533–9.075 | 8.649–9.136 | 9.620–9.687 | 9.271–9.278 | `73 / 1,768` cells loaded (`2,560 MB` `MTLHeap`); Temple Island (`~826 m` SW of Hidamari harbour) unstreams from the harbour quay compared with `896 m`. |
+
 ### Teaser handoff and corrected runtime evidence (2026-11-12)
 
 Carbon-god handed off a replacement teaser in board #31684: `build/yorimichi_v2/yorimichi_v2_teaser.mp4`

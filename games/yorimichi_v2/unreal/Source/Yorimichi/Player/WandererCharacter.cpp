@@ -427,6 +427,7 @@ void AWandererCharacter::TrimLaptopTravelMemory()
 {
     const bool bLaptopActive = Preferences ? Preferences->IsLaptopMode() : UJapanPreferences::IsLaptopModeConfigured();
     if (!GetWorld() || JapanNetwork::IsOnline(GetWorld()) || !bLaptopActive) return;
+    // Full purge causes a brief post-travel hitch; keep scoped to laptop mode unless measured for desktop.
     if (GEngine) GEngine->ForceGarbageCollection(true);
 }
 
