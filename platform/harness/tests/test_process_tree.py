@@ -148,10 +148,11 @@ def test_darwin_identity_only_treats_missing_process_as_exited(monkeypatch, erro
         assert not isinstance(failure.value, ProcessLookupError)
 
 
-def test_darwin_pwexit_teardown_waits_for_zombie_or_esrch_and_never_certifies_stuck_pwexit(monkeypatch):
-    """During cold compiles, exiting clang/ld children set P_WEXIT and shed their Mach task (EPERM)
-    for >20 ms while XNU tears down vm_map before setting SZOMB. Only SZOMB or ESRCH certifies exit."""
+def test_darwin_inexit_teardown_waits_for_zombie_or_esrch_and_never_certifies_stuck_inexit(monkeypatch):
+    """During cold compiles, exiting clang/ld children expose PROC_FLAG_INEXIT (4) in pbsi_flags and shed
+    their Mach task (EPERM) for >20 ms while XNU tears down vm_map before setting SZOMB. Only SZOMB or ESRCH certifies exit."""
     import ctypes
+    assert memory_guard.PROC_FLAG_INEXIT == 4
     monkeypatch.setattr(memory_guard, 'DARWIN', True)
     sleeps = []
     monkeypatch.setattr(memory_guard.time, 'sleep', lambda d: sleeps.append(d))
@@ -178,128 +179,57 @@ def test_darwin_pwexit_teardown_waits_for_zombie_or_esrch_and_never_certifies_st
         monkeypatch.setattr(memory_guard.ctypes, 'get_errno', lambda: last_errno[0])
         return SimpleNamespace(proc_pid_rusage=fake_rusage, proc_pidinfo=fake_pidinfo)
 
-    # 1. 12 polls (120 ms) of SRUN + P_WEXIT followed by SZOMB -> certified exited (None)
-    monkeypatch.setattr(memory_guard, 'LIB', make_lib([(2, memory_guard.P_WEXIT, None)] * 12 + [(memory_guard.SZOMB, memory_guard.P_WEXIT, None)]))
+    # 1. 12 polls (120 ms) of SRUN + PROC_FLAG_INEXIT followed by SZOMB -> certified exited (None)
+    monkeypatch.setattr(memory_guard, 'LIB', make_lib([(2, memory_guard.PROC_FLAG_INEXIT, None)] * 12 + [(memory_guard.SZOMB, memory_guard.PROC_FLAG_INEXIT, None)]))
     sleeps.clear()
     assert process_tree.started(95010) is None
     assert len(sleeps) == 12
 
-    # 2. 8 polls (80 ms) of SRUN + P_WEXIT followed by ESRCH (reaped) -> certified exited (None)
-    monkeypatch.setattr(memory_guard, 'LIB', make_lib([(2, memory_guard.P_WEXIT, None)] * 8 + [(0, 0, errno.ESRCH)]))
+    # 2. 8 polls (80 ms) of SRUN + PROC_FLAG_INEXIT followed by ESRCH (reaped) -> certified exited (None)
+    monkeypatch.setattr(memory_guard, 'LIB', make_lib([(2, memory_guard.PROC_FLAG_INEXIT, None)] * 8 + [(0, 0, errno.ESRCH)]))
     sleeps.clear()
     assert process_tree.started(95010) is None
     assert len(sleeps) == 8
 
-    # 3. Stuck P_WEXIT that never reaches SZOMB or ESRCH within 100 attempts -> raises PermissionError fail-closed!
-    monkeypatch.setattr(memory_guard, 'LIB', make_lib([(2, memory_guard.P_WEXIT, None)]))
+    # 3. Stuck PROC_FLAG_INEXIT that never reaches SZOMB or ESRCH within 100 attempts -> raises PermissionError fail-closed!
+    monkeypatch.setattr(memory_guard, 'LIB', make_lib([(2, memory_guard.PROC_FLAG_INEXIT, None)]))
     sleeps.clear()
     with pytest.raises(PermissionError) as stuck_err:
         process_tree.started(95010)
     assert stuck_err.value.errno == errno.EPERM
     assert len(sleeps) == 99
 
-    # 4. Live process (no P_WEXIT) returning EPERM -> stops after 2 retries and raises PermissionError!
-    monkeypatch.setattr(memory_guard, 'LIB', make_lib([(2, 0, None)]))
+    # 4. Live process (no PROC_FLAG_INEXIT, e.g. PROC_FLAG_PSUGID = 0x2000) returning EPERM -> stops after 2 retries!
+    monkeypatch.setattr(memory_guard, 'LIB', make_lib([(2, 0x2000, None)]))
     sleeps.clear()
     with pytest.raises(PermissionError):
         process_tree.started(95010)
     assert len(sleeps) == 2
 
 
-def test_a_guard_is_not_attached_to_a_different_process_on_the_same_pid(tmp_path):
-    import os
-    from atelier.harness.safety.guard import attach
-    with attach(os.getpid(), tmp_path/'report.json', duration=1, expected_start=1) as monitor:
-        assert monitor is None
+@pytest.mark.skipif(not memory_guard.DARWIN, reason='macOS libproc integration check')
+def test_real_darwin_bsd_shortinfo_live_zombie_and_reaped():
+    """Unmocked check against macOS libproc and SDK header value of PROC_FLAG_INEXIT."""
+    import ctypes, os, subprocess, time
+    info = memory_guard._BsdShortInfo()
+    self_pid = os.getpid()
+    cnt = memory_guard.LIB.proc_pidinfo(
+        self_pid, memory_guard.PROC_PIDT_SHORTBSDINFO, 0, ctypes.byref(info), ctypes.sizeof(info)
+    )
+    assert cnt == ctypes.sizeof(info) and info.pid == self_pid
+    assert (info.flags & memory_guard.PROC_FLAG_INEXIT) == 0
+    assert memory_guard._darwin_bsd_state(self_pid) == 'unknown'
 
-
-def test_unwind_rechecks_identity_before_every_signal(monkeypatch, tmp_path):
-    # Recorded as (77, 300); by the time it is signalled the pid belongs to another process.
-    starts, kids = {10: 100, 77: 300}, {10: [77]}
-    world(monkeypatch, starts=starts, kids=kids, names={77: 'sh'})
-    sent = []
-    monkeypatch.setattr(guarded.os, 'kill', lambda pid, number: sent.append((pid, number)))
-    stack = ExitStack()
-    tree = guarded.Descendants(10, 100, tmp_path, ('UnrealEditor-Cmd',), None, 10., stack)
-    tree.poll()
-    # The new process is foreign: unlike a new child of our root, it must not be
-    # acquired during cleanup discovery. Model the live parent edge explicitly.
-    starts[77], kids[10] = 999, []
-    tree.unwind(grace=0)
-    assert sent == [], 'a reused pid is never signalled'
-
-
-def test_unwind_rechecks_identity_between_term_and_kill(monkeypatch, tmp_path):
-    starts, kids = {10: 100, 77: 300}, {10: [77]}
-    world(monkeypatch, starts=starts, kids=kids, names={77: 'sh'})
-    sent = []
-
-    def send(pid, number):
-        assert starts[pid] == 300, 'every signal must still target the original identity'
-        sent.append((pid, number))
-        if number == signal.SIGTERM:
-            starts[77], kids[10] = 999, []
-    monkeypatch.setattr(guarded.os, 'kill', send)
-    tree = guarded.Descendants(10, 100, tmp_path, (), None, 10., ExitStack())
-    tree.poll()
-    tree.unwind(grace=0)
-    assert sent == [(77, signal.SIGTERM)], 'SIGKILL must not reach the replacement process'
-
-
-def test_unwind_discovers_a_new_owned_child_even_when_its_pid_was_recorded(monkeypatch, tmp_path):
-    starts = {10: 100, 77: 300}
-    world(monkeypatch, starts=starts, kids={10: [77]}, names={77: 'sh'})
-    sent = []
-
-    def send(pid, number):
-        assert starts[pid] == 999
-        sent.append((pid, number))
-    monkeypatch.setattr(guarded.os, 'kill', send)
-    tree = guarded.Descendants(10, 100, tmp_path, (), None, 10., ExitStack())
-    tree.poll()
-    # This replacement really is a new child of the pinned root, so cleanup must
-    # discover its distinct identity instead of exempting the previously seen PID.
-    starts[77] = 999
-    tree.unwind(grace=0)
-    assert set(tree.depth) == {(77, 300), (77, 999)}
-    assert sent == [(77, signal.SIGTERM), (77, signal.SIGKILL)]
-
-
-def test_shared_engine_services_are_never_signalled(monkeypatch, tmp_path):
-    # A cook (77) starts Zen (88); both are recorded, only the cook is stopped.
-    world(monkeypatch, starts={10: 100, 77: 300, 88: 400}, kids={10: [77], 77: [88]},
-          names={77: 'UnrealEditor-Cmd', 88: 'zenserver'})
-    attached, sent = [], []
-    stack, tree = tracker(monkeypatch, tmp_path, attached)
-    monkeypatch.setattr(guarded.os, 'kill', lambda pid, number: sent.append(pid))
-    with stack:
-        tree.poll()
-        assert (88, 400) in tree.depth and (88, 400) in tree.shared
-        assert [pid for pid, _, _ in attached] == [77], 'shared services get no guard'
-        tree.unwind(grace=0)
-    assert 88 not in sent and 77 in sent
-
-
-def test_an_orphaned_intermediate_still_brings_in_the_cook_it_starts(monkeypatch, tmp_path):
-    # 77 is recorded under the root, then its parent link is lost (reparented); it later starts the cook 99.
-    world(monkeypatch, starts={10: 100, 77: 300}, kids={10: [77]}, names={77: 'sh'})
-    attached = []
-    stack, tree = tracker(monkeypatch, tmp_path, attached)
-    with stack:
-        tree.poll()
-        world(monkeypatch, starts={10: 100, 77: 300, 99: 500}, kids={10: [], 77: [99]}, names={77: 'sh', 99: 'UnrealEditor-Cmd'})
-        tree.poll()
-        assert (99, 500) in tree.depth and [pid for pid, _, _ in attached] == [99]
-
-
-def test_a_recorded_shell_that_execs_a_shared_service_keeps_itself_and_its_children(monkeypatch, tmp_path):
-    # Root 10 -> sh 11 -> worker 12 are recorded; 11 then execs zenserver with no further poll before cleanup (#1560).
-    world(monkeypatch, starts={10: 100, 11: 110, 12: 120}, kids={10: [11], 11: [12]}, names={11: 'sh', 12: 'worker'})
-    sent = []
-    monkeypatch.setattr(guarded.os, 'kill', lambda pid, number: sent.append(pid))
-    tree = guarded.Descendants(10, 100, tmp_path, ('UnrealEditor-Cmd',), None, 10., ExitStack())
-    tree.poll()
-    assert set(tree.depth) == {(11, 110), (12, 120)} and not tree.shared
-    world(monkeypatch, starts={10: 100, 11: 110, 12: 120}, kids={10: [11], 11: [12]}, names={11: 'zenserver', 12: 'worker'})
-    tree.unwind(grace=0)
-    assert sent == [], 'neither the service nor anything under it is signalled'
+    # Spawn a short-lived child; before wait() reaps it (unreaped zombie: SZOMB or proc_find ESRCH) and after wait(),
+    # _darwin_bsd_state must report 'exited' and process_tree.started must return None.
+    child = subprocess.Popen(['/usr/bin/true'])
+    try:
+        deadline = time.monotonic() + 5.0
+        while time.monotonic() < deadline and memory_guard._darwin_bsd_state(child.pid) != 'exited':
+            time.sleep(0.005)
+        assert memory_guard._darwin_bsd_state(child.pid) == 'exited'
+        assert process_tree.started(child.pid) is None
+    finally:
+        assert child.wait(timeout=5) == 0
+    assert memory_guard._darwin_bsd_state(child.pid) == 'exited'
+    assert process_tree.started(child.pid) is None

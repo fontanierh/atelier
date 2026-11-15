@@ -18,7 +18,7 @@ class Usage(ctypes.Structure):
 PROC_PPID_ONLY=6
 PROC_PIDT_SHORTBSDINFO=13
 SZOMB=5
-P_WEXIT=0x00002000
+PROC_FLAG_INEXIT=4
 DARWIN=sys.platform=='darwin'
 PROCFS=Path('/proc')
 
@@ -176,13 +176,13 @@ def record_helpers(pid,started,path,seen):
             helpers=list(seen.values())),indent=2)+'\n');temp.replace(path)
 
 def _darwin_bsd_state(pid):
-    """'exited' for ESRCH or a full same-PID zombie, 'exiting' for a full same-PID P_WEXIT teardown, else 'unknown'."""
+    """'exited' for ESRCH or a full same-PID zombie, 'exiting' for a full same-PID PROC_FLAG_INEXIT teardown, else 'unknown'."""
     value=_BsdShortInfo()
     count=LIB.proc_pidinfo(pid,PROC_PIDT_SHORTBSDINFO,0,ctypes.byref(value),ctypes.sizeof(value))
     if count<=0:return 'exited' if ctypes.get_errno()==errno.ESRCH else 'unknown'
     if count!=ctypes.sizeof(value) or value.pid!=pid:return 'unknown'
     if value.status==SZOMB:return 'exited'
-    return 'exiting' if value.flags&P_WEXIT else 'unknown'
+    return 'exiting' if value.flags&PROC_FLAG_INEXIT else 'unknown'
 
 
 def _darwin_exited(pid):
@@ -195,9 +195,9 @@ def usage(pid):
     Darwin sampling failures MUST retain their errno-selected exception class unless ESRCH or
     a complete same-PID BSD zombie observation proves exit. EPERM MAY retry at most twice with
     10 ms pauses while BSD state is unknown, or poll at 10 ms intervals for at most 100 attempts
-    while a complete same-PID BSD observation reports P_WEXIT teardown; unknown, short, mismatched
-    or live BSD samples MUST NOT certify exit. A successful retry MUST return its full fresh
-    sample, never cached accounting or identity.
+    while a complete same-PID BSD observation reports PROC_FLAG_INEXIT teardown; unknown, short,
+    mismatched or live BSD samples MUST NOT certify exit. A successful retry MUST return its full
+    fresh sample, never cached accounting or identity.
     """
     if not DARWIN:return _procfs_usage(pid)
     for attempt in range(100):
@@ -205,9 +205,10 @@ def usage(pid):
         if not LIB.proc_pid_rusage(pid,2,ctypes.byref(value)):return value
         error=ctypes.get_errno()
         if error!=errno.EPERM:raise OSError(error,'Cannot sample process',pid)
-        # In XNU exit1(), P_WEXIT is set and the Mach task is terminated (proc_pid_rusage -> EPERM)
-        # before vm_map/fd teardown finishes and sets status = SZOMB. Wait boundedly only while
-        # P_WEXIT holds on this PID; only SZOMB or ESRCH ever certifies exit.
+        # In XNU exit1(), p_flag P_WEXIT (exposed in proc_bsdshortinfo.pbsi_flags as PROC_FLAG_INEXIT = 4)
+        # is set and the Mach task is terminated (proc_pid_rusage -> EPERM) before vm_map/fd teardown
+        # finishes and sets status = SZOMB. Wait boundedly only while PROC_FLAG_INEXIT holds on this PID;
+        # only SZOMB or ESRCH ever certifies exit.
         state=_darwin_bsd_state(pid)
         if state=='exited':raise ProcessLookupError(errno.ESRCH,'Process exited',pid)
         limit=99 if state=='exiting' else 2
