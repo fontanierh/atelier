@@ -43,6 +43,7 @@ public:
     /** The keys of the controls on the open menu page (empty when closed). */
     TArray<FString> MenuControlKeys() const;
     bool ShowFrameRate() const { return Get(TEXT("show_fps")) > .5f; }
+    bool IsLaptopMode() const { return Get(TEXT("laptop")) > .5f; }
     // Keys chosen per launch and never written to the shared settings file.
     static bool IsSessionOnly(const FString& Key);
     // Log the effective profile after applying, read back from the console variables themselves.
@@ -50,6 +51,8 @@ public:
     // A setting as saved (the settings file, then -set= overrides), for a character choosing its definition before
     // its own preferences exist.
     static float Saved(const FString& Key, float Default);
+    static bool IsLaptopModeConfigured();
+    static constexpr int32 LaptopLoadingRangeCm = 64000;
 private:
     UPROPERTY() TObjectPtr<AWandererCharacter> Owner;
     UPROPERTY() TArray<TObjectPtr<UMaterialInstanceDynamic>> Materials;

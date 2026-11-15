@@ -32,6 +32,7 @@
 #include "Misc/FileHelper.h"
 #include "HAL/IConsoleManager.h"
 #include "HAL/PlatformMisc.h"
+#include "HAL/PlatformMemory.h"
 #include "RHI.h"
 #include "DynamicRHI.h"
 #include "WorldPartition/WorldPartitionSubsystem.h"
@@ -322,6 +323,8 @@ TMap<FString,FString> JapanValuesToSave(const TMap<FString,FString>& Saved, cons
 
 static bool ShouldAutoDefaultLaptopMode()
 {
+    if (FPlatformMemory::GetConstants().TotalPhysicalGB > 0 && FPlatformMemory::GetConstants().TotalPhysicalGB <= 18)
+        return true;
     // Base Apple Silicon GPUs (M1/M2/M3/M4/M5 without Pro/Max/Ultra) have <= 10 GPU cores.
     FString Adapter = !GRHIAdapterName.IsEmpty() ? GRHIAdapterName : FPlatformMisc::GetPrimaryGPUBrand();
     Adapter.TrimStartAndEndInline();
@@ -345,7 +348,7 @@ void UJapanPreferences::Initialize(AWandererCharacter* Pawn)
     if (!SavedValues.Contains(TEXT("laptop")) && ShouldAutoDefaultLaptopMode())
     {
         for (FJapanPreference& V : Values) if (V.Key == TEXT("laptop")) V.Value = 1.f;
-        UE_LOG(LogTemp,Display,TEXT("PREFERENCES auto laptop=1 on <=10-core Apple GPU"));
+        UE_LOG(LogTemp,Display,TEXT("PREFERENCES auto laptop=1 on <=10-core Apple GPU or <=18 GB RAM"));
     }
     JapanApplySaved(Values,SavedValues);
     // A skating engine saved by an older menu no longer applies.
@@ -388,6 +391,11 @@ float UJapanPreferences::Saved(const FString& Key, float Default)
     float Number = Default;
     if (const FString* Text = Read.Find(Key); Text && LexTryParseString(Number,**Text) && FMath::IsFinite(Number)) return Number;
     return Default;
+}
+bool UJapanPreferences::IsLaptopModeConfigured()
+{
+    const float Explicit = Saved(TEXT("laptop"), -1.f);
+    return Explicit >= 0.f ? Explicit > .5f : ShouldAutoDefaultLaptopMode();
 }
 bool UJapanPreferences::MusicReady() const
 {
@@ -575,14 +583,16 @@ void UJapanPreferences::Apply()
         {
             // Desktop Performance and Quality keep Slice.umap's authored 3,000 m MainPartition range so the Volcano cone
             // (2.4-2.98 km north of Hidamari) and HD_Sea (1.45 km from Woodland air station) stay loaded under CraterCloud
-            // and over the harbor seabed; Laptop mode clamps MainPartition and CraterCloud together to 896 m.
-            const int32 WpRangeCm = Laptop ? 89600 : -1;
+            // and over the harbor seabed; Laptop mode clamps MainPartition and CraterCloud together to 640 m.
+            const int32 WpRangeCm = Laptop ? LaptopLoadingRangeCm : -1;
             UWorldPartitionSubsystem::SetOverrideLoadingRange(TEXT("MainPartition"), WpRangeCm);
+            if (Laptop && AppliedPerformanceMode != -1 && GEngine)
+                GEngine->ForceGarbageCollection(true);
         }
 #endif
         if (Owner && Owner->GetWorld())
         {
-            const float CloudCullCm = Laptop ? 89600.f : 380000.f;
+            const float CloudCullCm = Laptop ? float(LaptopLoadingRangeCm) : 380000.f;
             for (TActorIterator<ACraterCloud> It(Owner->GetWorld()); It; ++It)
                 for (UProceduralMeshComponent* Shell : It->Shells)
                     if (Shell) Shell->SetCullDistance(CloudCullCm);

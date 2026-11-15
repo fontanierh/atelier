@@ -397,6 +397,7 @@ bool AWandererCharacter::TravelTo(FVector Target, float Yaw, const TCHAR* Reason
     FHitResult Hit;
     FCollisionQueryParams Params(SCENE_QUERY_STAT(MapTeleport),false,this);
     const FVector Wanted = Target;
+    const FVector DepartedFrom = GetActorLocation();
     if (GetWorld()->LineTraceSingleByChannel(Hit,Target+FVector(0,0,Above),Target-FVector(0,0,2500),ECC_Visibility,Params)) Target.Z = Hit.ImpactPoint.Z;
     else { float Ground = 0.f; if (Landscape->SampleGroundHeight(Target,Ground)) Target.Z = Ground; }
     SetActorLocationAndRotation(Target+FVector(0,0,GetCapsuleComponent()->GetScaledCapsuleHalfHeight()+3.f),FRotator(0,Yaw,0),false,nullptr,ETeleportType::TeleportPhysics);
@@ -406,6 +407,11 @@ bool AWandererCharacter::TravelTo(FVector Target, float Yaw, const TCHAR* Reason
     if (Controller) Controller->SetControlRotation(FRotator(-8,Yaw,0));
     if (JapanNetwork::IsOnline(GetWorld())) BeginNetworkActivity(EJapanActivity::OnFoot, true);
     UE_LOG(LogTemp,Display,TEXT("Travelled to %s: (%.0f, %.0f, %.0f) yaw %.0f%s"),Reason,Target.X,Target.Y,Target.Z,Yaw,Hit.bBlockingHit ? TEXT("") : TEXT(" (no ground hit)"));
+    const bool bLaptopActive = Preferences ? Preferences->IsLaptopMode() : UJapanPreferences::IsLaptopModeConfigured();
+    const bool bFarLaptopTravel = !JapanNetwork::IsOnline(GetWorld()) && bLaptopActive &&
+        FVector::DistSquared2D(DepartedFrom, Target) > FMath::Square(30000.f);
+    if (bFarLaptopTravel)
+        GetWorldTimerManager().SetTimer(TravelMemoryTrimTimer, this, &AWandererCharacter::TrimLaptopTravelMemory, .75f, false);
     if (!Hit.bBlockingHit)
     {
         // V2 scenery streams in by cell, so a far town may not be loaded on arrival: the player waits in place (no fall,
@@ -415,6 +421,13 @@ bool AWandererCharacter::TravelTo(FVector Target, float Yaw, const TCHAR* Reason
         GetWorldTimerManager().SetTimer(TravelGroundWait, this, &AWandererCharacter::WaitForTravelGround, .25f, true);
     }
     return true;
+}
+
+void AWandererCharacter::TrimLaptopTravelMemory()
+{
+    const bool bLaptopActive = Preferences ? Preferences->IsLaptopMode() : UJapanPreferences::IsLaptopModeConfigured();
+    if (!GetWorld() || JapanNetwork::IsOnline(GetWorld()) || !bLaptopActive) return;
+    if (GEngine) GEngine->ForceGarbageCollection(true);
 }
 
 void AWandererCharacter::WaitForTravelGround()
@@ -434,6 +447,9 @@ void AWandererCharacter::WaitForTravelGround()
     Movement->bForceNextFloorCheck = true;
     if (Moves) Moves->Reset();
     UE_LOG(LogTemp,Display,TEXT("Travel ground %s after %.2f s"),bGround ? TEXT("found") : TEXT("still missing, falling"),TravelGroundWaited);
+    const bool bLaptopActive = Preferences ? Preferences->IsLaptopMode() : UJapanPreferences::IsLaptopModeConfigured();
+    if (!JapanNetwork::IsOnline(GetWorld()) && bLaptopActive)
+        GetWorldTimerManager().SetTimer(TravelMemoryTrimTimer, this, &AWandererCharacter::TrimLaptopTravelMemory, .75f, false);
 }
 
 void AWandererCharacter::BuildInput()

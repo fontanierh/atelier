@@ -362,6 +362,8 @@ private:
     bool bHasSafeCityLocation=false;
     // A travel whose target ground has not streamed in yet holds the player there until it has (TravelTo).
     FTimerHandle TravelGroundWait;
+    FTimerHandle TravelMemoryTrimTimer;
+    void TrimLaptopTravelMemory();
     FVector TravelGroundTarget=FVector::ZeroVector;
     float TravelGroundAbove=0.f, TravelGroundWaited=0.f;
     void WaitForTravelGround();
