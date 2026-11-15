@@ -330,16 +330,22 @@ namespace RacingCounterUi
         }), 12, FLinearColor::White, "Regular", ETextJustify::Center)];
 
         // The bet, lit like a runner while focused, and the host's answer under it.
+        // A press that cannot bet says why under the button, instead of doing nothing under an older answer.
+        const auto Blocker = [Service, Wallet, Choice]
+        {
+            const ARacingService* S = Service.Get();
+            static const FRacingNetRace NoRace;
+            return RacingCounter::BetBlocker(S ? S->GetNetState().Race : NoRace, S ? S->WorldNow() : 0., Choice->Runner,
+                Choice->Coins(WalletCoins(Wallet)));
+        };
         TSharedRef<SButton> Bet = SNew(SButton).ButtonStyle(Plain()).ContentPadding(FMargin(0, 7)).HAlign(HAlign_Center)
-            .IsEnabled_Lambda([Service, Wallet, Choice]
+            .OnClicked_Lambda([Service, Wallet, Choice, Blocker]
             {
+                if (!Wallet.IsValid()) return FReply::Handled();
+                const FString Why = Blocker();
                 const FRacingNetRace* Race = OpenRace(Service.Get());
-                return Race && Race->Runners.IsValidIndex(Choice->Runner) && Choice->Coins(WalletCoins(Wallet)) >= HRRules::FBetLimits::MinStake;
-            })
-            .OnClicked_Lambda([Service, Wallet, Choice]
-            {
-                const FRacingNetRace* Race = OpenRace(Service.Get());
-                if (Race && Wallet.IsValid()) Wallet->RequestBet(Race->Key, Choice->Runner, Choice->Coins(WalletCoins(Wallet)));
+                if (!Why.IsEmpty() || !Race) Wallet->SetLocalReply(Why.IsEmpty() ? FString(TEXT("No race is open to bets right now.")) : Why);
+                else Wallet->RequestBet(Race->Key, Choice->Runner, Choice->Coins(WalletCoins(Wallet)));
                 return FReply::Handled();
             })
             [Text(TAttribute<FText>::CreateLambda([Service, Wallet, Choice]
@@ -349,9 +355,18 @@ namespace RacingCounterUi
                 return FText::FromString(FString::Printf(TEXT("Bet %d coins on %s"), Choice->Coins(WalletCoins(Wallet)), *Race->Runners[Choice->Runner].Horse));
             }), 14, FLinearColor::White, "Bold", ETextJustify::Center)];
         Rows->AddSlot().AutoHeight()[LitButton(Bet)];
-        Rows->AddSlot().AutoHeight().Padding(0, 6, 0, 0)[Text(TAttribute<FText>::CreateLambda([Wallet]
+        // The answer belongs to the race it was about: a new race in focus clears it.
+        const TSharedRef<FString> ReplyRace = MakeShared<FString>(Service.IsValid() ? Service->GetNetState().Race.Key : FString());
+        Rows->AddSlot().AutoHeight().Padding(0, 6, 0, 0)[Text(TAttribute<FText>::CreateLambda([Service, Wallet, ReplyRace]
         {
-            return Wallet.IsValid() ? FText::FromString(Wallet->GetReply()) : FText::GetEmpty();
+            if (!Wallet.IsValid()) return FText::GetEmpty();
+            const FString Key = Service.IsValid() ? Service->GetNetState().Race.Key : FString();
+            if (Key != *ReplyRace)
+            {
+                *ReplyRace = Key;
+                Wallet->ClearReply();
+            }
+            return FText::FromString(Wallet->GetReply());
         }), 13, Accent, "Regular", ETextJustify::Center)];
         Rows->AddSlot().AutoHeight().Padding(0, 10)[YorimichiMenu::Divider()];
 
@@ -455,7 +470,10 @@ bool RacingCounter::TryOpen(AWandererCharacter* Pawn)
     if (!CanUse(Pawn) || !GEngine || !GEngine->GameViewport) return false;
     RacingCounterUi::FOpen& State = RacingCounterUi::Open();
     TSharedPtr<SButton> First;
-    State.Menu = RacingCounterUi::Build(ARacingService::Find(Pawn), URacingWallet::Of(Pawn->GetController()), First);
+    URacingWallet* Wallet = URacingWallet::Of(Pawn->GetController());
+    // A fresh window shows no answer from an earlier visit.
+    Wallet->ClearReply();
+    State.Menu = RacingCounterUi::Build(ARacingService::Find(Pawn), Wallet, First);
     State.Player = Pawn;
     GEngine->GameViewport->AddViewportWidgetContent(State.Menu.ToSharedRef(), 21);
     Pawn->SetMenuOpen(true);
@@ -498,6 +516,15 @@ int32 RacingCounter::StepStake(int32 Stake, int32 Coins, int32 Direction)
     for (const int32 Step : Steps)
         if (Step > Stake) return Step;
     return Steps.Last();
+}
+
+FString RacingCounter::BetBlocker(const FRacingNetRace& Race, double Now, int32 Runner, int32 Stake)
+{
+    if (Race.Key.IsEmpty() || Race.Runners.Num() < 2) return TEXT("No race is open to bets right now.");
+    if (!FMath::IsFinite(Now) || Now >= Race.Start) return TEXT("Betting on this race has closed.");
+    if (Stake < HRRules::FBetLimits::MinStake) return TEXT("You have no coins to bet.");
+    if (!Race.Runners.IsValidIndex(Runner)) return TEXT("This horse is not running in this race.");
+    return FString();
 }
 
 void RacingCounter::Close()

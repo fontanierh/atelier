@@ -670,6 +670,26 @@ bool FRacingBetStakeStepsTest::RunTest(const FString&)
     return true;
 }
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FRacingBetBlockerTest, "Yorimichi.Racing.Bet.Blocker",
+    EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
+
+bool FRacingBetBlockerTest::RunTest(const FString&)
+{
+    // A press of the bet button that cannot reach the host says why, so the window never leaves an older answer under it.
+    FRacingNetRace Race;
+    TestEqual(TEXT("No race in focus"), RacingCounter::BetBlocker(Race, 100., 0, 5), FString(TEXT("No race is open to bets right now.")));
+    Race.Key = TEXT("belmonte:0");
+    Race.Start = 200.;
+    Race.Runners.SetNum(2);
+    TestEqual(TEXT("Open race, a runner and coins: the host decides"), RacingCounter::BetBlocker(Race, 100., 1, 5), FString());
+    TestEqual(TEXT("Betting closes at the start"), RacingCounter::BetBlocker(Race, 200., 0, 5), FString(TEXT("Betting on this race has closed.")));
+    TestEqual(TEXT("No coins"), RacingCounter::BetBlocker(Race, 100., 0, 0), FString(TEXT("You have no coins to bet.")));
+    TestEqual(TEXT("No such runner"), RacingCounter::BetBlocker(Race, 100., 2, 5), FString(TEXT("This horse is not running in this race.")));
+    Race.Runners.SetNum(1);
+    TestEqual(TEXT("A race of one is not open to bets"), RacingCounter::BetBlocker(Race, 100., 0, 5), FString(TEXT("No race is open to bets right now.")));
+    return true;
+}
+
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FRacingBetWalletTicketsTest, "Yorimichi.Racing.Bet.WalletTickets",
     EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
 
