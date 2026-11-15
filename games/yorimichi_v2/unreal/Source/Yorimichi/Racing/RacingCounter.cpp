@@ -17,6 +17,7 @@
 #include "Widgets/Layout/SBorder.h"
 #include "Widgets/Layout/SBox.h"
 #include "Widgets/SBoxPanel.h"
+#include "Widgets/SCompoundWidget.h"
 #include "Widgets/Text/STextBlock.h"
 
 // ------------------------------------------------------------------------------------------------------------ wallet
@@ -99,12 +100,55 @@ namespace RacingCounterUi
         return State;
     }
 
-    /** The window's choices: a runner of the race in focus (its index) and the stake. */
+    /** The window's choices: a runner of the race in focus (its index) and the stake, or All (the player's coins, as they
+     *  change). */
     struct FChoice
     {
         int32 Runner = 0;
         int32 Stake = 1;
+        bool bAll = false;
+
+        /** The stake on offer: never more than the coins. */
+        int32 Coins(int32 Wallet) const { return bAll ? Wallet : FMath::Min(Stake, Wallet); }
+        void Step(int32 Wallet, int32 Direction)
+        {
+            Stake = RacingCounter::StepStake(Coins(Wallet), Wallet, Direction);
+            bAll = Stake > 0 && Stake == Wallet;
+        }
     };
+
+    /** The window's frame: LB / Q step the stake down and RB / E up from whichever button has focus. The keys are taken
+     *  here, so neither the game (wave, interact) nor the window's focus moves on them. */
+    class SStakeKeys : public SCompoundWidget
+    {
+    public:
+        SLATE_BEGIN_ARGS(SStakeKeys) {}
+            SLATE_DEFAULT_SLOT(FArguments, Content)
+        SLATE_END_ARGS()
+
+        void Construct(const FArguments& Args, TFunction<void(int32)> InStep)
+        {
+            Step = MoveTemp(InStep);
+            ChildSlot[Args._Content.Widget];
+        }
+        virtual FReply OnKeyDown(const FGeometry&, const FKeyEvent& E) override
+        {
+            const FKey K = E.GetKey();
+            const int32 Direction = K == EKeys::Gamepad_LeftShoulder || K == EKeys::Q ? -1 : K == EKeys::Gamepad_RightShoulder || K == EKeys::E ? 1 : 0;
+            if (!Direction) return FReply::Unhandled();
+            if (!E.IsRepeat()) Step(Direction);
+            return FReply::Handled();
+        }
+        virtual FReply OnKeyUp(const FGeometry&, const FKeyEvent& E) override
+        {
+            const FKey K = E.GetKey();
+            return K == EKeys::Gamepad_LeftShoulder || K == EKeys::Q || K == EKeys::Gamepad_RightShoulder || K == EKeys::E ? FReply::Handled() : FReply::Unhandled();
+        }
+    private:
+        TFunction<void(int32)> Step;
+    };
+
+    int32 WalletCoins(const TWeakObjectPtr<URacingWallet>& Wallet) { return Wallet.IsValid() ? Wallet->GetWallet().Coins : 0; }
 
     /** The race in focus while it is still open to bets, else nullptr. */
     const FRacingNetRace* OpenRace(const ARacingService* Service)
@@ -132,8 +176,9 @@ namespace RacingCounterUi
             .Justification(Justify);
     }
 
-    /** The window: the race in focus with each runner's odds, the stake (1 to 10), the bet, the wallet and the host's
-     *  answer. Buttons only, so the D-pad or the stick moves between them and the bottom face button presses them. */
+    /** The window: the race in focus with each runner's odds, the stake stepper with its estimated return, the bet, the
+     *  wallet (its newest tickets) and the host's answer. Buttons only, so the D-pad or the stick moves between them and the
+     *  bottom face button presses them; LB / RB (Q / E) step the stake from anywhere in it. */
     TSharedRef<SWidget> Build(TWeakObjectPtr<ARacingService> Service, TWeakObjectPtr<URacingWallet> Wallet, TSharedPtr<SButton>& OutFirst)
     {
         const TSharedRef<FChoice> Choice = MakeShared<FChoice>();
@@ -165,39 +210,62 @@ namespace RacingCounterUi
             Rows->AddSlot().AutoHeight().Padding(0, 0, 0, 4)[Runner];
         }
         Rows->AddSlot().AutoHeight().Padding(0, 10, 0, 6)[Text(FText::FromString(TEXT("Stake")), 16, FLinearColor::White, "Bold")];
-        TSharedRef<SHorizontalBox> Stakes = SNew(SHorizontalBox);
-        for (int32 Coins = HRRules::FBetLimits::MinStake; Coins <= HRRules::FBetLimits::MaxStake; ++Coins)
-            Stakes->AddSlot().FillWidth(1.f).Padding(0, 0, 4, 0)[SNew(SButton).HAlign(HAlign_Center)
-                .OnClicked_Lambda([Choice, Coins] { Choice->Stake = Coins; return FReply::Handled(); })
-                // The picked stake is drawn in the accent colour: a bracketed "[10]" is clipped by the narrow button.
-                [SNew(STextBlock).Text(FText::AsNumber(Coins)).Font(FCoreStyle::GetDefaultFontStyle("Bold", 13))
-                    .ColorAndOpacity_Lambda([Choice, Coins, Accent] { return FSlateColor(Choice->Stake == Coins ? Accent : FLinearColor::White); })]];
-        Rows->AddSlot().AutoHeight().Padding(0, 0, 0, 10)[Stakes];
+        auto StepButton = [Wallet, Choice](const TCHAR* Label, int32 Direction)
+        {
+            return SNew(SButton).HAlign(HAlign_Center).VAlign(VAlign_Center)
+                .OnClicked_Lambda([Wallet, Choice, Direction] { Choice->Step(WalletCoins(Wallet), Direction); return FReply::Handled(); })
+                [SNew(STextBlock).Text(FText::FromString(Label)).Font(FCoreStyle::GetDefaultFontStyle("Bold", 13))];
+        };
+        Rows->AddSlot().AutoHeight().Padding(0, 0, 0, 6)[SNew(SHorizontalBox)
+            + SHorizontalBox::Slot().FillWidth(1.f)[StepButton(TEXT("LB / Q  −"), -1)]
+            + SHorizontalBox::Slot().FillWidth(1.4f).VAlign(VAlign_Center)[Text(TAttribute<FText>::CreateLambda([Wallet, Choice]
+            {
+                const int32 Coins = WalletCoins(Wallet), Stake = Choice->Coins(Coins);
+                return FText::FromString(Stake > 0 && Stake == Coins ? FString::Printf(TEXT("%d  (All)"), Stake) : FString::FromInt(Stake));
+            }), 28, Accent, "Bold", ETextJustify::Center)]
+            + SHorizontalBox::Slot().FillWidth(1.f)[StepButton(TEXT("RB / E  +"), 1)]];
+        Rows->AddSlot().AutoHeight().Padding(0, 0, 0, 10)[Text(TAttribute<FText>::CreateLambda([Service, Wallet, Choice]
+        {
+            const FRacingNetRace* Race = OpenRace(Service.Get());
+            const int32 Stake = Choice->Coins(WalletCoins(Wallet));
+            if (Stake < HRRules::FBetLimits::MinStake) return FText::FromString(TEXT("You have no coins to bet."));
+            if (!Race || !Race->Runners.IsValidIndex(Choice->Runner)) return FText::GetEmpty();
+            // The stake joins the pool before the odds are read, as it will when the bet is taken.
+            const FRacingNetRunner& R = Race->Runners[Choice->Runner];
+            const int32 Returns = HRRules::Payout(Stake, HRRules::RapportOf(Race->Pool, R.Backing, Stake));
+            return FText::FromString(FString::Printf(TEXT("Returns about %d coins if %s wins (odds move as others bet)"), Returns, *R.Horse));
+        }), 12, FLinearColor::White, "Regular", ETextJustify::Center)];
         Rows->AddSlot().AutoHeight().Padding(0, 0, 0, 10)[SNew(SButton).HAlign(HAlign_Center)
-            .IsEnabled_Lambda([Service, Choice] { const FRacingNetRace* Race = OpenRace(Service.Get()); return Race && Race->Runners.IsValidIndex(Choice->Runner); })
+            .IsEnabled_Lambda([Service, Wallet, Choice]
+            {
+                const FRacingNetRace* Race = OpenRace(Service.Get());
+                return Race && Race->Runners.IsValidIndex(Choice->Runner) && Choice->Coins(WalletCoins(Wallet)) >= HRRules::FBetLimits::MinStake;
+            })
             .OnClicked_Lambda([Service, Wallet, Choice]
             {
                 const FRacingNetRace* Race = OpenRace(Service.Get());
-                if (Race && Wallet.IsValid()) Wallet->RequestBet(Race->Key, Choice->Runner, Choice->Stake);
+                if (Race && Wallet.IsValid()) Wallet->RequestBet(Race->Key, Choice->Runner, Choice->Coins(WalletCoins(Wallet)));
                 return FReply::Handled();
             })
-            [Text(TAttribute<FText>::CreateLambda([Service, Choice]
+            [Text(TAttribute<FText>::CreateLambda([Service, Wallet, Choice]
             {
                 const FRacingNetRace* Race = OpenRace(Service.Get());
                 if (!Race || !Race->Runners.IsValidIndex(Choice->Runner)) return FText::FromString(TEXT("Place the bet"));
-                return FText::FromString(FString::Printf(TEXT("Bet %d coins on %s"), Choice->Stake, *Race->Runners[Choice->Runner].Horse));
+                return FText::FromString(FString::Printf(TEXT("Bet %d coins on %s"), Choice->Coins(WalletCoins(Wallet)), *Race->Runners[Choice->Runner].Horse));
             }), 14, FLinearColor::White, "Bold", ETextJustify::Center)]];
         Rows->AddSlot().AutoHeight().Padding(0, 0, 0, 6)[Text(TAttribute<FText>::CreateLambda([Wallet]
         {
             if (!Wallet.IsValid()) return FText::GetEmpty();
             const FRacingWalletState& W = Wallet->GetWallet();
-            return FText::FromString(FString::Printf(TEXT("Coins: %d   ·   Staked today: %d of %d"), W.Coins, W.DayStaked, HRRules::FBetLimits::PerDay));
+            return FText::FromString(FString::Printf(TEXT("Coins: %d   ·   Staked today: %d"), W.Coins, W.DayStaked));
         }), 13, Accent, "Bold")];
         Rows->AddSlot().AutoHeight().Padding(0, 0, 0, 10)[Text(TAttribute<FText>::CreateLambda([Wallet]
         {
             if (!Wallet.IsValid() || Wallet->GetWallet().Tickets.IsEmpty()) return FText::FromString(TEXT("No tickets today."));
+            const FRacingWalletState& W = Wallet->GetWallet();
             TArray<FString> Lines;
-            for (const FRacingWalletTicket& T : Wallet->GetWallet().Tickets) Lines.Add(Ticket(T));
+            for (const FRacingWalletTicket& T : W.Tickets) Lines.Add(Ticket(T));
+            if (W.EarlierTickets > 0) Lines.Add(FString::Printf(TEXT("+%d earlier tickets"), W.EarlierTickets));
             return FText::FromString(FString::Join(Lines, TEXT("\n")));
         }), 11, FLinearColor::White)];
         Rows->AddSlot().AutoHeight().Padding(0, 0, 0, 12)[Text(TAttribute<FText>::CreateLambda([Wallet]
@@ -208,9 +276,9 @@ namespace RacingCounterUi
             .OnClicked_Lambda([] { RacingCounter::Close(); return FReply::Handled(); });
         Rows->AddSlot().AutoHeight()[Leave];
         if (!OpenRace(Service.Get())) OutFirst = Leave;
-        return SNew(SBorder).HAlign(HAlign_Center).VAlign(VAlign_Center).BorderImage(FCoreStyle::Get().GetBrush("WhiteBrush")).BorderBackgroundColor(FLinearColor(0, 0, 0, .35f))
+        return SNew(SStakeKeys, [Wallet, Choice](int32 Direction) { Choice->Step(WalletCoins(Wallet), Direction); })[SNew(SBorder).HAlign(HAlign_Center).VAlign(VAlign_Center).BorderImage(FCoreStyle::Get().GetBrush("WhiteBrush")).BorderBackgroundColor(FLinearColor(0, 0, 0, .35f))
             [SNew(SBox).WidthOverride(640)
-                [SNew(SBorder).Padding(28).BorderImage(FCoreStyle::Get().GetBrush("WhiteBrush")).BorderBackgroundColor(FLinearColor(.05f, .03f, .025f, .96f))[Rows]]];
+                [SNew(SBorder).Padding(28).BorderImage(FCoreStyle::Get().GetBrush("WhiteBrush")).BorderBackgroundColor(FLinearColor(.05f, .03f, .025f, .96f))[Rows]]]];
     }
 }
 
@@ -280,6 +348,30 @@ bool RacingCounter::IsOpen()
     // A window whose player is gone (a world left with it open) is closed, so the counter opens again.
     if (RacingCounterUi::Open().Menu.IsValid() && !RacingCounterUi::Open().Player.IsValid()) Close();
     return RacingCounterUi::Open().Menu.IsValid();
+}
+
+TArray<int32> RacingCounter::StakeSteps(int32 Coins)
+{
+    TArray<int32> Steps;
+    for (const int32 Step : {1, 5, 10, 25, 50, 100})
+        if (Step < Coins) Steps.Add(Step);
+    if (Coins >= HRRules::FBetLimits::MinStake) Steps.Add(Coins);
+    return Steps;
+}
+
+int32 RacingCounter::StepStake(int32 Stake, int32 Coins, int32 Direction)
+{
+    const TArray<int32> Steps = StakeSteps(Coins);
+    if (Steps.IsEmpty()) return 0;
+    if (Direction < 0)
+    {
+        for (int32 I = Steps.Num() - 1; I >= 0; --I)
+            if (Steps[I] < Stake) return Steps[I];
+        return Steps[0];
+    }
+    for (const int32 Step : Steps)
+        if (Step > Stake) return Step;
+    return Steps.Last();
 }
 
 void RacingCounter::Close()

@@ -639,10 +639,78 @@ bool FRacingBetPlaceTest::RunTest(const FString&)
     TestFalse(TEXT("No runner after the last"), ARacingService::PlaceBetAt(F.World, F.Player, F.Key, F.Runners(), 5, Before).IsEmpty());
     TestEqual(TEXT("No bet once the race has started"), ARacingService::PlaceBetAt(F.World, F.Player, F.Key, 0, 5, F.Start),
         FString(TEXT("Betting on this race has closed.")));
-    TestFalse(TEXT("No stake of 11"), ARacingService::PlaceBetAt(F.World, F.Player, F.Key, 0, 11, Before).IsEmpty());
+    TestFalse(TEXT("No stake of 0"), ARacingService::PlaceBetAt(F.World, F.Player, F.Key, 0, 0, Before).IsEmpty());
+    TestFalse(TEXT("No stake above the player's coins"), ARacingService::PlaceBetAt(F.World, F.Player, F.Key, 0, Coins - 4, Before).IsEmpty());
     TestFalse(TEXT("No unknown player"), ARacingService::PlaceBetAt(F.World, TEXT("local:nobody"), F.Key, 0, 5, Before).IsEmpty());
     TestEqual(TEXT("Refusals take no coins"), HRRules::FindPlayer(F.World, F.Player)->Coins, Coins - 5);
     TestEqual(TEXT("and make no ticket"), F.World.Tickets.Num(), Tickets + 1);
+    TestEqual(TEXT("A stake of 11 is taken"), ARacingService::PlaceBetAt(F.World, F.Player, F.Key, 1, 11, Before), FString());
+    TestEqual(TEXT("and so is all that is left"), ARacingService::PlaceBetAt(F.World, F.Player, F.Key, 0, Coins - 16, Before), FString());
+    TestEqual(TEXT("No coins left"), HRRules::FindPlayer(F.World, F.Player)->Coins, 0);
+    return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FRacingBetStakeStepsTest, "Yorimichi.Racing.Bet.StakeSteps",
+    EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
+
+bool FRacingBetStakeStepsTest::RunTest(const FString&)
+{
+    TestEqual(TEXT("37 coins: 1, 5, 10, 25, then All"), RacingCounter::StakeSteps(37), TArray<int32>({1, 5, 10, 25, 37}));
+    TestEqual(TEXT("500 coins: every step, then All"), RacingCounter::StakeSteps(500), TArray<int32>({1, 5, 10, 25, 50, 100, 500}));
+    TestEqual(TEXT("25 coins: 25 is All"), RacingCounter::StakeSteps(25), TArray<int32>({1, 5, 10, 25}));
+    TestEqual(TEXT("1 coin: only All"), RacingCounter::StakeSteps(1), TArray<int32>({1}));
+    TestTrue(TEXT("No coins, no step"), RacingCounter::StakeSteps(0).IsEmpty());
+    TestEqual(TEXT("Down from All"), RacingCounter::StepStake(37, 37, -1), 25);
+    TestEqual(TEXT("Up from 25 is All"), RacingCounter::StepStake(25, 37, 1), 37);
+    TestEqual(TEXT("Held at All"), RacingCounter::StepStake(37, 37, 1), 37);
+    TestEqual(TEXT("Held at 1"), RacingCounter::StepStake(1, 37, -1), 1);
+    TestEqual(TEXT("A stake between steps moves to the next one up"), RacingCounter::StepStake(30, 500, 1), 50);
+    TestEqual(TEXT("or down"), RacingCounter::StepStake(30, 500, -1), 25);
+    TestEqual(TEXT("No coins, no stake"), RacingCounter::StepStake(5, 0, 1), 0);
+    return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FRacingBetWalletTicketsTest, "Yorimichi.Racing.Bet.WalletTickets",
+    EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
+
+bool FRacingBetWalletTicketsTest::RunTest(const FString&)
+{
+    RacingTest::FBetFixture F;
+    if (!F.Make(*this)) return false;
+    const double Before = F.Start - 60.;
+    const int32 Placed = FRacingWalletState::MaxTickets + 5;
+    HRRules::FindPlayer(F.World, F.Player)->Coins = 1000;
+    for (int32 I = 0; I < Placed; ++I)
+        if (!TestEqual(TEXT("A ticket is taken"), ARacingService::PlaceBetAt(F.World, F.Player, F.Key, 0, I + 1, Before), FString())) return false;
+    const FRacingWalletState W = ARacingService::BuildWallet(F.World, F.Player, Before);
+    TestEqual(TEXT("The wallet carries at most MaxTickets"), W.Tickets.Num(), FRacingWalletState::MaxTickets);
+    TestEqual(TEXT("and counts the rest"), W.EarlierTickets, Placed - FRacingWalletState::MaxTickets);
+    TestEqual(TEXT("Newest first"), W.Tickets[0].Stake, Placed);
+    TestEqual(TEXT("down to the oldest carried"), W.Tickets.Last().Stake, Placed - FRacingWalletState::MaxTickets + 1);
+    TestEqual(TEXT("Every stake still counts today"), W.DayStaked, Placed * (Placed + 1) / 2);
+    return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FRacingBetQuoteTest, "Yorimichi.Racing.Bet.Quote",
+    EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
+
+bool FRacingBetQuoteTest::RunTest(const FString&)
+{
+    RacingTest::FBetFixture F;
+    if (!F.Make(*this)) return false;
+    const double Now = F.Start - 60.;
+    FRacingNetState Net;
+    ARacingService::BuildSnapshot(F.World, Now, FRacingNetResult(), Net);
+    if (!TestEqual(TEXT("The race in focus"), Net.Race.Key, F.Key) || !TestTrue(TEXT("with runners"), Net.Race.Runners.Num() >= 2)) return false;
+    const FRacingNetRunner& R = Net.Race.Runners[0];
+    const FHRRace& Race = *HRRules::FindRace(F.World, F.Key);
+    const FString Horse = Race.Entries[0].HorseId;
+    // The window quotes from the snapshot what the rules would pay with the stake in the pool.
+    for (const int32 Stake : {1, 5, 100})
+        TestEqual(FString::Printf(TEXT("The snapshot quotes the rules' odds for %d coins"), Stake),
+            HRRules::RapportOf(Net.Race.Pool, R.Backing, Stake), HRRules::Rapport(F.World, Race, Horse, Stake));
+    const double Small = HRRules::RapportOf(Net.Race.Pool, R.Backing, 1), Large = HRRules::RapportOf(Net.Race.Pool, R.Backing, 150);
+    TestTrue(FString::Printf(TEXT("A large stake returns less per coin (%.2f) than a small one (%.2f)"), Large, Small), Large < Small);
     return true;
 }
 

@@ -28,6 +28,8 @@ struct FRacingNetRunner
     UPROPERTY() FColor Silks = FColor::White;
     /** Win odds for one coin, in tenths (35 = 3.5). */
     UPROPERTY() int32 OddsTenths = 0;
+    /** The coins backing this horse in the race's pool (HRRules::PoolShares), so a stake's return is quoted anywhere. */
+    UPROPERTY() double Backing = 0.;
     /** The look: RacingLooks::Breeds index, coat (0 the breed's own, k the roster's coat variant k-1), scale in percent. */
     UPROPERTY() uint8 Breed = 0;
     UPROPERTY() uint8 Coat = 0;
@@ -56,6 +58,8 @@ struct FRacingNetRace
     /** World second of the start (the rules' clock). */
     UPROPERTY() double Start = 0.;
     UPROPERTY() bool bRun = false;
+    /** The race's whole pool, crowd and players' tickets (HRRules::PoolShares). */
+    UPROPERTY() double Pool = 0.;
     UPROPERTY() TArray<FRacingNetRunner> Runners;
 
     bool operator==(const FRacingNetRace& O) const;
@@ -186,7 +190,8 @@ public:
     static FString PlaceBetAt(FHRWorldState& S, const FString& PlayerId, const FString& RaceKey, int32 Runner, int32 Stake, double Now);
     /** A controller's bet (authority only): its pawn must stand at the betting counter. The odds move for everyone at once. */
     FString PlaceBet(const AController* Controller, const FString& RaceKey, int32 Runner, int32 Stake);
-    /** A player's wallet at world second Now: a ticket's outcome and payout stay hidden until its race's winner is home. */
+    /** A player's wallet at world second Now: a ticket's outcome and payout stay hidden until its race's winner is home.
+     *  It carries today's newest FRacingWalletState::MaxTickets tickets, newest first, and counts the rest. */
     static FRacingWalletState BuildWallet(const FHRWorldState& S, const FString& PlayerId, double Now);
     /** The world as it is saved: without the guests' session players and their tickets. */
     static FHRWorldState PersistentWorld(const FHRWorldState& S);

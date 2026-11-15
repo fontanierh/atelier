@@ -203,8 +203,12 @@ membership MUST fail readiness instead of loading a parent fallback.
 @cc [owner:fontanierh,label:correctness] racing-betting-requests
 Win bets MUST be placed only on authority: a client's ServerPlaceBet is admitted at most five times a second with a
 race key of at most 32 characters, its pawn MUST stand at the betting counter on the host, betting MUST close at the
-race's start, and HRRules::PlaceBet decides the rest; clients MUST NOT change coins or tickets locally. A taken bet MUST
-republish the snapshot so the odds move for every player. URacingWallet MUST replicate COND_OwnerOnly and MUST NOT carry
-another player's tickets; a settled ticket MUST show its outcome and payout only once its race's winner is home. The
+race's start, and HRRules::PlaceBet decides the rest: a stake MUST be at least 1 coin and at most the player's coins, with
+no other limit, and payouts MUST saturate at HRRules::MaxCoins; clients MUST NOT change coins or tickets locally. A taken
+bet MUST republish the snapshot so the odds move for every player; the window's estimated return MUST quote the rules'
+odds with the stake in the pool (HRRules::RapportOf over the snapshot's pool shares). URacingWallet MUST replicate
+COND_OwnerOnly, MUST NOT carry another player's tickets and MUST carry at most FRacingWalletState::MaxTickets of today's
+tickets, newest first, counting the rest; a settled ticket MUST show its outcome and payout only once its race's winner
+is home. The
 counter MUST derive from Belmonte's tv_spots salon_paris spot, with no hardcoded fallback. Guest betting MUST stay one
 switch (racing.GuestBets, on: session-only wallets never saved; off: guests refused in English).
