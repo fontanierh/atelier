@@ -5,6 +5,7 @@
 #include "JapanPreferences.h"
 #include "JapanHUD.h"
 #include "PlayableCharacter.h"
+#include "RacingCounter.h"
 #include "AdventureMoveSet.h"
 #include "WandererCharacter.h"
 #include "Components/CapsuleComponent.h"
@@ -236,6 +237,8 @@ void AJapanGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 AJapanPlayerController::AJapanPlayerController()
 {
     PrimaryActorTick.bCanEverTick = true;
+    // The player's racing coins and win bets, filled by the host and replicated to this player only.
+    CreateDefaultSubobject<URacingWallet>(TEXT("RacingWallet"));
 }
 void AJapanPlayerController::BeginPlay()
 {

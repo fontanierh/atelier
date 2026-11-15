@@ -21,6 +21,7 @@
 #include "WandererDefinition.h"
 #include "WandererAnimInstance.h"
 #include "SwordTrainer.h"
+#include "RacingCounter.h"
 #include "SkateComponent.h"
 #include "SailboatComponent.h"
 #include "BikeComponent.h"
@@ -1064,6 +1065,8 @@ void AWandererCharacter::ZeppelinStep(int32 Direction)
     else if(bReady&&!bMenuOpen)GetZeppelin()->ChooseDestination(this,Direction);
 }
 void AWandererCharacter::Interact(const FInputActionValue&) {
+ // The Salon's betting counter opens alike offline and online: its bets go to the host through the player's wallet.
+ if(bReady&&!bMenuOpen&&RacingCounter::TryOpen(this))return;
  if (JapanNetwork::IsOnline(GetWorld()))
  {
   if (IsLocallyControlled() && bReady && !bMenuOpen && !SkateRide->IsRiding() && !OnVehicle() && !IsZeppelinPassenger() && ABelmonteTrainService::CanInteract(this))

@@ -1,6 +1,7 @@
 #include "RacingService.h"
 #if WITH_DEV_AUTOMATION_TESTS
 #include "RacingBroadcast.h"
+#include "RacingCounter.h"
 #include "HorseComponent.h"
 #include "AtelierData.h"
 #include "Dom/JsonObject.h"
@@ -8,6 +9,7 @@
 #include "HRRules.h"
 #include "HRSave.h"
 #include "HAL/FileManager.h"
+#include "HAL/IConsoleManager.h"
 #include "Misc/AutomationTest.h"
 #include "Misc/FileHelper.h"
 #include "Misc/Guid.h"
@@ -16,6 +18,7 @@
 #include "Serialization/JsonSerializer.h"
 #include "Serialization/MemoryReader.h"
 #include "Serialization/MemoryWriter.h"
+#include "Net/UnrealNetwork.h"
 
 namespace RacingTest
 {
@@ -30,6 +33,13 @@ namespace RacingTest
 
     /** Belmonte's region origin (world/regions/belmonte/layout.py ORIGIN, in Unreal cm). */
     const FVector BelmonteOrigin(550. * 100., -4500. * 100., 210. * 100.);
+
+    /** Belmonte's runtime.json tv_spots as world/regions/belmonte derives them from the authored buildings. */
+    const TCHAR* const AuthoredSpotsJson = TEXT("{\"tv_spots\":[")
+        TEXT("{\"id\":\"osteria_front\",\"pivot_cm\":[-2600,-190,248],\"yaw\":180,\"watch_cm\":[-3040,-160,18],\"watch_yaw\":-4,\"scale\":1.4},")
+        TEXT("{\"id\":\"osteria_back\",\"pivot_cm\":[-4050,485,248],\"yaw\":0,\"watch_cm\":[-3700,160,18],\"watch_yaw\":136.2,\"scale\":1.4},")
+        TEXT("{\"id\":\"salon_paris\",\"pivot_cm\":[7500,-29720,3255],\"yaw\":-90,\"watch_cm\":[7500,-30150,3015],\"watch_yaw\":90,\"scale\":1.4},")
+        TEXT("{\"id\":\"salon_bar\",\"pivot_cm\":[5750,-31637.6,3305],\"yaw\":90,\"watch_cm\":[5750,-31160,3015],\"watch_yaw\":-90,\"scale\":1.3}]}");
 
     /** A world one second before its first race of the day, the race run, and the snapshot a second after its start. */
     struct FRaceFixture
@@ -50,6 +60,29 @@ namespace RacingTest
             ARacingService::BuildSnapshot(World, Start + 1., FRacingNetResult(), Snapshot);
             return Test.TestTrue(TEXT("The race in focus has been run"), Snapshot.Race.bRun && Snapshot.Race.Runners.Num() >= 2);
         }
+    };
+
+    /** A world before its first race of the day, with a player of FHRPlayer's starting coins. */
+    struct FBetFixture
+    {
+        FHRWorldState World;
+        FString Key;
+        double Start = 0.;
+        const FString Player = TEXT("local:bet-test");
+        bool Make(FAutomationTestBase& Test)
+        {
+            World = HRRules::CreateWorld(TEXT("yorimichi-racing-test"));
+            HRRules::StartClock(World, 1700000000);
+            const FHRRace* First = nullptr;
+            for (const FHRRace& R : World.Meeting.Races)
+                if (R.Status == TEXT("declared") && R.Entries.Num() >= 2) { First = &R; break; }
+            if (!Test.TestNotNull(TEXT("The day has a race"), First)) return false;
+            Key = First->Key;
+            Start = HRRules::RaceStartSeconds(World, Key);
+            HRRules::AddPlayer(World, Player, TEXT("Tester"));
+            return Test.TestTrue(TEXT("The race is still to start"), Start > 60.);
+        }
+        int32 Runners() const { return HRRules::FindRace(World, Key)->Entries.Num(); }
     };
 }
 
@@ -411,14 +444,9 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FRacingTvPlacementTest, "Yorimichi.Racing.TvPla
 bool FRacingTvPlacementTest::RunTest(const FString&)
 {
     const FVector Origin = RacingTest::BelmonteOrigin;
-    const FString AuthoredJson = TEXT("{\"tv_spots\":[")
-        TEXT("{\"id\":\"osteria_front\",\"pivot_cm\":[-2600,-190,248],\"yaw\":180,\"watch_cm\":[-3040,-160,18],\"watch_yaw\":-4,\"scale\":1.4},")
-        TEXT("{\"id\":\"osteria_back\",\"pivot_cm\":[-4050,485,248],\"yaw\":0,\"watch_cm\":[-3700,160,18],\"watch_yaw\":136.2,\"scale\":1.4},")
-        TEXT("{\"id\":\"salon_paris\",\"pivot_cm\":[7500,-29720,3255],\"yaw\":-90,\"watch_cm\":[7500,-30150,3015],\"watch_yaw\":90,\"scale\":1.4},")
-        TEXT("{\"id\":\"salon_bar\",\"pivot_cm\":[5750,-31637.6,3305],\"yaw\":90,\"watch_cm\":[5750,-31160,3015],\"watch_yaw\":-90,\"scale\":1.3}]}");
     TArray<RacingTv::FSpot> Authored;
     FString Error;
-    if (!TestTrue(TEXT("Authored runtime tv_spots parse"), RacingTv::ParseSpots(AuthoredJson, Authored, &Error) && Authored.Num() == 4))
+    if (!TestTrue(TEXT("Authored runtime tv_spots parse"), RacingTv::ParseSpots(RacingTest::AuthoredSpotsJson, Authored, &Error) && Authored.Num() == 4))
         return false;
     const int32 Front = RacingTv::FindSpot(TEXT("osteria_front"), Authored);
     if (!TestTrue(TEXT("The osteria's front screen"), Authored.IsValidIndex(Front))) return false;
@@ -568,6 +596,160 @@ bool FRacingTvDirectorTest::RunTest(const FString&)
         TestTrue(FString::Printf(TEXT("The %s shot is used: %s"), RacingTv::ShotName(S), *Order), Seen.Contains(S));
     // The leader is always in frame but for the line (fixed on the post, the field enters it) and the pull-up (the group).
     TestTrue(FString::Printf(TEXT("The leader is in frame most of the time (%d of %d)"), Framed, Samples), Framed >= Samples * 3 / 4);
+    return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FRacingCounterPlacementTest, "Yorimichi.Racing.Counter.Placement",
+    EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
+
+bool FRacingCounterPlacementTest::RunTest(const FString&)
+{
+    TArray<RacingTv::FSpot> Spots;
+    if (!TestTrue(TEXT("Authored runtime tv_spots parse"), RacingTv::ParseSpots(RacingTest::AuthoredSpotsJson, Spots))) return false;
+    RacingCounter::FCounter Counter;
+    if (!TestTrue(TEXT("The counter comes from the Paris screen's spot"), RacingCounter::Parse(Spots, Counter))) return false;
+    // V1's central window, hall-local (-1760, 300, 15): the Salon hall faces yaw 180 at (7000, -30200, 3000).
+    TestTrue(FString::Printf(TEXT("The counter is at the central window (%s)"), *Counter.Spot.ToString()), Counter.Spot.Equals(FVector(8760., -30500., 3015.), .5));
+    TestTrue(FString::Printf(TEXT("facing the windows (yaw %.2f)"), Counter.Yaw), FMath::IsNearlyZero(Counter.Yaw, .01f));
+    const FVector Origin = RacingTest::BelmonteOrigin;
+    // A standing player's capsule centre is 90 cm over the floor.
+    const FVector Standing(0., 0., 90.);
+    TestTrue(TEXT("In reach at the counter"), RacingCounter::InReach(Origin + Counter.Spot + Standing, Origin, Counter));
+    const RacingTv::FSpot& Paris = Spots[RacingTv::FindSpot(TEXT("salon_paris"), Spots)];
+    TestFalse(TEXT("Out of reach at the Paris screen's watch point"), RacingCounter::InReach(Origin + Paris.Watch + Standing, Origin, Counter));
+    TestFalse(TEXT("Out of reach one floor up"), RacingCounter::InReach(Origin + Counter.Spot + Standing + FVector(0., 0., 400.), Origin, Counter));
+    RacingCounter::FCounter None;
+    TestFalse(TEXT("No spots, no counter"), RacingCounter::Parse({}, None));
+    return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FRacingBetPlaceTest, "Yorimichi.Racing.Bet.Place",
+    EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
+
+bool FRacingBetPlaceTest::RunTest(const FString&)
+{
+    RacingTest::FBetFixture F;
+    if (!F.Make(*this)) return false;
+    const double Before = F.Start - 60.;
+    const int32 Coins = FHRPlayer().Coins, Tickets = F.World.Tickets.Num();
+    TestEqual(TEXT("A valid bet is taken"), ARacingService::PlaceBetAt(F.World, F.Player, F.Key, 0, 5, Before), FString());
+    TestEqual(TEXT("It takes five coins"), HRRules::FindPlayer(F.World, F.Player)->Coins, Coins - 5);
+    TestEqual(TEXT("and makes a ticket"), F.World.Tickets.Num(), Tickets + 1);
+    TestFalse(TEXT("No runner before the first"), ARacingService::PlaceBetAt(F.World, F.Player, F.Key, -1, 5, Before).IsEmpty());
+    TestFalse(TEXT("No runner after the last"), ARacingService::PlaceBetAt(F.World, F.Player, F.Key, F.Runners(), 5, Before).IsEmpty());
+    TestEqual(TEXT("No bet once the race has started"), ARacingService::PlaceBetAt(F.World, F.Player, F.Key, 0, 5, F.Start),
+        FString(TEXT("Betting on this race has closed.")));
+    TestFalse(TEXT("No stake of 11"), ARacingService::PlaceBetAt(F.World, F.Player, F.Key, 0, 11, Before).IsEmpty());
+    TestFalse(TEXT("No unknown player"), ARacingService::PlaceBetAt(F.World, TEXT("local:nobody"), F.Key, 0, 5, Before).IsEmpty());
+    TestEqual(TEXT("Refusals take no coins"), HRRules::FindPlayer(F.World, F.Player)->Coins, Coins - 5);
+    TestEqual(TEXT("and make no ticket"), F.World.Tickets.Num(), Tickets + 1);
+    return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FRacingBetRevealTest, "Yorimichi.Racing.Bet.Reveal",
+    EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
+
+bool FRacingBetRevealTest::RunTest(const FString&)
+{
+    RacingTest::FBetFixture F;
+    if (!F.Make(*this)) return false;
+    // A ticket on the winner: the race is decided at its start, so each runner is tried on a copy of the world.
+    FHRWorldState World;
+    bool bWon = false;
+    for (int32 I = 0; I < F.Runners() && !bWon; ++I)
+    {
+        World = F.World;
+        if (!ARacingService::PlaceBetAt(World, F.Player, F.Key, I, 5, F.Start - 60.).IsEmpty()) continue;
+        HRRules::AdvanceTo(World, F.Start + 1.);
+        bWon = World.Tickets.Last().Status == TEXT("won");
+    }
+    if (!TestTrue(TEXT("A ticket on the winner"), bWon)) return false;
+    const FHRTicket& Ticket = World.Tickets.Last();
+    const FHRRace* Race = HRRules::FindRace(World, F.Key);
+    const double Home = F.Start + Race->Finishes[0].TimeUs / 1e6;
+    const int32 Coins = HRRules::FindPlayer(World, F.Player)->Coins;
+    TestTrue(TEXT("The win is paid in the rules' world"), Ticket.Payout > Ticket.Stake);
+    const FRacingWalletState Running = ARacingService::BuildWallet(World, F.Player, Home - 1.);
+    if (!TestEqual(TEXT("One ticket"), Running.Tickets.Num(), 1)) return false;
+    TestEqual(TEXT("Still running before the winner is home"), Running.Tickets[0].Status, FString(TEXT("open")));
+    TestEqual(TEXT("with no payout shown"), Running.Tickets[0].Payout, 0);
+    TestEqual(TEXT("nor counted in the coins"), Running.Coins, Coins - Ticket.Payout);
+    const FRacingWalletState Seen = ARacingService::BuildWallet(World, F.Player, Home);
+    TestEqual(TEXT("Won once the winner is home"), Seen.Tickets[0].Status, FString(TEXT("won")));
+    TestEqual(TEXT("with its payout"), Seen.Tickets[0].Payout, Ticket.Payout);
+    TestEqual(TEXT("and the coins are the player's"), Seen.Coins, Coins);
+    return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FRacingBetOddsTest, "Yorimichi.Racing.Bet.Odds",
+    EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
+
+bool FRacingBetOddsTest::RunTest(const FString&)
+{
+    RacingTest::FBetFixture F;
+    if (!F.Make(*this)) return false;
+    const double Now = F.Start - 60.;
+    FRacingNetState Before;
+    ARacingService::BuildSnapshot(F.World, Now, FRacingNetResult(), Before);
+    if (!TestEqual(TEXT("The race in focus"), Before.Race.Key, F.Key) || !TestEqual(TEXT("Every runner shown"), Before.Race.Runners.Num(), F.Runners()))
+        return false;
+    // The longest odds move the most with a bet.
+    int32 Longest = 0;
+    for (int32 I = 1; I < Before.Race.Runners.Num(); ++I)
+        if (Before.Race.Runners[I].OddsTenths > Before.Race.Runners[Longest].OddsTenths) Longest = I;
+    TestEqual(TEXT("A bet on the outsider"), ARacingService::PlaceBetAt(F.World, F.Player, F.Key, Longest, 10, Now), FString());
+    FRacingNetState After;
+    ARacingService::BuildSnapshot(F.World, Now, FRacingNetResult(), After);
+    TestTrue(FString::Printf(TEXT("Its odds shorten (%d to %d tenths)"), Before.Race.Runners[Longest].OddsTenths, After.Race.Runners[Longest].OddsTenths),
+        After.Race.Runners[Longest].OddsTenths < Before.Race.Runners[Longest].OddsTenths);
+    TestFalse(TEXT("The snapshot changes"), After.SameContent(Before));
+    return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FRacingBetGuestSaveTest, "Yorimichi.Racing.Bet.GuestSave",
+    EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
+
+bool FRacingBetGuestSaveTest::RunTest(const FString&)
+{
+    RacingTest::FBetFixture F;
+    if (!F.Make(*this)) return false;
+    const double Now = F.Start - 60.;
+    const FString Guest(TEXT("session:0123456789abcdef0123456789abcdef"));
+    HRRules::AddPlayer(F.World, Guest, TEXT("Guest"));
+    TestEqual(TEXT("A guest bets from a session wallet"), ARacingService::PlaceBetAt(F.World, Guest, F.Key, 0, 5, Now), FString());
+    TestEqual(TEXT("The host bets"), ARacingService::PlaceBetAt(F.World, F.Player, F.Key, 1, 5, Now), FString());
+    const FHRWorldState Kept = ARacingService::PersistentWorld(F.World);
+    TestFalse(TEXT("The guest is not saved"), Kept.Players.Contains(Guest));
+    TestFalse(TEXT("nor its tickets"), Kept.Tickets.ContainsByPredicate([&Guest](const FHRTicket& T) { return T.PlayerId == Guest; }));
+    TestTrue(TEXT("The host is saved"), Kept.Players.Contains(F.Player));
+    TestEqual(TEXT("with its ticket"), Kept.Tickets.Num(), 1);
+    const FString Path = FPaths::ConvertRelativePathToFull(FPaths::AutomationTransientDir() / FString::Printf(TEXT("racing-guests-%s/world.json"),
+        *FGuid::NewGuid().ToString(EGuidFormats::Digits)));
+    FHRWorldState Loaded;
+    TestTrue(TEXT("The saved world is written"), ARacingService::SaveWorldFile(Kept, Path));
+    TestTrue(TEXT("and loads"), ARacingService::LoadWorldFile(Path, Loaded));
+    TestEqual(TEXT("as saved"), HRSave::ToJson(Loaded), HRSave::ToJson(Kept));
+    IFileManager::Get().DeleteDirectory(*FPaths::GetPath(Path), false, true);
+
+    // As the net driver does before it asks: the class's replicated properties get their indices first.
+    URacingWallet::StaticClass()->SetUpRuntimeReplicationData();
+    TArray<FLifetimeProperty> Props;
+    GetDefault<URacingWallet>()->GetLifetimeReplicatedProps(Props);
+    const FProperty* Wallet = URacingWallet::StaticClass()->FindPropertyByName(TEXT("Wallet"));
+    if (!TestNotNull(TEXT("The wallet is a replicated property"), Wallet)) return false;
+    const FLifetimeProperty* Rep = Props.FindByPredicate([Wallet](const FLifetimeProperty& P) { return P.RepIndex == Wallet->RepIndex; });
+    TestTrue(TEXT("The wallet replicates to its owner only"), Rep && Rep->Condition == COND_OwnerOnly);
+
+    // The guest switch off: only the host bets.
+    IConsoleVariable* GuestBets = IConsoleManager::Get().FindConsoleVariable(TEXT("racing.GuestBets"));
+    if (!TestNotNull(TEXT("The guest switch"), GuestBets)) return false;
+    const bool bWas = GuestBets->GetBool();
+    GuestBets->Set(false, ECVF_SetByCode);
+    const FString Refused = ARacingService::PlaceBetAt(F.World, Guest, F.Key, 0, 1, Now);
+    const FString Host = ARacingService::PlaceBetAt(F.World, F.Player, F.Key, 1, 1, Now);
+    GuestBets->Set(bWas, ECVF_SetByCode);
+    TestEqual(TEXT("A guest is refused"), Refused, FString(TEXT("Only the host can bet in this session.")));
+    TestEqual(TEXT("The host still bets"), Host, FString());
     return true;
 }
 #endif

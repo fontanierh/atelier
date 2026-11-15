@@ -122,11 +122,12 @@ unverified fallback teleport. Platform bystanders intersected by a passing coach
 
 @cc [owner:fontanierh,label:correctness] racing-service-and-broadcasts
 ARacingService MUST own FHRWorldState only on authority, persist world saves atomically
-with unreadable/invalid save quarantine rather than silent overwrite, register only the
-local host player until guest identity persistence exists, and replicate only the compact
-FRacingNetState snapshot (never FHRWorldState::Seed). RacingMotion::Distance, RacingGround::Pick
-hit selection and RacingTv::Direct camera selection from the snapshot, shared clock and
-spectator positions MUST be deterministic, with zero per-frame network traffic and no silent breed/coat/clip
+with unreadable/invalid save quarantine rather than silent overwrite, register the local
+host player persistently and a remote guest, only while guest bets are on, as a session player
+("session:" id) whose record and tickets saves exclude (PersistentWorld), and replicate only the
+compact FRacingNetState snapshot (never FHRWorldState::Seed) and each player's own wallet.
+RacingMotion::Distance, RacingGround::Pick hit selection and RacingTv::Direct camera selection
+from the snapshot, shared clock and spectator positions MUST be deterministic, with zero per-frame network traffic and no silent breed/coat/clip
 stand-ins when required assets are missing. Runner gait thresholds, play rates and seat contacts
 MUST share UHorseComponent's definitions, and Belmonte TV placements MUST follow the region's
 authored building transforms from runtime.json without falling back to hardcoded coordinates.
@@ -139,10 +140,10 @@ preference or leaves its range MUST be refused and reported, never clamped or ro
 keep their built-in defaults.
 
 @cc [owner:fontanierh,label:correctness] offline-interact-reachability
-AWandererCharacter::Interact MUST be a no-op, offline as online, unless a train, zeppelin or sword trainer is in
-reach: it MUST NOT set an Interact action or animation state, and it MUST check zeppelin (IsPassenger/CanReach)
-and trainer (CanTalk) reachability before Sword->CancelForInterrupt, so a press with nothing in reach never stows
-an armed blade or leaves the walker pose stuck.
+AWandererCharacter::Interact MUST be a no-op, offline as online, unless a train, zeppelin, sword trainer or the
+betting counter (RacingCounter::CanUse) is in reach: it MUST NOT set an Interact action or animation state, and it
+MUST check zeppelin (IsPassenger/CanReach) and trainer (CanTalk) reachability before Sword->CancelForInterrupt, so a
+press with nothing in reach never stows an armed blade or leaves the walker pose stuck.
 
 @cc [owner:fontanierh,label:correctness] transport-audio-from-state
 Transport sound (UTransportAudioComponent and its zeppelin, ferry and gondola components) MUST be presentation that
@@ -198,3 +199,12 @@ five original baked UV channels, shadow policy and curtain bounds expansion
 MUST survive subdivision. Dressing MUST remain nonblocking; Frame and other
 treehouse collision owners MUST remain unchanged. Missing or partial dressing
 membership MUST fail readiness instead of loading a parent fallback.
+
+@cc [owner:fontanierh,label:correctness] racing-betting-requests
+Win bets MUST be placed only on authority: a client's ServerPlaceBet is admitted at most five times a second with a
+race key of at most 32 characters, its pawn MUST stand at the betting counter on the host, betting MUST close at the
+race's start, and HRRules::PlaceBet decides the rest; clients MUST NOT change coins or tickets locally. A taken bet MUST
+republish the snapshot so the odds move for every player. URacingWallet MUST replicate COND_OwnerOnly and MUST NOT carry
+another player's tickets; a settled ticket MUST show its outcome and payout only once its race's winner is home. The
+counter MUST derive from Belmonte's tv_spots salon_paris spot, with no hardcoded fallback. Guest betting MUST stay one
+switch (racing.GuestBets, on: session-only wallets never saved; off: guests refused in English).

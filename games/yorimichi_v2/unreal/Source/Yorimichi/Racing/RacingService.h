@@ -3,10 +3,12 @@
 #include "GameFramework/Actor.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "HRTypes.h"
+#include "RacingCounter.h"
 #include "RacingCourse.h"
 #include "RacingMotion.h"
 #include "RacingService.generated.h"
 
+class AController;
 class AWandererCharacter;
 class UAnimSequence;
 class UMaterialInterface;
@@ -175,6 +177,20 @@ public:
     /** English name of a race ("Lantern Sprint · race 2"). */
     static FString RaceName(const FHRRace& Race);
 
+    // ------------------------------------------------------------------ win bets (host)
+    /** A controller's player id in the rules' world: the host's own keeps its saved id, a guest is
+     *  "session:<SessionPlayerId>" (empty without one). */
+    static FString PlayerIdOf(const AController* Controller);
+    /** A win bet on Runner (FRacingNetRace::Runners index: the race's Entries order) of RaceKey at world second Now: refused
+     *  once the race has started, then decided by HRRules::PlaceBet. Empty when taken, else the refusal (English). */
+    static FString PlaceBetAt(FHRWorldState& S, const FString& PlayerId, const FString& RaceKey, int32 Runner, int32 Stake, double Now);
+    /** A controller's bet (authority only): its pawn must stand at the betting counter. The odds move for everyone at once. */
+    FString PlaceBet(const AController* Controller, const FString& RaceKey, int32 Runner, int32 Stake);
+    /** A player's wallet at world second Now: a ticket's outcome and payout stay hidden until its race's winner is home. */
+    static FRacingWalletState BuildWallet(const FHRWorldState& S, const FString& PlayerId, double Now);
+    /** The world as it is saved: without the guests' session players and their tickets. */
+    static FHRWorldState PersistentWorld(const FHRWorldState& S);
+
     // ------------------------------------------------------------------ the clock
     /** The rules' world second now on the host (Unix time, the anchor and the dev offset). */
     double HostWorldSeconds() const;
@@ -210,6 +226,7 @@ private:
 
     void TickHost(float DeltaSeconds);
     void RegisterPlayers();
+    void RefreshWallets();
     void Publish(bool bForce);
     void TickPresentation(float DeltaSeconds);
     void ClearRunners();
