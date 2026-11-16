@@ -160,6 +160,8 @@ public:
     void TickNetworkActivity();
     bool IsNetworkActivityPending() const { return bNetworkActivityPending; }
     void SetMenuOpen(bool bOpen);
+    /** A menu or modal window holds the player (SetMenuOpen). */
+    bool IsMenuOpen() const { return bMenuOpen; }
     /** A minigame that reads the keys itself takes the character's input mapping away until it hands it back. */
     void SetControlsSuspended(bool bSuspended);
     bool AreControlsSuspended() const { return bControlsSuspended; }

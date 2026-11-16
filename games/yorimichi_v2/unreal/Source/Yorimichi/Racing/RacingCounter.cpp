@@ -36,6 +36,8 @@ void URacingWallet::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
     // A player's coins and tickets are theirs alone.
     DOREPLIFETIME_CONDITION(URacingWallet, Wallet, COND_OwnerOnly);
+    // So are their race results: other players' tickets reach a player only there, and only once the winner is home.
+    DOREPLIFETIME_CONDITION(URacingWallet, Result, COND_OwnerOnly);
 }
 
 URacingWallet* URacingWallet::Of(const AController* Controller)
@@ -120,71 +122,19 @@ namespace RacingCounterUi
         }
     };
 
-    /** The input in use (a pad, and which, or the keys), for the legend: it follows the last key or click as the settings
-     *  menu's does. */
-    struct FInputKind
+    /** The legend for the input in use. */
+    FString Legend(const YorimichiMenu::FInputKind& Input)
     {
-        int32 PadStyle = AJapanHUD::CurrentControllerStyle();
-        bool bPad = PadStyle != 0;
+        if (!Input.bPad) return TEXT("Arrows choose  ·  Enter select  ·  Q / E stake  ·  Esc close");
+        const YorimichiMenu::FPadNames Pad = Input.Pad();
+        return FString::Printf(TEXT("D-pad choose  ·  %s select  ·  %s stake  ·  %s close"), Pad.Accept, Pad.Shoulders, Pad.Cancel);
+    }
 
-        FString Legend() const
-        {
-            if (!bPad) return TEXT("Arrows choose  ·  Enter select  ·  Q / E stake  ·  Esc close");
-            const YorimichiMenu::FPadNames Pad = YorimichiMenu::PadNames(PadStyle);
-            return FString::Printf(TEXT("D-pad choose  ·  %s select  ·  %s stake  ·  %s close"), Pad.Accept, Pad.Shoulders, Pad.Cancel);
-        }
-    };
-
-    /** The window's frame: LB / Q step the stake down and RB / E up from whichever button has focus, and the right face
-     *  button (B on an Xbox pad) or Escape closes the window. The keys are taken here, so neither the game (wave, interact,
-     *  dodge, the settings menu) nor the window's focus moves on them. */
-    class SStakeKeys : public SCompoundWidget
+    /** LB / Q step the stake down and RB / E up from whichever button has focus. */
+    int32 StakeDirection(const FKey& K)
     {
-    public:
-        SLATE_BEGIN_ARGS(SStakeKeys) {}
-            SLATE_DEFAULT_SLOT(FArguments, Content)
-        SLATE_END_ARGS()
-
-        void Construct(const FArguments& Args, TFunction<void(int32)> InStep, TSharedRef<FInputKind> InInput)
-        {
-            Step = MoveTemp(InStep);
-            Input = InInput;
-            ChildSlot[Args._Content.Widget];
-        }
-        virtual FReply OnPreviewKeyDown(const FGeometry&, const FKeyEvent& E) override
-        {
-            Input->bPad = E.GetKey().IsGamepadKey();
-            return FReply::Unhandled();
-        }
-        virtual FReply OnPreviewMouseButtonDown(const FGeometry&, const FPointerEvent&) override
-        {
-            Input->bPad = false;
-            return FReply::Unhandled();
-        }
-        virtual FReply OnKeyDown(const FGeometry&, const FKeyEvent& E) override
-        {
-            const FKey K = E.GetKey();
-            if (IsClose(K))
-            {
-                if (!E.IsRepeat()) RacingCounter::Close();
-                return FReply::Handled();
-            }
-            const int32 Direction = K == EKeys::Gamepad_LeftShoulder || K == EKeys::Q ? -1 : K == EKeys::Gamepad_RightShoulder || K == EKeys::E ? 1 : 0;
-            if (!Direction) return FReply::Unhandled();
-            if (!E.IsRepeat()) Step(Direction);
-            return FReply::Handled();
-        }
-        virtual FReply OnKeyUp(const FGeometry&, const FKeyEvent& E) override
-        {
-            const FKey K = E.GetKey();
-            return IsClose(K) || K == EKeys::Gamepad_LeftShoulder || K == EKeys::Q || K == EKeys::Gamepad_RightShoulder || K == EKeys::E
-                ? FReply::Handled() : FReply::Unhandled();
-        }
-    private:
-        static bool IsClose(const FKey& K) { return K == EKeys::Gamepad_FaceButton_Right || K == EKeys::Escape; }
-        TFunction<void(int32)> Step;
-        TSharedPtr<FInputKind> Input;
-    };
+        return K == EKeys::Gamepad_LeftShoulder || K == EKeys::Q ? -1 : K == EKeys::Gamepad_RightShoulder || K == EKeys::E ? 1 : 0;
+    }
 
     int32 WalletCoins(const TWeakObjectPtr<URacingWallet>& Wallet) { return Wallet.IsValid() ? Wallet->GetWallet().Coins : 0; }
 
@@ -213,20 +163,9 @@ namespace RacingCounterUi
             : FString(TEXT("pending"));
     }
 
-    TSharedRef<STextBlock> Text(TAttribute<FText> Value, int32 Size, const FLinearColor& Color, const char* Weight = "Regular",
-        ETextJustify::Type Justify = ETextJustify::Left)
-    {
-        return SNew(STextBlock).Text(Value).Font(FCoreStyle::GetDefaultFontStyle(Weight, Size)).ColorAndOpacity(Color).AutoWrapText(true)
-            .Justification(Justify);
-    }
-
-    /** A button drawn as a menu row: no button chrome of its own, the row lit (YorimichiMenu::LitRow) while it has focus. */
-    TSharedRef<SWidget> LitButton(const TSharedRef<SButton>& Button)
-    {
-        const TWeakPtr<SWidget> Weak = Button;
-        return YorimichiMenu::LitRow([Weak] { const TSharedPtr<SWidget> W = Weak.Pin(); return W && W->HasAnyUserFocus().IsSet(); }, Button);
-    }
-    const FButtonStyle* Plain() { return &FCoreStyle::Get().GetWidgetStyle<FButtonStyle>("NoBorder"); }
+    using YorimichiMenu::LitButton;
+    using YorimichiMenu::Plain;
+    using YorimichiMenu::Text;
 
     /** The window, in the game's menu style: the race in focus with each runner's odds, the stake stepper with its steps and
      *  estimated return, the bet and the host's answer, today's tickets and the wallet, then the legend. Buttons only, so the
@@ -235,7 +174,7 @@ namespace RacingCounterUi
     TSharedRef<SWidget> Build(TWeakObjectPtr<ARacingService> Service, TWeakObjectPtr<URacingWallet> Wallet, TSharedPtr<SButton>& OutFirst)
     {
         const TSharedRef<FChoice> Choice = MakeShared<FChoice>();
-        const TSharedRef<FInputKind> Input = MakeShared<FInputKind>();
+        const TSharedRef<YorimichiMenu::FInputKind> Input = MakeShared<YorimichiMenu::FInputKind>(AJapanHUD::CurrentControllerStyle());
         const FLinearColor Accent(.95f, .72f, .5f), Dim(1.f, 1.f, 1.f, .6f), Faint(1.f, 1.f, 1.f, .45f);
         TSharedRef<SVerticalBox> Rows = SNew(SVerticalBox);
         Rows->AddSlot().AutoHeight().Padding(0, 0, 0, 4)[Text(FText::FromString(TEXT("Salon des Paris")), 24, FLinearColor::White, "Bold")];
@@ -415,8 +354,13 @@ namespace RacingCounterUi
         Frame->AddSlot().AutoHeight().Padding(0, 14, 0, 8)[YorimichiMenu::Divider()];
         Frame->AddSlot().AutoHeight()[SNew(STextBlock).AutoWrapText(true).Justification(ETextJustify::Center)
             .Font(FCoreStyle::GetDefaultFontStyle("Regular", 14)).ColorAndOpacity(YorimichiMenu::LegendColor)
-            .Text_Lambda([Input] { return FText::FromString(Input->Legend()); })];
-        return SNew(SStakeKeys, [Wallet, Choice](int32 Direction) { Choice->Step(WalletCoins(Wallet), Direction); }, Input)
+            .Text_Lambda([Input] { return FText::FromString(Legend(*Input)); })];
+        return SNew(YorimichiMenu::SMenuKeys, Input, [] { RacingCounter::Close(); }, [Wallet, Choice](const FKey& K, bool bRepeat)
+            {
+                const int32 Direction = StakeDirection(K);
+                if (Direction && !bRepeat) Choice->Step(WalletCoins(Wallet), Direction);
+                return Direction != 0;
+            })
             [SNew(SBorder).HAlign(HAlign_Center).VAlign(VAlign_Center).BorderImage(YorimichiMenu::White()).BorderBackgroundColor(FLinearColor(0, 0, 0, .35f))
                 [SNew(SBox).WidthOverride(640).MaxDesiredHeight(860.f)
                     [SNew(SBorder).Padding(28).BorderImage(YorimichiMenu::White()).BorderBackgroundColor(FLinearColor(.05f, .03f, .025f, .96f))[Frame]]]];
@@ -461,7 +405,7 @@ bool RacingCounter::IsAt(const AActor* Actor)
 
 bool RacingCounter::CanUse(const AWandererCharacter* Pawn)
 {
-    return Pawn && Pawn->IsLocallyControlled() && Pawn->IsReady() && !IsOpen() && !Pawn->OnVehicle() && !Pawn->IsZeppelinPassenger() &&
+    return Pawn && Pawn->IsLocallyControlled() && Pawn->IsReady() && !IsOpen() && !RacingResults::IsOpen() && !Pawn->OnVehicle() && !Pawn->IsZeppelinPassenger() &&
         !(Pawn->GetSkate() && Pawn->GetSkate()->IsRiding()) && URacingWallet::Of(Pawn->GetController()) && IsAt(Pawn);
 }
 

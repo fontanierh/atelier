@@ -2,6 +2,10 @@
 #if WITH_DEV_AUTOMATION_TESTS
 #include "RacingBroadcast.h"
 #include "RacingCounter.h"
+#include "RacingResults.h"
+#include "JapanSession.h"
+#include "Engine/Engine.h"
+#include "Engine/World.h"
 #include "HorseComponent.h"
 #include "AtelierData.h"
 #include "Dom/JsonObject.h"
@@ -838,6 +842,178 @@ bool FRacingBetGuestSaveTest::RunTest(const FString&)
     GuestBets->Set(bWas, ECVF_SetByCode);
     TestEqual(TEXT("A guest is refused"), Refused, FString(TEXT("Only the host can bet in this session.")));
     TestEqual(TEXT("The host still bets"), Host, FString());
+    return true;
+}
+
+namespace RacingTest
+{
+    /** A bet fixture with two guests betting beside the host, the race then run: Home is the world second its winner is home. */
+    struct FResultFixture : FBetFixture
+    {
+        const FString Sora = TEXT("session:0123456789abcdef0123456789abcdef");
+        const FString Kaito = TEXT("session:fedcba9876543210fedcba9876543210");
+        TMap<FString, FString> Names;
+        double Home = 0.;
+        /** Mine, SoraBets and KaitoBets tickets, the guests' interleaved, then the race run. */
+        bool Run(FAutomationTestBase& Test, int32 Mine, int32 SoraBets, int32 KaitoBets)
+        {
+            if (!Make(Test)) return false;
+            HRRules::AddPlayer(World, Sora, TEXT("Sora"));
+            HRRules::AddPlayer(World, Kaito, TEXT("Kaito"));
+            Names.Add(Player, TEXT("Host"));
+            Names.Add(Sora, TEXT("Sora"));
+            Names.Add(Kaito, TEXT("Kaito"));
+            const double Before = Start - 60.;
+            for (int32 I = 0; I < Mine; ++I)
+                if (!Test.TestEqual(TEXT("The host bets"), ARacingService::PlaceBetAt(World, Player, Key, I % Runners(), 1, Before), FString())) return false;
+            for (int32 I = 0; I < FMath::Max(SoraBets, KaitoBets); ++I)
+            {
+                if (I < SoraBets && !Test.TestEqual(TEXT("Sora bets"), ARacingService::PlaceBetAt(World, Sora, Key, I % Runners(), 1, Before), FString())) return false;
+                if (I < KaitoBets && !Test.TestEqual(TEXT("Kaito bets"), ARacingService::PlaceBetAt(World, Kaito, Key, I % Runners(), 1, Before), FString())) return false;
+            }
+            HRRules::AdvanceTo(World, Start + 1.);
+            const FHRRace* Race = HRRules::FindRace(World, Key);
+            if (!Test.TestTrue(TEXT("The race is run"), Race && Race->Status == TEXT("run") && !Race->Finishes.IsEmpty())) return false;
+            Home = Start + Race->Finishes[0].TimeUs / 1e6;
+            return true;
+        }
+    };
+
+    /** A struct's bytes as the network writes them, as text (ASCII strings are written as bytes). */
+    FString WireText(const FRacingResultState& R)
+    {
+        TArray<uint8> Bytes;
+        FMemoryWriter Writer(Bytes);
+        FRacingResultState::StaticStruct()->SerializeBin(Writer, const_cast<FRacingResultState*>(&R));
+        FString Text;
+        for (const uint8 B : Bytes) Text.AppendChar(B >= 32 && B < 127 ? TCHAR(B) : TEXT('.'));
+        return Text;
+    }
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FRacingResultsHiddenTest, "Yorimichi.Racing.Results.HiddenUntilHome",
+    EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
+
+bool FRacingResultsHiddenTest::RunTest(const FString&)
+{
+    RacingTest::FResultFixture F;
+    if (!F.Run(*this, 2, 2, 1)) return false;
+    // Nothing about the race's tickets, the player's own or anyone else's, leaves the host before the winner is home.
+    for (const double Now : {F.Start - 30., F.Start + 1., F.Home - 1.})
+        for (const FString& Id : {F.Player, F.Sora, F.Kaito})
+        {
+            const FRacingResultState R = RacingResults::Build(F.World, Id, Now, F.Names);
+            TestTrue(FString::Printf(TEXT("No result %.0f s before the winner is home"), F.Home - Now), R == FRacingResultState());
+        }
+    // Nor anywhere else: a wallet carries its own player's tickets only.
+    for (const FRacingWalletTicket& T : ARacingService::BuildWallet(F.World, F.Player, F.Home - 1.).Tickets)
+        TestEqual(TEXT("The host's wallet before the winner is home: its own tickets, still running"), T.Status, FString(TEXT("open")));
+    TestEqual(TEXT("and only its own"), ARacingService::BuildWallet(F.World, F.Player, F.Home - 1.).Tickets.Num(), 2);
+    const FRacingResultState Home = RacingResults::Build(F.World, F.Player, F.Home, F.Names);
+    TestEqual(TEXT("The result once the winner is home"), Home.Key, F.Key);
+    TestEqual(TEXT("with every ticket on the race"), Home.Tickets.Num(), 5);
+    TestTrue(TEXT("settled"), !Home.Tickets.ContainsByPredicate([](const FRacingResultTicket& T) { return T.Status == TEXT("open"); }));
+    TestTrue(TEXT("its winner named"), !Home.Winner.IsEmpty() && Home.WinnerNumber >= 1 && Home.WinnerOddsTenths > 0);
+    TestTrue(TEXT("Fresh when shown"), RacingResults::IsFresh(Home, F.Home + 1.));
+    TestFalse(TEXT("Stale after the window"), RacingResults::IsFresh(Home, F.Home + FRacingResultState::Window));
+    TestTrue(TEXT("No longer built after the window"), RacingResults::Build(F.World, F.Player, F.Home + FRacingResultState::Window, F.Names).IsEmpty());
+    TestTrue(TEXT("No result for a player who did not bet"), RacingResults::Build(F.World, TEXT("local:nobody"), F.Home, F.Names).IsEmpty());
+
+    // As the net driver does before it asks: the class's replicated properties get their indices first.
+    URacingWallet::StaticClass()->SetUpRuntimeReplicationData();
+    TArray<FLifetimeProperty> Props;
+    GetDefault<URacingWallet>()->GetLifetimeReplicatedProps(Props);
+    const FProperty* Result = URacingWallet::StaticClass()->FindPropertyByName(TEXT("Result"));
+    if (!TestNotNull(TEXT("The result is a replicated property"), Result)) return false;
+    const FLifetimeProperty* Rep = Props.FindByPredicate([Result](const FLifetimeProperty& P) { return P.RepIndex == Result->RepIndex; });
+    TestTrue(TEXT("The result replicates to its owner only"), Rep && Rep->Condition == COND_OwnerOnly);
+    return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FRacingResultsBoundedTest, "Yorimichi.Racing.Results.Bounded",
+    EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
+
+bool FRacingResultsBoundedTest::RunTest(const FString&)
+{
+    RacingTest::FResultFixture F;
+    if (!F.Run(*this, 5, 20, 15)) return false;
+    const FRacingResultState R = RacingResults::Build(F.World, F.Player, F.Home, F.Names);
+    TestEqual(TEXT("At most MaxTickets carried"), R.Tickets.Num(), FRacingResultState::MaxTickets);
+    TestEqual(TEXT("the rest counted"), R.MoreTickets, 5 + 20 + 15 - FRacingResultState::MaxTickets);
+    TestEqual(TEXT("Two other players"), R.OtherPlayers, 2);
+    for (int32 I = 0; I < R.Tickets.Num(); ++I)
+        TestEqual(FString::Printf(TEXT("Own tickets first (%d)"), I), R.Tickets[I].bMine, I < 5);
+    // The others grouped by player, in the order they first bet, though their bets were interleaved.
+    TArray<FString> Groups;
+    for (const FRacingResultTicket& T : R.Tickets)
+        if (!T.bMine && (Groups.IsEmpty() || Groups.Last() != T.Player)) Groups.Add(T.Player);
+    TestTrue(FString::Printf(TEXT("Grouped by player (%s)"), *FString::Join(Groups, TEXT(", "))), Groups == TArray<FString>({TEXT("Sora"), TEXT("Kaito")}));
+    const FRacingResultState Guest = RacingResults::Build(F.World, F.Sora, F.Home, F.Names);
+    TestEqual(TEXT("A guest's result: its own 20 first"), Guest.Tickets.FilterByPredicate([](const FRacingResultTicket& T) { return T.bMine; }).Num(), 20);
+    TestTrue(TEXT("then the host's"), Guest.Tickets.IsValidIndex(20) && Guest.Tickets[20].Player == TEXT("Host"));
+    return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FRacingResultsNamesTest, "Yorimichi.Racing.Results.Names",
+    EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
+
+bool FRacingResultsNamesTest::RunTest(const FString&)
+{
+    RacingTest::FResultFixture F;
+    if (!F.Run(*this, 1, 1, 1)) return false;
+    // Two players with one name are told apart; a player without a PlayerState name keeps its rules' name.
+    TMap<FString, FString> Names = F.Names;
+    Names[F.Kaito] = TEXT("Sora");
+    const FRacingResultState R = RacingResults::Build(F.World, F.Player, F.Home, Names);
+    TArray<FString> Shown;
+    for (const FRacingResultTicket& T : R.Tickets)
+    {
+        if (T.bMine) TestTrue(TEXT("The viewer's own tickets carry no name"), T.Player.IsEmpty());
+        else Shown.Add(T.Player);
+    }
+    TestTrue(FString::Printf(TEXT("Display names, told apart (%s)"), *FString::Join(Shown, TEXT(", "))), Shown == TArray<FString>({TEXT("Sora"), TEXT("Sora (2)")}));
+    Names.Remove(F.Kaito);
+    const FRacingResultState Unnamed = RacingResults::Build(F.World, F.Player, F.Home, Names);
+    TestTrue(TEXT("A player without a session name: its rules' name"), Unnamed.Tickets.ContainsByPredicate([](const FRacingResultTicket& T) { return T.Player == TEXT("Kaito"); }));
+    // No player id anywhere in what the host sends, to any of the players.
+    for (const FString& Viewer : {F.Player, F.Sora, F.Kaito})
+    {
+        const FString Wire = RacingTest::WireText(RacingResults::Build(F.World, Viewer, F.Home, F.Names));
+        TestTrue(TEXT("The result is sent"), Wire.Contains(TEXT("Sora")) || Viewer == F.Sora);
+        for (const FString& Id : {F.Player, F.Sora, F.Kaito})
+            TestFalse(FString::Printf(TEXT("No player id on the wire (%s)"), *Id), Wire.Contains(Id) || Wire.Contains(Id.Mid(Id.Find(TEXT(":")) + 1)));
+        TestFalse(TEXT("No id prefix on the wire"), Wire.Contains(TEXT("session:")) || Wire.Contains(TEXT("local:")));
+    }
+    return true;
+}
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FRacingResultsSessionNameTest, "Yorimichi.Racing.Results.NoSessionName",
+    EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
+
+bool FRacingResultsSessionNameTest::RunTest(const FString&)
+{
+    UWorld* World = nullptr;
+    for (const FWorldContext& Context : GEngine->GetWorldContexts())
+        if (Context.World() && Context.World()->IsGameWorld()) { World = Context.World(); break; }
+    if (!TestNotNull(TEXT("Native game world"), World)) return false;
+    FActorSpawnParameters Spawn;
+    Spawn.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+    AJapanPlayerState* PS = World->SpawnActor<AJapanPlayerState>(Spawn);
+    ON_SCOPE_EXIT { if (PS) PS->Destroy(); };
+    if (!TestNotNull(TEXT("A player state"), PS)) return false;
+    // Offline the session's player name is the machine's network name: it must never reach the other players.
+    PS->SetPlayerName(TEXT("pauls-macbook-air"));
+    PS->RiderName.Reset();
+    TestEqual(TEXT("No rider name: no shown name, so the rules' name is used"), ARacingService::ShownName(PS), FString());
+    PS->RiderName = TEXT("  Sora ");
+    TestEqual(TEXT("The rider's chosen name"), ARacingService::ShownName(PS), FString(TEXT("Sora")));
+    TestEqual(TEXT("No player state: no name"), ARacingService::ShownName(nullptr), FString());
+    // Without a shown name the result names the player by the rules, else "Another player".
+    RacingTest::FResultFixture F;
+    if (!F.Run(*this, 1, 1, 1)) return false;
+    const FRacingResultState R = RacingResults::Build(F.World, F.Player, F.Home, TMap<FString, FString>());
+    for (const FRacingResultTicket& T : R.Tickets)
+        TestFalse(TEXT("The session name never appears"), T.Player.Contains(TEXT("macbook")));
+    TestTrue(TEXT("Named by the rules"), R.Tickets.ContainsByPredicate([](const FRacingResultTicket& T) { return T.Player == TEXT("Kaito"); }));
     return true;
 }
 #endif
