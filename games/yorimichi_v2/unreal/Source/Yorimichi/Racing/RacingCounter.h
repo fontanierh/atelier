@@ -6,6 +6,7 @@
 class AActor;
 class AController;
 class AWandererCharacter;
+struct FRacingNetRace;
 namespace RacingTv { struct FSpot; }
 
 /** One of the player's win bets of today, as the player may see it. */
@@ -27,16 +28,24 @@ struct FRacingWalletTicket
     }
 };
 
-/** A player's coins (FHRPlayer::Coins, less the payouts not yet seen), coins staked today and today's tickets. */
+/** A player's coins (FHRPlayer::Coins, less the payouts not yet seen), coins staked today and today's newest tickets. */
 USTRUCT()
 struct FRacingWalletState
 {
     GENERATED_BODY()
+    /** Tickets the wallet carries at most: stakes have no count limit, the replicated wallet does. */
+    static constexpr int32 MaxTickets = 20;
     UPROPERTY() int32 Coins = 0;
     UPROPERTY() int32 DayStaked = 0;
+    /** Today's newest tickets first, at most MaxTickets. */
     UPROPERTY() TArray<FRacingWalletTicket> Tickets;
+    /** Today's tickets older than those carried. */
+    UPROPERTY() int32 EarlierTickets = 0;
 
-    bool operator==(const FRacingWalletState& O) const { return Coins == O.Coins && DayStaked == O.DayStaked && Tickets == O.Tickets; }
+    bool operator==(const FRacingWalletState& O) const
+    {
+        return Coins == O.Coins && DayStaked == O.DayStaked && Tickets == O.Tickets && EarlierTickets == O.EarlierTickets;
+    }
 };
 
 /**
@@ -70,6 +79,17 @@ namespace RacingCounter
     YORIMICHI_API FString Hint(const AWandererCharacter* Pawn);
     YORIMICHI_API bool IsOpen();
     YORIMICHI_API void Close();
+
+    /** The window's stakes for a player with Coins: 1, 5, 10, 25, 50 and 100 below Coins, then All (Coins itself). Empty
+     *  without coins. */
+    YORIMICHI_API TArray<int32> StakeSteps(int32 Coins);
+    /** The stake one step down (Direction < 0) or up from Stake among StakeSteps(Coins), held at the ends; a stake between
+     *  steps (coins changed) moves to the next step that way. 0 without coins. */
+    YORIMICHI_API int32 StepStake(int32 Stake, int32 Coins, int32 Direction);
+    /** Why a press of the bet button cannot ask the host for a bet on runner Runner of Race (the race in focus, Key empty
+     *  when none) at world second Now with Stake coins: no race open, betting closed, no coins or no such runner (English).
+     *  Empty when the request can go to the host, which still decides. */
+    YORIMICHI_API FString BetBlocker(const FRacingNetRace& Race, double Now, int32 Runner, int32 Stake);
 }
 
 /**
@@ -91,6 +111,10 @@ public:
     const FString& GetReply() const { return Reply; }
     /** Owner: asks the host for a win bet on runner Runner (FRacingNetRace::Runners index) of the race RaceKey. */
     void RequestBet(const FString& RaceKey, int32 Runner, int32 Stake);
+    /** Owner: a reply the window decides itself (why a press could not bet), or none: the window clears it when it opens
+     *  and when the race in focus changes, so an old answer is never shown for a press that did not reach the host. */
+    void SetLocalReply(const FString& Text) { Reply = Text; }
+    void ClearReply() { Reply.Reset(); }
 
     // ------------------------------------------------------------------ host
     void HostSet(const FRacingWalletState& Next) { if (!(Next == Wallet)) Wallet = Next; }

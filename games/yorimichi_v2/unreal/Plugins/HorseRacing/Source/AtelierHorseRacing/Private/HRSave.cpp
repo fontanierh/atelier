@@ -479,7 +479,7 @@ namespace HRSave
 			A.Check(OneOf(T.Status, {TEXT("open"), TEXT("won"), TEXT("lost"), TEXT("refunded")}), W + TEXT(" has an unknown status"));
 			A.Check(T.Status != TEXT("open") || (T.T == S.T && RaceKeys.Contains(T.RaceKey)), W + TEXT(" is open on a race not run today"));
 			A.Range(T.T, 0, S.T, W + TEXT(" day"));
-			A.Range(T.Stake, HRRules::FBetLimits::MinStake, HRRules::FBetLimits::MaxStake, W + TEXT(" stake"));
+			A.Range(T.Stake, HRRules::FBetLimits::MinStake, MaxCoins, W + TEXT(" stake"));
 			A.Range(T.Payout, 0, MaxCoins, W + TEXT(" payout"));
 			A.Check(FMath::IsFinite(T.Rapport) && T.Rapport >= 0. && T.Rapport < 1e6, W + TEXT(" has invalid odds"));
 		}

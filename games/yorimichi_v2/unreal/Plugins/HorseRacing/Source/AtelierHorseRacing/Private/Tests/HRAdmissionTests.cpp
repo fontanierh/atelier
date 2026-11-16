@@ -166,7 +166,8 @@ bool FHRSaveAdmissionTest::RunTest(const FString&)
 	Refused(TEXT("an allele beyond the breeds"), Mutated([&HorseId](FHRWorldState& W) { W.Horses[HorseId].Genome.FindOrAdd(TEXT("breed")).A = 7; }), TEXT("gene breed"));
 	Refused(TEXT("negative coins"), Mutated([](FHRWorldState& W) { W.Players[TEXT("p1")].Coins = -1; }), TEXT("coins"));
 	Refused(TEXT("coins beyond the cap"), Mutated([](FHRWorldState& W) { W.Players[TEXT("p1")].Coins = HRRules::MaxCoins + 1; }), TEXT("coins"));
-	Refused(TEXT("a stake beyond the limit"), Mutated([](FHRWorldState& W) { W.Tickets[0].Stake = 1000; }), TEXT("stake"));
+	Refused(TEXT("a stake beyond the coin cap"), Mutated([](FHRWorldState& W) { W.Tickets[0].Stake = HRRules::MaxCoins + 1; }), TEXT("stake"));
+	Refused(TEXT("a stake of 0"), Mutated([](FHRWorldState& W) { W.Tickets[0].Stake = 0; }), TEXT("stake"));
 	Refused(TEXT("a day in the future of the race day"), Mutated([](FHRWorldState& W) { W.Meeting.T = W.T + 1; }), TEXT("race day"));
 
 	// Collection sizes.

@@ -285,7 +285,7 @@ bool FHRMultiPlayerTest::RunTest(const FString&)
 		TestTrue(TEXT("p3 bets"), HRRules::PlaceBet(S, P3, Key, Pick, 10).IsEmpty());
 		TestTrue(TEXT("the odds shorten for everyone"), HRRules::Rapport(S, *HRRules::FindRace(S, Key), Pick) < Before);
 		TestTrue(TEXT("p1 bets on the same race"), HRRules::PlaceBet(S, P1, Key, Pick, 10).IsEmpty());
-		TestEqual(TEXT("caps are per player"), HRRules::DayStake(S, P3), 10);
+		TestEqual(TEXT("stakes are counted per player"), HRRules::DayStake(S, P3), 10);
 	}
 
 	// The shared world saves and replays for every player.

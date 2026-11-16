@@ -171,13 +171,13 @@ RacingMotion::FPlan FRacingNetRunner::Plan(int32 Distance) const
 bool FRacingNetRunner::operator==(const FRacingNetRunner& O) const
 {
     return Horse == O.Horse && Stable == O.Stable && Jockey == O.Jockey && Silks == O.Silks && OddsTenths == O.OddsTenths &&
-        Breed == O.Breed && Coat == O.Coat && Scale == O.Scale && Place == O.Place && SplitMs == O.SplitMs;
+        Backing == O.Backing && Breed == O.Breed && Coat == O.Coat && Scale == O.Scale && Place == O.Place && SplitMs == O.SplitMs;
 }
 
 bool FRacingNetRace::operator==(const FRacingNetRace& O) const
 {
     return Key == O.Key && Name == O.Name && Venue == O.Venue && Track == O.Track && Distance == O.Distance && Start == O.Start &&
-        bRun == O.bRun && Runners == O.Runners;
+        bRun == O.bRun && Pool == O.Pool && Runners == O.Runners;
 }
 
 bool FRacingNetState::SameContent(const FRacingNetState& O) const
@@ -286,7 +286,8 @@ void ARacingService::BuildSnapshot(const FHRWorldState& S, double Now, const FRa
             R.Horse = H->Name;
             R.Stable = St->Name;
             R.Silks = FColor::FromHex(St->Color);
-            R.OddsTenths = FMath::Clamp(FMath::RoundToInt(HRRules::Rapport(S, *Focus, Entry.HorseId) * 10.), 0, 9999);
+            HRRules::PoolShares(S, *Focus, Entry.HorseId, N.Pool, R.Backing);
+            R.OddsTenths = FMath::Clamp(FMath::RoundToInt(HRRules::RapportOf(N.Pool, R.Backing) * 10.), 0, 9999);
             if (!Entry.RiderPlayerId.IsEmpty())
             {
                 const FHRPlayer* P = HRRules::FindPlayer(S, Entry.RiderPlayerId);
@@ -753,15 +754,13 @@ FRacingWalletState ARacingService::BuildWallet(const FHRWorldState& S, const FSt
     if (!Player) return Out;
     Out.DayStaked = HRRules::DayStake(S, PlayerId);
     int64 Hidden = 0;
-    for (const FHRTicket& T : S.Tickets)
+    // Newest first: the wallet carries the latest MaxTickets and counts the earlier ones, so it stays small on the wire.
+    for (int32 I = S.Tickets.Num() - 1; I >= 0; --I)
     {
+        const FHRTicket& T = S.Tickets[I];
         if (T.PlayerId != PlayerId || T.T != S.T) continue;
         const FHRRace* Race = HRRules::FindRace(S, T.RaceKey);
-        const FHRHorse* Horse = S.Horses.Find(T.HorseId);
-        FRacingWalletTicket& V = Out.Tickets.AddDefaulted_GetRef();
-        V.Race = Race ? RaceName(*Race) : T.RaceKey;
-        V.Horse = Horse ? Horse->Name : T.HorseId;
-        V.Stake = T.Stake;
+        FRacingWalletTicket V;
         V.Status = T.Status;
         V.Payout = T.Payout;
         // Decided at the start, seen at the post: until the winner is home the ticket is still running, its payout unseen.
@@ -773,6 +772,16 @@ FRacingWalletState ARacingService::BuildWallet(const FHRWorldState& S, const FSt
             V.Status = TEXT("open");
             V.Payout = 0;
         }
+        if (Out.Tickets.Num() >= FRacingWalletState::MaxTickets)
+        {
+            Out.EarlierTickets++;
+            continue;
+        }
+        const FHRHorse* Horse = S.Horses.Find(T.HorseId);
+        V.Race = Race ? RaceName(*Race) : T.RaceKey;
+        V.Horse = Horse ? Horse->Name : T.HorseId;
+        V.Stake = T.Stake;
+        Out.Tickets.Add(MoveTemp(V));
     }
     Out.Coins = int32(FMath::Clamp<int64>(int64(Player->Coins) - Hidden, 0, HRRules::MaxCoins));
     return Out;

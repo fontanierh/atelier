@@ -279,13 +279,14 @@ namespace HRRules
 	ATELIERHORSERACING_API FFoalOutlook FoalOutlook(const FHRWorldState& S, const FHRHorse& Mare, const FHRHorse& Sire, int32 Samples = 32);
 
 	// ---------------------------------------------------------------- betting (HRBetting.cpp): win bets only
+	/** A stake is at least MinStake and at most the player's coins: no other limit, on a race or a day. */
 	struct FBetLimits
 	{
 		static constexpr int32 MinStake = 1;
-		static constexpr int32 MaxStake = 10;
-		static constexpr int32 PerDay = 30;
-		static constexpr int32 TicketsPerRace = 3;
 	};
+	/** Tickets the world's book holds at most (tickets are kept a season): a new ticket is refused once it is full, so a
+	 *  saved world always stays within HRSave's admission (its ticket count and its JSON size). Stakes stay unlimited. */
+	inline constexpr int32 MaxBookTickets = 100000;
 	/** The pool's take, the lowest odds paid, and the share of the crowd betting at random (it keeps long shots finite). */
 	inline constexpr double Take = 0.15;
 	inline constexpr double MinRapport = 1.05;
@@ -294,6 +295,12 @@ namespace HRRules
 	ATELIERHORSERACING_API double WinChance(const FHRRace& Race, const FString& HorseId);
 	/** Odds for one coin: the crowd's pool and every player's ticket on this race (plus ExtraStake on this horse). */
 	ATELIERHORSERACING_API double Rapport(const FHRWorldState& S, const FHRRace& Race, const FString& HorseId, int32 ExtraStake = 0);
+	/** The parts of Rapport: the race's whole pool (crowd and players' tickets) and the coins backing this horse in it. */
+	ATELIERHORSERACING_API void PoolShares(const FHRWorldState& S, const FHRRace& Race, const FString& HorseId, double& OutPool, double& OutOnHorse);
+	/** Rapport from PoolShares, after ExtraStake more coins on the horse: a machine given the shares quotes the same odds. */
+	ATELIERHORSERACING_API double RapportOf(double Pool, double OnHorse, int32 ExtraStake = 0);
+	/** Coins a winning ticket returns: the stake times the odds, floored, within 0..MaxCoins. */
+	ATELIERHORSERACING_API int32 Payout(int32 Stake, double Rapport);
 	/** Coins a player has staked today. */
 	ATELIERHORSERACING_API int32 DayStake(const FHRWorldState& S, const FString& PlayerId);
 	ATELIERHORSERACING_API FString BetRefusal(const FHRWorldState& S, const FString& PlayerId, const FHRRace& Race, const FString& HorseId, int32 Stake);
