@@ -10,7 +10,7 @@ class AWandererCharacter;
 struct FRacingNetRace;
 namespace RacingTv { struct FSpot; }
 
-/** One of the player's win bets of today, as the player may see it. */
+/** One of the player's win bets (of today, or a won ticket of any day still to collect), as the player may see it. */
 USTRUCT()
 struct FRacingWalletTicket
 {
@@ -22,14 +22,17 @@ struct FRacingWalletTicket
     UPROPERTY() FString Status;
     /** Coins paid back (a win or a refund), 0 while open. */
     UPROPERTY() int32 Payout = 0;
+    /** A win whose payout waits at the betting counter (FHRTicket::Unpaid); false while the ticket still shows open. */
+    UPROPERTY() bool Unpaid = false;
 
     bool operator==(const FRacingWalletTicket& O) const
     {
-        return Race == O.Race && Horse == O.Horse && Stake == O.Stake && Status == O.Status && Payout == O.Payout;
+        return Race == O.Race && Horse == O.Horse && Stake == O.Stake && Status == O.Status && Payout == O.Payout && Unpaid == O.Unpaid;
     }
 };
 
-/** A player's coins (FHRPlayer::Coins, less the payouts not yet seen), coins staked today and today's newest tickets. */
+/** A player's coins (FHRPlayer::Coins, less the credited payouts not yet seen), coins staked today, today's newest tickets
+ *  and the newest winning tickets of any day whose winnings wait to be collected at the counter. */
 USTRUCT()
 struct FRacingWalletState
 {
@@ -38,14 +41,27 @@ struct FRacingWalletState
     static constexpr int32 MaxTickets = 20;
     UPROPERTY() int32 Coins = 0;
     UPROPERTY() int32 DayStaked = 0;
-    /** Today's newest tickets first, at most MaxTickets. */
+    /** Newest first: at most MaxTickets of today's tickets, and at most MaxTickets unpaid winning tickets of earlier days
+     *  (the newest MaxTickets unpaid tickets of any day are carried). */
     UPROPERTY() TArray<FRacingWalletTicket> Tickets;
     /** Today's tickets older than those carried. */
     UPROPERTY() int32 EarlierTickets = 0;
+    /** Unpaid winning tickets (shown as won) not carried in Tickets. */
+    UPROPERTY() int32 UnpaidMore = 0;
+    /** Coins every unpaid winning ticket shown as won waits to pay (summed in int64, held within int32). */
+    UPROPERTY() int32 UnpaidCoins = 0;
 
+    /** Unpaid winning tickets shown as won: those carried plus UnpaidMore. */
+    int32 UnpaidTickets() const
+    {
+        int32 N = UnpaidMore;
+        for (const FRacingWalletTicket& T : Tickets) N += T.Unpaid ? 1 : 0;
+        return N;
+    }
     bool operator==(const FRacingWalletState& O) const
     {
-        return Coins == O.Coins && DayStaked == O.DayStaked && Tickets == O.Tickets && EarlierTickets == O.EarlierTickets;
+        return Coins == O.Coins && DayStaked == O.DayStaked && Tickets == O.Tickets && EarlierTickets == O.EarlierTickets &&
+            UnpaidMore == O.UnpaidMore && UnpaidCoins == O.UnpaidCoins;
     }
 };
 
@@ -76,7 +92,7 @@ namespace RacingCounter
     YORIMICHI_API bool CanUse(const AWandererCharacter* Pawn);
     /** Interact at the counter: opens the betting window; false when the player cannot use it. */
     YORIMICHI_API bool TryOpen(AWandererCharacter* Pawn);
-    /** The HUD's prompt at the counter ("Place a win bet"), empty elsewhere. */
+    /** The HUD's prompt at the counter ("Place a win bet", "Collect winnings" when some wait), empty elsewhere. */
     YORIMICHI_API FString Hint(const AWandererCharacter* Pawn);
     YORIMICHI_API bool IsOpen();
     YORIMICHI_API void Close();
@@ -96,8 +112,8 @@ namespace RacingCounter
 /**
  * A player's wallet, on each player controller, and the result of the last race they bet on. The host (ARacingService)
  * fills both, replicated to their owner only. The owner
- * asks the host for a bet (ServerPlaceBet) and hears the answer (ClientBetReply); offline and on the host the same call
- * runs directly.
+ * asks the host for a bet (ServerPlaceBet) or to collect its winnings (ServerCollect) and hears the answer (ClientBetReply);
+ * offline and on the host the same call runs directly. Both requests share one rate limit.
  */
 UCLASS(ClassGroup = Racing)
 class YORIMICHI_API URacingWallet : public UActorComponent
@@ -115,6 +131,8 @@ public:
     const FString& GetReply() const { return Reply; }
     /** Owner: asks the host for a win bet on runner Runner (FRacingNetRace::Runners index) of the race RaceKey. */
     void RequestBet(const FString& RaceKey, int32 Runner, int32 Stake);
+    /** Owner: asks the host to pay the winnings waiting on its tickets (it must stand at the counter). */
+    void RequestCollect();
     /** Owner: a reply the window decides itself (why a press could not bet), or none: the window clears it when it opens
      *  and when the race in focus changes, so an old answer is never shown for a press that did not reach the host. */
     void SetLocalReply(const FString& Text) { Reply = Text; }
@@ -127,6 +145,8 @@ public:
     static constexpr int32 MaxRequestsPerSecond = 5, MaxRaceKeyChars = 32;
 
     UFUNCTION(Server, Reliable) void ServerPlaceBet(const FString& RaceKey, int32 Runner, int32 Stake);
+    UFUNCTION(Server, Reliable) void ServerCollect();
+    /** The host's answer to a bet (empty: taken) or a collection (its text). */
     UFUNCTION(Client, Reliable) void ClientBetReply(const FString& Error);
 
 private:
@@ -135,7 +155,11 @@ private:
     FString Reply;
     double RequestWindow = -1.;
     int32 Requests = 0;
+    /** Whether the host looks at one more request this second (MaxRequestsPerSecond, bets and collections together). */
+    bool Admit();
     /** The host's handling of a request: rate, key length, then ARacingService::PlaceBet. Empty when taken. */
     FString HostHandle(const FString& RaceKey, int32 Runner, int32 Stake);
+    /** The host's handling of a collection: rate, then ARacingService::CollectWinnings. The answer to show. */
+    FString HostCollect();
     void ApplyReply(const FString& Error);
 };

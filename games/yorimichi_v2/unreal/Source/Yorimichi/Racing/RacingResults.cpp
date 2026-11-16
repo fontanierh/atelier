@@ -115,6 +115,8 @@ FRacingResultState RacingResults::Build(const FHRWorldState& S, const FString& P
         V.Stake = T.Stake;
         V.Status = T.Status;
         V.Payout = T.Payout;
+        // Whether another player has collected is not the viewer's business.
+        V.bUnpaid = bMine && T.Unpaid;
     };
     for (const FHRTicket* T : Mine) Add(*T, true, FString());
     for (const FString& Id : Others)
@@ -172,7 +174,8 @@ namespace RacingResultsUi
 
     FString Status(const FRacingResultTicket& T)
     {
-        return T.Status == TEXT("won") ? FString::Printf(TEXT("won +%d"), T.Payout)
+        return T.Status == TEXT("won") && T.bUnpaid ? FString::Printf(TEXT("won +%d, collect at the Salon"), T.Payout)
+            : T.Status == TEXT("won") ? FString::Printf(TEXT("won +%d"), T.Payout)
             : T.Status == TEXT("refunded") ? FString::Printf(TEXT("refunded +%d"), T.Payout)
             : FString(TEXT("lost"));
     }

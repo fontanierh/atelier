@@ -284,8 +284,9 @@ namespace HRRules
 	{
 		static constexpr int32 MinStake = 1;
 	};
-	/** Tickets the world's book holds at most (tickets are kept a season): a new ticket is refused once it is full, so a
-	 *  saved world always stays within HRSave's admission (its ticket count and its JSON size). Stakes stay unlimited. */
+	/** Tickets the world's book holds at most (tickets are kept a season, unpaid winning tickets until collected): a new
+	 *  ticket is refused once it is full, so a saved world always stays within HRSave's admission (its ticket count and its
+	 *  JSON size). Stakes stay unlimited. */
 	inline constexpr int32 MaxBookTickets = 100000;
 	/** The pool's take, the lowest odds paid, and the share of the crowd betting at random (it keeps long shots finite). */
 	inline constexpr double Take = 0.15;
@@ -305,6 +306,13 @@ namespace HRRules
 	ATELIERHORSERACING_API int32 DayStake(const FHRWorldState& S, const FString& PlayerId);
 	ATELIERHORSERACING_API FString BetRefusal(const FHRWorldState& S, const FString& PlayerId, const FHRRace& Race, const FString& HorseId, int32 Stake);
 	ATELIERHORSERACING_API FString PlaceBet(FHRWorldState& S, const FString& PlayerId, const FString& RaceKey, const FString& HorseId, int32 Stake);
-	/** Pays or refunds every open ticket on a race that has been run (or not run). */
+	/** Settles every open ticket on a race that has been run (or not run): refunds are credited at once, a winning ticket
+	 *  gets its odds and payout and is left Unpaid (the player's TotalWon and TicketsWon count it now, the coins wait for
+	 *  CollectWinnings), a losing one pays nothing. */
 	ATELIERHORSERACING_API void SettleRace(FHRWorldState& S, const FHRRace& Race);
+	/** Credits the player's Unpaid winning tickets, oldest first, for which Ready (when given) holds, and marks them paid.
+	 *  A ticket whose payout would take the player's coins above MaxCoins stays unpaid, and so do the ones after it. A second
+	 *  call pays nothing more. Out: the coins credited and the tickets paid. */
+	ATELIERHORSERACING_API void CollectWinnings(FHRWorldState& S, const FString& PlayerId, int32& OutPaid, int32& OutTickets,
+		const TFunction<bool(const FHRTicket&)>& Ready = nullptr);
 }

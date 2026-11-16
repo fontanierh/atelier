@@ -306,7 +306,12 @@ bool FHREconomyTest::RunTest(const FString&)
 			S.Players[TEXT("p1")].Coins = HRRules::MaxCoins - 3;
 			HRRules::SettleRace(S, *Run);
 			TestEqual(TEXT("won"), S.Tickets.Last().Status, FString(TEXT("won")));
-			TestEqual(TEXT("the payout saturates at the cap"), S.Players[TEXT("p1")].Coins, HRRules::MaxCoins);
+			TestEqual(TEXT("settlement credits no winnings"), S.Players[TEXT("p1")].Coins, HRRules::MaxCoins - 3);
+			int32 Paid = 0, Count = 0;
+			HRRules::CollectWinnings(S, TEXT("p1"), Paid, Count);
+			TestEqual(TEXT("a payout past the cap is not collected"), Paid, 0);
+			TestTrue(TEXT("it stays unpaid"), S.Tickets.Last().Unpaid);
+			TestEqual(TEXT("the coins stay within the cap"), S.Players[TEXT("p1")].Coins, HRRules::MaxCoins - 3);
 		}
 		HRRules::AdvanceDay(S);
 		TestEqual(TEXT("the income saturates at the cap"), S.Players[TEXT("p1")].Coins, HRRules::MaxCoins);

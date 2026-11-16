@@ -192,8 +192,21 @@ public:
     /** A controller's bet (authority only): its pawn must stand at the betting counter. The odds move for everyone at once. */
     FString PlaceBet(const AController* Controller, const FString& RaceKey, int32 Runner, int32 Stake);
     /** A player's wallet at world second Now: a ticket's outcome and payout stay hidden until its race's winner is home.
-     *  It carries today's newest FRacingWalletState::MaxTickets tickets, newest first, and counts the rest. */
+     *  It carries today's newest FRacingWalletState::MaxTickets tickets, newest first, and counts the rest; and the unpaid
+     *  winning tickets of any day (the newest MaxTickets carried, the rest counted, all of their coins summed). Coins hide
+     *  only payouts already credited (refunds, guests' wins), never unpaid winnings. */
     static FRacingWalletState BuildWallet(const FHRWorldState& S, const FString& PlayerId, double Now);
+    /** Whether a ticket's race's winner is home at world second Now: always for an earlier day's ticket; for today's, once
+     *  the race was run and its winner crossed the line. Before that a settled ticket still shows as open. */
+    static bool WinnerHome(const FHRWorldState& S, const FHRTicket& T, double Now);
+    /** Pays PlayerId's unpaid winnings whose winner is home at Now (HRRules::CollectWinnings): the counter's answer
+     *  ("Collected 32 coins.", "No winnings to collect.", or why the rest waits). Out: coins and tickets paid. */
+    static FString CollectAt(FHRWorldState& S, const FString& PlayerId, double Now, int32& OutPaid, int32& OutTickets);
+    /** Guests' session players are not saved, so nothing can wait for them: their winnings are paid as soon as their
+     *  races are settled (as far as their coins' cap allows). Returns the coins paid. */
+    static int32 PaySessionWinnings(FHRWorldState& S);
+    /** A controller's collection (authority only): its pawn must stand at the betting counter. The answer to show. */
+    FString CollectWinnings(const AController* Controller);
     /** Every connected player's display name by player id: only riders who chose a name. The others are named by the
      *  rules (RacingResults::Build), never by the session's player name, which offline is the machine's network name. */
     TMap<FString, FString> PlayerNames() const;

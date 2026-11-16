@@ -912,8 +912,9 @@ namespace
 			T.Payout = T.Stake;
 			if (FHRPlayer* P = HRRules::FindPlayer(S, T.PlayerId)) P->Coins = HRRules::Credit(P->Coins, T.Stake);
 		}
-		// Settled tickets are kept for one season, so the saved world does not grow without end.
-		S.Tickets.RemoveAll([&S](const FHRTicket& T) { return T.T <= S.T - HRClock::DaysPerSeason; });
+		// Settled tickets are kept for one season, so the saved world does not grow without end; a winning ticket not yet
+		// collected is kept until it is (its winnings are still owed).
+		S.Tickets.RemoveAll([&S](const FHRTicket& T) { return !T.Unpaid && T.T <= S.T - HRClock::DaysPerSeason; });
 
 		HRRules::AdvanceRiders(S);
 		for (TPair<FString, FHRPlayer>& It : S.Players)

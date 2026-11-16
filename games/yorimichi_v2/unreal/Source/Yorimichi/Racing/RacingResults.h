@@ -20,10 +20,13 @@ struct FRacingResultTicket
     /** The rules' settled status: "won", "lost" or "refunded". */
     UPROPERTY() FString Status;
     UPROPERTY() int32 Payout = 0;
+    /** The viewer's own win, its payout still to collect at the Salon's counter (never set on another player's ticket). */
+    UPROPERTY() bool bUnpaid = false;
 
     bool operator==(const FRacingResultTicket& O) const
     {
-        return bMine == O.bMine && Player == O.Player && Horse == O.Horse && Stake == O.Stake && Status == O.Status && Payout == O.Payout;
+        return bMine == O.bMine && Player == O.Player && Horse == O.Horse && Stake == O.Stake && Status == O.Status && Payout == O.Payout &&
+            bUnpaid == O.bUnpaid;
     }
 };
 

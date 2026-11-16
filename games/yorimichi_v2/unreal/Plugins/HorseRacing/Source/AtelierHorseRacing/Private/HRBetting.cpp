@@ -93,7 +93,13 @@ namespace HRRules
 			return TEXT("This horse is not declared to run.");
 		if (Stake < FBetLimits::MinStake) return FString::Printf(TEXT("Stake at least %d coin."), FBetLimits::MinStake);
 		if (Stake > P->Coins) return FString::Printf(TEXT("You have only %d coins."), P->Coins);
-		if (S.Tickets.Num() >= MaxBookTickets) return TEXT("The betting book is full for this season.");
+		if (S.Tickets.Num() >= MaxBookTickets)
+		{
+			// Unpaid winning tickets are never pruned: when they are part of what fills the book, say so.
+			const bool bUnpaid = S.Tickets.ContainsByPredicate([](const FHRTicket& T) { return T.Unpaid; });
+			return bUnpaid ? TEXT("The betting book is full for this season. Winning tickets stay in it until their winnings are collected.")
+				: TEXT("The betting book is full for this season.");
+		}
 		return FString();
 	}
 
@@ -149,12 +155,33 @@ namespace HRRules
 			T.Rapport = Rapport(S, Race, Winner);
 			T.Payout = Payout(T.Stake, T.Rapport);
 			T.Status = TEXT("won");
+			// The winnings wait to be collected (CollectWinnings); the player's record counts the win now.
+			T.Unpaid = T.Payout > 0;
 			if (FHRPlayer* P = FindPlayer(S, T.PlayerId))
 			{
-				P->Coins = Credit(P->Coins, T.Payout);
 				P->TotalWon = Tally(P->TotalWon, T.Payout);
 				P->TicketsWon++;
 			}
+		}
+	}
+
+	void CollectWinnings(FHRWorldState& S, const FString& PlayerId, int32& OutPaid, int32& OutTickets, const TFunction<bool(const FHRTicket&)>& Ready)
+	{
+		OutPaid = 0;
+		OutTickets = 0;
+		FHRPlayer* P = FindPlayer(S, PlayerId);
+		if (!P) return;
+		// Oldest first (the book is in the order the tickets were taken). A payout that does not fit under MaxCoins stops the
+		// collection: that ticket and the later ones stay unpaid rather than lose coins to the cap.
+		for (FHRTicket& T : S.Tickets)
+		{
+			if (!T.Unpaid || T.PlayerId != PlayerId || (Ready && !Ready(T))) continue;
+			const int32 Payout = FMath::Max(T.Payout, 0);
+			if ((int64)P->Coins + Payout > MaxCoins) break;
+			P->Coins = Credit(P->Coins, Payout);
+			T.Unpaid = false;
+			OutPaid += Payout;
+			OutTickets++;
 		}
 	}
 }

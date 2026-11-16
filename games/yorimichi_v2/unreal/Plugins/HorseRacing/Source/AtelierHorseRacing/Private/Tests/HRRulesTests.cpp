@@ -275,6 +275,141 @@ bool FHRWorldRulesTest::RunTest(const FString&)
 	return true;
 }
 
+// Winnings are collected: settlement leaves a winning ticket unpaid, collecting pays it once, unpaid tickets outlive the
+// season's pruning, the coin cap keeps the rest unpaid, and a save without the field reads every win as paid.
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FHRCollectTest, "Atelier.HorseRacing.Betting.Collect", EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
+bool FHRCollectTest::RunTest(const FString&)
+{
+	const FString P1 = TEXT("p1");
+	FHRWorldState S = HRRules::CreateWorld(TEXT("bet-collect"));
+	HRRules::AddPlayer(S, P1, TEXT("Ada"));
+	const FString Key = S.Meeting.Races[0].Key;
+	// Tickets never change a result: a copy run first tells the winner and a loser.
+	FString Winner, Loser;
+	{
+		FHRWorldState Probe = S;
+		HRRules::RunNextRace(Probe);
+		const FHRRace* Done = HRRules::FindRace(Probe, Key);
+		if (!TestTrue(TEXT("the race is run with a field"), Done && Done->Finishes.Num() >= 2)) return false;
+		Winner = Done->Finishes[0].HorseId;
+		Loser = Done->Finishes.Last().HorseId;
+	}
+	TestTrue(TEXT("a ticket on the winner"), HRRules::PlaceBet(S, P1, Key, Winner, 10).IsEmpty());
+	TestTrue(TEXT("a ticket on a loser"), HRRules::PlaceBet(S, P1, Key, Loser, 5).IsEmpty());
+	const int32 Before = S.Players[P1].Coins;
+	HRRules::RunNextRace(S);
+	const FHRTicket& Won = S.Tickets[S.Tickets.Num() - 2];
+	const FHRTicket& Lost = S.Tickets.Last();
+	TestEqual(TEXT("the winning ticket is won"), Won.Status, FString(TEXT("won")));
+	TestTrue(TEXT("with a payout"), Won.Payout >= Won.Stake);
+	TestTrue(TEXT("left unpaid"), Won.Unpaid);
+	TestFalse(TEXT("a lost ticket is not unpaid"), Lost.Unpaid);
+	TestEqual(TEXT("settlement credits no winnings"), S.Players[P1].Coins, Before);
+	TestEqual(TEXT("the win is counted at settlement"), S.Players[P1].TicketsWon, 1);
+	TestEqual(TEXT("with its winnings"), S.Players[P1].TotalWon, Won.Payout);
+	TestEqual(TEXT("an unpaid win is admissible"), HRSave::Validate(S), FString());
+
+	// A save written before the field existed: its won tickets read as paid, so nothing is paid twice.
+	{
+		const FString Json = HRTest::ToJson(S);
+		TestTrue(TEXT("the save names the unpaid ticket"), Json.Contains(TEXT("\"unpaid\":true")));
+		const FString Old = Json.Replace(TEXT(",\"unpaid\":true"), TEXT("")).Replace(TEXT(",\"unpaid\":false"), TEXT(""));
+		TestFalse(TEXT("the old save has no unpaid key"), Old.Contains(TEXT("unpaid")));
+		FHRWorldState Loaded;
+		FString Error;
+		TestTrue(TEXT("an old save loads: ") + Error, HRSave::FromJson(Old, Loaded, Error));
+		TestFalse(TEXT("with no unpaid ticket"), Loaded.Tickets.ContainsByPredicate([](const FHRTicket& T) { return T.Unpaid; }));
+		int32 Paid = -1, Count = -1;
+		HRRules::CollectWinnings(Loaded, P1, Paid, Count);
+		TestEqual(TEXT("and nothing to collect"), Paid, 0);
+	}
+
+	// Admission: only a winning ticket with a payout may be unpaid.
+	{
+		FHRWorldState Bad = S;
+		Bad.Tickets.Last().Unpaid = true;
+		TestTrue(TEXT("an unpaid lost ticket is refused"), HRSave::Validate(Bad).Contains(TEXT("unpaid but not a winning ticket")));
+		FHRWorldState NoPayout = S;
+		NoPayout.Tickets[NoPayout.Tickets.Num() - 2].Payout = 0;
+		TestFalse(TEXT("an unpaid win without a payout is refused"), HRSave::Validate(NoPayout).IsEmpty());
+	}
+
+	// Unpaid tickets outlive the season's pruning; the lost ticket of the same day does not.
+	{
+		FHRWorldState Later = S;
+		const FString WonId = Won.Id, LostId = Lost.Id;
+		for (int32 D = 0; D <= HRClock::DaysPerSeason; ++D) HRRules::AdvanceDay(Later);
+		TestTrue(TEXT("an unpaid ticket is kept past a season"), Later.Tickets.ContainsByPredicate([&WonId](const FHRTicket& T) { return T.Id == WonId && T.Unpaid; }));
+		TestFalse(TEXT("a settled ticket is pruned after a season"), Later.Tickets.ContainsByPredicate([&LostId](const FHRTicket& T) { return T.Id == LostId; }));
+		TestEqual(TEXT("the kept world is admissible"), HRSave::Validate(Later), FString());
+		int32 Paid = 0, Count = 0;
+		HRRules::CollectWinnings(Later, P1, Paid, Count);
+		TestEqual(TEXT("collected a season later"), Paid, Won.Payout);
+		HRRules::AdvanceDay(Later);
+		TestFalse(TEXT("then pruned at the next close"), Later.Tickets.ContainsByPredicate([&WonId](const FHRTicket& T) { return T.Id == WonId; }));
+	}
+
+	// Collecting pays once.
+	{
+		const int32 Payout = Won.Payout;
+		int32 Paid = 0, Count = 0;
+		HRRules::CollectWinnings(S, P1, Paid, Count);
+		TestEqual(TEXT("collecting pays the winnings"), Paid, Payout);
+		TestEqual(TEXT("for one ticket"), Count, 1);
+		TestEqual(TEXT("into the player's coins"), S.Players[P1].Coins, Before + Payout);
+		TestFalse(TEXT("the ticket is paid"), S.Tickets[S.Tickets.Num() - 2].Unpaid);
+		HRRules::CollectWinnings(S, P1, Paid, Count);
+		TestEqual(TEXT("a second collection pays nothing"), Paid, 0);
+		TestEqual(TEXT("for no ticket"), Count, 0);
+		TestEqual(TEXT("and the coins stay"), S.Players[P1].Coins, Before + Payout);
+		TestEqual(TEXT("the record is not counted twice"), S.Players[P1].TicketsWon, 1);
+	}
+
+	// The coin cap: a payout that does not fit stays unpaid, and so do the ones after it.
+	{
+		FHRWorldState W = S;
+		FHRTicket Model = W.Tickets[W.Tickets.Num() - 2];
+		const int32 Payouts[3] = {10, 20, 1};
+		for (int32 I = 0; I < 3; ++I)
+		{
+			FHRTicket T = Model;
+			T.Id = FString::Printf(TEXT("bet:%d:%d"), W.T, W.Serial++);
+			T.Payout = Payouts[I];
+			T.Unpaid = true;
+			W.Tickets.Add(T);
+		}
+		W.Players[P1].Coins = HRRules::MaxCoins - 15;
+		int32 Paid = 0, Count = 0;
+		HRRules::CollectWinnings(W, P1, Paid, Count);
+		TestEqual(TEXT("the first payout fits"), Paid, 10);
+		TestEqual(TEXT("one ticket paid"), Count, 1);
+		TestEqual(TEXT("the coins stay under the cap"), W.Players[P1].Coins, HRRules::MaxCoins - 5);
+		TestTrue(TEXT("the payout that does not fit stays unpaid"), W.Tickets[W.Tickets.Num() - 2].Unpaid);
+		TestTrue(TEXT("and so does the one after it"), W.Tickets.Last().Unpaid);
+	}
+
+	// A book full of tickets with unpaid winnings among them says why it stays full.
+	{
+		FHRWorldState W = HRRules::CreateWorld(TEXT("bet-collect-book"));
+		HRRules::AddPlayer(W, P1, TEXT("Ada"));
+		const FHRRace& R = W.Meeting.Races[0];
+		TestTrue(TEXT("a first ticket"), HRRules::PlaceBet(W, P1, R.Key, R.Entries[0].HorseId, 5).IsEmpty());
+		FHRTicket Model = W.Tickets.Last();
+		Model.Status = TEXT("won");
+		Model.Payout = 10;
+		Model.Unpaid = true;
+		while (W.Tickets.Num() < HRRules::MaxBookTickets)
+		{
+			FHRTicket T = Model;
+			T.Id = FString::Printf(TEXT("bet:%d:%d"), W.T, W.Serial++);
+			W.Tickets.Add(MoveTemp(T));
+		}
+		TestEqual(TEXT("a book full with unpaid winnings refuses and says so"), HRRules::PlaceBet(W, P1, R.Key, R.Entries[0].HorseId, 1),
+			FString(TEXT("The betting book is full for this season. Winning tickets stay in it until their winnings are collected.")));
+	}
+	return true;
+}
+
 // Win bets: stakes up to the player's coins, refunds, settlement, a pool shared by every player, and no simple strategy wins on average.
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FHRBettingTest, "Atelier.HorseRacing.Betting", EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
 bool FHRBettingTest::RunTest(const FString&)
@@ -315,6 +450,19 @@ bool FHRBettingTest::RunTest(const FString&)
 		TestTrue(TEXT("settled after the race"), T.Status != TEXT("open"));
 		(T.PlayerId == P1 ? Paid1 : Paid2) += T.Payout;
 	}
+	// Refunds are credited at once; winnings wait to be collected.
+	int32 Won1 = 0, Won2 = 0, Refunded1 = 0, Refunded2 = 0;
+	for (const FHRTicket& T : S.Tickets)
+	{
+		if (T.RaceKey != First.Key) continue;
+		TestEqual(TEXT("a ticket is unpaid only when it won"), T.Unpaid, T.Status == TEXT("won"));
+		(T.Status == TEXT("won") ? (T.PlayerId == P1 ? Won1 : Won2) : (T.PlayerId == P1 ? Refunded1 : Refunded2)) += T.Payout;
+	}
+	TestEqual(TEXT("settlement credits refunds only"), S.Players[P1].Coins - Coins1 + S.Players[P2].Coins - Coins2, Refunded1 + Refunded2);
+	int32 Collected1 = 0, Collected2 = 0, Tickets1 = 0, Tickets2 = 0;
+	HRRules::CollectWinnings(S, P1, Collected1, Tickets1);
+	HRRules::CollectWinnings(S, P2, Collected2, Tickets2);
+	TestEqual(TEXT("collecting pays each player's winnings"), Collected1 + Collected2, Won1 + Won2);
 	TestEqual(TEXT("payouts credited to their players"), S.Players[P1].Coins - Coins1 + S.Players[P2].Coins - Coins2, Paid1 + Paid2);
 	TestFalse(TEXT("no bet on a run race"), HRRules::PlaceBet(S, P1, First.Key, One, 1).IsEmpty());
 
@@ -351,8 +499,11 @@ bool FHRBettingTest::RunTest(const FString&)
 		TestEqual(TEXT("no coins left"), W.Players[P1].Coins, 0);
 		TestFalse(TEXT("nothing left to stake"), HRRules::PlaceBet(W, P1, Key, Winner, 1).IsEmpty());
 		HRRules::RunNextRace(W);
+		int32 Paid = 0, Count = 0;
+		HRRules::CollectWinnings(W, P1, Paid, Count);
 		const FHRTicket& T = W.Tickets.Last();
 		TestEqual(TEXT("the ticket wins"), T.Status, FString(TEXT("won")));
+		TestEqual(TEXT("and is collected whole"), Paid, HRRules::MaxCoins);
 		TestTrue(TEXT("finite odds"), FMath::IsFinite(T.Rapport) && T.Rapport >= HRRules::MinRapport);
 		TestEqual(TEXT("the payout saturates at MaxCoins"), T.Payout, HRRules::MaxCoins);
 		TestEqual(TEXT("coins saturate at MaxCoins"), W.Players[P1].Coins, HRRules::MaxCoins);

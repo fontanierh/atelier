@@ -482,6 +482,7 @@ namespace HRSave
 			A.Range(T.Stake, HRRules::FBetLimits::MinStake, MaxCoins, W + TEXT(" stake"));
 			A.Range(T.Payout, 0, MaxCoins, W + TEXT(" payout"));
 			A.Check(FMath::IsFinite(T.Rapport) && T.Rapport >= 0. && T.Rapport < 1e6, W + TEXT(" has invalid odds"));
+			A.Check(!T.Unpaid || (T.Status == TEXT("won") && T.Payout > 0), W + TEXT(" is unpaid but not a winning ticket with a payout"));
 		}
 		for (const FHRNews& N : S.News)
 		{
