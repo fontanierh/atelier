@@ -3,6 +3,9 @@
 #include "RacingBroadcast.h"
 #include "RacingCounter.h"
 #include "RacingResults.h"
+#include "JapanSession.h"
+#include "Engine/Engine.h"
+#include "Engine/World.h"
 #include "HorseComponent.h"
 #include "AtelierData.h"
 #include "Dom/JsonObject.h"
@@ -981,6 +984,36 @@ bool FRacingResultsNamesTest::RunTest(const FString&)
             TestFalse(FString::Printf(TEXT("No player id on the wire (%s)"), *Id), Wire.Contains(Id) || Wire.Contains(Id.Mid(Id.Find(TEXT(":")) + 1)));
         TestFalse(TEXT("No id prefix on the wire"), Wire.Contains(TEXT("session:")) || Wire.Contains(TEXT("local:")));
     }
+    return true;
+}
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FRacingResultsSessionNameTest, "Yorimichi.Racing.Results.NoSessionName",
+    EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
+
+bool FRacingResultsSessionNameTest::RunTest(const FString&)
+{
+    UWorld* World = nullptr;
+    for (const FWorldContext& Context : GEngine->GetWorldContexts())
+        if (Context.World() && Context.World()->IsGameWorld()) { World = Context.World(); break; }
+    if (!TestNotNull(TEXT("Native game world"), World)) return false;
+    FActorSpawnParameters Spawn;
+    Spawn.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+    AJapanPlayerState* PS = World->SpawnActor<AJapanPlayerState>(Spawn);
+    ON_SCOPE_EXIT { if (PS) PS->Destroy(); };
+    if (!TestNotNull(TEXT("A player state"), PS)) return false;
+    // Offline the session's player name is the machine's network name: it must never reach the other players.
+    PS->SetPlayerName(TEXT("pauls-macbook-air"));
+    PS->RiderName.Reset();
+    TestEqual(TEXT("No rider name: no shown name, so the rules' name is used"), ARacingService::ShownName(PS), FString());
+    PS->RiderName = TEXT("  Sora ");
+    TestEqual(TEXT("The rider's chosen name"), ARacingService::ShownName(PS), FString(TEXT("Sora")));
+    TestEqual(TEXT("No player state: no name"), ARacingService::ShownName(nullptr), FString());
+    // Without a shown name the result names the player by the rules, else "Another player".
+    RacingTest::FResultFixture F;
+    if (!F.Run(*this, 1, 1, 1)) return false;
+    const FRacingResultState R = RacingResults::Build(F.World, F.Player, F.Home, TMap<FString, FString>());
+    for (const FRacingResultTicket& T : R.Tickets)
+        TestFalse(TEXT("The session name never appears"), T.Player.Contains(TEXT("macbook")));
+    TestTrue(TEXT("Named by the rules"), R.Tickets.ContainsByPredicate([](const FRacingResultTicket& T) { return T.Player == TEXT("Kaito"); }));
     return true;
 }
 #endif

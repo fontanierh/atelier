@@ -9,6 +9,7 @@
 #include "RacingService.generated.h"
 
 class AController;
+class APlayerState;
 class AWandererCharacter;
 class UAnimSequence;
 class UMaterialInterface;
@@ -193,8 +194,11 @@ public:
     /** A player's wallet at world second Now: a ticket's outcome and payout stay hidden until its race's winner is home.
      *  It carries today's newest FRacingWalletState::MaxTickets tickets, newest first, and counts the rest. */
     static FRacingWalletState BuildWallet(const FHRWorldState& S, const FString& PlayerId, double Now);
-    /** Every connected player's display name by player id (PlayerState: the rider's name, else the session name). */
+    /** Every connected player's display name by player id: only riders who chose a name. The others are named by the
+     *  rules (RacingResults::Build), never by the session's player name, which offline is the machine's network name. */
     TMap<FString, FString> PlayerNames() const;
+    /** The name a player shows other players: the rider's chosen name, else empty (never the session's player name). */
+    static FString ShownName(const APlayerState* PS);
     /** The world as it is saved: without the guests' session players and their tickets. */
     static FHRWorldState PersistentWorld(const FHRWorldState& S);
 

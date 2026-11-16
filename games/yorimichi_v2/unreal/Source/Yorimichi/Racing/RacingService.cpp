@@ -404,7 +404,7 @@ void ARacingService::BeginPlay()
 void ARacingService::EndPlay(const EEndPlayReason::Type Reason)
 {
     if (HasAuthority() && bHasWorld) SaveNow();
-    RacingResults::Close();
+    RacingResults::Reset();
     ClearRunners();
     Super::EndPlay(Reason);
 }
@@ -807,12 +807,17 @@ TMap<FString, FString> ARacingService::PlayerNames() const
     {
         const FString Id = PS ? PlayerIdOf(Cast<AController>(PS->GetOwner())) : FString();
         if (Id.IsEmpty()) continue;
-        // The rider's chosen name; else the player's name in the session (offline, the machine's network name).
-        const AJapanPlayerState* JPS = Cast<AJapanPlayerState>(PS);
-        const FString Name = JPS && !JPS->RiderName.IsEmpty() ? JPS->RiderName : PS->GetPlayerName();
+        const FString Name = ShownName(PS);
         if (!Name.IsEmpty()) Names.Add(Id, Name);
     }
     return Names;
+}
+
+FString ARacingService::ShownName(const APlayerState* PS)
+{
+    // Not the player's name in the session: offline and in direct sessions it is the machine's network name.
+    const AJapanPlayerState* JPS = Cast<AJapanPlayerState>(PS);
+    return JPS ? JPS->RiderName.TrimStartAndEnd() : FString();
 }
 
 void ARacingService::RefreshWallets()

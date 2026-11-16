@@ -11,6 +11,7 @@
 #include "Engine/GameViewportClient.h"
 #include "Engine/World.h"
 #include "Framework/Application/SlateApplication.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerController.h"
 #include "Widgets/Input/SButton.h"
 #include "Widgets/Layout/SBorder.h"
@@ -137,7 +138,9 @@ bool RacingResults::IsFresh(const FRacingResultState& Result, double Now)
 
 bool RacingResults::IsFree(const AWandererCharacter* Pawn)
 {
-    return Pawn && Pawn->IsLocallyControlled() && Pawn->IsReady() && !Pawn->IsMenuOpen() && !Pawn->AreControlsSuspended() &&
+    // On the ground: the panel holds the player still, so it waits out a jump, a fall or a swim.
+    const UCharacterMovementComponent* Movement = Pawn ? Pawn->GetCharacterMovement() : nullptr;
+    return Pawn && Movement && Movement->IsMovingOnGround() && Pawn->IsLocallyControlled() && Pawn->IsReady() && !Pawn->IsMenuOpen() && !Pawn->AreControlsSuspended() &&
         !RacingCounter::IsOpen() && !IsOpen() && !Pawn->OnVehicle() && !Pawn->IsZeppelinPassenger() && !Pawn->IsOnTrain() &&
         !(Pawn->GetSkate() && Pawn->GetSkate()->IsRiding()) && !Pawn->IsWaitingForTravelGround() && !Pawn->IsCinematic() &&
         !Pawn->IsNetworkActivityPending();
@@ -317,4 +320,10 @@ void RacingResults::Close()
     State.Menu.Reset();
     if (AWandererCharacter* Player = State.Player.Get()) Player->SetMenuOpen(false);
     State.Player.Reset();
+}
+
+void RacingResults::Reset()
+{
+    Close();
+    RacingResultsUi::Open().Done.Reset();
 }

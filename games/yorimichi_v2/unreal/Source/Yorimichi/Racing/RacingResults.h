@@ -86,11 +86,13 @@ namespace RacingResults
 
     /** Whether a result is still worth showing at world second Now: not empty and its winner home less than Window ago. */
     YORIMICHI_API bool IsFresh(const FRacingResultState& Result, double Now);
-    /** Whether the player is free for the panel: on foot and out of any menu, vehicle, seat, train, travel or cutscene. */
+    /** Whether the player is free for the panel: on foot, on the ground (not jumping, falling or swimming) and out of any menu, vehicle, seat, train, travel or cutscene. */
     YORIMICHI_API bool IsFree(const AWandererCharacter* Pawn);
 
     /** Each frame on every machine: shows the local player's new result once they are free, or drops it once stale. */
     YORIMICHI_API void Tick(const ARacingService* Service);
     YORIMICHI_API bool IsOpen();
     YORIMICHI_API void Close();
+    /** Closes the panel and forgets which results this machine has shown: a new world in the same run starts afresh. */
+    YORIMICHI_API void Reset();
 }
