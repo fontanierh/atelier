@@ -58,9 +58,28 @@ void URacingWallet::RequestBet(const FString& RaceKey, int32 Runner, int32 Stake
     ServerPlaceBet(RaceKey, Runner, Stake);
 }
 
+void URacingWallet::RequestCollect()
+{
+    const AActor* Owner = GetOwner();
+    if (!Owner) return;
+    if (Owner->HasAuthority())
+    {
+        Reply = HostCollect();
+        return;
+    }
+    Reply = TEXT("Collecting your winnings...");
+    ServerCollect();
+}
+
 void URacingWallet::ServerPlaceBet_Implementation(const FString& RaceKey, int32 Runner, int32 Stake)
 {
     ClientBetReply(HostHandle(RaceKey, Runner, Stake));
+}
+
+void URacingWallet::ServerCollect_Implementation()
+{
+    // The answer is never empty, so ApplyReply shows it as it is.
+    ClientBetReply(HostCollect());
 }
 
 void URacingWallet::ClientBetReply_Implementation(const FString& Error)
@@ -68,16 +87,29 @@ void URacingWallet::ClientBetReply_Implementation(const FString& Error)
     ApplyReply(Error);
 }
 
-FString URacingWallet::HostHandle(const FString& RaceKey, int32 Runner, int32 Stake)
+bool URacingWallet::Admit()
 {
-    // A client cannot flood the host: at most five requests a second are looked at.
+    // A client cannot flood the host: at most five requests a second are looked at, bets and collections together.
     const double Now = FPlatformTime::Seconds();
     if (RequestWindow < 0. || Now - RequestWindow >= 1.)
     {
         RequestWindow = Now;
         Requests = 0;
     }
-    if (++Requests > MaxRequestsPerSecond) return TEXT("Too many bets at once. Try again in a moment.");
+    return ++Requests <= MaxRequestsPerSecond;
+}
+
+FString URacingWallet::HostCollect()
+{
+    if (!Admit()) return TEXT("Too many requests at once. Try again in a moment.");
+    ARacingService* Service = ARacingService::Find(this);
+    if (!Service) return TEXT("The betting counter is closed for now.");
+    return Service->CollectWinnings(Cast<AController>(GetOwner()));
+}
+
+FString URacingWallet::HostHandle(const FString& RaceKey, int32 Runner, int32 Stake)
+{
+    if (!Admit()) return TEXT("Too many bets at once. Try again in a moment.");
     if (RaceKey.IsEmpty() || RaceKey.Len() > MaxRaceKeyChars) return TEXT("This bet is not valid.");
     ARacingService* Service = ARacingService::Find(this);
     if (!Service) return TEXT("The betting counter is closed for now.");
@@ -154,10 +186,11 @@ namespace RacingCounterUi
         return Wallet.IsValid() && Wallet->GetWallet().Tickets.IsValidIndex(Index) ? &Wallet->GetWallet().Tickets[Index] : nullptr;
     }
 
-    /** A ticket's outcome, shown at the right of its line. */
+    /** A ticket's outcome, shown at the right of its line: a win still to collect says so. */
     FString TicketStatus(const FRacingWalletTicket& T)
     {
-        return T.Status == TEXT("won") ? FString::Printf(TEXT("won +%d"), T.Payout)
+        return T.Status == TEXT("won") && T.Unpaid ? FString::Printf(TEXT("won +%d, collect here"), T.Payout)
+            : T.Status == TEXT("won") ? FString::Printf(TEXT("won +%d"), T.Payout)
             : T.Status == TEXT("lost") ? FString(TEXT("lost"))
             : T.Status == TEXT("refunded") ? FString::Printf(TEXT("refunded +%d"), T.Payout)
             : FString(TEXT("pending"));
@@ -167,8 +200,16 @@ namespace RacingCounterUi
     using YorimichiMenu::Plain;
     using YorimichiMenu::Text;
 
-    /** The window, in the game's menu style: the race in focus with each runner's odds, the stake stepper with its steps and
-     *  estimated return, the bet and the host's answer, today's tickets and the wallet, then the legend. Buttons only, so the
+    /** The collect row's label: the coins waiting and on how many winning tickets. */
+    FString CollectLabel(const FRacingWalletState& W)
+    {
+        const int32 Tickets = W.UnpaidTickets();
+        return FString::Printf(TEXT("Collect %d coins (%d winning ticket%s)"), W.UnpaidCoins, Tickets, Tickets == 1 ? TEXT("") : TEXT("s"));
+    }
+
+    /** The window, in the game's menu style: the winnings waiting to be collected (a row while there are any), the race in
+     *  focus with each runner's odds, the stake stepper with its steps and estimated return, the bet and the host's answer,
+     *  the tickets (today's, and wins still to collect) and the wallet, then the legend. Buttons only, so the
      *  D-pad or the stick moves between them and the bottom face button presses them; LB / RB (Q / E) step the stake from
      *  anywhere in it and B (Escape) closes it. */
     TSharedRef<SWidget> Build(TWeakObjectPtr<ARacingService> Service, TWeakObjectPtr<URacingWallet> Wallet, TSharedPtr<SButton>& OutFirst)
@@ -187,6 +228,24 @@ namespace RacingCounterUi
             const int32 Left = FMath::Max(0, FMath::CeilToInt(Race->Start - S->WorldNow()));
             return FText::FromString(FString::Printf(TEXT("%s  ·  %d m  ·  starts in %d:%02d"), *Race->Name, Race->Distance, Left / 60, Left % 60));
         }), 14, FLinearColor::White, "Bold")];
+
+        // Winnings waiting at the counter: one row that collects them all. A press moves focus on, as the row goes once paid.
+        const TSharedRef<TWeakPtr<SWidget>> AfterCollect = MakeShared<TWeakPtr<SWidget>>();
+        const auto HasUnpaid = [Wallet] { return Wallet.IsValid() && Wallet->GetWallet().UnpaidCoins > 0; };
+        TSharedRef<SButton> Collect = SNew(SButton).ButtonStyle(Plain()).ContentPadding(FMargin(0, 7)).HAlign(HAlign_Center)
+            .OnClicked_Lambda([Wallet, AfterCollect]
+            {
+                if (!Wallet.IsValid()) return FReply::Handled();
+                Wallet->RequestCollect();
+                if (const TSharedPtr<SWidget> Next = AfterCollect->Pin()) return FReply::Handled().SetUserFocus(Next.ToSharedRef(), EFocusCause::SetDirectly);
+                return FReply::Handled();
+            })
+            [Text(TAttribute<FText>::CreateLambda([Wallet]
+            {
+                return Wallet.IsValid() ? FText::FromString(CollectLabel(Wallet->GetWallet())) : FText::GetEmpty();
+            }), 14, Accent, "Bold", ETextJustify::Center)];
+        Rows->AddSlot().AutoHeight().Padding(0, 0, 0, 10)[SNew(SBox).Visibility_Lambda([HasUnpaid] { return HasUnpaid() ? EVisibility::Visible : EVisibility::Collapsed; })
+            [LitButton(Collect)]];
 
         // Runners: a row each, ● the one chosen, its odds at the right.
         Rows->AddSlot().AutoHeight().Padding(0, 0, 0, 4)[SNew(SBox).Visibility_Lambda([Service] { return OpenRace(Service.Get()) ? EVisibility::Visible : EVisibility::Collapsed; })
@@ -309,7 +368,7 @@ namespace RacingCounterUi
         }), 13, Accent, "Regular", ETextJustify::Center)];
         Rows->AddSlot().AutoHeight().Padding(0, 10)[YorimichiMenu::Divider()];
 
-        // Today's tickets, newest first, each with its outcome at the right; then the wallet.
+        // Today's tickets and the wins still to collect, newest first, each with its outcome at the right; then the wallet.
         Rows->AddSlot().AutoHeight().Padding(0, 0, 0, 4)[Text(FText::FromString(TEXT("Your tickets")), 16, FLinearColor::White, "Bold")];
         Rows->AddSlot().AutoHeight()[SNew(SBox).Visibility_Lambda([Wallet] { return TicketAt(Wallet, 0) ? EVisibility::Collapsed : EVisibility::Visible; })
             [Text(FText::FromString(TEXT("No tickets today.")), 13, Dim)]];
@@ -346,6 +405,9 @@ namespace RacingCounterUi
             [Text(FText::FromString(TEXT("Leave the counter")), 13, FLinearColor::White, "Regular", ETextJustify::Center)];
         Rows->AddSlot().AutoHeight().Padding(0, 8, 0, 0)[LitButton(Leave)];
         if (!OpenRace(Service.Get())) OutFirst = Leave;
+        *AfterCollect = OutFirst;
+        // Winnings waiting: the collect row has focus first.
+        if (HasUnpaid()) OutFirst = Collect;
 
         // The page scrolls to follow focus when today's tickets make it taller than the screen allows; the legend stays.
         TSharedRef<SVerticalBox> Frame = SNew(SVerticalBox);
@@ -428,7 +490,9 @@ bool RacingCounter::TryOpen(AWandererCharacter* Pawn)
 
 FString RacingCounter::Hint(const AWandererCharacter* Pawn)
 {
-    return CanUse(Pawn) ? FString(TEXT("Place a win bet")) : FString();
+    if (!CanUse(Pawn)) return FString();
+    const URacingWallet* Wallet = URacingWallet::Of(Pawn->GetController());
+    return Wallet && Wallet->GetWallet().UnpaidCoins > 0 ? FString(TEXT("Collect winnings and bet")) : FString(TEXT("Place a win bet"));
 }
 
 bool RacingCounter::IsOpen()

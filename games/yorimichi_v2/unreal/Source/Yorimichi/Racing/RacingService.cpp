@@ -620,6 +620,9 @@ void ARacingService::TickHost(float DeltaSeconds)
     int32 RunAfter = 0;
     for (const FHRRace& R : State.Meeting.Races) RunAfter += R.IsRun() ? 1 : 0;
     const bool bChanged = State.T != DayBefore || RunAfter != RunBefore;
+    // The rules leave every win to collect; a guest's session wallet is never saved, so its wins are paid as soon as they
+    // are settled (only when a race was run or the day turned, never a scan of the book every frame).
+    if (bChanged && PaySessionWinnings(State) > 0) bDirty = true;
     if (State.T != DayBefore) LookCache.Reset();
     bDirty |= bChanged;
     const double GameNow = ServerTimeOf(GetWorld());
@@ -749,44 +752,114 @@ FString ARacingService::PlaceBet(const AController* Controller, const FString& R
     return FString();
 }
 
+bool ARacingService::WinnerHome(const FHRWorldState& S, const FHRTicket& T, double Now)
+{
+    if (T.T != S.T) return true;
+    const FHRRace* Race = HRRules::FindRace(S, T.RaceKey);
+    // Decided at the start, seen at the post: a race run today is over for the player once its winner is home.
+    const double Start = HRRules::RaceStartSeconds(S, T.RaceKey);
+    if (!Race || Race->Status != TEXT("run") || Race->Finishes.IsEmpty() || Start < 0.) return true;
+    return Now >= Start + Race->Finishes[0].TimeUs / 1e6;
+}
+
 FRacingWalletState ARacingService::BuildWallet(const FHRWorldState& S, const FString& PlayerId, double Now)
 {
     FRacingWalletState Out;
     const FHRPlayer* Player = PlayerId.IsEmpty() ? nullptr : HRRules::FindPlayer(S, PlayerId);
     if (!Player) return Out;
     Out.DayStaked = HRRules::DayStake(S, PlayerId);
-    int64 Hidden = 0;
-    // Newest first: the wallet carries the latest MaxTickets and counts the earlier ones, so it stays small on the wire.
+    int64 Hidden = 0, Waiting = 0;
+    int32 Today = 0, Unpaid = 0;
+    // Newest first: the wallet carries the latest MaxTickets of today and the latest MaxTickets unpaid wins, and counts the
+    // others, so it stays small on the wire however many tickets wait.
     for (int32 I = S.Tickets.Num() - 1; I >= 0; --I)
     {
         const FHRTicket& T = S.Tickets[I];
-        if (T.PlayerId != PlayerId || T.T != S.T) continue;
-        const FHRRace* Race = HRRules::FindRace(S, T.RaceKey);
+        if (T.PlayerId != PlayerId || (T.T != S.T && !T.Unpaid)) continue;
         FRacingWalletTicket V;
         V.Status = T.Status;
         V.Payout = T.Payout;
-        // Decided at the start, seen at the post: until the winner is home the ticket is still running, its payout unseen.
-        const double Start = HRRules::RaceStartSeconds(S, T.RaceKey);
-        if (T.Status != TEXT("open") && Race && Race->Status == TEXT("run") && !Race->Finishes.IsEmpty() && Start >= 0. &&
-            Now < Start + Race->Finishes[0].TimeUs / 1e6)
+        V.Unpaid = T.Unpaid;
+        // Until the winner is home the ticket is still running, its payout unseen. Only a payout the rules have already
+        // credited (a refund, a guest's win) is taken out of the coins shown; an unpaid win was never credited.
+        if (T.Status != TEXT("open") && !WinnerHome(S, T, Now))
         {
-            Hidden += T.Payout;
+            if (!T.Unpaid) Hidden += T.Payout;
             V.Status = TEXT("open");
             V.Payout = 0;
+            V.Unpaid = false;
         }
-        if (Out.Tickets.Num() >= FRacingWalletState::MaxTickets)
+        bool bCarry;
+        if (V.Unpaid)
         {
-            Out.EarlierTickets++;
-            continue;
+            Waiting += T.Payout;
+            bCarry = T.T == S.T ? Today < FRacingWalletState::MaxTickets : Unpaid < FRacingWalletState::MaxTickets;
+            ++Unpaid;
+            if (!bCarry) Out.UnpaidMore++;
         }
+        else bCarry = Today < FRacingWalletState::MaxTickets;
+        if (T.T == S.T)
+        {
+            if (Today++ >= FRacingWalletState::MaxTickets) Out.EarlierTickets++;
+        }
+        if (!bCarry) continue;
+        const FHRRace* Race = T.T == S.T ? HRRules::FindRace(S, T.RaceKey) : nullptr;
         const FHRHorse* Horse = S.Horses.Find(T.HorseId);
-        V.Race = Race ? RaceName(*Race) : T.RaceKey;
+        // An earlier day's race is no longer on the card: its event and day name it.
+        V.Race = Race ? RaceName(*Race) : T.T == S.T ? T.RaceKey : FString::Printf(TEXT("%s · day %d"), HRContent::EventForT(T.T).Name, T.T);
         V.Horse = Horse ? Horse->Name : T.HorseId;
         V.Stake = T.Stake;
         Out.Tickets.Add(MoveTemp(V));
     }
     Out.Coins = int32(FMath::Clamp<int64>(int64(Player->Coins) - Hidden, 0, HRRules::MaxCoins));
+    Out.UnpaidCoins = int32(FMath::Clamp<int64>(Waiting, 0, MAX_int32));
     return Out;
+}
+
+FString ARacingService::CollectAt(FHRWorldState& S, const FString& PlayerId, double Now, int32& OutPaid, int32& OutTickets)
+{
+    OutPaid = OutTickets = 0;
+    if (PlayerId.IsEmpty() || !HRRules::FindPlayer(S, PlayerId)) return TEXT("No winnings to collect.");
+    // A win is collected once the player has seen it: never before its race's winner is home.
+    HRRules::CollectWinnings(S, PlayerId, OutPaid, OutTickets, [&S, Now](const FHRTicket& T) { return WinnerHome(S, T, Now); });
+    if (OutTickets > 0) return FString::Printf(TEXT("Collected %d coins."), OutPaid);
+    const bool bWaiting = S.Tickets.ContainsByPredicate([&S, &PlayerId, Now](const FHRTicket& T)
+    {
+        return T.Unpaid && T.PlayerId == PlayerId && WinnerHome(S, T, Now);
+    });
+    return bWaiting ? FString(TEXT("Your coins are at their limit. The rest of your winnings waits here.")) : FString(TEXT("No winnings to collect."));
+}
+
+int32 ARacingService::PaySessionWinnings(FHRWorldState& S)
+{
+    int32 Paid = 0;
+    TArray<FString> Guests;
+    for (const TPair<FString, FHRPlayer>& Player : S.Players)
+        if (RacingBets::IsSessionPlayer(Player.Key)) Guests.Add(Player.Key);
+    for (const FString& Guest : Guests)
+    {
+        int32 Coins = 0, Tickets = 0;
+        HRRules::CollectWinnings(S, Guest, Coins, Tickets);
+        Paid = HRRules::Tally(Paid, Coins);
+    }
+    return Paid;
+}
+
+FString ARacingService::CollectWinnings(const AController* Controller)
+{
+    if (!HasAuthority() || !bHasWorld) return TEXT("The betting counter is closed for now.");
+    // The host checks the counter itself: a client's word that its player stands there is not enough.
+    if (!Controller || !RacingCounter::IsAt(Controller->GetPawn())) return TEXT("Step up to the betting counter to collect.");
+    const FString PlayerId = PlayerIdOf(Controller);
+    int32 Paid = 0, Tickets = 0;
+    const FString Reply = CollectAt(State, PlayerId, HostWorldSeconds(), Paid, Tickets);
+    UE_LOG(LogTemp, Display, TEXT("RACING COLLECT %s paid=%d tickets=%d"), *PlayerId, Paid, Tickets);
+    if (Tickets > 0)
+    {
+        bDirty = true;
+        RefreshWallets();
+    }
+    return Reply;
 }
 
 FHRWorldState ARacingService::PersistentWorld(const FHRWorldState& S)

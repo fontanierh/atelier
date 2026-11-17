@@ -39,4 +39,9 @@ ranges before mutating the output world state. Coin balances MUST saturate in 0.
 with int64 pool sums, SettleRace MUST skip declared races and settle refunds before
 winner payouts so odds are order-independent, and AdvanceTo catch-up MUST ignore nonfinite
 times and bound catch-up to at most MaxCatchUpDays per call.
+SettleRace MUST credit refunds at once and MUST NOT credit a win: it marks the ticket Unpaid
+(TotalWon and TicketsWon count it then). Only CollectWinnings credits it, oldest first, at most
+once, leaving unpaid any ticket that would take coins above MaxCoins and every ticket after it.
+Unpaid MUST be admitted only on a "won" ticket with a positive payout, a save without the key
+MUST read every win as paid, and season pruning MUST NOT remove an unpaid ticket.
 Replicated client snapshots MUST NOT expose FHRWorldState::Seed or a derivation of it.

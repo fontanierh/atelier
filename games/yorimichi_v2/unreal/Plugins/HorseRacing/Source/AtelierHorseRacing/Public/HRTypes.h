@@ -249,6 +249,9 @@ struct ATELIERHORSERACING_API FHRTicket
 	UPROPERTY() int32 Payout = 0;
 	/** Odds paid per coin, fixed when the race was run. */
 	UPROPERTY() double Rapport = 0;
+	/** A won ticket whose payout has not been collected yet (HRRules::CollectWinnings): settling a race does not credit
+	 *  winnings. JSON "unpaid"; a save without the key loads false, so its won tickets read as already paid. */
+	UPROPERTY() bool Unpaid = false;
 };
 
 /** A horse offered by one stable to the others. */

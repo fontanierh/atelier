@@ -210,7 +210,12 @@ bet MUST republish the snapshot so the odds move for every player; the window's 
 odds with the stake in the pool (HRRules::RapportOf over the snapshot's pool shares). URacingWallet MUST replicate
 COND_OwnerOnly, MUST NOT carry another player's tickets and MUST carry at most FRacingWalletState::MaxTickets of today's
 tickets, newest first, counting the rest; a settled ticket MUST show its outcome and payout only once its race's winner
-is home. The race results list (RacingResults::Build, URacingWallet's Result) MUST be built on the host only once the
+is home. Winnings MUST be paid only by ARacingService::CollectWinnings on authority, with the pawn at the betting counter,
+through ServerCollect under the same rate limit as bets, and only for wins whose winner is home; session players' wins
+MUST be paid by the service right after settlement (PaySessionWinnings), as they are never saved. The wallet MUST also
+carry the newest FRacingWalletState::MaxTickets unpaid wins of any day, counting the rest (UnpaidMore) and summing their
+coins (UnpaidCoins, int64 then clamped); its coins MUST hide only credited payouts not yet seen, never an unpaid win.
+The race results list (RacingResults::Build, URacingWallet's Result) MUST be built on the host only once the
 race's winner is home and within FRacingResultState::Window after, MUST replicate COND_OwnerOnly to a player who holds a
 ticket on that race, MUST carry at most FRacingResultState::MaxTickets of the race's tickets (the player's own first, the
 others grouped by player) and count the rest ("+N more bets"), and MUST name other players only by display name (from

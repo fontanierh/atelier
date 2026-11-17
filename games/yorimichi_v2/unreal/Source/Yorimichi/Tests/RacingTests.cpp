@@ -87,6 +87,22 @@ namespace RacingTest
             return Test.TestTrue(TEXT("The race is still to start"), Start > 60.);
         }
         int32 Runners() const { return HRRules::FindRace(World, Key)->Entries.Num(); }
+        /** Out: this world with PlayerId's Stake on the race's winner, the race run (each runner tried on a copy: the race is
+         *  decided at its start); Home is the world second its winner is home. */
+        bool WinTicket(FAutomationTestBase& Test, const FString& PlayerId, FHRWorldState& Out, double& Home, int32 Stake = 5) const
+        {
+            for (int32 I = 0; I < Runners(); ++I)
+            {
+                Out = World;
+                if (!ARacingService::PlaceBetAt(Out, PlayerId, Key, I, Stake, Start - 60.).IsEmpty()) continue;
+                HRRules::AdvanceTo(Out, Start + 1.);
+                if (Out.Tickets.Last().Status != TEXT("won")) continue;
+                const FHRRace* Race = HRRules::FindRace(Out, Key);
+                Home = Start + Race->Finishes[0].TimeUs / 1e6;
+                return true;
+            }
+            return Test.TestTrue(TEXT("A ticket on the winner"), false);
+        }
     };
 }
 
@@ -745,31 +761,160 @@ bool FRacingBetRevealTest::RunTest(const FString&)
 {
     RacingTest::FBetFixture F;
     if (!F.Make(*this)) return false;
-    // A ticket on the winner: the race is decided at its start, so each runner is tried on a copy of the world.
+    // A saved player's ticket on the winner: the win waits to be collected, so its coins were never credited.
     FHRWorldState World;
-    bool bWon = false;
-    for (int32 I = 0; I < F.Runners() && !bWon; ++I)
-    {
-        World = F.World;
-        if (!ARacingService::PlaceBetAt(World, F.Player, F.Key, I, 5, F.Start - 60.).IsEmpty()) continue;
-        HRRules::AdvanceTo(World, F.Start + 1.);
-        bWon = World.Tickets.Last().Status == TEXT("won");
-    }
-    if (!TestTrue(TEXT("A ticket on the winner"), bWon)) return false;
+    double Home = 0.;
+    if (!F.WinTicket(*this, F.Player, World, Home)) return false;
     const FHRTicket& Ticket = World.Tickets.Last();
-    const FHRRace* Race = HRRules::FindRace(World, F.Key);
-    const double Home = F.Start + Race->Finishes[0].TimeUs / 1e6;
     const int32 Coins = HRRules::FindPlayer(World, F.Player)->Coins;
-    TestTrue(TEXT("The win is paid in the rules' world"), Ticket.Payout > Ticket.Stake);
+    TestTrue(TEXT("The win is settled in the rules' world"), Ticket.Payout > Ticket.Stake);
+    TestTrue(TEXT("and left to collect"), Ticket.Unpaid);
+    TestEqual(TEXT("Settlement credits no coins"), Coins, FHRPlayer().Coins - 5);
     const FRacingWalletState Running = ARacingService::BuildWallet(World, F.Player, Home - 1.);
     if (!TestEqual(TEXT("One ticket"), Running.Tickets.Num(), 1)) return false;
     TestEqual(TEXT("Still running before the winner is home"), Running.Tickets[0].Status, FString(TEXT("open")));
     TestEqual(TEXT("with no payout shown"), Running.Tickets[0].Payout, 0);
-    TestEqual(TEXT("nor counted in the coins"), Running.Coins, Coins - Ticket.Payout);
+    TestFalse(TEXT("nor anything to collect"), Running.Tickets[0].Unpaid);
+    TestEqual(TEXT("No winnings waiting yet"), Running.UnpaidCoins, 0);
+    TestEqual(TEXT("The coins shown are the player's: nothing was credited to hide"), Running.Coins, Coins);
     const FRacingWalletState Seen = ARacingService::BuildWallet(World, F.Player, Home);
     TestEqual(TEXT("Won once the winner is home"), Seen.Tickets[0].Status, FString(TEXT("won")));
     TestEqual(TEXT("with its payout"), Seen.Tickets[0].Payout, Ticket.Payout);
-    TestEqual(TEXT("and the coins are the player's"), Seen.Coins, Coins);
+    TestTrue(TEXT("to collect"), Seen.Tickets[0].Unpaid);
+    TestEqual(TEXT("The winnings wait"), Seen.UnpaidCoins, Ticket.Payout);
+    TestEqual(TEXT("on one ticket"), Seen.UnpaidTickets(), 1);
+    TestEqual(TEXT("and the coins are unchanged"), Seen.Coins, Coins);
+    return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FRacingBetCollectTest, "Yorimichi.Racing.Bet.Collect",
+    EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
+
+bool FRacingBetCollectTest::RunTest(const FString&)
+{
+    RacingTest::FBetFixture F;
+    if (!F.Make(*this)) return false;
+    FHRWorldState World;
+    double Home = 0.;
+    if (!F.WinTicket(*this, F.Player, World, Home)) return false;
+    const int32 Coins = HRRules::FindPlayer(World, F.Player)->Coins, Payout = World.Tickets.Last().Payout;
+    int32 Paid = -1, Tickets = -1;
+    TestEqual(TEXT("Nothing to collect before the winner is home"), ARacingService::CollectAt(World, F.Player, Home - 1., Paid, Tickets),
+        FString(TEXT("No winnings to collect.")));
+    TestEqual(TEXT("so nothing is paid"), Paid, 0);
+    TestTrue(TEXT("and the win still waits"), World.Tickets.Last().Unpaid);
+    TestEqual(TEXT("Collected once the winner is home"), ARacingService::CollectAt(World, F.Player, Home, Paid, Tickets),
+        FString::Printf(TEXT("Collected %d coins."), Payout));
+    TestEqual(TEXT("the payout"), Paid, Payout);
+    TestEqual(TEXT("of one ticket"), Tickets, 1);
+    TestEqual(TEXT("into the player's coins"), HRRules::FindPlayer(World, F.Player)->Coins, Coins + Payout);
+    TestEqual(TEXT("A second collection pays nothing"), ARacingService::CollectAt(World, F.Player, Home, Paid, Tickets),
+        FString(TEXT("No winnings to collect.")));
+    TestEqual(TEXT("not a coin"), Paid, 0);
+    TestEqual(TEXT("and the coins stay"), HRRules::FindPlayer(World, F.Player)->Coins, Coins + Payout);
+    const FRacingWalletState W = ARacingService::BuildWallet(World, F.Player, Home);
+    TestEqual(TEXT("The wallet shows the coins"), W.Coins, Coins + Payout);
+    TestTrue(TEXT("the ticket won and collected"), W.Tickets.Num() == 1 && W.Tickets[0].Status == TEXT("won") && !W.Tickets[0].Unpaid);
+    TestEqual(TEXT("nothing left waiting"), W.UnpaidCoins, 0);
+    TestEqual(TEXT("An unknown player collects nothing"), ARacingService::CollectAt(World, TEXT("local:nobody"), Home, Paid, Tickets),
+        FString(TEXT("No winnings to collect.")));
+
+    // The host decides where a collection happens: away from the counter (no pawn here) it is refused and pays nothing.
+    const FString Path = FPaths::ConvertRelativePathToFull(FPaths::AutomationTransientDir() / FString::Printf(TEXT("racing-collect-%s/world.json"),
+        *FGuid::NewGuid().ToString(EGuidFormats::Digits)));
+    ARacingService* Service = NewObject<ARacingService>(GetTransientPackage());
+    TestEqual(TEXT("No world, no counter"), Service->CollectWinnings(nullptr), FString(TEXT("The betting counter is closed for now.")));
+    if (TestTrue(TEXT("A world opens"), Service->OpenWorld(Path, TEXT("collect"))))
+    {
+        const FString Before = HRSave::ToJson(Service->GetWorldState());
+        TestEqual(TEXT("Away from the counter, a collection is refused"), Service->CollectWinnings(nullptr),
+            FString(TEXT("Step up to the betting counter to collect.")));
+        TestTrue(TEXT("and changes nothing"), HRSave::ToJson(Service->GetWorldState()) == Before);
+    }
+    IFileManager::Get().DeleteDirectory(*FPaths::GetPath(Path), false, true);
+    return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FRacingBetSessionPaidTest, "Yorimichi.Racing.Bet.SessionPaid",
+    EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
+
+bool FRacingBetSessionPaidTest::RunTest(const FString&)
+{
+    RacingTest::FBetFixture F;
+    if (!F.Make(*this)) return false;
+    // A guest's session wallet is never saved, so its win cannot wait: the service pays it as soon as the race is settled.
+    const FString Guest(TEXT("session:0123456789abcdef0123456789abcdef"));
+    HRRules::AddPlayer(F.World, Guest, TEXT("Guest"));
+    FHRWorldState World;
+    double Home = 0.;
+    if (!F.WinTicket(*this, Guest, World, Home)) return false;
+    const int32 Before = HRRules::FindPlayer(World, Guest)->Coins, Payout = World.Tickets.Last().Payout;
+    TestTrue(TEXT("The rules leave the guest's win unpaid"), World.Tickets.Last().Unpaid);
+    TestEqual(TEXT("The service pays it"), ARacingService::PaySessionWinnings(World), Payout);
+    TestFalse(TEXT("so it is paid"), World.Tickets.Last().Unpaid);
+    TestEqual(TEXT("into the guest's coins"), HRRules::FindPlayer(World, Guest)->Coins, Before + Payout);
+    TestEqual(TEXT("once"), ARacingService::PaySessionWinnings(World), 0);
+    // Credited before the winner is home: the wallet hides it until then, as before.
+    const FRacingWalletState Running = ARacingService::BuildWallet(World, Guest, Home - 1.);
+    TestEqual(TEXT("Hidden while the race runs"), Running.Coins, Before);
+    TestEqual(TEXT("with nothing to collect"), Running.UnpaidCoins, 0);
+    const FRacingWalletState Seen = ARacingService::BuildWallet(World, Guest, Home);
+    TestEqual(TEXT("Seen once the winner is home"), Seen.Coins, Before + Payout);
+    TestTrue(TEXT("as a collected win"), Seen.Tickets.Num() == 1 && Seen.Tickets[0].Status == TEXT("won") && !Seen.Tickets[0].Unpaid);
+
+    // A saved player's win beside it stays to collect.
+    FHRWorldState Both;
+    if (!F.WinTicket(*this, F.Player, Both, Home)) return false;
+    ARacingService::PaySessionWinnings(Both);
+    TestTrue(TEXT("The host's win is not paid with the guests'"), Both.Tickets.Last().Unpaid);
+    return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FRacingBetUnpaidBoundTest, "Yorimichi.Racing.Bet.UnpaidBound",
+    EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
+
+bool FRacingBetUnpaidBoundTest::RunTest(const FString&)
+{
+    RacingTest::FBetFixture F;
+    if (!F.Make(*this)) return false;
+    // Wins of earlier days still to collect, more than the wallet carries, and one of today's tickets after them.
+    const int32 Waiting = FRacingWalletState::MaxTickets + 5;
+    const FString Horse = HRRules::FindRace(F.World, F.Key)->Entries[0].HorseId;
+    int64 Total = 0;
+    for (int32 I = 0; I < Waiting; ++I)
+    {
+        FHRTicket T;
+        T.Id = FString::Printf(TEXT("bet:%d:%d"), F.World.T - 1, I);
+        T.PlayerId = F.Player;
+        T.T = F.World.T - 1;
+        T.RaceKey = F.Key;
+        T.HorseId = Horse;
+        T.Stake = 1;
+        T.Status = TEXT("won");
+        T.Payout = I + 1;
+        T.Rapport = 2.;
+        T.Unpaid = true;
+        Total += T.Payout;
+        F.World.Tickets.Add(T);
+    }
+    // And a won ticket of an earlier day already collected: not carried.
+    FHRTicket Paid = F.World.Tickets[0];
+    Paid.Id = TEXT("bet:paid");
+    Paid.Unpaid = false;
+    F.World.Tickets.Insert(Paid, 0);
+    TestEqual(TEXT("A ticket today"), ARacingService::PlaceBetAt(F.World, F.Player, F.Key, 0, 3, F.Start - 60.), FString());
+    const FRacingWalletState W = ARacingService::BuildWallet(F.World, F.Player, F.Start - 60.);
+    if (!TestEqual(TEXT("Today's ticket and the newest MaxTickets wins to collect"), W.Tickets.Num(), 1 + FRacingWalletState::MaxTickets)) return false;
+    TestEqual(TEXT("today's first"), W.Tickets[0].Stake, 3);
+    TestEqual(TEXT("then the newest win"), W.Tickets[1].Payout, Waiting);
+    TestEqual(TEXT("down to the oldest carried"), W.Tickets.Last().Payout, Waiting - FRacingWalletState::MaxTickets + 1);
+    TestTrue(TEXT("each to collect"), !W.Tickets.ContainsByPredicate([](const FRacingWalletTicket& T) { return T.Status == TEXT("won") && !T.Unpaid; }));
+    TestEqual(TEXT("the others counted"), W.UnpaidMore, Waiting - FRacingWalletState::MaxTickets);
+    TestEqual(TEXT("every winning ticket counted"), W.UnpaidTickets(), Waiting);
+    TestEqual(TEXT("every coin waiting summed"), int64(W.UnpaidCoins), Total);
+    TestEqual(TEXT("No earlier ticket of today"), W.EarlierTickets, 0);
+    TestEqual(TEXT("The coins hide nothing"), W.Coins, HRRules::FindPlayer(F.World, F.Player)->Coins);
+    TestTrue(TEXT("An earlier day's race is named by its event and day"), W.Tickets[1].Race.Contains(FString::Printf(TEXT("day %d"), F.World.T - 1)));
     return true;
 }
 
@@ -913,6 +1058,9 @@ bool FRacingResultsHiddenTest::RunTest(const FString&)
     TestEqual(TEXT("The result once the winner is home"), Home.Key, F.Key);
     TestEqual(TEXT("with every ticket on the race"), Home.Tickets.Num(), 5);
     TestTrue(TEXT("settled"), !Home.Tickets.ContainsByPredicate([](const FRacingResultTicket& T) { return T.Status == TEXT("open"); }));
+    // The viewer's own wins show as still to collect; whether another player collected is never sent.
+    for (const FRacingResultTicket& T : Home.Tickets)
+        TestEqual(TEXT("Unpaid only on the viewer's own wins"), T.bUnpaid, T.bMine && T.Status == TEXT("won"));
     TestTrue(TEXT("its winner named"), !Home.Winner.IsEmpty() && Home.WinnerNumber >= 1 && Home.WinnerOddsTenths > 0);
     TestTrue(TEXT("Fresh when shown"), RacingResults::IsFresh(Home, F.Home + 1.));
     TestFalse(TEXT("Stale after the window"), RacingResults::IsFresh(Home, F.Home + FRacingResultState::Window));
