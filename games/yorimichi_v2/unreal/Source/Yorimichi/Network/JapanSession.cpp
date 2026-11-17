@@ -25,10 +25,32 @@
 #include "Widgets/Input/SEditableTextBox.h"
 #include "Widgets/Text/STextBlock.h"
 #include "Containers/Ticker.h"
+#include "WorldPartition/WorldPartitionSubsystem.h"
+
+static void ApplyEarlyLaptopStreamingOverride()
+{
+#if !UE_BUILD_SHIPPING
+    if (!GIsEditor && !IsRunningCommandlet())
+    {
+        const bool bLaptop = UJapanPreferences::IsLaptopModeConfigured();
+        UWorldPartitionSubsystem::SetOverrideLoadingRange(
+            TEXT("MainPartition"), bLaptop ? UJapanPreferences::LaptopLoadingRangeCm : -1);
+        if (bLaptop)
+            UE_LOG(LogTemp, Display, TEXT("PREFERENCES early laptop=1 MainPartition override=%dcm"),
+                   UJapanPreferences::LaptopLoadingRangeCm);
+    }
+#endif
+}
 
 void UJapanGameInstance::Init()
 {
     Super::Init();
+    ApplyEarlyLaptopStreamingOverride();
+    WorldPartitionInitHandle = UWorldPartitionSubsystem::OnWorldPartitionSubsystemInitialized.AddLambda(
+        [](UWorldPartitionSubsystem*, UWorld* InWorld)
+        {
+            if (InWorld && InWorld->IsGameWorld()) ApplyEarlyLaptopStreamingOverride();
+        });
     if (GEngine)
     {
         GEngine->OnNetworkFailure().AddUObject(this, &UJapanGameInstance::NetworkFailure);
@@ -39,6 +61,11 @@ void UJapanGameInstance::Init()
 }
 void UJapanGameInstance::Shutdown()
 {
+    if (WorldPartitionInitHandle.IsValid())
+    {
+        UWorldPartitionSubsystem::OnWorldPartitionSubsystemInitialized.Remove(WorldPartitionInitHandle);
+        WorldPartitionInitHandle.Reset();
+    }
     FTSTicker::GetCoreTicker().RemoveTicker(NetworkQATicker);
     CloseFriends();
     if (GEngine)

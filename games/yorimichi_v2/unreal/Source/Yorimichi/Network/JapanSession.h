@@ -50,6 +50,7 @@ private:
     bool WriteNetworkQA(const TCHAR* Stage, const FString& Error = FString());
     FString NetworkQARole, NetworkQADirectory;
     FTSTicker::FDelegateHandle NetworkQATicker;
+    FDelegateHandle WorldPartitionInitHandle;
     double NetworkQAStarted = 0, NetworkQAConnected = 0, NetworkQALeaving = 0;
     bool bNetworkQAWorld = false, bNetworkQASawPeer = false;
     bool bNetworkQAHostRequested = false, bNetworkQABindFailure = false;
